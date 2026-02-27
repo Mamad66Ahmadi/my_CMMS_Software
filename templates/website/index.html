@@ -1,27 +1,48 @@
 {% extends 'base.html' %}
 
-{% block title %}Home{% endblock %}
-
 {% block content %}
 <div class="container mt-5">
-    <h1 class="text-primary">This is my new site</h1>
-
-    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">
-        Open Modal
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#contactModal">
+        Contact Us
     </button>
 </div>
 
-<!-- Modal Example -->
-<div class="modal fade" id="exampleModal" tabindex="-1">
+<!-- Modal -->
+<div class="modal fade" id="contactModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Bootstrap Works 🎉</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        Bootstrap JS components are working correctly.
-      </div>
+
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="modal-header">
+          <h5 class="modal-title">Contact Form</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            {{ form.name.label_tag }}
+            {{ form.name }}
+          </div>
+
+          <div class="mb-3">
+            {{ form.email.label_tag }}
+            {{ form.email }}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+          <button type="submit" class="btn btn-success">
+            Submit
+          </button>
+        </div>
+
+      </form>
+
     </div>
   </div>
 </div>
