@@ -37,7 +37,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'viewflow',
+    'simple_history',
     'website',
+    'accounts',
+ #   'maintenance',
+ #   'work_orders',
+ #  'daily_reports',
+ #   'permits',
 ]
 
 MIDDLEWARE = [
@@ -129,4 +136,5 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+# user manager config
+AUTH_USER_MODEL = 'accounts.User'
