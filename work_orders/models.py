@@ -1,12 +1,14 @@
 from django.db import models
 from viewflow.fsm import FSMField, transition
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 
 from equipment import LocationTag
-from accounts.models import User, Department  # Import Department from accounts app
-# Create your models here.
+from accounts.models import Department  # Import Department from accounts app (this app has User and Department models)
 
 
+# ----------------------    Getting user model object    ----------------------------------
+User = get_user_model()
 
 # ----------------------    Work Order Header (The Parent)    ----------------------------------
 class WorkOrderHeader(models.Model):

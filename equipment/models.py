@@ -1,7 +1,12 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
+from django.contrib.auth import get_user_model
 
-from accounts.models import Department, User
+
+
+
+# ----------------------    Getting user model object    ----------------------------------
+User = get_user_model()
 
 
 # ----------------------    Abstract Base Class    ----------------------------------
@@ -87,6 +92,8 @@ class Unit(TimeStampedModel):
         return self.unit_code
 
     class Meta:
+        verbose_name = "Unit"
+        verbose_name_plural = "Units"
         ordering = ['unit_code']
 
 
@@ -108,11 +115,11 @@ class LocationTag(TimeStampedModel):
     long_tag = models.CharField(max_length=250, null=True, blank=True)
     
     # Foreign Keys
-    obj_criticality = models.ForeignKey(ObjectCriticality, on_delete=models.SET_NULL, null=True, blank=True, related_name='locations')
+    obj_criticality = models.ForeignKey(ObjectCriticality, on_delete=models.SET_NULL, null=True, blank=True, related_name='tag_locations')
     obj_type = models.ForeignKey(ObjectType, on_delete=models.SET_NULL, null=True, blank=True, related_name='tag_locations')
     obj_category = models.ForeignKey(ObjectCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='tag_locations')
     
-    operational_unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True, related_name='tag_locations')
+    unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True, related_name='tag_locations')
     train = models.IntegerField(null=True, blank=True)
     note = models.TextField(max_length=500, null=True, blank=True)
     mih_level = models.CharField(max_length=150, null=True, blank=True)
@@ -121,6 +128,8 @@ class LocationTag(TimeStampedModel):
         return self.loc_tag
 
     class Meta:
+        verbose_name = "Location Tag"
+        verbose_name_plural = "Location Tags"
         ordering = ['loc_tag']
 
 
@@ -130,8 +139,6 @@ class Equipment(TimeStampedModel):
     """ 
     Represents the physical 'Thing' installed at a location 
     """
-    equipment_id = models.AutoField()
-
     functional_location = models.ForeignKey(
         LocationTag, 
         on_delete=models.SET_NULL, 
@@ -144,14 +151,52 @@ class Equipment(TimeStampedModel):
     note = models.TextField(max_length=500, null=True, blank=True)
     manufacturer = models.CharField(max_length=100, null=True, blank=True)
     model = models.CharField(max_length=100, null=True, blank=True)
-    documents = models.FilePathField(blank=True, null=True)
+    #documents = models.FilePathField(blank=True, null=True)
     
     def __str__(self):
         loc_str = str(self.functional_location) if self.functional_location else "No Location"
-        return f"{loc_str}/id:{self.equipment_id}"
+        return f"{loc_str}/id:{self.id}"
 
     class Meta:
-        ordering = ['functional_location', 'equipment_id']
+        ordering = ['functional_location', 'id']
+
+
+# ----------------------    Equipment Document    ----------------------------------
+def get_document_upload_path(instance, filename):
+    """
+    Helper function to determine upload path dynamically.
+    Path: media/<loc_tag>/<filename>
+    """
+    # Safely get the location tag. If missing, use 'unassigned'.
+    if instance.equipment.functional_location:
+        loc_tag = instance.equipment.functional_location.loc_tag
+    else:
+        loc_tag = 'unassigned'
+        
+    return f'{loc_tag}/{filename}'
+
+class EquipmentDocument(TimeStampedModel):
+    """
+    Represents a single document file attached to an Equipment.
+    """
+
+    equipment = models.ForeignKey(
+        Equipment, 
+        on_delete=models.CASCADE, 
+        related_name='documents'
+    )
+    file_name = models.CharField(unique=True)
+    file = models.FileField(upload_to=get_document_upload_path, verbose_name="Document File")
+    description = models.CharField(max_length=255, blank=True, null=True)
+    
+    def __str__(self):
+        # Access location via the equipment relationship
+        loc_tag = self.equipment.functional_location.loc_tag if self.equipment.functional_location else "Unknown"
+        return f"Doc for {loc_tag}: {self.file_name or self.file.name}"    
+    class Meta:
+        verbose_name = "Equipment Document"
+        verbose_name_plural = "Equipment Documents"
+        ordering = ['equipment__functional_location__loc_tag', 'equipment']
 
 
 

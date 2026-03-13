@@ -38,7 +38,7 @@ class User(AbstractBaseUser,PermissionsMixin):
     personnel_number = models.IntegerField()
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    department = models.ForeignKey('Department', on_delete=models.SET_NULL, null=True, blank=True)
+    department = models.ForeignKey('Department', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
