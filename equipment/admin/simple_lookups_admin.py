@@ -3,7 +3,7 @@ from simple_history.admin import SimpleHistoryAdmin
 from ..models import (
     ObjectCriticality, ObjectType, ObjectCategory, Unit,
 )
-from base_admin_mixin import *
+from .base_admin_mixin import *
 
 
 # ----------------------    Simple Lookups Admins    ----------------------------------

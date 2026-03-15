@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Location Tags List{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Location Tags</h2>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Location Tag</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Unit</th>
+                    <th>Criticality</th>
+                    <th>Parent</th>
+                    <th>Train</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tag in tags %}
+                <tr>
+                    <td><strong>{{ tag.loc_tag }}</strong></td>
+                    <td>{{ tag.description|default:"-" }}</td>
+                    <td>{{ tag.obj_type|default:"-" }}</td>
+                    <td>{{ tag.unit|default:"-" }}</td>
+                    <td>
+                        {% if tag.obj_criticality %}
+                            <span class="badge bg-info text-dark">{{ tag.obj_criticality }}</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ tag.parent|default:"-" }}</td>
+                    <td>{{ tag.train|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">No location tags found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "equipment/pagination/custom_pagination.html" %}
+
+</div>
+{% endblock %}

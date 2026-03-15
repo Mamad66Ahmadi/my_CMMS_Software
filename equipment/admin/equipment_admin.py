@@ -6,7 +6,7 @@ from simple_history.admin import SimpleHistoryAdmin
 from ..models import (
     Equipment, EquipmentDocument
 )
-from base_admin_mixin import *
+from .base_admin_mixin import *
 
 
 # ----------------------    Equipment Document inline Admin    ----------------------------------
