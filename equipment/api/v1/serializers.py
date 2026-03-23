@@ -55,14 +55,14 @@ class LocationTagSerializer(serializers.ModelSerializer):
         model = LocationTag
         fields = [
             'loc_tag',
-            'description',
+            'parent',
             'long_tag',
+            'description',
             'obj_type',
             'obj_criticality',
             'obj_category',
             'unit',
             'train',
-            'parent',
             'is_active',
             'created_at',
             'modified_at',
@@ -127,6 +127,10 @@ class LocationTagSerializer(serializers.ModelSerializer):
         return rep
     
     def create(self, validated_data):
+        # ✅ CONVERT TO UPPERCASE BEFORE SAVING
+        if 'loc_tag' in validated_data:
+            validated_data['loc_tag'] = validated_data['loc_tag'].upper()
+
         # Get current user from request context
         request = self.context.get('request')
         if request and request.user.is_authenticated:
@@ -134,6 +138,7 @@ class LocationTagSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
+
         # Get current user from request context
         request = self.context.get('request')
         if request and request.user.is_authenticated:
