@@ -1,0 +1,16 @@
+{% load i18n %}
+{% if form %}
+    <form method="get" class="django-filter-form">
+        {% for field in form %}
+            {% if field.is_hidden %}
+                {{ field }}
+            {% else %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+            {% endif %}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">{% trans "Apply" %}</button>
+    </form>
+{% endif %}

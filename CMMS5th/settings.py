@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'viewflow',
     'simple_history',
     'import_export',
+    'rest_framework',
+    'django_filters',
     'website',
     'accounts',
     'equipment',

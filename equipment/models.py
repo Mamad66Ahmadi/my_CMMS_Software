@@ -1,6 +1,7 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 
 
@@ -126,6 +127,10 @@ class LocationTag(TimeStampedModel):
     
     def __str__(self):
         return self.loc_tag
+    
+    def get_absolute_api_url(self):
+        """Return the API URL for this location tag"""
+        return f'/equipment/api/v1/tag/{self.loc_tag}/'
 
     class Meta:
         verbose_name = "Location Tag"
