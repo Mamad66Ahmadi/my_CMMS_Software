@@ -1,0 +1,26 @@
+<div class="vazir-topbar d-flex justify-content-between align-items-center py-2 px-3"
+    style="border-bottom:1px solid #ccc; margin-top: 50px;">
+
+    <!-- LEFT SIDE: Dates -->
+    <div style="font-size:14px; color:#000;">
+        <span id="weekday"
+              class="weekday-{{ weekday_name }}"
+              style="font-weight:bold;">
+            {{ weekday_name }}
+        </span> :
+        <span id="gregorian-date">{{ gregorian_date }}</span>
+        |
+        <span id="jalali-date" style="color:#001514; font-weight:bold;">
+            {{ jalali_date_persian }}
+        </span>
+    </div>
+
+    <!-- RIGHT SIDE: User info -->
+    <div style="font-size:15px;">
+        🖥️ {{ username }}
+        |
+        👤 {{ first_name }} {{ last_name }}
+        |
+        🏢 {{ department_name }}
+    </div>
+</div>

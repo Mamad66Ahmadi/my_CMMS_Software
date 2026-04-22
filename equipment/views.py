@@ -1,9 +1,15 @@
+# equipment/views.py
+
 from django.shortcuts import render
-from django.views.generic import ListView,DetailView
+from django.views.generic import ListView,DetailView,TemplateView
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from django.utils import timezone
+import jdatetime
+
 from .models import LocationTag
+
 
 
 class Taglist(LoginRequiredMixin, ListView):
@@ -70,3 +76,22 @@ class RegisterView(CreateView):
 # function based view function
 def tagView(request):
     return render(request, 'website/index.html')
+
+class DashboardView(TemplateView):
+    template_name = "equipment/index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        now = timezone.now()
+        jnow = jdatetime.datetime.fromgregorian(datetime=now)
+
+        # Format Gregorian date as usual
+        gregorian_date_str = now.strftime("%Y/%m/%d")
+
+        # Format Jalali date directly with Persian digits using jdatetime's strftime
+        # %Y, %m, %d will be automatically converted to Persian digits by jdatetime's formatter
+        jalali_date_persian = jnow.strftime("%Y/%m/%d")
+
+        context['gregorian_date'] = gregorian_date_str
+        context['jalali_date_persian'] = jalali_date_persian
+        return context

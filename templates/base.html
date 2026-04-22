@@ -1,4 +1,5 @@
 {% load static %}
+{% load tz %} {# good to have tz loaded if you use timezone features elsewhere #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,15 +10,45 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
 
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    <style>
+    @font-face {
+        font-family: 'Vazirmatn';
+        /* Ensure this path is correct based on your STATICFILES_DIRS and collectstatic */
+        src: url("{% static 'fonts/Vazirmatn-Regular.woff2' %}") format('woff2');
+    }
+
+    .vazir-topbar {
+        font-family: 'Vazirmatn', sans-serif !important;
+    }
+
+    /* Weekday Colors */
+    .weekday-Monday { color:#b20000; } /* Red */
+    .weekday-Tuesday { color:#b27300; } /* Dark Gray */
+    .weekday-Wednesday { color:#a83569; } /* Dark Pink/Purple */
+    .weekday-Thursday { color:#006400; } /* Dark Green */
+    .weekday-Friday { color:#2b1e06; } /* Brownish Orange */
+    .weekday-Saturday { color:#0073b2; } /* Blue */
+    .weekday-Sunday { color:#4b0082; } /* Indigo */
+    </style>
+    {% endblock %}
 </head>
 <body>
+    {# {% load static %} and {% load tz %} can be placed here or in the head #}
+
+
+
 
     {% block content %}{% endblock %}
 
     <!-- Bootstrap JS -->
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+    {# This is where we'll put the simplified weekday JS #}
+    <script>
+
+    </script>
+    {% endblock %}
 </body>
 </html>

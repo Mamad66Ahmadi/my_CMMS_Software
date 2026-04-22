@@ -9,4 +9,6 @@ urlpatterns = [
     path('register/', views.RegisterView.as_view(), name='register'),
     path('api/v1/', include('equipment.api.v1.urls')),
     path('fvb/', views.tagView, name='function-based-view'),
+
+    path('', views.DashboardView.as_view(), name = "dashboard"),
 ]
