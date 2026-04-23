@@ -4,9 +4,11 @@ from django.shortcuts import render
 from django.views.generic import ListView,DetailView,TemplateView
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from django.utils import timezone
-import jdatetime
+
+from django.db.models import F, OrderBy
+
 
 from .models import LocationTag
 
@@ -77,21 +79,92 @@ class RegisterView(CreateView):
 def tagView(request):
     return render(request, 'website/index.html')
 
-class DashboardView(TemplateView):
-    template_name = "equipment/index.html"
+
+
+
+# ----------------------------------------- Location Tag List ------------------------------
+class LocationTagList(TemplateView):
+    template_name = "equipment/location_tag_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        now = timezone.now()
-        jnow = jdatetime.datetime.fromgregorian(datetime=now)
 
-        # Format Gregorian date as usual
-        gregorian_date_str = now.strftime("%Y/%m/%d")
+        # Filters from GET
+        filters = {
+            'loc_tag': self.request.GET.get('search', '').strip(),
+            'parent': self.request.GET.get('parent', '').strip(),
+            'unit': self.request.GET.get('unit', '').strip(),
+            'train': self.request.GET.get('train', '').strip(),
+            'criticality': self.request.GET.get('criticality', '').strip(),
+            'obj_type': self.request.GET.get('obj_type', '').strip(),
+            'obj_category': self.request.GET.get('obj_category', '').strip(), 
+        }
 
-        # Format Jalali date directly with Persian digits using jdatetime's strftime
-        # %Y, %m, %d will be automatically converted to Persian digits by jdatetime's formatter
-        jalali_date_persian = jnow.strftime("%Y/%m/%d")
+        queryset = LocationTag.objects.all()
 
-        context['gregorian_date'] = gregorian_date_str
-        context['jalali_date_persian'] = jalali_date_persian
+        # Filtering logic
+        if filters['loc_tag']:
+            queryset = queryset.filter(loc_tag__icontains=filters['loc_tag'])
+
+        if filters['parent']:
+            queryset = queryset.filter(parent__loc_tag__icontains=filters['parent'])
+
+        if filters['unit']:
+            queryset = queryset.filter(unit__unit_code__icontains=filters['unit'])
+
+        if filters['train']:
+            queryset = queryset.filter(train__icontains=filters['train'])
+
+        if filters['criticality']:
+            queryset = queryset.filter(obj_criticality__obj_crt_level__icontains=filters['criticality'])
+
+        if filters['obj_type']:
+            queryset = queryset.filter(obj_type__obj_type__icontains=filters['obj_type'])
+
+        if filters['obj_category']:
+            queryset = queryset.filter(obj_category__category_name__icontains=filters['obj_category'])
+
+        # Sorting
+        sort_by = self.request.GET.get('sort', 'loc_tag')
+        sort_order = self.request.GET.get('order', 'asc')
+
+        allowed_sort_fields = {
+            'loc_tag': 'loc_tag',
+            'parent': 'parent__loc_tag',
+            'unit': 'unit__unit_code',
+            'train': 'train',
+            'long_tag': 'long_tag',
+            'description': 'description',
+            'obj_criticality': 'obj_criticality__obj_crt_level',
+            'obj_type': 'obj_type__obj_type',
+            'obj_category': 'obj_category__category_name', 
+        }
+
+        sort_field = allowed_sort_fields.get(sort_by, 'loc_tag')
+
+        if sort_order == "desc":
+            queryset = queryset.order_by(f"-{sort_field}")
+        else:
+            queryset = queryset.order_by(sort_field)
+
+        # Pagination
+        paginator = Paginator(queryset, 25)
+        page_number = self.request.GET.get("page")
+        location_tags = paginator.get_page(page_number)
+
+        context["location_tags"] = location_tags
+        context["paginator"] = paginator
+        context["sort_by"] = sort_by
+        context["sort_order"] = sort_order
+        context["filters"] = filters
+        context["total_location_tags"] = queryset.count()
+
+        # Build sort_params WITHOUT sort or order
+        param_list = []
+        for key, value in filters.items():
+            if value:
+                param_list.append(f"{key}={value}")
+
+        context["sort_params"] = "&".join(param_list)
+
         return context

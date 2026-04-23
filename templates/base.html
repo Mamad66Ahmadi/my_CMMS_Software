@@ -1,54 +1,114 @@
 {% load static %}
-{% load tz %} {# good to have tz loaded if you use timezone features elsewhere #}
+{% load top_bar %}
+{% load sidebar %} {# <-- Add this line to load your sidebar tag #}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}CMMS{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    {# We'll add Bootstrap's JS for dropdowns and potentially Font Awesome for icons #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    {% block extra_css %}
     <style>
-    @font-face {
-        font-family: 'Vazirmatn';
-        /* Ensure this path is correct based on your STATICFILES_DIRS and collectstatic */
-        src: url("{% static 'fonts/Vazirmatn-Regular.woff2' %}") format('woff2');
-    }
+        @font-face {
+            font-family: 'Vazirmatn';
+            src: url("{% static 'fonts/Vazirmatn-Regular.woff2' %}") format('woff2');
+        }
+        body { font-family: 'Vazirmatn', sans-serif; display: flex; min-height: 100vh; margin: 0; }
+        
+        /* Sidebar Styles */
+        .sidebar { 
+            width: 250px; 
+            background: #343a40; 
+            color: white; 
+            min-height: 100vh; 
+            padding: 20px; 
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+            overflow-y: auto; /* In case sidebar content becomes very long */
+        }
+        .sidebar .nav-link { 
+            color: #ccc; 
+            text-decoration: none; 
+            display: block; 
+            padding: 10px 0; 
+            margin-bottom: 5px; /* Space between items */
+            transition: color 0.2s ease-in-out;
+        }
+        .sidebar .nav-link:hover { 
+            color: white; 
+        }
 
-    .vazir-topbar {
-        font-family: 'Vazirmatn', sans-serif !important;
-    }
+        /* Dropdown Styles */
+        .sidebar .dropdown-menu {
+            background-color: #444; /* Darker background for dropdown */
+            border: none;
+            padding-left: 20px; /* Indent sub-items */
+        }
+        .sidebar .dropdown-item {
+            color: #ddd;
+            padding: 8px 15px;
+        }
+        .sidebar .dropdown-item:hover {
+            color: white;
+            background-color: #555;
+        }
+        /* Style for the toggle icon (plus/minus) */
+        .dropdown-toggle::after {
+            font-family: "Font Awesome 5 Free"; /* Use Font Awesome */
+            font-weight: 900; /* Solid style */
+            content: "\f067"; /* Plus icon */
+            float: right; /* Position to the right */
+            margin-left: auto; /* Push it to the far right */
+            transition: transform 0.2s ease-in-out;
+        }
+        /* Rotate the icon when dropdown is open */
+        .dropdown-toggle[aria-expanded="true"]::after {
+            content: "\f068"; /* Minus icon */
+            transform: rotate(0.5turn); /* Rotate to show it's active, though content changes it */
+        }
 
-    /* Weekday Colors */
-    .weekday-Monday { color:#b20000; } /* Red */
-    .weekday-Tuesday { color:#b27300; } /* Dark Gray */
-    .weekday-Wednesday { color:#a83569; } /* Dark Pink/Purple */
-    .weekday-Thursday { color:#006400; } /* Dark Green */
-    .weekday-Friday { color:#2b1e06; } /* Brownish Orange */
-    .weekday-Saturday { color:#0073b2; } /* Blue */
-    .weekday-Sunday { color:#4b0082; } /* Indigo */
+        /* Main Content Layout */
+        .page-wrapper { 
+            flex: 1; /* Takes remaining space */
+            display: flex; 
+            flex-direction: column; 
+            overflow-y: auto; /* Allows scrolling if content exceeds height */
+        }
+        .content { 
+            padding: 20px; 
+            flex-grow: 1; /* Content area will grow */
+        }
+
+        /* Weekday Colors */
+        .weekday-Monday { color:#b20000; }
+        .weekday-Tuesday { color:#b27300; }
+        .weekday-Wednesday { color:#a83569; }
+        .weekday-Thursday { color:#006400; }
+        .weekday-Friday { color:#2b1e06; }
+        .weekday-Saturday { color:#0073b2; }
+        .weekday-Sunday { color:#4b0082; }
     </style>
-    {% endblock %}
 </head>
 <body>
-    {# {% load static %} and {% load tz %} can be placed here or in the head #}
 
+    {# RENDER SIDEBAR USING THE INCLUSION TAG #}
+    {% render_sidebar %}
 
+    <!-- PAGE CONTENT WRAPPER -->
+    <div class="page-wrapper">
+        
+        {# This renders your application's actual top bar with dates/user info #}
+        {% top_bar %} 
+        
+        {# This is where the content of your individual pages goes #}
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
 
-
-    {% block content %}{% endblock %}
-
-    <!-- Bootstrap JS -->
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-
-    {% block extra_js %}
-    {# This is where we'll put the simplified weekday JS #}
-    <script>
-
-    </script>
-    {% endblock %}
 </body>
 </html>

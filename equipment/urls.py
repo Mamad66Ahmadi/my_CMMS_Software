@@ -10,5 +10,6 @@ urlpatterns = [
     path('api/v1/', include('equipment.api.v1.urls')),
     path('fvb/', views.tagView, name='function-based-view'),
 
-    path('', views.DashboardView.as_view(), name = "dashboard"),
+    path('', views.LocationTagList.as_view(), name = "location_tag_list"),
+    
 ]

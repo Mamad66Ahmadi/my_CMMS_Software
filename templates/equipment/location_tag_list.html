@@ -1,0 +1,380 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+    .container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding: 20px;
+    }
+    h1 { color: #43334C; font-size: 24px; margin-bottom: 20px; }
+    
+    /* Filter Bar Styles */
+    .filter-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #eee;
+        margin-bottom: 20px;
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .filter-label {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    .filter-input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .filter-input:focus {
+        border-color: #43334C;
+        outline: none;
+    }
+    .filter-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+    }
+    .btn-search {
+        padding: 8px 8px;
+        background-color: #43334C;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        height: 35px;
+        width: 200px;
+    }
+    .btn-search:hover {
+        background-color: #5a4a5e;
+    }
+    .btn-clear {
+        padding: 8px 8px;
+        background-color: #e0e0e0;
+        color: #333;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        height: 35px;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        width: 150px;
+
+    }
+    .btn-clear:hover {
+        background-color: #d0d0d0;
+    }
+
+    table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid #ddd;
+        font-size: 13px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 15px;
+    }
+    th {
+        background-color: #43334C;
+        color: #FFFFFF;
+        font-weight: 500;
+        text-align: center !important;
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        cursor: pointer;
+        position: relative;
+    }
+    th:hover {
+        background-color: #5a4a5e;
+    }
+    td {
+        padding: 10px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+        background-color: #fff;
+        color: #222;
+    }
+    tr:hover td { background-color: #f1f1f1; }
+    .tag-link, .parent-link {
+        color: #000;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .tag-link:hover { text-decoration: underline; }
+    .parent-link {
+        color: #00008B;
+    }
+    .parent-link:hover { text-decoration: underline; }
+    
+    /* Sorting Arrows */
+    .sort-arrow {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.7);
+        width: 16px;
+        text-align: center;
+    }
+    .sort-arrow.asc::before { content: '\25B2'; }
+    .sort-arrow.desc::before { content: '\25BC'; }
+    
+    th:not(.sorted) .sort-arrow {
+        display: none;
+    }
+
+    /* Column Sizing */
+    th:nth-child(6), td:nth-child(6) { 
+        width: 25%; 
+        text-align: left !important; 
+    } 
+    th, td { border-right: 1px solid #f0f0f0; }
+    th:last-child, td:last-child { border-right: none; }
+</style>
+<div class="container">
+    <h1>Location Tags <span style="font-weight: normal;">( {{ total_location_tags }} Objects)</span></h1>
+
+    <!-- Multi-Field Search Bar -->
+    <form method="get" action="">
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label class="filter-label">Location Tag</label>
+                <input type="text" name="search" class="filter-input" placeholder="Search Tag..." value="{{ filters.loc_tag }}">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Parent Tag</label>
+                <input type="text" name="parent" class="filter-input" placeholder="Search Parent..." value="{{ filters.parent }}">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Unit</label>
+                <input type="text" name="unit" class="filter-input" placeholder="Search Unit..." value="{{ filters.unit }}">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Train</label>
+                <input type="text" name="train" class="filter-input" placeholder="Search Train..." value="{{ filters.train }}">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Criticality</label>
+                <input type="text" name="criticality" class="filter-input" placeholder="Search Criticality..." value="{{ filters.criticality }}">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Type</label>
+                <input type="text" name="obj_type" class="filter-input" placeholder="Search Type..." value="{{ filters.obj_type }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Object Category</label>
+                <input type="text" name="obj_category" class="filter-input" placeholder="Search Type..." value="{{ filters.obj_category }}">
+            </div>
+
+
+            <div class="filter-actions">
+                <button type="submit" class="btn-search">Apply Filters</button>
+                {% if filters.loc_tag or filters.parent or filters.unit or filters.train or filters.criticality or filters.obj_type %}
+                    <a href="?sort={{ sort_by }}&order={{ sort_order }}" class="btn-clear">Clear All</a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    {% if location_tags %}
+    <table>
+        <thead>
+            <tr>
+                <!-- Location Tag Header -->
+                <th 
+                    {% if sort_by == 'loc_tag' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=loc_tag&order={% if sort_by == 'loc_tag' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Location Tag
+                    <span class="sort-arrow">
+                        {% if sort_by == 'loc_tag' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+                <!-- Parent Header -->
+                <th 
+                    {% if sort_by == 'parent' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=parent&order={% if sort_by == 'parent' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Parent
+                    <span class="sort-arrow">
+                        {% if sort_by == 'parent' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+                <!-- Unit Header -->
+                <th 
+                    {% if sort_by == 'unit' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=unit&order={% if sort_by == 'unit' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Unit
+                    <span class="sort-arrow">
+                        {% if sort_by == 'unit' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+                <!-- Train Header -->
+                <th 
+                    {% if sort_by == 'train' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=train&order={% if sort_by == 'train' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Train
+                    <span class="sort-arrow">
+                        {% if sort_by == 'train' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+                <!-- Long Tag Header -->
+                <th 
+                    {% if sort_by == 'long_tag' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=long_tag&order={% if sort_by == 'long_tag' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Long Tag
+                    <span class="sort-arrow">
+                        {% if sort_by == 'long_tag' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+                <!-- Description Header -->
+                <th 
+                    {% if sort_by == 'description' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=description&order={% if sort_by == 'description' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Description
+                    <span class="sort-arrow">
+                        {% if sort_by == 'description' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+                <!-- Criticality Header -->
+                <th 
+                    {% if sort_by == 'obj_criticality' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=obj_criticality&order={% if sort_by == 'obj_criticality' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Criticality
+                    <span class="sort-arrow">
+                        {% if sort_by == 'obj_criticality' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+                <!-- Type Header -->
+                <th 
+                    {% if sort_by == 'obj_type' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=obj_type&order={% if sort_by == 'obj_type' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Type
+                    <span class="sort-arrow">
+                        {% if sort_by == 'obj_type' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+                <!-- Category Header -->
+                <th 
+                    {% if sort_by == 'obj_category' %} class="sorted" {% endif %}
+                    onclick="window.location.href='?sort=obj_category&order={% if sort_by == 'obj_category' and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+                    Type
+                    <span class="sort-arrow">
+                        {% if sort_by == 'obj_category' %}
+                            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+                        {% endif %}
+                    </span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tag in location_tags %}
+            <tr>
+                <td>
+                    <a href="" class="tag-link">
+                        {{ tag.loc_tag }}
+                    </a>
+                </td>
+                <td>
+                    <a href="" class="parent-link">
+                        {{ tag.parent }}
+                    </a>
+                </td>
+                <td>{{ tag.unit }}</td>
+                <td>{{ tag.train }}</td>
+                <td>{{ tag.long_tag }}</td>
+                <td style="text-align: left;">{{ tag.description }}</td>
+                <td>{{ tag.obj_criticality }}</td>
+                <td>{{ tag.obj_type }}</td>
+                <td>{{ tag.obj_category }}</td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <!-- Pagination Links -->
+    <div class="pagination">
+        <span class="step-links">
+
+            {% if location_tags.has_previous %}
+                <a href="?page=1{% if sort_params %}&{{ sort_params }}{% endif %}&sort={{ sort_by }}&order={{ sort_order }}">First</a>
+
+                <a href="?page={{ location_tags.previous_page_number }}{% if sort_params %}&{{ sort_params }}{% endif %}&sort={{ sort_by }}&order={{ sort_order }}">Previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ location_tags.number }} of {{ location_tags.paginator.num_pages }}
+            </span>
+
+            {% if location_tags.has_next %}
+                <a href="?page={{ location_tags.next_page_number }}{% if sort_params %}&{{ sort_params }}{% endif %}&sort={{ sort_by }}&order={{ sort_order }}">Next</a>
+
+                <a href="?page={{ location_tags.paginator.num_pages }}{% if sort_params %}&{{ sort_params }}{% endif %}&sort={{ sort_by }}&order={{ sort_order }}">Last</a>
+            {% endif %}
+
+        </span>
+    </div>
+
+    {% else %}
+    <p>No location tags found.</p>
+    {% endif %}
+</div>
+<style>
+/* Basic styling for sortable headers and arrows */
+.sorted {
+    background-color: #43334C;
+}
+.sort-arrow {
+    display: inline-block;
+    margin-left: 5px;
+    width: 1em;
+    text-align: center;
+    font-size: 0.8em;
+    color: #43334C;
+}
+.asc .sort-arrow::after { content: '▲'; }
+.desc .sort-arrow::after { content: '▼'; }
+th {
+    cursor: pointer;
+    user-select: none;
+}
+</style>
+{% endblock %}
