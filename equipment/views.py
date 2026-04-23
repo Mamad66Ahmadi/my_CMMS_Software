@@ -91,7 +91,7 @@ class LocationTagList(TemplateView):
 
         # Filters from GET
         filters = {
-            'loc_tag': self.request.GET.get('search', '').strip(),
+            'loc_tag': self.request.GET.get('loc_tag', '').strip(),
             'parent': self.request.GET.get('parent', '').strip(),
             'unit': self.request.GET.get('unit', '').strip(),
             'train': self.request.GET.get('train', '').strip(),
@@ -138,6 +138,13 @@ class LocationTagList(TemplateView):
             'obj_criticality': 'obj_criticality__obj_crt_level',
             'obj_type': 'obj_type__obj_type',
             'obj_category': 'obj_category__category_name', 
+
+            'created_at': 'created_at',
+            'created_by': 'created_by__username',
+            'modified_at': 'modified_at',
+            'modified_by': 'modified_by__username',
+            'note': 'note',
+            'mih_level': 'mih_level',
         }
 
         sort_field = allowed_sort_fields.get(sort_by, 'loc_tag')
@@ -148,9 +155,24 @@ class LocationTagList(TemplateView):
             queryset = queryset.order_by(sort_field)
 
         # Pagination
-        paginator = Paginator(queryset, 25)
+        per_page = self.request.GET.get("per_page", "25")
+
+        try:
+            per_page = int(per_page)
+        except ValueError:
+            per_page = 25
+
+        if per_page > 200:
+            per_page = 200
+        elif per_page <=10:
+            per_page = 10
+
+        paginator = Paginator(queryset, per_page)
         page_number = self.request.GET.get("page")
         location_tags = paginator.get_page(page_number)
+
+        context["per_page"] = per_page
+
 
         context["location_tags"] = location_tags
         context["paginator"] = paginator
@@ -167,4 +189,9 @@ class LocationTagList(TemplateView):
 
         context["sort_params"] = "&".join(param_list)
 
+        params = self.request.GET.copy()
+        params.pop("page", None)  # remove page so pagination can replace it
+        context["query_params"] = params.urlencode()
+
+  
         return context

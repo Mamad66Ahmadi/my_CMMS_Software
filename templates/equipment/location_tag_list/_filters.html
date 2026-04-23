@@ -1,0 +1,76 @@
+<form method="get" action="">
+    <div class="filter-bar">
+
+        <div class="filter-group">
+            <label class="filter-label">Location Tag</label>
+            <input type="text" name="loc_tag" class="filter-input"
+                   placeholder="Search Tag..."
+                   value="{{ filters.loc_tag }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Parent Tag</label>
+            <input type="text" name="parent" class="filter-input"
+                   placeholder="Search Parent..."
+                   value="{{ filters.parent }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Unit</label>
+            <input type="text" name="unit" class="filter-input"
+                   placeholder="Search Unit..."
+                   value="{{ filters.unit }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Train</label>
+            <input type="text" name="train" class="filter-input"
+                   placeholder="Search Train..."
+                   value="{{ filters.train }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Criticality</label>
+            <input type="text" name="criticality" class="filter-input"
+                   placeholder="Search Criticality..."
+                   value="{{ filters.criticality }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Type</label>
+            <input type="text" name="obj_type" class="filter-input"
+                   placeholder="Search Type..."
+                   value="{{ filters.obj_type }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Object Category</label>
+            <input type="text" name="obj_category" class="filter-input"
+                   placeholder="Search Category..."
+                   value="{{ filters.obj_category }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Rows Per Page (max = 200)</label>
+
+            <input type="number"
+                name="per_page"
+                class="filter-input"
+                min="1"
+                max="500"
+                value="{{ per_page }}"
+                placeholder="max = 200">
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn-search">Apply</button>
+
+            {% if filters.loc_tag or filters.parent or filters.unit or filters.train or filters.criticality or filters.obj_type or filters.obj_category %}
+                <a href="?sort={{ sort_by }}&order={{ sort_order }}" class="btn-clear">
+                    Clear All
+                </a>
+            {% endif %}
+        </div>
+
+    </div>
+</form>

@@ -1,0 +1,179 @@
+<style>
+
+
+    .container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding: 20px;
+    }
+    h1 { color: #43334C; font-size: 24px; margin-bottom: 20px; }
+    
+    /* Filter Bar Styles */
+    .filter-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #eee;
+        margin-bottom: 20px;
+    }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .filter-label {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    .filter-input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .filter-input:focus {
+        border-color: #43334C;
+        outline: none;
+    }
+    .filter-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+    }
+    .btn-search {
+        padding: 8px 8px;
+        background-color: #43334C;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        height: 35px;
+        width: 200px;
+    }
+    .btn-search:hover {
+        background-color: #5a4a5e;
+    }
+    .btn-clear {
+        padding: 8px 8px;
+        background-color: #e0e0e0;
+        color: #333;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        height: 35px;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        width: 150px;
+
+    }
+    .btn-clear:hover {
+        background-color: #d0d0d0;
+    }
+
+    table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid #ddd;
+        font-size: 13px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 15px;
+    }
+    th {
+        background-color: #43334C;
+        color: #FFFFFF;
+        font-weight: 500;
+        text-align: center !important;
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        cursor: pointer;
+        position: relative;
+    }
+    th:hover {
+        background-color: #5a4a5e;
+    }
+    td {
+        padding: 10px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+        background-color: #fff;
+        color: #222;
+    }
+    tr:hover td { background-color: #f1f1f1; }
+    .tag-link, .parent-link {
+        color: #000;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .tag-link:hover { text-decoration: underline; }
+    .parent-link {
+        color: #00008B;
+    }
+    .parent-link:hover { text-decoration: underline; }
+    
+    /* Sorting Arrows */
+    .sort-arrow {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.7);
+        width: 16px;
+        text-align: center;
+    }
+    .sort-arrow.asc::before { content: '\25B2'; }
+    .sort-arrow.desc::before { content: '\25BC'; }
+    
+    th:not(.sorted) .sort-arrow {
+        display: none;
+    }
+
+    /* Column Sizing */
+
+    th, td { border-right: 1px solid #f0f0f0; }
+    th:last-child, td:last-child { border-right: none; }
+
+    .table-scroll-container {
+        width: 100%;
+        max-height: 700px;   /* adjust as needed */
+        overflow-y: auto;
+        border-radius: 5px;
+    }
+
+    table {
+        width: max-content;
+        min-width: 100%;
+        table-layout: auto;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    th, td {
+        min-width: 140px;
+    }
+
+    /* Banded (striped) rows */
+    tbody tr:nth-child(odd) td {
+        background-color: #ffffff;
+    }
+    tbody tr:nth-child(even) td {
+        background-color: #f9f7fa;
+    }
+
+    /* Hover state overrides the background */
+    tbody tr:hover td {
+        background-color: #ece9f0 !important;
+    }
+
+</style>

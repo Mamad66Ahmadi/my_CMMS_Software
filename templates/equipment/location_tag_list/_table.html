@@ -1,0 +1,51 @@
+<div class="table-scroll-container">
+
+    <table>
+        <thead>
+            <tr>
+
+                {% include "equipment/location_tag_list/_table_header.html" with column="loc_tag" label="Location Tag" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="parent" label="Parent" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="unit" label="Unit" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="train" label="Train" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="obj_criticality" label="Criticality" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="obj_type" label="Type" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="obj_category" label="Object Category" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="long_tag" label="Long Tag" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="description" label="Description" %}
+
+                {% include "equipment/location_tag_list/_table_header.html" with column="created_at" label="Created At" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="created_by" label="Created By" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="modified_at" label="Modified At" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="modified_by" label="Modified By" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="note" label="Note" %}
+                {% include "equipment/location_tag_list/_table_header.html" with column="mih_level" label="MIH Level" %}
+
+
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for tag in location_tags %}
+            <tr>
+                <td><a class="tag-link">{{ tag.loc_tag }}</a></td>
+                <td><a class="parent-link">{{ tag.parent }}</a></td>
+                <td>{{ tag.unit }}</td>
+                <td>{{ tag.train }}</td>
+                <td>{{ tag.obj_criticality }}</td>
+                <td>{{ tag.obj_type }}</td>
+                <td>{{ tag.obj_category }}</td>
+                <td>{{ tag.long_tag }}</td>
+                <td style="text-align:left;">{{ tag.description }}</td>
+
+                <td>{{ tag.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ tag.created_by }}</td>
+                <td>{{ tag.modified_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ tag.modified_by }}</td>
+                <td>{{ tag.note|default:"" }}</td>
+                <td>{{ tag.mih_level|default:"" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

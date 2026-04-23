@@ -1,0 +1,19 @@
+<div class="pagination">
+    <span class="step-links">
+
+        {% if location_tags.has_previous %}
+            <a href="?page=1{% if query_params %}&{{ query_params }}{% endif %}">First</a>
+            <a href="?page={{ location_tags.previous_page_number }}{% if query_params %}&{{ query_params }}{% endif %}">Previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ location_tags.number }} of {{ location_tags.paginator.num_pages }}
+        </span>
+
+        {% if location_tags.has_next %}
+            <a href="?page={{ location_tags.next_page_number }}{% if query_params %}&{{ query_params }}{% endif %}">Next</a>
+            <a href="?page={{ location_tags.paginator.num_pages }}{% if query_params %}&{{ query_params }}{% endif %}">Last</a>
+        {% endif %}
+
+    </span>
+</div>

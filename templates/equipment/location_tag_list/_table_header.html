@@ -1,0 +1,13 @@
+<th
+    {% if sort_by == column %} class="sorted" {% endif %}
+    onclick="window.location.href='?sort={{ column }}&order={% if sort_by == column and sort_order == 'asc' %}desc{% else %}asc{% endif %}{% if sort_params %}&{{ sort_params }}{% endif %}'">
+
+    {{ label }}
+    
+    <span class="sort-arrow">
+        {% if sort_by == column %}
+            {% if sort_order == 'asc' %}▲{% else %}▼{% endif %}
+        {% endif %}
+    </span>
+
+</th>
