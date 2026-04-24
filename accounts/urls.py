@@ -1,12 +1,20 @@
 # accounts/urls.py
 
 from django.urls import path, include
+from django.contrib.auth import views as auth_views
 
 app_name = "accounts"
 
 urlpatterns = [
 
     path('api/v1/', include('accounts.api.v1.urls')),
-    path('', include('django.contrib.auth.urls')),
+    path(
+        "login/",
+        auth_views.LoginView.as_view(
+            template_name="registration/login.html",
+            redirect_authenticated_user=True
+        ),
+        name="login",
+    ),
 
 ]
