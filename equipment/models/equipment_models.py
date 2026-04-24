@@ -1,8 +1,9 @@
-# equipment/models.py
+# equipment/models/equipment_models.py
 from django.db import models
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
-from django.urls import reverse
+from django.core.exceptions import ValidationError
+
 
 
 
@@ -35,6 +36,7 @@ class TimeStampedModel(models.Model):
         related_name='%(app_label)s_%(class)s_modified',
         verbose_name="Modified By"
     )
+    
     is_active = models.BooleanField(default=True)
     
     # Since inherit=True is used, all children will track history automatically.
@@ -104,7 +106,7 @@ class LocationTag(TimeStampedModel):
     """ 
     Represents the 'Place' or Position in the hierarchy (e.g., 103-K-101)
     """
-    loc_tag = models.CharField(max_length=50, unique=True)
+    loc_tag = models.CharField(max_length=50, unique=True,  db_index=True)
     parent = models.ForeignKey(
         'self', 
         null=True, 
@@ -161,7 +163,7 @@ class Equipment(TimeStampedModel):
     
     def __str__(self):
         loc_str = str(self.functional_location) if self.functional_location else "No Location"
-        return f"{loc_str}/id:{self.id}"
+        return f"{loc_str}/Equipment:{self.id}"
 
     class Meta:
         ordering = ['functional_location', 'id']
@@ -191,7 +193,7 @@ class EquipmentDocument(TimeStampedModel):
         on_delete=models.CASCADE, 
         related_name='documents'
     )
-    file_name = models.CharField(unique=True)
+    file_name = models.CharField(max_length=255)
     file = models.FileField(upload_to=get_document_upload_path, verbose_name="Document File")
     description = models.CharField(max_length=255, blank=True, null=True)
     
@@ -203,6 +205,4 @@ class EquipmentDocument(TimeStampedModel):
         verbose_name = "Equipment Document"
         verbose_name_plural = "Equipment Documents"
         ordering = ['equipment__functional_location__loc_tag', 'equipment']
-
-
 
