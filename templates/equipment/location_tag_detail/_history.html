@@ -1,0 +1,33 @@
+
+<!-- COLLAPSIBLE SECTION: HISTORY -->
+<div class="section-header" onclick="toggleSection('history_section')">
+    Recent History
+    <span id="chevron_history_section" class="chevron">&#9656;</span>
+</div>
+
+<div id="history_section" class="section-content">
+    <div class="table-scroll-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in history %}
+                <tr>
+                    <td>{{ h.history_date|date:"Y-m-d H:i" }}</td>
+                    <td>{{ h.history_user }}</td>
+                    <td>{{ h.get_history_type_display }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No history recorded.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

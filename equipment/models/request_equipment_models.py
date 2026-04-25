@@ -106,6 +106,7 @@ class LocationTagChangeRequest(BaseChangeRequest):
         verbose_name="Target Location Tag",
     )
 
+    changes = models.JSONField(default=dict)
     # requested fields (proposed values)
     loc_tag = models.CharField(
         max_length=50,

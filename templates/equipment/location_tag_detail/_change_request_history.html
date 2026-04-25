@@ -1,0 +1,64 @@
+<!-- CHANGE REQUEST HISTORY (LATEST 5) -->
+<div style="margin-top:40px;">
+
+    <h2>Recent Change Requests</h2>
+
+    {% if change_requests %}
+        <div class="table-scroll-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Requested At</th>
+                        <th>Requested By</th>
+                        <th>Status</th>
+                        <th>Changes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in change_requests %}
+                    <tr>
+                        <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ req.requested_by }}</td>
+                        <td>
+                            {% if req.status == req.Status.PENDING %}
+                                <span style="color:#d9534f;">{{ req.get_status_display }}</span>
+
+                            {% elif req.status == req.Status.APPROVED %}
+                                <span style="color:#5cb85c;">{{ req.get_status_display }}</span>
+
+                            {% elif req.status == req.Status.APPROVED_WITH_CHANGE %}
+                                <span style="color:#0275d8;">{{ req.get_status_display }}</span>
+
+                            {% else %}
+                                <span style="color:#777;">{{ req.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+
+
+                        <td style="text-align:left;">
+                            <strong>Fields:</strong><br>
+                            {% for field, diff in req.changes.items %}
+                                {{ field }}: "{{ diff.old }}" → "{{ diff.new }}"<br>
+                            {% empty %}
+                                No field-level diff available.
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% else %}
+        <p>No change requests found for this tag.</p>
+    {% endif %}
+</div>
+
+<!-- WARNING IF THERE IS A PENDING REQUEST -->
+{% if has_pending_request %}
+<div style="margin-top:20px; padding:15px; border-radius:6px; background:#f8d7da; color:#721c24;">
+    <strong>Warning:</strong> This location tag already has a pending change request.
+    Please wait for it to be approved before submitting a new one.
+</div>
+{% endif %}
+

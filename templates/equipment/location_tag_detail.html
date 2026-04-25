@@ -74,241 +74,42 @@
         <span style="font-weight: normal;">{{ location_tag.loc_tag }}</span>
     </h1>
 
-    <!-- BASIC INFO TABLE (Always Visible) -->
-    <h2 style="margin-top: 30px;">Basic Information</h2>
 
-    <div class="table-scroll-container">
-        <table>
-            <tbody>
+    {% include "equipment/location_tag_detail/_basic_info.html" %}
 
-                <tr>
-                    <th style="width: 45px;">Location Tag</th>
-                    <td style="text-align:left;">{{ location_tag.loc_tag }}</td>
-                </tr>
+    {% include "equipment/location_tag_detail/_child_tags.html" %}
 
-                <tr>
-                    <th >Long Tag</th>
-                    <td style="text-align:left;">{{ location_tag.long_tag }}</td>
-                </tr>
+    {% include "equipment/location_tag_detail/_installed_equipment.html" %}
 
-                <tr>
-                    <th>Parent</th>
-                    <td style="text-align:left;">
-                        {% if location_tag.parent %}
-                            <a class="parent-link"
-                            href="{% url 'equipment:location_tag_detail' location_tag.parent.loc_tag %}">
-                                {{ location_tag.parent.loc_tag }}
-                            </a>
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                </tr>
+    {% include "equipment/location_tag_detail/_documents.html" %}
 
-                <tr>
-                    <th>MIH Level</th>
-                    <td style="text-align:left;">
-                        {{ location_tag.mih_level }}
-                    </td>
-                </tr>
+    {% include "equipment/location_tag_detail/_history.html" %}
 
-                <tr>
-                    <th>Description</th>
-                    <td style="text-align:left;">
-                        {{ location_tag.description|default:"—" }}
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Note</th>
-                    <td style="text-align:left;">
-                        {{ location_tag.note|default:"—" }}
-                    </td>
-                </tr>
-
-                <tr>
-                    <th>Created By</th>
-                    <td style="text-align:left;">{{ location_tag.created_by }}</td>
-                </tr>
-
-                <tr>
-                    <th>Created At</th>
-                    <td style="text-align:left;">{{ location_tag.created_at|date:"Y-m-d H:i" }}</td>
-                </tr>
-
-                <tr>
-                    <th>Modified By</th>
-                    <td style="text-align:left;">{{ location_tag.modified_by|default:"—" }}</td>
-                </tr>
-
-                <tr>
-                    <th>Modified At</th>
-                    <td style="text-align:left;">
-                        {% if location_tag.modified_at %}
-                            {{ location_tag.modified_at|date:"Y-m-d H:i" }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                </tr>
-
-            </tbody>
-        </table>
-    </div>
+    {% include "equipment/location_tag_detail/_change_request_history.html" %}
 
 
-
-    <!-- COLLAPSIBLE SECTION: CHILD TAGS -->
-    <div class="section-header" onclick="toggleSection('child_section')">
-        Child Location Tags
-        <span id="chevron_child_section" class="chevron">&#9656;</span>
-    </div>
-
-    <div id="child_section" class="section-content">
-        <div class="table-scroll-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Location Tag</th>
-                        <th>Description</th>
-                        <th>Unit</th>
-                        <th>Train</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for child in children %}
-                    <tr>
-                        <td>
-                            <a class="tag-link"
-                               href="{% url 'equipment:location_tag_detail' child.loc_tag %}">
-                                {{ child.loc_tag }}
-                            </a>
-                        </td>
-                        <td style="text-align:left;">{{ child.description }}</td>
-                        <td>{{ child.unit }}</td>
-                        <td>{{ child.train }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4">No child locations.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-
-    <!-- COLLAPSIBLE SECTION: INSTALLED EQUIPMENT -->
-    <div class="section-header" onclick="toggleSection('equipment_section')">
-        Installed Equipment
-        <span id="chevron_equipment_section" class="chevron">&#9656;</span>
-    </div>
-
-    <div id="equipment_section" class="section-content">
-        <div class="table-scroll-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Serial Number</th>
-                        <th>Created At</th>
-                        <th>Created By</th>
-                        <th>Modified At</th>
-                        <th>Modified By</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for eq in equipments %}
-                    <tr>
-                        <td>{{ eq.id }}</td>
-                        <td>{{ eq.serial_number }}</td>
-                        <td>{{ eq.created_at|date:"Y-m-d H:i" }}</td>
-                        <td>{{ eq.created_by }}</td>
-                        <td>{{ eq.modified_at|date:"Y-m-d H:i" }}</td>
-                        <td>{{ eq.modified_by }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6">No installed equipment found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-
-    <!-- COLLAPSIBLE SECTION: DOCUMENTS -->
-    <div class="section-header" onclick="toggleSection('documents_section')">
-        Documents
-        <span id="chevron_documents_section" class="chevron">&#9656;</span>
-    </div>
-
-    <div id="documents_section" class="section-content">
-        <div class="table-scroll-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Equipment</th>
-                        <th>Document</th>
-                        <th>Type</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for doc in documents %}
-                    <tr>
-                        <td>{{ doc.equipment }}</td>
-                        <td style="text-align:left;">
-                            <a href="{{ doc.file.url }}" target="_blank">{{ doc.file.name }}</a>
-                        </td>
-                        <td>{{ doc.document_type }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3">No documents available.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-
-    <!-- COLLAPSIBLE SECTION: HISTORY -->
-    <div class="section-header" onclick="toggleSection('history_section')">
-        Recent History
-        <span id="chevron_history_section" class="chevron">&#9656;</span>
-    </div>
-
-    <div id="history_section" class="section-content">
-        <div class="table-scroll-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>User</th>
-                        <th>Change</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for h in history %}
-                    <tr>
-                        <td>{{ h.history_date|date:"Y-m-d H:i" }}</td>
-                        <td>{{ h.history_user }}</td>
-                        <td>{{ h.get_history_type_display }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3">No history recorded.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
 
 </div>
+
+
+
+<div style="margin-top: 40px; margin-bottom: 40px; text-align:right;">
+
+{% if has_pending_request %}
+    <button class="btn btn-secondary" disabled
+            style="padding:10px 20px; font-weight:600;">
+        ✏️ Modify This Tag (Pending Request Exists)
+    </button>
+{% else %}
+    <a href="{% url 'equipment:location_tag_update_request' location_tag.loc_tag %}"
+       class="btn btn-primary"
+       style="padding:10px 20px; font-weight:600; background:#43334C; border:none;">
+        ✏️ Modify This Tag
+    </a>
+{% endif %}
+
+</div>
+
 
 
 <script>

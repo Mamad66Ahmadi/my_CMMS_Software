@@ -1,17 +1,18 @@
 # equipment/views.py
 
-from django.shortcuts import render
-from django.views.generic import ListView,DetailView,TemplateView
-from django.shortcuts import get_object_or_404
+from django.views.generic import DetailView,TemplateView, CreateView
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 
 
 from .models import LocationTag, EquipmentDocument, Equipment
 
-
-
+from equipment.models.request_equipment_models import LocationTagChangeRequest
+from equipment.forms.location_tag_change_form import LocationTagChangeRequestForm
 
 
 
@@ -165,29 +166,142 @@ class LocationTagDetail(LoginRequiredMixin, DetailView):
         "installed_equipments__documents",
     )
 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-
         tag = self.object
 
-        # children location tags
         context["children"] = tag.children.all()
 
-        # equipment installed at this location
         equipments = tag.installed_equipments.select_related(
             "created_by", "modified_by"
         ).prefetch_related("documents")
 
         context["equipments"] = equipments
 
-        # all documents for this location (via equipment)
         context["documents"] = EquipmentDocument.objects.filter(
             equipment__functional_location=tag
         ).select_related("equipment")
 
-        # history (django-simple-history)
         context["history"] = tag.history.all()[:20]
+
+        # 👉 NEW: latest 5 change requests for this tag
+        context["change_requests"] = (
+            LocationTagChangeRequest.objects
+            .filter(location_tag=tag)
+            .select_related("requested_by")
+            .order_by("-requested_at")[:5]
+        )
+
+        # 👉 NEW: check if there's any pending request
+        context["has_pending_request"] = (
+            LocationTagChangeRequest.objects
+            .filter(location_tag=tag, status=LocationTagChangeRequest.Status.PENDING)
+            .exists()
+        )
 
 
         return context
+    
+
+
+
+
+@login_required
+def locationtag_autocomplete(request):
+    q = request.GET.get("q", "")
+
+    tags = LocationTag.objects.filter(
+        loc_tag__istartswith=q.upper()).order_by("loc_tag")[:20]
+        
+    results = [
+        {
+            "id": tag.id,
+            "text": f"{tag.loc_tag}"
+        }
+        for tag in tags
+    ]
+
+    return JsonResponse({"results": results})
+
+
+
+class LocationTagUpdateRequestView(LoginRequiredMixin, CreateView):
+    model = LocationTagChangeRequest
+    form_class = LocationTagChangeRequestForm
+    template_name = "equipment/location_tag_request_update_form.html"
+
+    login_url = "/accounts/login/"
+    redirect_field_name = "next"
+
+
+    def dispatch(self, request, *args, **kwargs):
+        self.tag = get_object_or_404(LocationTag, loc_tag=kwargs["loc_tag"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        # Pre‑populate the form with current values from the real tag
+        tag = self.tag
+        return {
+            "loc_tag": tag.loc_tag,
+            "parent": tag.parent,
+            "description": tag.description,
+            "long_tag": tag.long_tag,
+            "obj_criticality": tag.obj_criticality,
+            "obj_type": tag.obj_type,
+            "obj_category": tag.obj_category,
+            "unit": tag.unit,
+            "train": tag.train,
+            "note": tag.note,
+            "mih_level": tag.mih_level,
+        }
+
+    def form_valid(self, form):
+
+        # 1. Check for an existing pending request
+        existing = LocationTagChangeRequest.objects.filter(
+            location_tag=self.tag,
+            status=LocationTagChangeRequest.Status.PENDING
+        ).first()
+
+        if existing:
+            form.add_error(
+                None,
+                "There is already a pending change request for this tag. "
+                "Please wait for it to be approved before submitting another."
+            )
+            return self.form_invalid(form)
+
+        # 2. No pending request → create a new one (but don't save yet)
+        req = form.save(commit=False)
+        req.action = LocationTagChangeRequest.Action.UPDATE
+        req.location_tag = self.tag
+        req.requested_by = self.request.user
+
+        # 3. Detect changed fields
+        tag = self.tag
+        changes = {}
+
+        for field in ("loc_tag", "parent", "description", "long_tag",
+                        "obj_criticality", "obj_type", "obj_category",
+                        "unit", "train", "note", "mih_level"):
+            if field not in form.cleaned_data:
+                continue
+            old_value = getattr(tag, field, None)
+            new_value = form.cleaned_data[field]
+            if old_value != new_value:
+                changes[field] = {
+                    "old": str(old_value),
+                    "new": str(new_value),
+                }
+        # 4. Save the differences to the JSONField
+        req.changes = changes
+
+        # 5. Save request
+        req.save()
+
+
+
+        return redirect("equipment:location_tag_detail", loc_tag=self.tag.loc_tag)
+

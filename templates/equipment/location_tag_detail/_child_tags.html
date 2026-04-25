@@ -1,0 +1,39 @@
+<!-- COLLAPSIBLE SECTION: CHILD TAGS -->
+<div class="section-header" onclick="toggleSection('child_section')">
+    Child Location Tags
+    <span id="chevron_child_section" class="chevron">&#9656;</span>
+</div>
+
+<div id="child_section" class="section-content">
+    <div class="table-scroll-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Location Tag</th>
+                    <th>Description</th>
+                    <th>Unit</th>
+                    <th>Train</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for child in children %}
+                <tr>
+                    <td>
+                        <a class="tag-link"
+                            href="{% url 'equipment:location_tag_detail' child.loc_tag %}">
+                            {{ child.loc_tag }}
+                        </a>
+                    </td>
+                    <td style="text-align:left;">{{ child.description }}</td>
+                    <td>{{ child.unit }}</td>
+                    <td>{{ child.train }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No child locations.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

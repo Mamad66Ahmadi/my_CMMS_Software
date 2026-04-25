@@ -1,0 +1,82 @@
+<!-- BASIC INFO TABLE (Always Visible) -->
+<h2 style="margin-top: 30px;">Basic Information</h2>
+
+<div class="table-scroll-container">
+    <table>
+        <tbody>
+
+            <tr>
+                <th style="width: 45px;">Location Tag</th>
+                <td style="text-align:left;">{{ location_tag.loc_tag }}</td>
+            </tr>
+
+            <tr>
+                <th >Long Tag</th>
+                <td style="text-align:left;">{{ location_tag.long_tag }}</td>
+            </tr>
+
+            <tr>
+                <th>Parent</th>
+                <td style="text-align:left;">
+                    {% if location_tag.parent %}
+                        <a class="parent-link"
+                        href="{% url 'equipment:location_tag_detail' location_tag.parent.loc_tag %}">
+                            {{ location_tag.parent.loc_tag }}
+                        </a>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+
+            <tr>
+                <th>MIH Level</th>
+                <td style="text-align:left;">
+                    {{ location_tag.mih_level }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Description</th>
+                <td style="text-align:left;">
+                    {{ location_tag.description|default:"—" }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Note</th>
+                <td style="text-align:left;">
+                    {{ location_tag.note|default:"—" }}
+                </td>
+            </tr>
+
+            <tr>
+                <th>Created By</th>
+                <td style="text-align:left;">{{ location_tag.created_by }}</td>
+            </tr>
+
+            <tr>
+                <th>Created At</th>
+                <td style="text-align:left;">{{ location_tag.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+
+            <tr>
+                <th>Modified By</th>
+                <td style="text-align:left;">{{ location_tag.modified_by|default:"—" }}</td>
+            </tr>
+
+            <tr>
+                <th>Modified At</th>
+                <td style="text-align:left;">
+                    {% if location_tag.modified_at %}
+                        {{ location_tag.modified_at|date:"Y-m-d H:i" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+</div>
+

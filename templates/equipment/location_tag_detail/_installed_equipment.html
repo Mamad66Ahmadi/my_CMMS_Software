@@ -1,0 +1,38 @@
+<!-- COLLAPSIBLE SECTION: INSTALLED EQUIPMENT -->
+<div class="section-header" onclick="toggleSection('equipment_section')">
+    Installed Equipment
+    <span id="chevron_equipment_section" class="chevron">&#9656;</span>
+</div>
+
+<div id="equipment_section" class="section-content">
+    <div class="table-scroll-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Serial Number</th>
+                    <th>Created At</th>
+                    <th>Created By</th>
+                    <th>Modified At</th>
+                    <th>Modified By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for eq in equipments %}
+                <tr>
+                    <td>{{ eq.id }}</td>
+                    <td>{{ eq.serial_number }}</td>
+                    <td>{{ eq.created_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ eq.created_by }}</td>
+                    <td>{{ eq.modified_at|date:"Y-m-d H:i" }}</td>
+                    <td>{{ eq.modified_by }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">No installed equipment found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
