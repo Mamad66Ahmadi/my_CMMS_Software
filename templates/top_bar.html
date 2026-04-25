@@ -1,3 +1,32 @@
+
+<style>
+.profile-menu {
+    position: absolute;
+    right: 0;
+    top: 30px;
+    background: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 150px;
+    display: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    z-index: 100;
+}
+
+.profile-menu-item {
+    display: block;
+    padding: 10px;
+    font-size: 14px;
+    color: black;
+    text-decoration: none;
+}
+
+.profile-menu-item:hover {
+    background: #f0f0f0;
+}
+</style>
+
+
 <div class="vazir-topbar d-flex justify-content-between align-items-center py-2 px-3"
     style="border-bottom:1px solid #ccc; margin-top: 30px;">
 
@@ -16,11 +45,43 @@
     </div>
 
     <!-- RIGHT SIDE: User info -->
-    <div style="font-size:15px;">
-        🖥️ {{ username }}
+<div class="profile-container" style="position: relative; font-size:15px; cursor:pointer;">
+
+    <div class="profile-summary" onclick="toggleProfileMenu()">
+        🖥️ {{ username }} ▼
+        <div id="profile-menu" class="profile-menu">
+
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="profile-menu-item" style="border:none; background:none; width:100%; text-align:left;">
+                    Logout
+                </button>
+            </form>
+
+        </div>
         |
         👤 {{ first_name }} {{ last_name }}
         |
         🏢 {{ department_name }}
     </div>
+
+
 </div>
+</div>
+
+<script>
+function toggleProfileMenu() {
+    const menu = document.getElementById("profile-menu");
+    menu.style.display = (menu.style.display === "block") ? "none" : "block";
+}
+
+// Close dropdown when clicking outside
+document.addEventListener("click", function(event) {
+    const menu = document.getElementById("profile-menu");
+    const container = document.querySelector(".profile-container");
+
+    if (!container.contains(event.target)) {
+        menu.style.display = "none";
+    }
+});
+</script>

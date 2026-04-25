@@ -123,6 +123,9 @@ class LocationTagList(LoginRequiredMixin, TemplateView):
             if value:
                 param_list.append(f"{key}={value}")
 
+        param_list.append(f"per_page={per_page}")
+
+
         context["sort_params"] = "&".join(param_list)
 
         params = self.request.GET.copy()

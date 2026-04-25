@@ -28,8 +28,8 @@
         <tbody>
             {% for tag in location_tags %}
             <tr>
-                <td><a class="tag-link">{{ tag.loc_tag }}</a></td>
-                <td><a class="parent-link">{{ tag.parent }}</a></td>
+                <td><a class="tag-link" href="{% url 'equipment:location_tag_detail' tag.loc_tag %}?{{ request.GET.urlencode }}"> {{ tag.loc_tag }} </a></td>
+                <td><a class="parent-link" href="{% url 'equipment:location_tag_detail' tag.parent %}?{{ request.GET.urlencode }}"> {{ tag.parent }} </a></td>
                 <td>{{ tag.unit }}</td>
                 <td>{{ tag.train }}</td>
                 <td>{{ tag.obj_criticality }}</td>
