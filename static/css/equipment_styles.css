@@ -1,0 +1,338 @@
+/* --------------------------------------------------------------
+   GLOBAL / BASE
+-------------------------------------------------------------- */
+
+body, .container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container {
+    padding: 20px;
+}
+
+h1 {
+    color: #43334C;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+
+/* --------------------------------------------------------------
+   BUTTONS
+-------------------------------------------------------------- */
+
+.btn-primary-custom,
+.btn-search,
+.back-button {
+    background-color: #43334C;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-primary-custom {
+    padding: 10px 20px;
+    font-size: 15px;
+}
+
+.btn-primary-custom:hover,
+.btn-search:hover,
+.back-button:hover {
+    background-color: #5a4a5e;
+}
+
+.btn-secondary-custom,
+.btn-clear {
+    background-color: #ddd;
+    color: #333;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-secondary-custom {
+    padding: 10px 20px;
+}
+
+.btn-secondary-custom:hover,
+.btn-clear:hover {
+    background-color: #ccc;
+}
+
+.btn-search {
+    padding: 8px 8px;
+    font-size: 13px;
+    height: 35px;
+    width: 200px;
+    border-radius: 4px;
+}
+
+.btn-clear {
+    padding: 8px 8px;
+    font-size: 13px;
+    height: 35px;
+    width: 150px;
+    display: inline-block;
+    text-align: center;
+}
+
+.back-button {
+    display: inline-block;
+    padding: 8px 14px;
+    font-size: 14px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+
+/* --------------------------------------------------------------
+   FILTER BAR
+-------------------------------------------------------------- */
+
+.filter-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.filter-input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.filter-input:focus {
+    border-color: #43334C;
+    outline: none;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+
+/* --------------------------------------------------------------
+   TABLES
+-------------------------------------------------------------- */
+
+.table-scroll-container {
+    width: 100%;
+    max-height: 700px;
+    overflow-y: auto;
+    border-radius: 5px;
+}
+
+table {
+    width: max-content;
+    min-width: 100%;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #ddd;
+    font-size: 13px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+th {
+    background-color: #43334C;
+    color: #fff;
+    font-weight: 500;
+    text-align: center;
+    padding: 12px 28px 12px 12px;;
+    position: relative;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+}
+
+th:hover {
+    background-color: #5a4a5e;
+}
+
+td {
+    padding: 10px;
+    text-align: center;
+    vertical-align: middle;
+    color: #222;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+tr:hover td {
+    background-color: #f1f1f1;
+}
+
+/* table column borders */
+th, td { border-right: 1px solid #f0f0f0; }
+th:last-child, td:last-child { border-right: none; }
+
+/* striped rows */
+tbody tr:nth-child(odd) td { background-color: #ffffff; }
+tbody tr:nth-child(even) td { background-color: #f9f7fa; }
+
+/* hover row override */
+tbody tr:hover td { background-color: #ece9f0 !important; }
+
+/* sorting arrows */
+.sort-arrow {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    width: 16px;
+    text-align: center;
+    opacity: 0.7;
+}
+
+.sort-arrow.asc::before { content: '\25B2'; }
+.sort-arrow.desc::before { content: '\25BC'; }
+th:not(.sorted) .sort-arrow { display: none; }
+
+.tag-link,
+.parent-link {
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    color: #000;
+}
+
+.tag-link:hover,
+.parent-link:hover {
+    text-decoration: underline;
+}
+
+.parent-link { color: #00008B; }
+
+
+/* --------------------------------------------------------------
+   COLLAPSIBLE SECTIONS
+-------------------------------------------------------------- */
+
+.section-header {
+    background-color: #43334C;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-top: 25px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    display: flex;
+    user-select: none;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.section-header:hover {
+    background-color: #5a4a5e;
+}
+
+.section-content {
+    display: none;
+    margin-top: 10px;
+}
+
+.chevron {
+    font-size: 14px;
+    transition: transform 0.25s ease;
+}
+
+.chevron.open {
+    transform: rotate(90deg);
+}
+
+
+/* --------------------------------------------------------------
+   FORMS
+-------------------------------------------------------------- */
+
+.form-card {
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-top: 25px;
+}
+
+.form-card label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+    color: #333;
+}
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
+    outline: none;
+    border-color: #43334C;
+    box-shadow: 0 0 0 2px rgba(67, 51, 76, 0.15);
+}
+
+.tag-highlight {
+    font-weight: 600;
+    color: #43334C;
+}
+
+
+/* --------------------------------------------------------------
+   AUTOCOMPLETE
+-------------------------------------------------------------- */
+
+.autocomplete-results {
+    position: absolute;
+    border: 1px solid #ccc;
+    background: white;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+}
+
+.autocomplete-results div {
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.autocomplete-results div:hover {
+    background: #eee;
+}
