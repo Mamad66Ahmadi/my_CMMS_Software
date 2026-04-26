@@ -3,6 +3,9 @@
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 
+from .views import UserDashboardView
+
+
 app_name = "accounts"
 
 urlpatterns = [
@@ -22,5 +25,8 @@ urlpatterns = [
         auth_views.LogoutView.as_view(next_page="accounts:login"),
         name="logout",
     ),
+
+    path("dashboard/", UserDashboardView.as_view(), name="dashboard"),
+
 
 ]

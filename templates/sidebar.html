@@ -4,20 +4,34 @@
     <hr class="mt-0">
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
-        
         {# --- Dashboard --- #}
         <div class="accordion-item">
             <h2 class="accordion-header" id="dashboardHeading">
-                <button class="nav-link dropdown-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardCollapse" aria-expanded="false" aria-controls="dashboardCollapse">
-                    Dashboard
+
+                <button class="nav-link dropdown-toggle collapsed d-flex justify-content-between align-items-center" 
+                        type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#dashboardCollapse" aria-expanded="false" 
+                        aria-controls="dashboardCollapse">
+
+                    <span>Dashboard</span>
+
+                    {% if pending_requests_count > 0 and request.user.is_staff %}
+                        <span class="badge bg-danger ms-2">
+                            {{ pending_requests_count }}
+                        </span>
+                    {% endif %}
+
                 </button>
+
             </h2>
+
             <div id="dashboardCollapse" class="accordion-collapse collapse" aria-labelledby="dashboardHeading" data-bs-parent="#sidebarAccordion">
                 <div class="accordion-body p-0">
-                    <a href="" class="dropdown-item">Overview</a>
+                    <a href="{% url 'accounts:dashboard' %}" class="dropdown-item">Overview</a>
                 </div>
             </div>
         </div>
+
 
         {# --- Location Tag --- #}
         <div class="accordion-item">
@@ -29,7 +43,7 @@
             <div id="equipmentCollapse" class="accordion-collapse collapse" aria-labelledby="equipmentHeading" data-bs-parent="#sidebarAccordion">
                 <div class="accordion-body p-0">
                     <a href="{% url 'equipment:location_tag_list' %}" class="dropdown-item">Search for</a>
-                    <a href="" class="dropdown-item">Add New</a>
+                    <a href="{% url 'equipment:location_tag_create_request' %}" class="dropdown-item">Add New</a>
                 </div>
             </div>
         </div>

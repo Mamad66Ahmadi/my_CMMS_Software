@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h1 class="mb-4">Dashboard</h1>
+
+    <!-- ===== Location Tag Requests ===== -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Location Tag Requests</h4>
+        </div>
+        <div class="card-body">
+
+            {% if location_tag_requests %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Requested By</th>
+                            <th>Requested At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in location_tag_requests %}
+                        <tr>
+                            <td>{{ req.id }}</td>
+                            <td>{{ req.get_action_display }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if req.status == 'pending' %} bg-warning 
+                                    {% elif req.status == 'approved' %} bg-success 
+                                    {% elif req.status == 'approved_with_change' %} bg-info 
+                                    {% elif req.status == 'rejected' %} bg-danger 
+                                    {% endif %}
+                                ">
+                                    {{ req.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ req.requested_by }}</td>
+                            <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No location tag requests found.</p>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ===== Equipment Requests ===== -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">Equipment Requests</h4>
+        </div>
+        <div class="card-body">
+
+            {% if equipment_requests %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Requested By</th>
+                            <th>Requested At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in equipment_requests %}
+                        <tr>
+                            <td>{{ req.id }}</td>
+                            <td>{{ req.get_action_display }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if req.status == 'pending' %} bg-warning 
+                                    {% elif req.status == 'approved' %} bg-success 
+                                    {% elif req.status == 'approved_with_change' %} bg-info 
+                                    {% elif req.status == 'rejected' %} bg-danger 
+                                    {% endif %}
+                                ">
+                                    {{ req.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ req.requested_by }}</td>
+                            <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No equipment requests found.</p>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ===== Document Requests ===== -->
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">Document Requests</h4>
+        </div>
+        <div class="card-body">
+
+            {% if document_requests %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Requested By</th>
+                            <th>Requested At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in document_requests %}
+                        <tr>
+                            <td>{{ req.id }}</td>
+                            <td>{{ req.get_action_display }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if req.status == 'pending' %} bg-warning 
+                                    {% elif req.status == 'approved' %} bg-success 
+                                    {% elif req.status == 'approved_with_change' %} bg-info 
+                                    {% elif req.status == 'rejected' %} bg-danger 
+                                    {% endif %}
+                                ">
+                                    {{ req.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ req.requested_by }}</td>
+                            <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No document requests found.</p>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock content %}
