@@ -26,4 +26,19 @@
 
 </div>
 
+<script>
+// Save scroll location before navigating away
+window.addEventListener("beforeunload", function () {
+    localStorage.setItem("scrollPosLocTags", window.scrollY);
+});
+
+// Restore scroll location after reload
+window.addEventListener("load", function () {
+    const pos = localStorage.getItem("scrollPosLocTags");
+    if (pos !== null) {
+        window.scrollTo(0, parseInt(pos));
+    }
+});
+</script>
+
 {% endblock %}

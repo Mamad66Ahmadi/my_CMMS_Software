@@ -3,7 +3,7 @@
 -------------------------------------------------------------- */
 
 body, .container {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .container {
@@ -50,7 +50,7 @@ h1 {
     color: #333;
     text-decoration: none;
     border-radius: 4px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
 }
 
@@ -165,7 +165,7 @@ th {
     color: #fff;
     font-weight: 500;
     text-align: center;
-    padding: 12px 28px 12px 12px;;
+    padding: 12px 25px 12px 18px;;
     position: relative;
     cursor: pointer;
     border-bottom: 1px solid #ddd;
@@ -335,4 +335,61 @@ th:not(.sorted) .sort-arrow { display: none; }
 
 .autocomplete-results div:hover {
     background: #eee;
+}
+
+.alert-success {
+    background: #e8f7ed;
+    border-left: 4px solid #2e7d32;
+    color: #2e7d32;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+}
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.popup-box {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 80%;
+    text-align: center;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+    animation: popupFadeIn 0.3s ease-out;
+}
+
+.popup-box p {
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+#popup-ok {
+    padding: 7px 20px;
+    background: #2e7d32;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#popup-ok:hover {
+    background: #256428;
+}
+
+@keyframes popupFadeIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
 }

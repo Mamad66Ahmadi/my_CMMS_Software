@@ -7,12 +7,16 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.contrib import messages
+
+
 
 
 from .models import LocationTag, EquipmentDocument, Equipment
 
 from equipment.models.request_equipment_models import LocationTagChangeRequest
 from equipment.forms.location_tag_change_form import LocationTagChangeRequestForm
+from equipment.forms.location_tag_create_form import LocationTagCreateRequestForm
 
 
 
@@ -305,3 +309,35 @@ class LocationTagUpdateRequestView(LoginRequiredMixin, CreateView):
 
         return redirect("equipment:location_tag_detail", loc_tag=self.tag.loc_tag)
 
+
+
+class LocationTagCreateRequestView(LoginRequiredMixin, CreateView):
+    model = LocationTagChangeRequest
+    form_class = LocationTagCreateRequestForm
+    template_name = "equipment/location_tag_request_create_form.html"
+
+    login_url = "/accounts/login/"
+    redirect_field_name = "next"
+
+    def form_valid(self, form):
+        # Check if a tag with the same loc_tag already exists
+        loc_tag = form.cleaned_data["loc_tag"]
+        if LocationTag.objects.filter(loc_tag=loc_tag).exists():
+            form.add_error("loc_tag", "A Location Tag with this code already exists.")
+            return self.form_invalid(form)
+
+        req = form.save(commit=False)
+        req.action = LocationTagChangeRequest.Action.CREATE
+        req.requested_by = self.request.user
+        req.changes = {}  # no changes for creation
+
+        req.save()
+
+        # ✅ Build success message with specifications
+        messages.success(
+            self.request,
+            f"Your request for object tag: {req.loc_tag} has been submitted."
+        )
+
+
+        return redirect("equipment:location_tag_create_request")

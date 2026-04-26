@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% if form.non_field_errors %}
+<div style="color:red; margin-bottom:15px;">
+    {{ form.non_field_errors }}
+</div>
+{% endif %}
+
+<div class="container" style="max-width:750px; margin-top:30px;">
+
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+
+    <div class="section-header">
+        Request New Location Tag
+    </div>
+
+    <div class="form-card">
+
+        <form method="post" autocomplete="off">
+            {% csrf_token %}
+
+            <p>
+                {{ form.loc_tag.label_tag }}
+                {{ form.loc_tag }}
+            </p>
+
+            <!-- Parent Search -->
+            <p style="position: relative;">
+                {{ form.parent_search.label_tag }}
+                {{ form.parent_search }}
+                <div id="parent-results" class="autocomplete-results"></div>
+            </p>
+
+            <!-- Hidden parent field -->
+            {{ form.parent }}
+
+            <p>
+                {{ form.description.label_tag }}
+                {{ form.description }}
+            </p>
+
+            <p>
+                {{ form.long_tag.label_tag }}
+                {{ form.long_tag }}
+            </p>
+
+            <p>
+                {{ form.obj_criticality.label_tag }}
+                {{ form.obj_criticality }}
+            </p>
+
+            <p>
+                {{ form.obj_type.label_tag }}
+                {{ form.obj_type }}
+            </p>
+
+            <p>
+                {{ form.obj_category.label_tag }}
+                {{ form.obj_category }}
+            </p>
+
+            <p>
+                {{ form.unit.label_tag }}
+                {{ form.unit }}
+            </p>
+
+            <p>
+                {{ form.train.label_tag }}
+                {{ form.train }}
+            </p>
+
+            <p>
+                {{ form.note.label_tag }}
+                {{ form.note }}
+            </p>
+
+            <p>
+                {{ form.mih_level.label_tag }}
+                {{ form.mih_level }}
+            </p>
+
+            <div style="margin-top:25px;">
+                <button type="submit" class="btn-primary-custom">
+                    Submit Request
+                </button>
+
+                <a href="{% url 'equipment:location_tag_list' %}"
+                   class="btn-secondary-custom">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+        <p>
+            {{ form.loc_tag.errors }}
+        </p>
+
+    </div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const input = document.getElementById("parent-search");
+    const hidden = document.getElementById("id_parent");
+    const resultsBox = document.getElementById("parent-results");
+
+    if (!input) return;
+
+    const url = input.dataset.autocompleteUrl;
+    const form = input.closest("form");
+
+    // --- 1) AUTOCOMPLETE KEYUP HANDLER ---
+    input.addEventListener("keyup", function () {
+
+        const query = input.value;
+
+        // clear hidden id if user edits text
+        hidden.value = "";
+
+        if (query.length < 2) {
+            resultsBox.style.display = "none";
+            return;
+        }
+
+        fetch(url + "?q=" + encodeURIComponent(query))
+            .then(response => response.json())
+            .then(data => {
+
+                resultsBox.innerHTML = "";
+
+                data.results.forEach(item => {
+                    const option = document.createElement("div");
+                    option.textContent = item.text;
+
+                    option.onclick = function () {
+                        input.value = item.text;
+                        hidden.value = item.id;
+                        resultsBox.style.display = "none";
+                    };
+
+                    resultsBox.appendChild(option);
+                });
+
+                resultsBox.style.display = "block";
+            });
+
+    });
+
+    // --- 2) HIDE RESULTS WHEN CLICKING OUTSIDE ---
+    document.addEventListener("click", function(e){
+        if (!resultsBox.contains(e.target) && e.target !== input){
+            resultsBox.style.display = "none";
+        }
+    });
+
+    // --- 3) PREVENT INVALID SUBMISSION ---
+    form.addEventListener("submit", function(e){
+
+        // 1️⃣ Validate parent selection
+        if (input.value.trim() !== "" && hidden.value === "") {
+            e.preventDefault();
+            alert("Please select a valid parent location tag from the list.");
+            input.focus();
+            return;
+        }
+
+        // 2️⃣ Confirmation before submit
+        const locTagInput = document.getElementById("id_loc_tag");
+        const locTagValue = locTagInput.value;
+
+        const confirmed = confirm(
+            "Are you sure you want to submit a request for object tag: " 
+            + locTagValue + " ?"
+        );
+
+        if (!confirmed) {
+            e.preventDefault();
+        }
+    });
+
+
+});
+</script>
+
+{% endblock %}

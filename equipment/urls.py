@@ -11,4 +11,5 @@ urlpatterns = [
     path("tag/<path:loc_tag>/", views.LocationTagDetail.as_view(),name="location_tag_detail",),
     path("tag-modification/<path:loc_tag>/", views.LocationTagUpdateRequestView.as_view(),name="location_tag_update_request",),
     path("locationtag-autocomplete/",views.locationtag_autocomplete,name="locationtag_autocomplete"),
+    path("tag-creation/",views.LocationTagCreateRequestView.as_view(),name="location_tag_create_request",),
 ]
