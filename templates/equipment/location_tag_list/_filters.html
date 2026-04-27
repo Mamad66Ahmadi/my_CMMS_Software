@@ -50,6 +50,20 @@
                    value="{{ filters.obj_category }}">
         </div>
 
+        <div class="filter-group toggle-center">
+            <label class="filter-label">Active Only</label>
+
+            <input type="hidden" name="is_active" value="false">
+
+            <label class="toggle-switch">
+                <input type="checkbox"
+                    name="is_active"
+                    value="true"
+                    {% if filters.is_active != "false" %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+
         <div class="filter-group">
             <label class="filter-label">Rows Per Page (max = 200)</label>
 

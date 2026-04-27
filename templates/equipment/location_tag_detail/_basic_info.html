@@ -76,6 +76,21 @@
                 </td>
             </tr>
 
+            <tr>
+                <th>Status</th>
+                <td style="text-align:left;">
+                    {% if location_tag.is_active %}
+                        <span style="color:#1f7a1f; font-weight:600;">
+                            ✅ Active
+                        </span>
+                    {% else %}
+                        <span style="color:#c0392b; font-weight:600;">
+                            ❌ Inactive
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+
         </tbody>
     </table>
 </div>

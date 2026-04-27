@@ -36,12 +36,16 @@
 
 
                         <td style="text-align:left;">
-                            <strong>Fields:</strong><br>
-                            {% for field, diff in req.changes.items %}
-                                {{ field }}: "{{ diff.old }}" → "{{ diff.new }}"<br>
-                            {% empty %}
-                                No field-level diff available.
-                            {% endfor %}
+                            {% if req.action == req.Action.REMOVE %}
+                                <strong>Action:</strong> Remove this tag.
+                            {% else %}
+                                <strong>Fields:</strong><br>
+                                {% for field, diff in req.changes.items %}
+                                    {{ field }}: "{{ diff.old }}" → "{{ diff.new }}"<br>
+                                {% empty %}
+                                    No field-level diff available.
+                                {% endfor %}
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

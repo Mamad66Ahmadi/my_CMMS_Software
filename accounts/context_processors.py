@@ -11,7 +11,7 @@ def pending_requests_count(request):
     if not request.user.is_authenticated:
         return {}
 
-    if request.user.is_staff or request.user.is_superuser:
+    if request.user.is_staff:
         location = LocationTagChangeRequest.objects.filter(status="pending").count()
         equipment = EquipmentChangeRequest.objects.filter(status="pending").count()
         document = EquipmentDocumentChangeRequest.objects.filter(status="pending").count()

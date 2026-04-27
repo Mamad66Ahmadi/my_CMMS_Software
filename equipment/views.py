@@ -1,6 +1,6 @@
 # equipment/views.py
 
-from django.views.generic import DetailView,TemplateView, CreateView
+from django.views.generic import DetailView,TemplateView, CreateView, View
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -39,6 +39,8 @@ class LocationTagList(LoginRequiredMixin, TemplateView):
             'criticality': self.request.GET.get('criticality', '').strip(),
             'obj_type': self.request.GET.get('obj_type', '').strip(),
             'obj_category': self.request.GET.get('obj_category', '').strip(), 
+            'is_active': self.request.GET.get('is_active', 'true'),
+
         }
 
         queryset = LocationTag.objects.all()
@@ -64,6 +66,8 @@ class LocationTagList(LoginRequiredMixin, TemplateView):
 
         if filters['obj_category']:
             queryset = queryset.filter(obj_category__category_name__icontains=filters['obj_category'])
+        if filters['is_active'] == "true":
+            queryset = queryset.filter(is_active=True)
 
         # Sorting
         sort_by = self.request.GET.get('sort', 'loc_tag')
@@ -78,14 +82,15 @@ class LocationTagList(LoginRequiredMixin, TemplateView):
             'description': 'description',
             'obj_criticality': 'obj_criticality__obj_crt_level',
             'obj_type': 'obj_type__obj_type',
-            'obj_category': 'obj_category__category_name', 
-
+            'obj_category': 'obj_category__category_name',
+            'is_active': 'is_active',
+            'note': 'note',
+            'mih_level': 'mih_level',
             'created_at': 'created_at',
             'created_by': 'created_by__username',
             'modified_at': 'modified_at',
             'modified_by': 'modified_by__username',
-            'note': 'note',
-            'mih_level': 'mih_level',
+
         }
 
         sort_field = allowed_sort_fields.get(sort_by, 'loc_tag')
@@ -341,3 +346,45 @@ class LocationTagCreateRequestView(LoginRequiredMixin, CreateView):
 
 
         return redirect("equipment:location_tag_create_request")
+    
+
+class LocationTagRemoveRequestView(LoginRequiredMixin, View):
+    login_url = "/accounts/login/"
+
+    def get(self, request, loc_tag):
+        tag = get_object_or_404(LocationTag, loc_tag=loc_tag)
+
+        # Prevent duplication
+        existing = LocationTagChangeRequest.objects.filter(
+            location_tag=tag,
+            status=LocationTagChangeRequest.Status.PENDING
+        ).first()
+
+        if existing:
+            messages.error(request,
+                           "There is already a pending request for this tag.")
+            return redirect("equipment:location_tag_detail", loc_tag=loc_tag)
+
+        # Create a remove request
+        LocationTagChangeRequest.objects.create(
+            action=LocationTagChangeRequest.Action.REMOVE,
+            location_tag=tag,
+            requested_by=request.user,
+            loc_tag=tag.loc_tag,      # required model field
+            parent=tag.parent,
+            description=tag.description,
+            long_tag=tag.long_tag,
+            obj_criticality=tag.obj_criticality,
+            obj_type=tag.obj_type,
+            obj_category=tag.obj_category,
+            unit=tag.unit,
+            train=tag.train,
+            note=tag.note,
+            mih_level=tag.mih_level,
+            changes={"action": "remove"},
+        )
+
+        messages.success(request,
+                         "Remove request submitted successfully.")
+        return redirect("equipment:location_tag_detail", loc_tag=loc_tag)
+

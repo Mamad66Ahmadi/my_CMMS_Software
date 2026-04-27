@@ -4,7 +4,17 @@
 
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
 
-
+{% if not location_tag.is_active %}
+<div style="
+    background:#ffeaea;
+    padding:15px;
+    border-left:5px solid #c0392b;
+    margin-bottom:20px;
+    font-weight:600;
+">
+    ⚠️ This Location Tag is INACTIVE.
+</div>
+{% endif %}
 
 <div class="container">
 
@@ -46,7 +56,13 @@
 
 <div style="margin-top: 40px; margin-bottom: 40px; text-align:right;">
 
-{% if has_pending_request %}
+{% if not location_tag.is_active %}
+    <button class="btn btn-secondary" disabled
+            style="padding:10px 20px; font-weight:600;">
+        ⚠️ This Tag is Inactive
+    </button>
+
+{% elif has_pending_request %}
     <button class="btn btn-secondary" disabled
             style="padding:10px 20px; font-weight:600;">
         ✏️ Modify This Tag (Pending Request Exists)

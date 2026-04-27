@@ -22,6 +22,7 @@ class BaseChangeRequest(models.Model):
     class Action(models.TextChoices):
         CREATE = "create", "Create"
         UPDATE = "update", "Update"
+        REMOVE = "remove", "Remove"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -187,6 +188,9 @@ class LocationTagChangeRequest(BaseChangeRequest):
 
         if self.action == self.Action.UPDATE and not self.location_tag:
             raise ValidationError("UPDATE request must have a location_tag.")
+        
+        if self.action == self.Action.REMOVE and not self.location_tag:
+            raise ValidationError("REMOVE request must have a location_tag.")
 
     def __str__(self):
         return f"[{self.get_action_display()}] {self.loc_tag}"
@@ -234,14 +238,26 @@ class LocationTagChangeRequest(BaseChangeRequest):
                 tag.train = self.train
                 tag.note = self.note
                 tag.mih_level = self.mih_level
-                tag.modified_by = reviewer
+                tag.modified_by = self.requested_by
 
                 tag.save()
+
+            elif self.action == self.Action.REMOVE:
+                tag = self.location_tag
+                if not tag:
+                    raise ValidationError("No target LocationTag to remove.")
+
+                # Soft delete: mark as inactive
+                tag.is_active = False
+                tag.modified_by = self.requested_by
+                tag.save(update_fields=["is_active", "modified_by"])
+
 
             # mark request as approved
             self.mark_approved(reviewer=reviewer)
             # ensure link to created object is saved if CREATE
-            self.save(update_fields=["location_tag"])
+            if self.action == self.Action.CREATE and self.location_tag_id:
+                self.save(update_fields=["location_tag"])
 
 
 # --------------------- Equipment Change Request -----------------------------

@@ -98,19 +98,35 @@
                    class="btn-secondary-custom">
                     Cancel
                 </a>
+
             </div>
 
         </form>
+
+        
 
         <p>
             {{ form.non_field_errors }}
             {{ form.loc_tag.errors }}
         </p>
-
-
+        <div style="margin-top:50px;">
+            <a href="{% url 'equipment:location_tag_request_remove' view.tag.loc_tag %}"
+            class="btn btn-danger"
+            onclick="return confirmRemove();">
+                Request to Remove the Tag
+            </a>
+        </div>
+        
     </div>
 </div>
 <script>
+
+const initial = {};
+
+document.querySelectorAll("form input, form select, form textarea").forEach(el => {
+    initial[el.id] = el.value;
+});
+
 document.addEventListener("DOMContentLoaded", function () {
 
     const input = document.getElementById("parent-search");
@@ -167,15 +183,64 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // --- 3) PREVENT INVALID SUBMISSION ---
-    form.addEventListener("submit", function(e){
+    // --- 4) CHANGE REQUEST CONFIRMATION WITH WHAT CHANGED ---
+    form.addEventListener("submit", function(e) {
+
+        // --- Validate parent selection (keep your existing logic) ---
         if (input.value.trim() !== "" && hidden.value === "") {
             e.preventDefault();
             alert("Please select a valid parent location tag from the list.");
             input.focus();
+            return;
         }
+
+        // --- Detect changed fields ---
+        const changes = [];
+
+        document.querySelectorAll("form input, form select, form textarea").forEach(el => {
+            const oldVal = initial[el.id];
+            const newVal = el.value;
+
+            if (oldVal != newVal) {
+                const label = document.querySelector(`label[for=${el.id}]`);
+                const labelText = label ? label.textContent : el.name;
+
+                changes.push(`• ${labelText.trim()}:\n    from: "${oldVal}"\n    to:   "${newVal}"`);
+            }
+        });
+
+        // --- If nothing changed, warn user ---
+        if (changes.length === 0) {
+            e.preventDefault();
+            alert("No fields have been changed. Nothing to submit.");
+            return;
+        }
+
+        // --- Confirmation dialog showing changes ---
+        const message =
+            "You are about to submit a CHANGE REQUEST.\n\n" +
+            "The following fields have been modified:\n\n" +
+            changes.join("\n\n") +
+            "\n\nDo you want to submit this change request?";
+
+        if (!confirm(message)) {
+            e.preventDefault();
+            return false;
+        }
+
     });
 
 });
+
+
+function confirmRemove() {
+    return confirm(
+        "Are you sure you want to submit a REMOVE request for this tag?\n\n" +
+        "The tag will be marked as inactive after approval."
+    );
+}
+
+
 </script>
 
 
