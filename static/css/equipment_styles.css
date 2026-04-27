@@ -366,3 +366,25 @@ th:not(.sorted) .sort-arrow { display: none; }
 .filter-group.toggle-center {
     align-items: center;
 }
+
+
+
+/* --------------------------------------------------------------
+   AUTOCOMPLETE
+-------------------------------------------------------------- */
+
+
+.autocomplete-item {
+    padding: 5px 5px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid #d2d0d0;
+    border-left: 1px solid #d2d0d0;
+    border-right: 1px solid #d2d0d0;
+    background-color: #fdfbfe;
+}
+
+
+.autocomplete-item:hover {
+    background-color: #f4f4f4;
+}

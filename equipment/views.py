@@ -1,14 +1,12 @@
 # equipment/views.py
 
 from django.views.generic import DetailView,TemplateView, CreateView, View
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.contrib import messages
-
 
 
 
@@ -222,7 +220,7 @@ def locationtag_autocomplete(request):
     q = request.GET.get("q", "")
 
     tags = LocationTag.objects.filter(
-        loc_tag__istartswith=q.upper()).order_by("loc_tag")[:20]
+        loc_tag__istartswith=q.upper()).order_by("loc_tag")[:10]
         
     results = [
         {
@@ -388,3 +386,103 @@ class LocationTagRemoveRequestView(LoginRequiredMixin, View):
                          "Remove request submitted successfully.")
         return redirect("equipment:location_tag_detail", loc_tag=loc_tag)
 
+
+
+
+class LocationTagRequestReviewView(View):
+
+    template_name = "equipment/location_tag_request_review.html"
+
+    def get(self, request, pk):
+        req = get_object_or_404(LocationTagChangeRequest, pk=pk)
+
+        # SELECT the correct form class based on request type
+        if req.action == LocationTagChangeRequest.Action.CREATE:
+            FormClass = LocationTagCreateRequestForm
+        else:
+            FormClass = LocationTagChangeRequestForm
+
+        # Build initial values from req or the underlying tag
+        initial = {
+            "loc_tag": req.loc_tag or getattr(req.location_tag, "loc_tag", ""),
+            "description": req.description or getattr(req.location_tag, "description", ""),
+            "long_tag": req.long_tag or getattr(req.location_tag, "long_tag", ""),
+            "obj_criticality": req.obj_criticality or getattr(req.location_tag, "obj_criticality", ""),
+            "obj_type": req.obj_type or getattr(req.location_tag, "obj_type", ""),
+            "obj_category": req.obj_category or getattr(req.location_tag, "obj_category", ""),
+            "unit": req.unit or getattr(req.location_tag, "unit", ""),
+            "train": req.train or getattr(req.location_tag, "train", ""),
+            "note": req.note or getattr(req.location_tag, "note", ""),
+            "mih_level": req.mih_level or getattr(req.location_tag, "mih_level", ""),
+            "parent": getattr(req.location_tag, "parent", None),
+        }
+
+        form = FormClass(initial=initial)
+
+        return render(
+            request,
+            "equipment/location_tag_request_review.html",
+            {"req": req, "form": form}
+        )
+
+    def post(self, request, pk):
+        req = get_object_or_404(LocationTagChangeRequest, pk=pk)
+
+        action = request.POST.get("decision")
+
+        if action == "approve":
+
+            # CREATE
+            if req.action == LocationTagChangeRequest.Action.CREATE:
+                tag = LocationTag.objects.create(
+                    loc_tag=request.POST.get("loc_tag"),
+                    description=request.POST.get("description"),
+                    long_tag=request.POST.get("long_tag"),
+                    obj_type=request.POST.get("obj_type"),
+                    obj_category=request.POST.get("obj_category"),
+                    unit=request.POST.get("unit"),
+                    train=request.POST.get("train"),
+                    note=request.POST.get("note"),
+                    mih_level=request.POST.get("mih_level"),
+                )
+
+                req.location_tag = tag
+
+            # UPDATE
+            elif req.action == LocationTagChangeRequest.Action.UPDATE:
+
+                tag = req.location_tag
+
+                tag.description = request.POST.get("description")
+                tag.long_tag = request.POST.get("long_tag")
+                tag.obj_type = request.POST.get("obj_type")
+                tag.obj_category = request.POST.get("obj_category")
+                tag.unit = request.POST.get("unit")
+                tag.train = request.POST.get("train")
+                tag.note = request.POST.get("note")
+                tag.mih_level = request.POST.get("mih_level")
+
+                tag.save()
+
+            # REMOVE
+            elif req.action == LocationTagChangeRequest.Action.REMOVE:
+
+                tag = req.location_tag
+                tag.is_active = False
+                tag.save()
+
+            req.status = LocationTagChangeRequest.Status.APPROVED
+            req.save()
+
+            messages.success(request, "Request approved and applied.")
+            return redirect("dashboard")
+
+        elif action == "reject":
+
+            req.status = LocationTagChangeRequest.Status.REJECTED
+            req.save()
+
+            messages.warning(request, "Request rejected.")
+            return redirect("dashboard")
+
+        return redirect("dashboard")

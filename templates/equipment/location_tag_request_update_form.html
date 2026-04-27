@@ -159,6 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 data.results.forEach(item => {
                     const option = document.createElement("div");
+                    option.classList.add("autocomplete-item");
                     option.textContent = item.text;
 
                     option.onclick = function () {
