@@ -19,9 +19,9 @@ class UserDashboardView(LoginRequiredMixin, TemplateView):
 
         # ADMIN: see all requests
         if user.is_staff or user.is_superuser:
-            context["location_tag_requests"] = LocationTagChangeRequest.objects.all()
-            context["equipment_requests"] = EquipmentChangeRequest.objects.all()
-            context["document_requests"] = EquipmentDocumentChangeRequest.objects.all()
+            context["location_tag_requests"] = LocationTagChangeRequest.objects.filter(status="pending")
+            context["equipment_requests"] = EquipmentChangeRequest.objects.filter(status="pending")
+            context["document_requests"] = EquipmentDocumentChangeRequest.objects.filter(status="pending")
 
         else:
             # NORMAL USER: only their own requests

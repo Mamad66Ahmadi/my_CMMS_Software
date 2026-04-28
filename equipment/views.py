@@ -10,14 +10,11 @@ from django.contrib import messages
 
 
 
-from .models import LocationTag, EquipmentDocument, Equipment
+from .models import LocationTag, EquipmentDocument, Equipment, ObjectType, ObjectCriticality, ObjectCategory, Unit
 
-from equipment.models.request_equipment_models import LocationTagChangeRequest
-from equipment.forms.location_tag_change_form import LocationTagChangeRequestForm
-from equipment.forms.location_tag_create_form import LocationTagCreateRequestForm
+from equipment.models import LocationTagChangeRequest
 
-
-
+from equipment.forms import LocationTagChangeRequestForm, LocationTagCreateRequestForm
 
 # ----------------------------------------- Location Tag List ------------------------------
 class LocationTagList(LoginRequiredMixin, TemplateView):
@@ -345,6 +342,7 @@ class LocationTagCreateRequestView(LoginRequiredMixin, CreateView):
 
         return redirect("equipment:location_tag_create_request")
     
+#----------------------------------------------------------------------------------------------------
 
 class LocationTagRemoveRequestView(LoginRequiredMixin, View):
     login_url = "/accounts/login/"
@@ -388,13 +386,13 @@ class LocationTagRemoveRequestView(LoginRequiredMixin, View):
 
 
 
-
+# ----------------------------------------------------------------------------------------------------
 class LocationTagRequestReviewView(View):
 
     template_name = "equipment/location_tag_request_review.html"
 
     def get(self, request, pk):
-        req = get_object_or_404(LocationTagChangeRequest, pk=pk)
+        req = get_object_or_404(LocationTagChangeRequest, pk=pk, status=LocationTagChangeRequest.Status.PENDING)
 
         # SELECT the correct form class based on request type
         if req.action == LocationTagChangeRequest.Action.CREATE:
@@ -414,7 +412,12 @@ class LocationTagRequestReviewView(View):
             "train": req.train or getattr(req.location_tag, "train", ""),
             "note": req.note or getattr(req.location_tag, "note", ""),
             "mih_level": req.mih_level or getattr(req.location_tag, "mih_level", ""),
-            "parent": getattr(req.location_tag, "parent", None),
+            "parent": req.parent or getattr(req.location_tag, "parent", None),
+
+            "parent_search": (
+                (req.parent.long_tag if req.parent else None) or
+                (getattr(req.location_tag, "parent").long_tag if getattr(req.location_tag, "parent", None) else "")
+            )
         }
 
         form = FormClass(initial=initial)
@@ -432,18 +435,34 @@ class LocationTagRequestReviewView(View):
 
         if action == "approve":
 
+            obj_type_id = request.POST.get("obj_type")
+            obj_cat_id = request.POST.get("obj_category")
+            obj_crit_id = request.POST.get("obj_criticality")
+            obj_unit_id = request.POST.get("unit")
+            obj_parent_id = request.POST.get("parent")
+
+            obj_type_instance = ObjectType.objects.filter(pk=obj_type_id).first() if obj_type_id else None
+            obj_cat_instance = ObjectCategory.objects.filter(pk=obj_cat_id).first() if obj_cat_id else None
+            obj_crit_instance = ObjectCriticality.objects.filter(pk=obj_crit_id).first() if obj_crit_id else None
+            obj_unit_instance = Unit.objects.filter(pk=obj_unit_id).first() if obj_unit_id else None
+            obj_parent_instance = LocationTag.objects.filter(pk=obj_parent_id).first() if obj_parent_id else None
+
+
             # CREATE
             if req.action == LocationTagChangeRequest.Action.CREATE:
                 tag = LocationTag.objects.create(
                     loc_tag=request.POST.get("loc_tag"),
                     description=request.POST.get("description"),
                     long_tag=request.POST.get("long_tag"),
-                    obj_type=request.POST.get("obj_type"),
-                    obj_category=request.POST.get("obj_category"),
-                    unit=request.POST.get("unit"),
-                    train=request.POST.get("train"),
+                    parent=obj_parent_instance,
+                    obj_type=obj_type_instance,
+                    obj_category=obj_cat_instance,
+                    unit=obj_unit_instance,
+                    obj_criticality=obj_crit_instance,
+                    train=request.POST.get("train") or None,
                     note=request.POST.get("note"),
                     mih_level=request.POST.get("mih_level"),
+                    created_by=req.requested_by,
                 )
 
                 req.location_tag = tag
@@ -453,14 +472,18 @@ class LocationTagRequestReviewView(View):
 
                 tag = req.location_tag
 
+                tag.parent = obj_parent_instance
                 tag.description = request.POST.get("description")
                 tag.long_tag = request.POST.get("long_tag")
-                tag.obj_type = request.POST.get("obj_type")
-                tag.obj_category = request.POST.get("obj_category")
-                tag.unit = request.POST.get("unit")
-                tag.train = request.POST.get("train")
+                tag.obj_type = obj_type_instance
+                tag.obj_category = obj_cat_instance
+                tag.obj_criticality = obj_crit_instance
+                tag.unit = obj_unit_instance
+                tag.train = request.POST.get("train") or None
                 tag.note = request.POST.get("note")
                 tag.mih_level = request.POST.get("mih_level")
+                tag.modified_by = req.requested_by
+
 
                 tag.save()
 
@@ -475,7 +498,7 @@ class LocationTagRequestReviewView(View):
             req.save()
 
             messages.success(request, "Request approved and applied.")
-            return redirect("dashboard")
+            return redirect("accounts:dashboard")
 
         elif action == "reject":
 
@@ -483,6 +506,6 @@ class LocationTagRequestReviewView(View):
             req.save()
 
             messages.warning(request, "Request rejected.")
-            return redirect("dashboard")
+            return redirect("accounts:dashboard")
 
-        return redirect("dashboard")
+        return redirect("accounts:dashboard")

@@ -2,96 +2,101 @@
 <h2 style="margin-top: 30px;">Basic Information</h2>
 
 <div class="table-scroll-container">
-    <table>
+    <table class="info-table">
         <tbody>
 
-            <tr>
-                <th style="width: 45px;">Location Tag</th>
-                <td style="text-align:left;">{{ location_tag.loc_tag }}</td>
-            </tr>
+        <tr>
+            <th>Location Tag</th>
+            <td>{{ location_tag.loc_tag }}</td>
 
-            <tr>
-                <th >Long Tag</th>
-                <td style="text-align:left;">{{ location_tag.long_tag }}</td>
-            </tr>
 
-            <tr>
-                <th>Parent</th>
-                <td style="text-align:left;">
-                    {% if location_tag.parent %}
-                        <a class="parent-link"
-                        href="{% url 'equipment:location_tag_detail' location_tag.parent.loc_tag %}">
-                            {{ location_tag.parent.loc_tag }}
-                        </a>
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
-            </tr>
+            <th>Description</th>
+            <td colspan="3">{{ location_tag.description|default:"—" }}</td>
 
-            <tr>
-                <th>MIH Level</th>
-                <td style="text-align:left;">
-                    {{ location_tag.mih_level }}
-                </td>
-            </tr>
+        </tr>
 
-            <tr>
-                <th>Description</th>
-                <td style="text-align:left;">
-                    {{ location_tag.description|default:"—" }}
-                </td>
-            </tr>
+        <tr>
+            <th>Parent</th>
+            <td>
+                {% if location_tag.parent %}
+                    <a href="{% url 'equipment:location_tag_detail' location_tag.parent.loc_tag %}">
+                        {{ location_tag.parent.loc_tag }}
+                    </a>
+                {% else %} — {% endif %}
+            </td>
 
-            <tr>
-                <th>Note</th>
-                <td style="text-align:left;">
-                    {{ location_tag.note|default:"—" }}
-                </td>
-            </tr>
+            <th>MIH Level</th>
+            <td colspan="3">{{ location_tag.mih_level }}</td>
+        </tr>
 
-            <tr>
-                <th>Created By</th>
-                <td style="text-align:left;">{{ location_tag.created_by }}</td>
-            </tr>
+        <tr>
+            <th>Unit</th>
+            <td>{{ location_tag.unit|default:"—" }}</td>
 
-            <tr>
-                <th>Created At</th>
-                <td style="text-align:left;">{{ location_tag.created_at|date:"Y-m-d H:i" }}</td>
-            </tr>
+            <th>Created By</th>
+            <td colspan="3">{{ location_tag.created_by }}</td>
 
-            <tr>
-                <th>Modified By</th>
-                <td style="text-align:left;">{{ location_tag.modified_by|default:"—" }}</td>
-            </tr>
+        </tr>
 
-            <tr>
-                <th>Modified At</th>
-                <td style="text-align:left;">
-                    {% if location_tag.modified_at %}
-                        {{ location_tag.modified_at|date:"Y-m-d H:i" }}
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
-            </tr>
+        <tr>
+            <th>Train</th>
+            <td>{{ location_tag.train|default:"—" }}</td>
 
-            <tr>
-                <th>Status</th>
-                <td style="text-align:left;">
-                    {% if location_tag.is_active %}
-                        <span style="color:#1f7a1f; font-weight:600;">
-                            ✅ Active
-                        </span>
-                    {% else %}
-                        <span style="color:#c0392b; font-weight:600;">
-                            ❌ Inactive
-                        </span>
-                    {% endif %}
-                </td>
-            </tr>
+            <th>Modified By</th>
+            <td colspan="3">{{ location_tag.modified_by|default:"—" }}</td>
+
+        </tr>
+
+        <tr>
+            <th>Object Category</th>
+            <td>{{ location_tag.obj_category|default:"—" }}</td>
+
+
+            <th>Modified At</th>
+            <td colspan="3">
+                {% if location_tag.modified_at %}
+                    {{ location_tag.modified_at|date:"Y-m-d H:i" }}
+                {% else %} — {% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <th>Object Type</th>
+            <td>{{ location_tag.obj_type|default:"—" }}</td>
+
+
+            <th>Created At</th>
+            <td colspan="3">{{ location_tag.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+
+        <tr>
+            <th>Object Criticality</th>
+            <td>{{ location_tag.obj_criticality|default:"—" }}</td>
+
+            <th>Status</th>
+            <td colspan="3">
+                {% if location_tag.is_active %}
+                    <span style="color:#1f7a1f; font-weight:600;">✅ Active</span>
+                {% else %}
+                    <span style="color:#c0392b; font-weight:600;">❌ Inactive</span>
+                {% endif %}
+            </td>
+
+        </tr>
+
+
+        <tr>
+            <th>Note</th>
+            <td colspan="5">{{ location_tag.note|default:"—" }}</td>
+        </tr>
+        <tr>
+            <th>Long Tag</th>
+            <td colspan="4">{{ location_tag.long_tag }}</td>
+        </tr>
+
 
         </tbody>
+
     </table>
 </div>
 
