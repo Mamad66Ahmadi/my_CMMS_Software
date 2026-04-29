@@ -8,141 +8,114 @@
     <h1 class="mb-4">Dashboard</h1>
 
     <!-- ===== Location Tag Requests ===== -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Location Tag Requests</h4>
-        </div>
-        <div class="card-body">
+    <form method="post" action="{% url 'equipment:bulk_location_tag_actions' %}">
+        {% csrf_token %}
 
-            {% if location_tag_requests %}
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Tag</th>
-                            <th>Action</th>
-                            <th>Status</th>
-                            <th>Changes</th>
-                            <th>Requested By</th>
-                            <th>Requested At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for req in location_tag_requests %}
-                            <tr>
-                                <td>
-                                <a href="{% url 'equipment:location_tag_request_review' req.id %}">
-                                    {{ req.id }}
-                                </a>
-                                </td>
-
-                                <!-- Tag column -->
-                                <td>
-                                    {% if req.action == req.Action.CREATE %}
-                                        <!-- NEW TAG: plain text from model field -->
-                                        <span>{{ req.loc_tag }}</span>
-
-                                    {% elif req.location_tag and req.location_tag.loc_tag %}
-                                        <!-- Existing tag: hyperlink -->
-                                        <a href="{% url 'equipment:location_tag_detail' req.location_tag.loc_tag %}">
-                                            {{ req.location_tag.loc_tag }}
-                                        </a>
-
-                                    {% else %}
-                                        <span class="text-muted">Unavailable</span>
-                                    {% endif %}
-                                </td>
-
-
-                                <!-- Action -->
-                                <td
-                                    class="
-                                    {% if req.action == req.Action.REMOVE %}
-                                        text-danger
-                                    {% elif req.action == req.Action.UPDATE %}
-                                        text-primary
-                                    {% elif req.action == req.Action.CREATE %}
-                                        text-success
-                                    {% endif %}
-                                    "
-                                >
-                                    {{ req.get_action_display }}
-                                </td>
-
-                                <!-- Status with color badges -->
-                                <td>
-                                    {{ req.get_status_display }}
-                                </td>
-
-                                <!-- Changes column -->
-                                <td style="text-align:left; max-width:300px;">
-
-                                    {% if req.action == req.Action.CREATE %}
-
-                                        <strong>loc_tag</strong>: "{{ req.loc_tag }}"<br>
-
-                                        {% if req.parent %}
-                                            <strong>parent</strong>: "{{ req.parent.loc_tag }}"<br>
-                                        {% endif %}
-                                        {% if req.description %}
-                                            <strong>description</strong>: "{{ req.description }}"<br>
-                                        {% endif %}
-                                        {% if req.long_tag %}
-                                            <strong>long_tag</strong>: "{{ req.long_tag }}"<br>
-                                        {% endif %}
-                                        {% if req.obj_type %}
-                                            <strong>obj_type</strong>: "{{ req.obj_type }}"<br>
-                                        {% endif %}
-                                        {% if req.obj_category %}
-                                            <strong>obj_category</strong>: "{{ req.obj_category }}"<br>
-                                        {% endif %}
-                                        {% if req.unit %}
-                                            <strong>unit</strong>: "{{ req.unit }}"<br>
-                                        {% endif %}
-                                        {% if req.train %}
-                                            <strong>train</strong>: "{{ req.train }}"<br>
-                                        {% endif %}
-                                        {% if req.note %}
-                                            <strong>note</strong>: "{{ req.note }}"<br>
-                                        {% endif %}
-                                        {% if req.mih_level %}
-                                            <strong>mih_level</strong>: "{{ req.mih_level }}"<br>
-                                        {% endif %}
-
-                                    {% elif req.action == req.Action.REMOVE %}
-                                        <span style="color:#c0392b; font-weight:600;">
-                                            Remove this tag (will become inactive)
-                                        </span>
-
-                                    {% else %}
-                                        {% if req.changes %}
-                                            {% for field, diff in req.changes.items %}
-                                                <strong>{{ field }}</strong>: 
-                                                "{{ diff.old }}" → "{{ diff.new }}"<br>
-                                            {% endfor %}
-                                        {% else %}
-                                            <span class="text-muted">No field-level changes</span>
-                                        {% endif %}
-                                    {% endif %}
-                                </td>
-
-
-                                <!-- Requested by & at -->
-                                <td>{{ req.requested_by }}</td>
-                                <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
-                            </tr>
-
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4>Location Tag Requests</h4>
+            <div>
+                <button type="submit" name="bulk_action" value="approve" class="btn btn-success btn-sm">
+                    Approve Selected
+                </button>
+                <button type="submit" name="bulk_action" value="reject" class="btn btn-danger btn-sm">
+                    Reject Selected
+                </button>
             </div>
-            {% else %}
-            <p class="text-muted">No location tag requests found.</p>
-            {% endif %}
-
         </div>
-    </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <!-- Select All -->
+                        <th style="width:35px;">
+                            <input type="checkbox" id="select-all">
+                        </th>
+
+                        <th>ID</th>
+                        <th>Tag</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                        <th>Changes</th>
+                        <th>Requested By</th>
+                        <th>Requested At</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for req in location_tag_requests %}
+                    <tr>
+
+                        <!-- Checkbox -->
+                        <td>
+                            <input type="checkbox" name="selected_requests" value="{{ req.id }}" class="row-checkbox">
+                        </td>
+
+                        <!-- ID link -->
+                        <td>
+                            <a href="{% url 'equipment:location_tag_request_review' req.id %}">
+                                {{ req.id }}
+                            </a>
+                        </td>
+
+                        <!-- Tag -->
+                        <td>
+                            {% if req.action == req.Action.CREATE %}
+                                {{ req.loc_tag }}
+                            {% elif req.location_tag %}
+                                <a href="{% url 'equipment:location_tag_detail' req.location_tag.loc_tag %}">
+                                    {{ req.location_tag.loc_tag }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Unavailable</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Action -->
+                        <td>{{ req.get_action_display }}</td>
+
+                        <!-- Status -->
+                        <td>{{ req.get_status_display }}</td>
+
+                        <!-- Changes -->
+                        <td style="max-width:300px;">
+                            {% if req.action == req.Action.CREATE %}
+                                <strong>loc_tag:</strong> {{ req.loc_tag }}<br>
+                                {% if req.description %}<strong>description:</strong> {{ req.description }}<br>{% endif %}
+                                {% if req.long_tag %}<strong>long_tag:</strong> {{ req.long_tag }}<br>{% endif %}
+                            {% elif req.action == req.Action.REMOVE %}
+                                <span class="text-danger fw-bold">Remove this tag</span>
+                            {% else %}
+                                {% if req.changes %}
+                                    {% for field, diff in req.changes.items %}
+                                        <strong>{{ field }}</strong>: "{{ diff.old }}" → "{{ diff.new }}"<br>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">No changes</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+
+                        <td>{{ req.requested_by }}</td>
+                        <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
+
+    <!-- Select all script -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let selectAll = document.getElementById("select-all");
+        let checkboxes = document.querySelectorAll(".row-checkbox");
+
+        selectAll.addEventListener("change", function () {
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        });
+    });
+    </script>
 
     <!-- ===== Equipment Requests ===== -->
     <div class="card mb-4">

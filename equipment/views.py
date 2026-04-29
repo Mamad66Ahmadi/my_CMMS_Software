@@ -2,7 +2,7 @@
 
 from django.views.generic import DetailView,TemplateView, CreateView, View
 from django.shortcuts import get_object_or_404, redirect, render
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -390,28 +390,35 @@ class LocationTagRemoveRequestView(LoginRequiredMixin, View):
 class LocationTagRequestReviewView(View):
 
     template_name = "equipment/location_tag_request_review.html"
+class LocationTagRequestReviewView(View):
+
+    template_name = "equipment/location_tag_request_review.html"
 
     def get(self, request, pk):
-        req = get_object_or_404(LocationTagChangeRequest, pk=pk, status=LocationTagChangeRequest.Status.PENDING)
+        req = get_object_or_404(
+            LocationTagChangeRequest,
+            pk=pk,
+            status=LocationTagChangeRequest.Status.PENDING
+        )
 
-        # SELECT the correct form class based on request type
-        if req.action == LocationTagChangeRequest.Action.CREATE:
-            FormClass = LocationTagCreateRequestForm
-        else:
-            FormClass = LocationTagChangeRequestForm
+        FormClass = (
+            LocationTagCreateRequestForm
+            if req.action == LocationTagChangeRequest.Action.CREATE
+            else LocationTagChangeRequestForm
+        )
 
-        # Build initial values from req or the underlying tag
         initial = {
             "loc_tag": req.loc_tag or getattr(req.location_tag, "loc_tag", ""),
             "description": req.description or getattr(req.location_tag, "description", ""),
             "long_tag": req.long_tag or getattr(req.location_tag, "long_tag", ""),
-            "obj_criticality": req.obj_criticality or getattr(req.location_tag, "obj_criticality", ""),
-            "obj_type": req.obj_type or getattr(req.location_tag, "obj_type", ""),
-            "obj_category": req.obj_category or getattr(req.location_tag, "obj_category", ""),
-            "unit": req.unit or getattr(req.location_tag, "unit", ""),
-            "train": req.train or getattr(req.location_tag, "train", ""),
+            "obj_criticality": req.obj_criticality or getattr(req.location_tag, "obj_criticality", None),
+            "obj_type": req.obj_type or getattr(req.location_tag, "obj_type", None),
+            "obj_category": req.obj_category or getattr(req.location_tag, "obj_category", None),
+            "unit": req.unit or getattr(req.location_tag, "unit", None),
+            "train": req.train or getattr(req.location_tag, "train", None),
             "note": req.note or getattr(req.location_tag, "note", ""),
             "mih_level": req.mih_level or getattr(req.location_tag, "mih_level", ""),
+
             "parent": req.parent or getattr(req.location_tag, "parent", None),
 
             "parent_search": (
@@ -422,90 +429,78 @@ class LocationTagRequestReviewView(View):
 
         form = FormClass(initial=initial)
 
-        return render(
-            request,
-            "equipment/location_tag_request_review.html",
-            {"req": req, "form": form}
-        )
+        return render(request, self.template_name, {"req": req, "form": form})
+
 
     def post(self, request, pk):
         req = get_object_or_404(LocationTagChangeRequest, pk=pk)
 
         action = request.POST.get("decision")
 
+        # Load proper form class
+        FormClass = (
+            LocationTagCreateRequestForm
+            if req.action == LocationTagChangeRequest.Action.CREATE
+            else LocationTagChangeRequestForm
+        )
+
+        form = FormClass(request.POST)
+
+        if not form.is_valid():
+            messages.error(request, "Invalid form data.")
+            return render(request, self.template_name, {"req": req, "form": form})
+
+        # Update the request object with reviewer edits
+        for field, value in form.cleaned_data.items():
+            setattr(req, field, value)
+
+        req.save()
+
+        # APPROVE
         if action == "approve":
-
-            obj_type_id = request.POST.get("obj_type")
-            obj_cat_id = request.POST.get("obj_category")
-            obj_crit_id = request.POST.get("obj_criticality")
-            obj_unit_id = request.POST.get("unit")
-            obj_parent_id = request.POST.get("parent")
-
-            obj_type_instance = ObjectType.objects.filter(pk=obj_type_id).first() if obj_type_id else None
-            obj_cat_instance = ObjectCategory.objects.filter(pk=obj_cat_id).first() if obj_cat_id else None
-            obj_crit_instance = ObjectCriticality.objects.filter(pk=obj_crit_id).first() if obj_crit_id else None
-            obj_unit_instance = Unit.objects.filter(pk=obj_unit_id).first() if obj_unit_id else None
-            obj_parent_instance = LocationTag.objects.filter(pk=obj_parent_id).first() if obj_parent_id else None
-
-
-            # CREATE
-            if req.action == LocationTagChangeRequest.Action.CREATE:
-                tag = LocationTag.objects.create(
-                    loc_tag=request.POST.get("loc_tag"),
-                    description=request.POST.get("description"),
-                    long_tag=request.POST.get("long_tag"),
-                    parent=obj_parent_instance,
-                    obj_type=obj_type_instance,
-                    obj_category=obj_cat_instance,
-                    unit=obj_unit_instance,
-                    obj_criticality=obj_crit_instance,
-                    train=request.POST.get("train") or None,
-                    note=request.POST.get("note"),
-                    mih_level=request.POST.get("mih_level"),
-                    created_by=req.requested_by,
-                )
-
-                req.location_tag = tag
-
-            # UPDATE
-            elif req.action == LocationTagChangeRequest.Action.UPDATE:
-
-                tag = req.location_tag
-
-                tag.parent = obj_parent_instance
-                tag.description = request.POST.get("description")
-                tag.long_tag = request.POST.get("long_tag")
-                tag.obj_type = obj_type_instance
-                tag.obj_category = obj_cat_instance
-                tag.obj_criticality = obj_crit_instance
-                tag.unit = obj_unit_instance
-                tag.train = request.POST.get("train") or None
-                tag.note = request.POST.get("note")
-                tag.mih_level = request.POST.get("mih_level")
-                tag.modified_by = req.requested_by
-
-
-                tag.save()
-
-            # REMOVE
-            elif req.action == LocationTagChangeRequest.Action.REMOVE:
-
-                tag = req.location_tag
-                tag.is_active = False
-                tag.save()
-
-            req.status = LocationTagChangeRequest.Status.APPROVED
-            req.save()
-
+            req.approve_request(reviewer=request.user)
             messages.success(request, "Request approved and applied.")
             return redirect("accounts:dashboard")
 
+        # REJECT
         elif action == "reject":
-
-            req.status = LocationTagChangeRequest.Status.REJECTED
-            req.save()
-
+            req.mark_rejected(reviewer=request.user)
             messages.warning(request, "Request rejected.")
             return redirect("accounts:dashboard")
+
+        return redirect("accounts:dashboard")
+
+
+class BulkLocationTagActionsView(LoginRequiredMixin,UserPassesTestMixin,View):
+
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
+
+    def post(self, request):
+
+        ids = request.POST.getlist("selected_requests")
+        action = request.POST.get("bulk_action")
+
+        if not ids:
+            messages.warning(request, "No requests selected.")
+            return redirect("accounts:dashboard")
+
+        qs = LocationTagChangeRequest.objects.filter(id__in=ids)
+        count = 0
+
+        for req in qs:
+            try:
+                if action == "approve":
+                    req.approve_request(reviewer=request.user)
+                elif action == "reject":
+                    req.mark_rejected(reviewer=request.user)
+                count += 1
+            except Exception as e:
+                messages.error(request, f"Error in request {req.id}: {e}")
+
+        if action == "approve":
+            messages.success(request, f"{count} request(s) approved.")
+        elif action == "reject":
+            messages.warning(request, f"{count} request(s) rejected.")
 
         return redirect("accounts:dashboard")

@@ -81,6 +81,10 @@
             padding: 20px; 
             flex-grow: 1; /* Content area will grow */
         }
+        .table-hover tbody tr:hover {
+            background-color: #f6f8fa;
+            cursor: pointer;
+        }
 
         /* Weekday Colors */
         .weekday-Monday { color:#b20000; }
@@ -111,6 +115,7 @@
 
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'select2/js/select2.min.js' %}"></script>
+    <script src="{% static 'htmx/htmx.min.js' %}"></script>
 
 </body>
 </html>

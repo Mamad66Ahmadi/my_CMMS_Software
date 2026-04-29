@@ -14,4 +14,5 @@ urlpatterns = [
     path("tag-creation/",views.LocationTagCreateRequestView.as_view(),name="location_tag_create_request",),
     path("tag-remove/<path:loc_tag>", views.LocationTagRemoveRequestView.as_view(), name="location_tag_request_remove",),
     path("request-confirmation/<int:pk>/", views.LocationTagRequestReviewView.as_view(), name="location_tag_request_review",),
+    path("requests/location-tags/bulk/",views.BulkLocationTagActionsView.as_view(),name="bulk_location_tag_actions",),
 ]
