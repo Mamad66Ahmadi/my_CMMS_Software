@@ -20,7 +20,11 @@
             <tbody>
                 {% for eq in equipments %}
                 <tr>
-                    <td>{{ eq.id }}</td>
+                    <td>
+                        <a href="{% url 'equipment:equipment_detail' eq.id %}" class="id-link">
+                            {{ eq.id }}
+                        </a>
+                    </td>
                     <td>{{ eq.serial_number }}</td>
                     <td>{{ eq.created_at|date:"Y-m-d H:i" }}</td>
                     <td>{{ eq.created_by }}</td>

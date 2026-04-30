@@ -24,7 +24,7 @@
 
                 <td>
                     <a class="id-link"
-                    href="">
+                    href="{% url 'equipment:equipment_detail' eq.id %}?{{ request.GET.urlencode }}">
                         {{ eq.id }}
                     </a>
                 </td>

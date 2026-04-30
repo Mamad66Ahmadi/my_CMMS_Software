@@ -1,0 +1,71 @@
+<!-- BASIC INFO TABLE (Always Visible) -->
+<h4 style="margin-top: 30px; color: rgb(3, 2, 67); border: 1px solid rgb(3, 2, 67); padding: 5px 6px; border-radius: 4px;">
+    Equipment Information
+</h4>
+
+<div class="table-scroll-container">
+    <table class="info-table">
+        <tbody>
+
+        <tr>
+            <th>Equipment ID</th>
+            <td>{{ equipment.id }}</td>
+
+            <th>Functional Location</th>
+            <td colspan="3">
+                <a href="#">
+                    {{ equipment.functional_location }}
+                </a>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Serial Number</th>
+            <td>{{ equipment.serial_number|default:"—" }}</td>
+
+            <th>Manufacturer</th>
+            <td colspan="3">{{ equipment.manufacturer|default:"—" }}</td>
+        </tr>
+
+        <tr>
+            <th>Model</th>
+            <td>{{ equipment.model|default:"—" }}</td>
+
+            <th>Created By</th>
+            <td colspan="3">{{ equipment.created_by }}</td>
+        </tr>
+
+        <tr>
+            <th>Created At</th>
+            <td>{{ equipment.created_at|date:"Y-m-d H:i" }}</td>
+
+            <th>Modified By</th>
+            <td colspan="3">{{ equipment.modified_by|default:"—" }}</td>
+        </tr>
+
+        <tr>
+            <th>Status</th>
+            <td>
+                {% if equipment.is_active %}
+                    <span style="color:#1f7a1f; font-weight:600;">✅ Active</span>
+                {% else %}
+                    <span style="color:#c0392b; font-weight:600;">❌ Inactive</span>
+                {% endif %}
+            </td>
+
+            <th>Modified At</th>
+            <td colspan="3">
+                {% if equipment.modified_at %}
+                    {{ equipment.modified_at|date:"Y-m-d H:i" }}
+                {% else %} — {% endif %}
+            </td>
+        </tr>
+
+        <tr>
+            <th>Note</th>
+            <td colspan="5">{{ equipment.note|default:"—" }}</td>
+        </tr>
+
+        </tbody>
+    </table>
+</div>

@@ -11,7 +11,9 @@
                 <tr>
                     <th>Equipment</th>
                     <th>Document</th>
-                    <th>Type</th>
+                    <th>File Name</th>
+                    <th>Description</th>
+
                 </tr>
             </thead>
             <tbody>
@@ -21,7 +23,9 @@
                     <td style="text-align:left;">
                         <a href="{{ doc.file.url }}" target="_blank">{{ doc.file.name }}</a>
                     </td>
-                    <td>{{ doc.document_type }}</td>
+                    <td>{{ doc.file_name }}</td>
+                    <td>{{ doc.description }}</td>
+
                 </tr>
                 {% empty %}
                 <tr>

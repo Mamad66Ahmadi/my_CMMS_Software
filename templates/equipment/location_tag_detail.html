@@ -25,15 +25,11 @@
         </a>
     {% else %}
         <a href="{% url 'equipment:location_tag_list' %}" class="back-button">
-            ← Back to Location Tag List
+            ← Location Tag List
         </a>
     {% endif %}
 
 
-    <h1>
-        Location Tag:
-        <span style="font-weight: normal;">{{ location_tag.loc_tag }}</span>
-    </h1>
 
 
     {% include "equipment/location_tag_detail/_basic_info.html" %}
@@ -42,7 +38,7 @@
 
     {% include "equipment/location_tag_detail/_installed_equipment.html" %}
 
-    {% include "equipment/location_tag_detail/_documents.html" %}
+    {% include "equipment/common/_documents_detail_page.html" %}
 
     {% include "equipment/location_tag_detail/_history.html" %}
 
@@ -50,32 +46,34 @@
 
 
 
+    <div style="margin-top: 40px; margin-bottom: 40px; text-align:right;">
+
+    {% if not location_tag.is_active %}
+        <button class="btn btn-secondary" disabled
+                style="padding:10px 20px; font-weight:600;">
+            ⚠️ This Tag is Inactive
+        </button>
+
+    {% elif has_pending_request %}
+        <button class="btn btn-secondary" disabled
+                style="padding:10px 20px; font-weight:600;">
+            ✏️ Modify This Tag (Pending Request Exists)
+        </button>
+    {% else %}
+        <a href="{% url 'equipment:location_tag_update_request' location_tag.loc_tag %}"
+        class="btn btn-primary"
+        style="padding:10px 20px; font-weight:600; background:#43334C; border:none;">
+            ✏️ Modify This Tag
+        </a>
+    {% endif %}
+
+    </div>
+
+
 </div>
 
 
 
-<div style="margin-top: 40px; margin-bottom: 40px; text-align:right;">
-
-{% if not location_tag.is_active %}
-    <button class="btn btn-secondary" disabled
-            style="padding:10px 20px; font-weight:600;">
-        ⚠️ This Tag is Inactive
-    </button>
-
-{% elif has_pending_request %}
-    <button class="btn btn-secondary" disabled
-            style="padding:10px 20px; font-weight:600;">
-        ✏️ Modify This Tag (Pending Request Exists)
-    </button>
-{% else %}
-    <a href="{% url 'equipment:location_tag_update_request' location_tag.loc_tag %}"
-       class="btn btn-primary"
-       style="padding:10px 20px; font-weight:600; background:#43334C; border:none;">
-        ✏️ Modify This Tag
-    </a>
-{% endif %}
-
-</div>
 
 
 

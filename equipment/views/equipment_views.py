@@ -1,9 +1,13 @@
-# ----------------------------------------- Equipment List ------------------------------
+# equipment/views/equipment_views.py
 from django.core.paginator import Paginator
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404
+
 
 from equipment.models.equipment_models import Equipment
+
+
 
 class EquipmentList(LoginRequiredMixin, TemplateView):
     template_name = "equipment/equipment_list.html"
@@ -115,5 +119,45 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
         params = self.request.GET.copy()
         params.pop("page", None)
         context["query_params"] = params.urlencode()
+
+        return context
+
+
+# ----------------------------------------- Equipment Detail ------------------------------
+
+
+class EquipmentDetail(LoginRequiredMixin, DetailView):
+    model = Equipment
+    template_name = "equipment/equipment_detail.html"
+    context_object_name = "equipment"
+
+    pk_url_kwarg = "pk"  # assuming URL pattern like path("<int:pk>/", ...)
+    login_url = "/accounts/login/"
+    redirect_field_name = "next"
+
+    queryset = Equipment.objects.select_related(
+        "functional_location",
+        "created_by",
+        "modified_by",
+    ).prefetch_related(
+        "documents",
+    )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        equipment = self.object
+
+        # Functional location of this equipment (for linking)
+        context["functional_location"] = equipment.functional_location
+
+        # Related documents
+        context["documents"] = equipment.documents.all()
+
+        # Example: any child objects or reverse lookups could be added here if needed
+        # context["maintenance_logs"] = equipment.maintenancelog_set.all()
+
+        # History or recent changes (if using simple_history or audit model)
+        if hasattr(equipment, "history"):
+            context["history"] = equipment.history.all()[:20]
 
         return context

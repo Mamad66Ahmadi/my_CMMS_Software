@@ -1,0 +1,62 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Equipment {{ equipment.id }}{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+
+{% if not equipment.is_active %}
+<div style="background:#ffeaea; padding:15px; border-left:5px solid #c0392b; margin-bottom:20px; font-weight:600;">
+    ⚠️ This Equipment is INACTIVE.
+</div>
+{% endif %}
+
+<div class="container">
+
+    <a href="{% url 'equipment:equipment_list' %}" class="back-button">← Equipment List</a>
+
+    {% include "equipment/equipment_detail/_basic_info.html" %}
+    {% include "equipment/common/_documents_detail_page.html" %}
+
+    <div style="margin-top: 40px; margin-bottom: 40px; text-align:right;">
+
+    {% if not equipment.is_active %}
+        <button class="btn btn-secondary" disabled
+                style="padding:10px 20px; font-weight:600;">
+            ⚠️ This Equipment is Inactive
+        </button>
+
+    {% else %}
+        <a href="#"
+        class="btn btn-primary"
+        style="padding:10px 20px; font-weight:600; background:#43334C; border:none;">
+            ✏️ Modify This Equipment
+        </a>
+    {% endif %}
+
+    </div>
+
+</div>
+
+<script>
+    function toggleSection(id) {
+        const content = document.getElementById(id);
+        const chevron = document.getElementById("chevron_" + id);
+
+        const isOpen = content.style.display === "block";
+
+        content.style.display = isOpen ? "none" : "block";
+        chevron.classList.toggle("open", !isOpen);
+    }
+</script>
+
+
+{% endblock %}
+
+
+
+
+

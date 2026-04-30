@@ -17,4 +17,7 @@ urlpatterns = [
     path("requests/location-tags/bulk/",location_tag_views.BulkLocationTagActionsView.as_view(),name="bulk_location_tag_actions",),
 
     path("equipment/", equipment_views.EquipmentList.as_view(), name="equipment_list"),
+    path("equipment/<int:pk>/", equipment_views.EquipmentDetail.as_view(), name="equipment_detail"),
+
+
 ]
