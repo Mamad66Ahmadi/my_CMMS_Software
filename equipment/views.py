@@ -3,7 +3,7 @@
 from django.views.generic import DetailView,TemplateView, CreateView, View
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -387,12 +387,12 @@ class LocationTagRemoveRequestView(LoginRequiredMixin, View):
 
 
 # ----------------------------------------------------------------------------------------------------
-class LocationTagRequestReviewView(View):
+class LocationTagRequestReviewView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     template_name = "equipment/location_tag_request_review.html"
-class LocationTagRequestReviewView(View):
 
-    template_name = "equipment/location_tag_request_review.html"
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
 
     def get(self, request, pk):
         req = get_object_or_404(
@@ -475,7 +475,7 @@ class BulkLocationTagActionsView(LoginRequiredMixin,UserPassesTestMixin,View):
 
     def test_func(self):
         return self.request.user.is_staff or self.request.user.is_superuser
-
+    
     def post(self, request):
 
         ids = request.POST.getlist("selected_requests")
@@ -504,3 +504,4 @@ class BulkLocationTagActionsView(LoginRequiredMixin,UserPassesTestMixin,View):
             messages.warning(request, f"{count} request(s) rejected.")
 
         return redirect("accounts:dashboard")
+

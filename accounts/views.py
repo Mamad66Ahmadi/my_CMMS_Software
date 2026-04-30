@@ -17,22 +17,27 @@ class UserDashboardView(LoginRequiredMixin, TemplateView):
 
         user = self.request.user
 
-        # ADMIN: see all requests
-        if user.is_staff or user.is_superuser:
-            context["location_tag_requests"] = LocationTagChangeRequest.objects.filter(status="pending")
-            context["equipment_requests"] = EquipmentChangeRequest.objects.filter(status="pending")
-            context["document_requests"] = EquipmentDocumentChangeRequest.objects.filter(status="pending")
 
-        else:
-            # NORMAL USER: only their own requests
-            context["location_tag_requests"] = LocationTagChangeRequest.objects.filter(
-                requested_by=user
-            )
-            context["equipment_requests"] = EquipmentChangeRequest.objects.filter(
-                requested_by=user
-            )
-            context["document_requests"] = EquipmentDocumentChangeRequest.objects.filter(
-                requested_by=user
+
+
+
+        if user.is_staff or user.is_superuser:
+            location_tag_requests = LocationTagChangeRequest.objects.filter(status="pending").order_by("-requested_at")[:100]
+            equipment_requests = EquipmentChangeRequest.objects.filter(status="pending").order_by("-requested_at")[:100]
+            document_requests = EquipmentDocumentChangeRequest.objects.filter(status="pending").order_by("-requested_at")[:100]
+
+            context["location_tag_requests"] = location_tag_requests
+            context["equipment_requests"] = equipment_requests
+            context["document_requests"] = document_requests
+
+            # ✅ TOTAL COUNT
+            context["total_asset_requests"] = (
+                LocationTagChangeRequest.objects.filter(status="pending").count()
+                + EquipmentChangeRequest.objects.filter(status="pending").count()
+                + EquipmentDocumentChangeRequest.objects.filter(status="pending").count()
             )
 
         return context
+
+
+
