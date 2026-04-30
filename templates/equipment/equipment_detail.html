@@ -29,6 +29,11 @@
             ⚠️ This Equipment is Inactive
         </button>
 
+    <!-- {% elif has_pending_request %}
+        <button class="btn btn-secondary" disabled
+                style="padding:10px 20px; font-weight:600;">
+            ✏️ Modify This Tag (Pending Request Exists)
+        </button> -->
     {% else %}
         <a href="#"
         class="btn btn-primary"
@@ -36,9 +41,7 @@
             ✏️ Modify This Equipment
         </a>
     {% endif %}
-
     </div>
-
 </div>
 
 <script>
