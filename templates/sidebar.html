@@ -1,159 +1,235 @@
 {# sidebar.html #}
-<nav class="sidebar">
-    <h5 class="mb-3">Menu</h5>
-    <hr class="mt-0">
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h6>Menu</h6>
+
+        <!-- Collapse / Expand icon (looks like normal text now) -->
+        <span id="sidebarToggle" class="sidebar-toggle-icon" title="Collapse / Expand sidebar">
+            «
+        </span>
+    </div>
+
+    <hr>
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
-        {# --- Dashboard --- #}
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="dashboardHeading">
-
-                <button class="nav-link dropdown-toggle collapsed d-flex justify-content-between align-items-center" 
-                        type="button" data-bs-toggle="collapse" 
-                        data-bs-target="#dashboardCollapse" aria-expanded="false" 
-                        aria-controls="dashboardCollapse">
-
-                    <span>Dashboard</span>
-
+        <!-- Dashboard -->
+            <h6 class="accordion-header" id="dashboardHeading">
+                <button class="nav-link dropdown-toggle collapsed d-flex justify-content-between align-items-center"
+                        type="button" data-bs-toggle="collapse"
+                        data-bs-target="#dashboardCollapse">
+                    Dashboard
                     {% if pending_requests_count > 0 and request.user.is_staff %}
-                        <span class="badge bg-danger ms-2">
-                            {{ pending_requests_count }}
-                        </span>
+                        <span class="badge bg-danger ms-2">{{ pending_requests_count }}</span>
                     {% endif %}
-
                 </button>
-
-            </h2>
-
-            <div id="dashboardCollapse" class="accordion-collapse collapse" aria-labelledby="dashboardHeading" data-bs-parent="#sidebarAccordion">
+            </h6>
+            <div id="dashboardCollapse"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#sidebarAccordion">
                 <div class="accordion-body p-0">
                     <a href="{% url 'accounts:dashboard' %}" class="dropdown-item">Overview</a>
                 </div>
             </div>
-        </div>
 
-
-        {# --- Location Tag --- #}
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="equipmentHeading">
-                <button class="nav-link dropdown-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#equipmentCollapse" aria-expanded="false" aria-controls="equipmentCollapse">
-                    Location Tag 
-                </button>
-            </h2>
-            <div id="equipmentCollapse" class="accordion-collapse collapse" aria-labelledby="equipmentHeading" data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <a href="{% url 'equipment:location_tag_list' %}" class="dropdown-item">Search for</a>
-                    <a href="{% url 'equipment:location_tag_create_request' %}" class="dropdown-item">Add New</a>
-                </div>
-            </div>
-        </div>
-
-        {# --- Work Orders --- #}
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="workordersHeading">
-                <button class="nav-link dropdown-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#workordersCollapse" aria-expanded="false" aria-controls="workordersCollapse">
+        <!-- Work Orders -->
+            <h6 class="accordion-header">
+                <button class="nav-link dropdown-toggle collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#workordersCollapse">
                     Work Orders
                 </button>
-            </h2>
-            <div id="workordersCollapse" class="accordion-collapse collapse" aria-labelledby="workordersHeading" data-bs-parent="#sidebarAccordion">
+            </h6>
+            <div id="workordersCollapse"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#sidebarAccordion">
                 <div class="accordion-body p-0">
                     <a href="" class="dropdown-item">All Orders</a>
                     <a href="" class="dropdown-item">Create Order</a>
                 </div>
             </div>
-        </div>
 
-        {# --- Daily Reports --- #}
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="reportsHeading">
-                <button class="nav-link dropdown-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#reportsCollapse" aria-expanded="false" aria-controls="reportsCollapse">
+        <!-- Daily Reports -->
+            <h6 class="accordion-header">
+                <button class="nav-link dropdown-toggle collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#reportsCollapse">
                     Daily Reports
                 </button>
-            </h2>
-            <div id="reportsCollapse" class="accordion-collapse collapse" aria-labelledby="reportsHeading" data-bs-parent="#sidebarAccordion">
+            </h6>
+            <div id="reportsCollapse"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#sidebarAccordion">
                 <div class="accordion-body p-0">
                     <a href="" class="dropdown-item">View Logs</a>
                 </div>
             </div>
-        </div>
 
-    </div> 
+        <!-- ASSETS SECTION -->
+        <hr class="section-divider">
+        <h6 class="section-title">Assets</h6>
+
+        <!-- ASSETS: Location Tag -->
+            <h6 class="accordion-header">
+                <button class="nav-link dropdown-toggle collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#locationTagCollapse">
+                    Location Tag
+                </button>
+            </h6>
+            <div id="locationTagCollapse"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <a href="{% url 'equipment:location_tag_list' %}" class="dropdown-item">Search for</a>
+                    <a href="{% url 'equipment:location_tag_create_request' %}" class="dropdown-item">Add New</a>
+                </div>
+            </div>
+
+        <!-- ASSETS: Equipment -->
+            <h6 class="accordion-header">
+                <button class="nav-link dropdown-toggle collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#equipmentCollapse">
+                    Equipment
+                </button>
+            </h6>
+            <div id="equipmentCollapse"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#sidebarAccordion">
+                <div class="accordion-body p-0">
+                    <a href="{% url 'equipment:equipment_list' %}" class="dropdown-item">Search for</a>
+                    <a href="#" class="dropdown-item">Add New</a>
+                </div>
+            </div>
+
+
+
+        <!-- ASSETS: Documents -->
+            <h6 class="accordion-header">
+                <button class="nav-link"
+                        onclick="window.location.href='#'">
+                    Documents
+                </button>
+            </h6>
+    </div>
 </nav>
 
 <style>
-    /* 1. Global font size reduction for sidebar */
-    .sidebar {
-        width: 175px;
-        background: #343a40;
-        color: white;
-        min-height: 100vh;
-        padding: 15px;
-        flex-shrink: 0;
-        font-size: 0.4rem; /* Reduced font size */
-    }
+/* --- BASIC SIDEBAR --- */
+.sidebar {
+    width: 220px;
+    background: #2c3136;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 15px;
+    transition: width 0.25s ease;
+    overflow: hidden;
+    font-size: 0.9rem;
+    border-right: 1px solid #1f2327;
+}
 
-    /* Adjust headers for smaller font */
-    .sidebar h5 {font-size: 1rem; }
+/* Collapsed version */
+.sidebar.collapsed {
+    width: 60px;
+}
 
-    .sidebar hr {
-        margin-top: 2rem; /* Adjusted from 0 */
-        margin-bottom: 2.5rem; /* Increased to push content down */
-        width: 80%; /* Optional: makes hr a bit shorter than full width */
-        border-color: #bdb8b8; /* Optional: change hr color */
-    }
+/* Hide text when collapsed */
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed h6,
+.sidebar.collapsed .section-title,
+.sidebar.collapsed .dropdown-item {
+    display: none;
+}
 
-    /* Button and Link styling */
-    .sidebar .nav-link {
-        color: #ccc;
-        text-decoration: none;
-        display: block;
-        padding: 5px 10px;
-        margin-bottom: 2px;
-        border-radius: 4px;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-        font-size: 1rem; /* Keep font size consistent */
-        line-height: 1.2;
-    }
+/* Sidebar Header */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-    .sidebar .nav-link:hover {
-        color: white;
-        background-color: #495057;
-    }
+/* Compact the header in collapsed mode */
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+}
 
-    /* 2. Remove the plus/minus icons completely */
-    .sidebar .dropdown-toggle::after {
-        display: none !important; /* Removes the icon entirely */
-    }
+/* --- Small, regular icon font instead of ugly button --- */
+.sidebar-toggle-icon {
+    font-size: 0.8rem;
+    color: #bbb;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s, transform 0.2s;
+}
+.sidebar-toggle-icon:hover {
+    color: #fff;
+    transform: scale(1.15);
+}
+.sidebar.collapsed .sidebar-toggle-icon {
+    display: inline;
+}
 
-    /* Accordion items */
-    .sidebar .accordion-item {
-        background-color: transparent;
-        border: none;
-    }
+/* Divider for assets section */
+.section-divider {
+    border-color: #666;
+    margin-top: 20px;
+    margin-bottom: 8px;
+}
 
-    .sidebar .accordion-collapse {
-        background-color: #444;
-        border-radius: 4px;
-        margin-bottom: 5px;
-    }
+.section-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-left: 3px;
+}
 
-    .sidebar .accordion-body {
-        padding: 5px 10px;
-    }
+/* Accordion buttons */
+.sidebar .nav-link {
+    color: #ddd;
+    padding: 8px;
+    border-radius: 4px;
+    display: block;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+}
 
-    .sidebar .dropdown-item {
-        color: #ddd;
-        padding: 6px 10px;
-        text-decoration: none;
-        display: block;
-        font-size: 0.85rem; /* Even smaller for sub-items */
-    }
+.sidebar .nav-link:hover {
+    background-color: #41464b;
+    color: #fff;
+}
 
-    .sidebar .dropdown-item:hover {
-        color: white;
-        background-color: #555;
-    }
+/* Sub-links */
+.sidebar .dropdown-item {
+    padding: 6px 14px;
+    color: #ccc;
+}
+
+.sidebar .dropdown-item:hover {
+    background-color: #50565c;
+    color: #fff;
+}
 </style>
+
+<script>
+const sidebar = document.getElementById("sidebar");
+const toggleBtn = document.getElementById("sidebarToggle");
+
+// Load saved state
+if (localStorage.getItem("sidebarCollapsed") === "true") {
+    sidebar.classList.add("collapsed");
+    toggleBtn.textContent = "»";
+}
+
+toggleBtn.addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+    const collapsed = sidebar.classList.contains("collapsed");
+    toggleBtn.textContent = collapsed ? "»" : "«";
+    localStorage.setItem("sidebarCollapsed", collapsed);
+});
+</script>
