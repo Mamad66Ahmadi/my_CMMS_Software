@@ -10,7 +10,7 @@ from django.contrib import messages
 
 
 
-from .models import LocationTag, EquipmentDocument, Equipment, ObjectType, ObjectCriticality, ObjectCategory, Unit
+from ..models import LocationTag, EquipmentDocument, Equipment, ObjectType, ObjectCriticality, ObjectCategory, Unit
 
 from equipment.models import LocationTagChangeRequest
 
@@ -117,6 +117,7 @@ class LocationTagList(LoginRequiredMixin, TemplateView):
 
         context["location_tags"] = location_tags
         context["paginator"] = paginator
+        context["page_obj"] = location_tags
         context["sort_by"] = sort_by
         context["sort_order"] = sort_order
         context["filters"] = filters
@@ -277,6 +278,11 @@ class LocationTagUpdateRequestView(LoginRequiredMixin, CreateView):
             )
             return self.form_invalid(form)
 
+        loc_tag = form.cleaned_data["loc_tag"]
+        if LocationTag.objects.filter(loc_tag=loc_tag).exists():
+            form.add_error("loc_tag", "A Location Tag with this code already exists.")
+            return self.form_invalid(form)
+
         # 2. No pending request → create a new one (but don't save yet)
         req = form.save(commit=False)
         req.action = LocationTagChangeRequest.Action.UPDATE
@@ -316,8 +322,6 @@ class LocationTagCreateRequestView(LoginRequiredMixin, CreateView):
     form_class = LocationTagCreateRequestForm
     template_name = "equipment/location_tag_request_create_form.html"
 
-    login_url = "/accounts/login/"
-    redirect_field_name = "next"
 
     def form_valid(self, form):
         # Check if a tag with the same loc_tag already exists
@@ -345,7 +349,6 @@ class LocationTagCreateRequestView(LoginRequiredMixin, CreateView):
 #----------------------------------------------------------------------------------------------------
 
 class LocationTagRemoveRequestView(LoginRequiredMixin, View):
-    login_url = "/accounts/login/"
 
     def get(self, request, loc_tag):
         tag = get_object_or_404(LocationTag, loc_tag=loc_tag)

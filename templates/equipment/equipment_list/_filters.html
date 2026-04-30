@@ -1,0 +1,81 @@
+<form method="get" action="">
+    <div class="filter-bar">
+
+        <div class="filter-group">
+            <label class="filter-label">Functional Location</label>
+            <input type="text" name="functional_location"
+                   class="filter-input"
+                   placeholder="Search Location..."
+                   value="{{ filters.functional_location }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Serial Number</label>
+            <input type="text" name="serial_number"
+                   class="filter-input"
+                   placeholder="Search Serial..."
+                   value="{{ filters.serial_number }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Manufacturer</label>
+            <input type="text" name="manufacturer"
+                   class="filter-input"
+                   placeholder="Search Manufacturer..."
+                   value="{{ filters.manufacturer }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Model</label>
+            <input type="text" name="model"
+                   class="filter-input"
+                   placeholder="Search Model..."
+                   value="{{ filters.model }}">
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Note</label>
+            <input type="text" name="note"
+                   class="filter-input"
+                   placeholder="Search Note..."
+                   value="{{ filters.note }}">
+        </div>
+
+        <!-- Active Toggle -->
+        <div class="filter-group toggle-center">
+            <label class="filter-label">Active Only</label>
+
+            <input type="hidden" name="is_active" value="false">
+
+            <label class="toggle-switch">
+                <input type="checkbox"
+                       name="is_active"
+                       value="true"
+                       {% if filters.is_active != "false" %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">Rows Per Page (max = 200)</label>
+            <input type="number"
+                   name="per_page"
+                   class="filter-input"
+                   min="10"
+                   max="200"
+                   value="{{ per_page }}">
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn-search">Apply</button>
+
+            {% if filters.functional_location or filters.serial_number or filters.manufacturer or filters.model or filters.note %}
+                <a href="?sort={{ sort_by }}&order={{ sort_order }}"
+                   class="btn-clear">
+                    Clear All
+                </a>
+            {% endif %}
+        </div>
+
+    </div>
+</form>

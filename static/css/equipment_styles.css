@@ -412,3 +412,29 @@ th:not(.sorted) .sort-arrow { display: none; }
     padding: 10px;
     word-break: break-word;
 }
+/* Only affect links inside the EQUIPMENT table */
+.equipment-table .id-link {
+    color: #00008B;   /* dark blue */
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.equipment-table .id-link:hover {
+    color: #000066;
+    text-decoration: underline;
+}
+.equipment-table .tag-link
+ {
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    color: #000;
+}
+.equipment-table .tag-link:hover
+ {
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    color: #000;
+    text-decoration: underline;
+}

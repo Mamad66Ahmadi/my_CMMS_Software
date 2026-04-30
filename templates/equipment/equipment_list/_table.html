@@ -1,0 +1,87 @@
+<div class="table-scroll-container equipment-table">
+
+    <table>
+        <thead>
+            <tr>
+                {% include "equipment/common/_table_header.html" with column="id" label="ID" %}
+                {% include "equipment/common/_table_header.html" with column="functional_location" label="Functional Location" %}
+                {% include "equipment/common/_table_header.html" with column="serial_number" label="Serial Number" %}
+                {% include "equipment/common/_table_header.html" with column="manufacturer" label="Manufacturer" %}
+                {% include "equipment/common/_table_header.html" with column="model" label="Model" %}
+                {% include "equipment/common/_table_header.html" with column="note" label="Note" %}
+                {% include "equipment/common/_table_header.html" with column="is_active" label="Active" %}
+                {% include "equipment/common/_table_header.html" with column="created_at" label="Created At" %}
+                {% include "equipment/common/_table_header.html" with column="created_by" label="Created By" %}
+                {% include "equipment/common/_table_header.html" with column="modified_at" label="Modified At" %}
+                {% include "equipment/common/_table_header.html" with column="modified_by" label="Modified By" %}
+
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for eq in equipments %}
+            <tr>
+
+                <td>
+                    <a class="id-link"
+                    href="">
+                        {{ eq.id }}
+                    </a>
+                </td>
+                <td>
+                    {% if eq.functional_location %}
+                        <a class="tag-link"
+                        href="{% url 'equipment:location_tag_detail' eq.functional_location %}?{{ request.GET.urlencode }}">
+                            {{ eq.functional_location }}
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td>
+                    {{ eq.serial_number }}
+                </td>
+
+                <td>
+                    {{ eq.manufacturer }}
+                </td>
+
+                <td>
+                    {{ eq.model }}
+                </td>
+
+                <td style="text-align:left;">
+                    {{ eq.note|default:"" }}
+                </td>
+
+                <td>
+                    {% if eq.is_active %}
+                        <span style="color:green;">Active</span>
+                    {% else %}
+                        <span style="color:red;">Inactive</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    {{ eq.created_at|date:"Y-m-d H:i" }}
+                </td>
+
+                <td>
+                    {{ eq.created_by }}
+                </td>
+
+                <td>
+                    {{ eq.modified_at|date:"Y-m-d H:i" }}
+                </td>
+
+                <td>
+                    {{ eq.modified_by }}
+                </td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>

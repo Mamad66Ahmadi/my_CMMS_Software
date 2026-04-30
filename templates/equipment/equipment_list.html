@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+
+<div class="container">
+
+    <h5>Filter Pane</h5>
+
+    {% include "equipment/equipment_list/_filters.html" %}
+
+    <h1>
+        Equipment List
+        <span style="font-weight: normal;">
+            ( {{ total_equipments }} Objects )
+        </span>
+    </h1>
+
+    {% if equipments %}
+        {% include "equipment/equipment_list/_table.html" %}
+        {% include "equipment/common/_pagination.html" %}
+    {% else %}
+        <p>No equipment found.</p>
+    {% endif %}
+
+</div>
+
+<script>
+window.addEventListener("beforeunload", function () {
+    localStorage.setItem("scrollPosEquipments", window.scrollY);
+});
+
+window.addEventListener("load", function () {
+    const pos = localStorage.getItem("scrollPosEquipments");
+    if (pos !== null) {
+        window.scrollTo(0, parseInt(pos));
+    }
+});
+</script>
+
+{% endblock %}

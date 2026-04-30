@@ -4,22 +4,22 @@
         <thead>
             <tr>
 
-                {% include "equipment/location_tag_list/_table_header.html" with column="loc_tag" label="Location Tag" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="parent" label="Parent" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="unit" label="Unit" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="train" label="Train" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="obj_criticality" label="Criticality" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="obj_type" label="Type" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="obj_category" label="Object Category" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="long_tag" label="Long Tag" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="description" label="Description" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="is_active" label="Active" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="note" label="Note" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="mih_level" label="MIH Level" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="created_at" label="Created At" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="created_by" label="Created By" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="modified_at" label="Modified At" %}
-                {% include "equipment/location_tag_list/_table_header.html" with column="modified_by" label="Modified By" %}
+                {% include "equipment/common/_table_header.html" with column="loc_tag" label="Location Tag" %}
+                {% include "equipment/common/_table_header.html" with column="parent" label="Parent" %}
+                {% include "equipment/common/_table_header.html" with column="unit" label="Unit" %}
+                {% include "equipment/common/_table_header.html" with column="train" label="Train" %}
+                {% include "equipment/common/_table_header.html" with column="obj_criticality" label="Criticality" %}
+                {% include "equipment/common/_table_header.html" with column="obj_type" label="Type" %}
+                {% include "equipment/common/_table_header.html" with column="obj_category" label="Object Category" %}
+                {% include "equipment/common/_table_header.html" with column="long_tag" label="Long Tag" %}
+                {% include "equipment/common/_table_header.html" with column="description" label="Description" %}
+                {% include "equipment/common/_table_header.html" with column="is_active" label="Active" %}
+                {% include "equipment/common/_table_header.html" with column="note" label="Note" %}
+                {% include "equipment/common/_table_header.html" with column="mih_level" label="MIH Level" %}
+                {% include "equipment/common/_table_header.html" with column="created_at" label="Created At" %}
+                {% include "equipment/common/_table_header.html" with column="created_by" label="Created By" %}
+                {% include "equipment/common/_table_header.html" with column="modified_at" label="Modified At" %}
+                {% include "equipment/common/_table_header.html" with column="modified_by" label="Modified By" %}
 
 
 
@@ -30,7 +30,16 @@
             {% for tag in location_tags %}
             <tr>
                 <td><a class="tag-link" href="{% url 'equipment:location_tag_detail' tag.loc_tag %}?{{ request.GET.urlencode }}"> {{ tag.loc_tag }} </a></td>
-                <td><a class="parent-link" href="{% url 'equipment:location_tag_detail' tag.parent %}?{{ request.GET.urlencode }}"> {{ tag.parent }} </a></td>
+                <td>
+                    {% if tag.parent %}
+                        <a class="parent-link"
+                        href="{% url 'equipment:location_tag_detail' tag.parent %}?{{ request.GET.urlencode }}">
+                            {{ tag.parent }}
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
                 <td>{{ tag.unit }}</td>
                 <td>{{ tag.train }}</td>
                 <td>{{ tag.obj_criticality }}</td>

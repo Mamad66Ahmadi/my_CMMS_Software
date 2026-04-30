@@ -19,7 +19,7 @@
 
     {% if location_tags %}
         {% include "equipment/location_tag_list/_table.html" %}
-        {% include "equipment/location_tag_list/_pagination.html" %}
+        {% include "equipment/common/_pagination.html" %}
     {% else %}
         <p>No location tags found.</p>
     {% endif %}
