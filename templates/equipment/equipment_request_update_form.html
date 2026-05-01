@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %} Equipment Modification {% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+
+{% if form.non_field_errors %}
+<div style="color:red; margin-bottom:15px;">
+    {{ form.non_field_errors }}
+</div>
+{% endif %}
+
+<div class="container" style="max-width:750px; margin-top:30px;">
+
+    <div class="section-header">
+        Request Equipment Modification
+    </div>
+
+    <div class="form-card">
+
+        <p>You are submitting a modification request for the following equipment:</p>
+
+        <h4 class="tag-highlight">
+            {{ view.equipment.tag }} &nbsp; / &nbsp; {{ view.equipment.serial_number }}
+        </h4>
+
+        <hr style="margin:20px 0;">
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Functional Location with Autocomplete -->
+            <p style="position: relative;">
+                {{ form.functional_location_search.label_tag }}
+                {{ form.functional_location_search }}
+                <div id="location-results" class="autocomplete-results"></div>
+            </p>
+
+            <!-- Hidden ID field (This is the one that was invisible) -->
+            {{ form.functional_location }}
+
+
+            <p>
+                {{ form.serial_number.label_tag }}
+                {{ form.serial_number }}
+            </p>
+
+            <p>
+                {{ form.manufacturer.label_tag }}
+                {{ form.manufacturer }}
+            </p>
+
+            <p>
+                {{ form.model.label_tag }}
+                {{ form.model }}
+            </p>
+
+            <p>
+                {{ form.note.label_tag }}
+                {{ form.note }}
+            </p>
+
+            <div style="margin-top:25px;">
+                <button type="submit" class="btn-primary-custom">
+                    Submit Change Request
+                </button>
+
+                <a href="{% url 'equipment:equipment_detail' view.equipment.pk %}"
+                   class="btn-secondary-custom">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+        <!-- Per‑field errors -->
+        <p>
+            {{ form.functional_location.errors }}
+            {{ form.serial_number.errors }}
+            {{ form.manufacturer.errors }}
+            {{ form.model.errors }}
+            {{ form.note.errors }}
+        </p>
+
+        {% if view.equipment.is_active %}
+        <div style="margin-top:50px;">
+            <a href=""
+               class="btn btn-danger"
+               onclick="return confirmRemoveEquipment();">
+                Request to Remove this Equipment
+            </a>
+        </div>
+        {% endif %}
+
+    </div> <!-- card -->
+</div> <!-- container -->
+
+
+<script>
+/* ---------------------------------------------------------------------
+   Store initial values for change‑detection
+------------------------------------------------------------------------ */
+/* ---------------------------------------------------------------------
+   Store initial values for change‑detection
+------------------------------------------------------------------------ */
+const initial = {};
+document.querySelectorAll("form input, form select, form textarea").forEach(el => {
+    initial[el.id] = el.value;
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // --- 1) AUTOCOMPLETE LOGIC ---
+    const input = document.getElementById("location-search"); // Matches form.py id
+    const hidden = document.getElementById("id_functional_location"); // Django default ID
+    const resultsBox = document.getElementById("location-results");
+
+    if (input) {
+        const url = input.dataset.autocompleteUrl;
+
+        input.addEventListener("keyup", function () {
+            const query = input.value;
+            hidden.value = ""; // Clear ID if user starts typing
+
+            if (query.length < 2) {
+                resultsBox.style.display = "none";
+                return;
+            }
+
+            fetch(url + "?q=" + encodeURIComponent(query))
+                .then(response => response.json())
+                .then(data => {
+                    resultsBox.innerHTML = "";
+                    data.results.forEach(item => {
+                        const option = document.createElement("div");
+                        option.classList.add("autocomplete-item");
+                        option.textContent = item.text;
+
+                        option.onclick = function () {
+                            input.value = item.text;
+                            hidden.value = item.id;
+                            resultsBox.style.display = "none";
+                        };
+                        resultsBox.appendChild(option);
+                    });
+                    resultsBox.style.display = "block";
+                });
+        });
+
+        // Hide results when clicking outside
+        document.addEventListener("click", function(e){
+            if (!resultsBox.contains(e.target) && e.target !== input){
+                resultsBox.style.display = "none";
+            }
+        });
+    }
+
+    // --- 2) FORM SUBMISSION & CHANGE DETECTION ---
+    const form = document.querySelector("form");
+    form.addEventListener("submit", function (e) {
+        
+        // Validate autocomplete selection
+        if (input.value.trim() !== "" && hidden.value === "") {
+            e.preventDefault();
+            alert("Please select a valid functional location from the list.");
+            input.focus();
+            return;
+        }
+
+        const changes = [];
+        document.querySelectorAll("form input, form select, form textarea").forEach(el => {
+            // Skip the search box and CSRF token for change detection
+            if (el.id === "location-search" || el.name === "csrfmiddlewaretoken") return;
+
+            const oldVal = initial[el.id];
+            const newVal = el.value;
+
+            if (oldVal != newVal) {
+                const label = document.querySelector(`label[for=${el.id}]`);
+                const labelText = label ? label.textContent : el.name;
+                changes.push(`• ${labelText.trim()}:\n    from: "${oldVal}"\n    to:   "${newVal}"`);
+            }
+        });
+
+        if (changes.length === 0) {
+            e.preventDefault();
+            alert("No fields have been changed. Nothing to submit.");
+            return;
+        }
+
+        const message = "You are about to submit a CHANGE REQUEST.\n\n" +
+                        "Changes:\n" + changes.join("\n") + 
+                        "\n\nConfirm submission?";
+
+        if (!confirm(message)) {
+            e.preventDefault();
+        }
+    });
+});
+
+function confirmRemoveEquipment() {
+    return confirm("Are you sure you want to request removal of this equipment?");
+}
+
+</script>
+
+{% endblock %}

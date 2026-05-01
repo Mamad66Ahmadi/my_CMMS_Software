@@ -1,11 +1,14 @@
 # equipment/views/equipment_views.py
 from django.core.paginator import Paginator
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import TemplateView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 
 
 from equipment.models.equipment_models import Equipment
+from equipment.models.request_equipment_models import EquipmentChangeRequest
+
+from equipment.forms import equioment_change_form
 
 
 
@@ -153,11 +156,85 @@ class EquipmentDetail(LoginRequiredMixin, DetailView):
         # Related documents
         context["documents"] = equipment.documents.all()
 
-        # Example: any child objects or reverse lookups could be added here if needed
-        # context["maintenance_logs"] = equipment.maintenancelog_set.all()
+        context["change_requests"] = (
+            EquipmentChangeRequest.objects
+            .filter(equipment=equipment)
+            .order_by("-requested_at")[:5]
+        )
 
-        # History or recent changes (if using simple_history or audit model)
-        if hasattr(equipment, "history"):
-            context["history"] = equipment.history.all()[:20]
+        context["has_pending_request"] = EquipmentChangeRequest.objects.filter(
+            equipment=equipment,
+            status=EquipmentChangeRequest.Status.PENDING,
+        ).exists()
 
         return context
+
+
+
+#-------------------------------- Modification ------------------------------
+class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
+    model = EquipmentChangeRequest
+    form_class = equioment_change_form.EquipmentChangeRequestForm
+    template_name = "equipment/equipment_request_update_form.html"
+
+    login_url = "/accounts/login/"
+    redirect_field_name = "next"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.equipment = get_object_or_404(Equipment, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_initial(self):
+        eq = self.equipment
+        return {
+            "functional_location": eq.functional_location,
+            "serial_number": eq.serial_number,
+            "manufacturer": eq.manufacturer,
+            "model": eq.model,
+            "note": eq.note,
+        }
+
+    def form_valid(self, form):
+
+        # 1. Check for existing pending request
+        existing = EquipmentChangeRequest.objects.filter(
+            equipment=self.equipment,
+            status=EquipmentChangeRequest.Status.PENDING
+        ).first()
+
+        if existing:
+            form.add_error(None, "There is already a pending change request for this equipment.")
+            return self.form_invalid(form)
+
+        req = form.save(commit=False)
+        req.action = EquipmentChangeRequest.Action.UPDATE
+        req.equipment = self.equipment
+        req.requested_by = self.request.user
+
+        # 2. Detect field changes
+        eq = self.equipment
+        changes = {}
+
+        change_fields = [
+            "functional_location",
+            "serial_number",
+            "manufacturer",
+            "model",
+            "note",
+        ]
+
+        for field in change_fields:
+            old = getattr(eq, field, None)
+            new = form.cleaned_data.get(field)
+
+            if old != new:
+                changes[field] = {
+                    "old": str(old),
+                    "new": str(new),
+                }
+
+        req.changes = changes
+        req.save()
+
+        return redirect("equipment:equipment_detail", pk=self.equipment.pk)
+

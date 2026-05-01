@@ -20,6 +20,7 @@
 
     {% include "equipment/equipment_detail/_basic_info.html" %}
     {% include "equipment/common/_documents_detail_page.html" %}
+    {% include "equipment/common/_change_request_history.html" %}
 
     <div style="margin-top: 40px; margin-bottom: 40px; text-align:right;">
 
@@ -35,7 +36,7 @@
             ✏️ Modify This Tag (Pending Request Exists)
         </button> -->
     {% else %}
-        <a href="#"
+        <a href="{% url 'equipment:equipment_update_request' equipment.id %}"
         class="btn btn-primary"
         style="padding:10px 20px; font-weight:600; background:#43334C; border:none;">
             ✏️ Modify This Equipment

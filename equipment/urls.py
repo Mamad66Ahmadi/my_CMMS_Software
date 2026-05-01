@@ -18,6 +18,7 @@ urlpatterns = [
 
     path("equipment/", equipment_views.EquipmentList.as_view(), name="equipment_list"),
     path("equipment/<int:pk>/", equipment_views.EquipmentDetail.as_view(), name="equipment_detail"),
+    path("equipment-modification/<int:pk>", equipment_views.EquipmentUpdateRequestView.as_view(), name="equipment_update_request"),
 
 
 ]

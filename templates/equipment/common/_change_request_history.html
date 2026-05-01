@@ -1,7 +1,41 @@
-<!-- CHANGE REQUEST HISTORY (LATEST 5) -->
-<div style="margin-top:40px;">
+<!-- CHANGE REQUEST HISTORY (LATEST) -->
+<div style="
+    margin-top:40px;
+    border: 1px solid #d8dbe2;
+    border-radius: 12px;
+    padding: 24px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+">
 
-    <h2>Recent Change Requests</h2>
+    <div style="
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #ececec;
+    ">
+        <span style="
+            display: inline-flex;
+            align-items: center;
+            background: #f3f1fa;
+            color: #6c3483;
+            font-weight: 600;
+            font-size: 18px;
+            padding: 10px 22px 10px 18px;
+            border-radius: 24px 8px 24px 8px;
+            box-shadow: 0 2px 6px #dcdcdc50;
+            letter-spacing: 0.5px;
+        ">
+            <svg style="margin-right:10px;" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <rect x="4" y="5" width="16" height="14" rx="3" fill="#6c3483" fill-opacity="0.13"/>
+                <rect x="7" y="8" width="10" height="8" rx="2" fill="#6c3483" fill-opacity="0.28"/>
+                <rect x="9" y="10" width="6" height="4" rx="1.2" fill="#6c3483" fill-opacity="0.5"/>
+            </svg>
+            Recent Change Requests
+        </span>
+    </div>
 
     {% if change_requests %}
         <div class="table-scroll-container">
@@ -19,25 +53,22 @@
                     <tr>
                         <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
                         <td>{{ req.requested_by }}</td>
+
                         <td>
                             {% if req.status == req.Status.PENDING %}
                                 <span style="color:#d9534f;">{{ req.get_status_display }}</span>
-
                             {% elif req.status == req.Status.APPROVED %}
                                 <span style="color:#5cb85c;">{{ req.get_status_display }}</span>
-
                             {% elif req.status == req.Status.APPROVED_WITH_CHANGE %}
                                 <span style="color:#0275d8;">{{ req.get_status_display }}</span>
-
                             {% else %}
                                 <span style="color:#777;">{{ req.get_status_display }}</span>
                             {% endif %}
                         </td>
 
-
                         <td style="text-align:left;">
                             {% if req.action == req.Action.REMOVE %}
-                                <strong>Action:</strong> Remove this tag.
+                                <strong>Action:</strong> Remove this item.
                             {% else %}
                                 <strong>Fields:</strong><br>
                                 {% for field, diff in req.changes.items %}
@@ -52,17 +83,21 @@
                 </tbody>
             </table>
         </div>
-
     {% else %}
-        <p>No change requests found for this tag.</p>
+        <p style="margin: 0; color: #666;">No change requests found.</p>
     {% endif %}
 </div>
 
-<!-- WARNING IF THERE IS A PENDING REQUEST -->
 {% if has_pending_request %}
-<div style="margin-top:20px; padding:15px; border-radius:6px; background:#f8d7da; color:#721c24;">
-    <strong>Warning:</strong> This location tag already has a pending change request.
+<div style="
+    margin-top:20px;
+    padding:15px;
+    border-radius:6px;
+    background:#f8d7da;
+    color:#721c24;
+    border:1px solid #f1b0b7;
+">
+    <strong>Warning:</strong> This item already has a pending change request.
     Please wait for it to be approved before submitting a new one.
 </div>
 {% endif %}
-

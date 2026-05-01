@@ -3,6 +3,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
 from equipment.models.equipment_models import *
 
@@ -200,8 +201,6 @@ class LocationTagChangeRequest(BaseChangeRequest):
         """
         Apply the requested changes to LocationTag and mark this request as approved.
         """
-        from django.db import transaction
-
         self._ensure_pending()
 
         with transaction.atomic():
@@ -309,6 +308,8 @@ class EquipmentChangeRequest(BaseChangeRequest):
         verbose_name="Model",
     )
 
+    changes = models.JSONField(default=dict)
+
     def clean(self):
         super().clean()
 
@@ -325,7 +326,7 @@ class EquipmentChangeRequest(BaseChangeRequest):
         """
         Apply the requested changes to Equipment and mark this request as approved.
         """
-        from django.db import transaction
+        
 
         self._ensure_pending()
 
@@ -351,8 +352,17 @@ class EquipmentChangeRequest(BaseChangeRequest):
                 eq.note = self.note
                 eq.manufacturer = self.manufacturer
                 eq.model = self.model
-                eq.modified_by = reviewer
+                eq.modified_by = self.requested_by
                 eq.save()
+
+            elif self.action == self.Action.REMOVE:
+                eq = self.equipment
+                if not eq:
+                    raise ValidationError("No target Equipment to remove.")
+
+                eq.is_active = False
+                eq.modified_by = self.requested_by
+                eq.save(update_fields=["is_active", "modified_by"])
 
             self.mark_approved(reviewer=reviewer)
             self.save(update_fields=["equipment"])
