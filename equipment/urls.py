@@ -19,6 +19,7 @@ urlpatterns = [
     path("equipment/", equipment_views.EquipmentList.as_view(), name="equipment_list"),
     path("equipment/<int:pk>/", equipment_views.EquipmentDetail.as_view(), name="equipment_detail"),
     path("equipment-modification/<int:pk>", equipment_views.EquipmentUpdateRequestView.as_view(), name="equipment_update_request"),
-
+    path("equipment/<int:equipment_id>/upload-document/",equipment_views.upload_request_document,name="upload_request_document",),
+    path("equipment/<int:equipment_id>/cancel-pending-request/",equipment_views.cancel_pending_request,name="cancel_pending_request",),
 
 ]

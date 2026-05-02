@@ -48,6 +48,7 @@
                     <p>{{ form.manufacturer.label_tag }} {{ form.manufacturer }} {{ form.manufacturer.errors }}</p>
                     <p>{{ form.model.label_tag }} {{ form.model }} {{ form.model.errors }}</p>
                     <p>{{ form.note.label_tag }} {{ form.note }} {{ form.note.errors }}</p>
+                    
                 </div>
 
                 <!-- RIGHT COLUMN: Supporting Documents -->
@@ -64,10 +65,24 @@
                                 <p>{{ doc_form.file.label_tag }} {{ doc_form.file }}</p>
                                 <p>{{ doc_form.file_name.label_tag }} {{ doc_form.file_name }}</p>
                                 <p>{{ doc_form.description.label_tag }} {{ doc_form.description }}</p>
+                                
+                                <!-- NEW UPLOAD BUTTON -->
+                                <button type="button" 
+                                        class="btn btn-sm btn-success"
+                                        hx-post="{% url 'equipment:upload_request_document' view.equipment.pk %}" 
+                                        hx-encoding="multipart/form-data"
+                                        hx-target="#uploaded-documents-body" 
+                                        hx-swap="beforeend"
+                                        hx-include="closest form"
+                                        hx-on::after-request="if(event.detail.successful) this.closest('.doc-row').remove();">
+                                    Upload Now
+                                </button>
+
                                 <button type="button" class="remove-doc-btn btn btn-sm btn-danger">Remove</button>
                             </div>
                         {% endfor %}
                     </div>
+
 
                     <button type="button" id="add-doc-btn" class="btn btn-info" style="margin-top:10px;">+ Add another document</button>
                 </div>
@@ -104,16 +119,37 @@
             <!-- SUBMIT BUTTONS (Full Width) -->
             <div style="margin-top:40px; border-top:1px solid #eee; padding-top:20px;">
                 <button type="submit" class="btn-primary-custom">Submit Change Request</button>
-                <a href="{% url 'equipment:equipment_detail' view.equipment.pk %}" class="btn-secondary-custom">Cancel</a>
+                <button 
+                    type="button"
+                    class="btn-secondary-custom"
+                    hx-delete="{% url 'equipment:cancel_pending_request' view.equipment.pk %}"
+                    hx-target="#cancel-redirect"
+                    hx-swap="outerHTML"
+                    hx-params="none"
+                >
+                    Cancel
+                </button>
             </div>
-
+            <div id="cancel-redirect"></div>
             <script type="text/template" id="empty-form-template">
                 <div class="document-form-row doc-row" style="border:1px solid #ddd; padding:15px; margin-bottom:15px; border-radius:6px; position:relative;">
                     <p>{{ doc_formset.empty_form.file.label_tag }} {{ doc_formset.empty_form.file }}</p>
                     <p>{{ doc_formset.empty_form.file_name.label_tag }} {{ doc_formset.empty_form.file_name }}</p>
                     <p>{{ doc_formset.empty_form.description.label_tag }} {{ doc_formset.empty_form.description }}</p>
                     
-                    <button type="button" class="remove-doc-btn btn btn-sm btn-danger" style="background:#d9534f; color:white; border:none; padding:5px 10px; border-radius:4px;">
+                    <!-- NEW UPLOAD BUTTON FOR DYNAMIC ROWS -->
+                    <button type="button" 
+                            class="btn btn-sm btn-success"
+                            hx-post="{% url 'equipment:upload_request_document' view.equipment.pk %}" 
+                            hx-encoding="multipart/form-data"
+                            hx-target="#uploaded-documents-body" 
+                            hx-swap="beforeend"
+                            hx-include="closest .doc-row"
+                            hx-on::after-request="if(event.detail.successful) this.closest('.doc-row').remove();">
+                        Upload Now
+                    </button>
+
+                    <button type="button" class="remove-doc-btn btn btn-sm btn-danger">
                         Remove
                     </button>
                 </div>
@@ -184,11 +220,13 @@ document.addEventListener("DOMContentLoaded", function () {
         const formCount = parseInt(totalFormsInput.value);
         const template = document.getElementById("empty-form-template").innerHTML;
         
-        // Replace the __prefix__ placeholder with the actual index
         const newFormHtml = template.replace(/__prefix__/g, formCount);
         
         container.insertAdjacentHTML("beforeend", newFormHtml);
         totalFormsInput.value = formCount + 1;
+
+        // ADD THIS LINE: Tells HTMX to look at the newly added button
+        htmx.process(container); 
     });
 
     // Event Delegation for Remove buttons
@@ -254,6 +292,12 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
         }
     });
+});
+
+document.body.addEventListener('htmx:configRequest', function(event) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (!csrfToken) return;
+    event.detail.headers['X-CSRFToken'] = csrfToken;
 });
 
 </script>
