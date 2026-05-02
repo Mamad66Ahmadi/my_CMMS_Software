@@ -3,12 +3,15 @@ from django.core.paginator import Paginator
 from django.views.generic import TemplateView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.forms import inlineformset_factory 
+from django.db import transaction
 
 
 from equipment.models.equipment_models import Equipment
-from equipment.models.request_equipment_models import EquipmentChangeRequest
+from equipment.models.request_equipment_models import EquipmentChangeRequest, EquipmentDocumentChangeRequest
 
-from equipment.forms import equioment_change_form
+from equipment.forms.equioment_change_form import EquipmentChangeRequestForm, EquipmentDocumentChangeRequestForm, EquipmentDocumentChangeRequestFormSet
 
 
 
@@ -172,15 +175,26 @@ class EquipmentDetail(LoginRequiredMixin, DetailView):
 
 
 #-------------------------------- Modification ------------------------------
+
+EquipmentDocumentChangeRequestFormSet = inlineformset_factory(
+    EquipmentChangeRequest,
+    EquipmentDocumentChangeRequest,
+    form=EquipmentDocumentChangeRequestForm,
+    extra=1,
+    can_delete=True,
+)
+
+
 class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
     model = EquipmentChangeRequest
-    form_class = equioment_change_form.EquipmentChangeRequestForm
+    form_class = EquipmentChangeRequestForm
     template_name = "equipment/equipment_request_update_form.html"
 
     login_url = "/accounts/login/"
     redirect_field_name = "next"
 
     def dispatch(self, request, *args, **kwargs):
+        # Get the equipment instance here
         self.equipment = get_object_or_404(Equipment, pk=kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
@@ -194,27 +208,55 @@ class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
             "note": eq.note,
         }
 
-    def form_valid(self, form):
+    # Override get_context_data to add the formset
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-        # 1. Check for existing pending request
+        if "doc_formset" not in context:
+            context["doc_formset"] = EquipmentDocumentChangeRequestFormSet()
+
+        context["equipment"] = self.equipment
+        return context
+
+    # Override form_valid to handle saving the formset
+
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = self.get_form()
+
+        doc_formset = EquipmentDocumentChangeRequestFormSet(
+            request.POST,
+            request.FILES,
+            instance=self.object,
+        )
+
+        if form.is_valid() and doc_formset.is_valid():
+            return self.forms_valid(form, doc_formset)
+        else:
+            return self.forms_invalid(form, doc_formset)
+
+
+    @transaction.atomic
+    def forms_valid(self, form, doc_formset):
+        # Check for existing pending request
         existing = EquipmentChangeRequest.objects.filter(
             equipment=self.equipment,
             status=EquipmentChangeRequest.Status.PENDING
-        ).first()
+        ).exists()
 
         if existing:
             form.add_error(None, "There is already a pending change request for this equipment.")
-            return self.form_invalid(form)
+            return self.forms_invalid(form, doc_formset)
 
-        req = form.save(commit=False)
-        req.action = EquipmentChangeRequest.Action.UPDATE
-        req.equipment = self.equipment
-        req.requested_by = self.request.user
+        # Create main request
+        self.object = form.save(commit=False)
+        self.object.action = EquipmentChangeRequest.Action.UPDATE
+        self.object.equipment = self.equipment
+        self.object.requested_by = self.request.user
 
-        # 2. Detect field changes
+        # Detect changes
         eq = self.equipment
         changes = {}
-
         change_fields = [
             "functional_location",
             "serial_number",
@@ -233,8 +275,24 @@ class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
                     "new": str(new),
                 }
 
-        req.changes = changes
-        req.save()
+        self.object.changes = changes
+        self.object.save()
 
-        return redirect("equipment:equipment_detail", pk=self.equipment.pk)
+        # Now bind formset to saved object
+        doc_formset.instance = self.object
+        doc_formset.save()
 
+        return redirect(self.get_success_url())
+
+
+    def forms_invalid(self, form, doc_formset):
+        return self.render_to_response(
+            self.get_context_data(
+                form=form,
+                doc_formset=doc_formset,
+            )
+        )
+
+
+    def get_success_url(self):
+        return reverse_lazy("equipment:equipment_detail", kwargs={"pk": self.equipment.pk})

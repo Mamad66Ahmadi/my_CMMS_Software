@@ -1,19 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %} Equipment Modification {% endblock %}
+{% block title %}Equipment Modification{% endblock %}
 
 {% block content %}
 
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
 
-{% if form.non_field_errors %}
-<div style="color:red; margin-bottom:15px;">
-    {{ form.non_field_errors }}
-</div>
-{% endif %}
-
-<div class="container" style="max-width:750px; margin-top:30px;">
+<div class="container" style="max-width:1000px; margin-top:30px;">
 
     <div class="section-header">
         Request Equipment Modification
@@ -28,62 +22,105 @@
         </h4>
 
         <hr style="margin:20px 0;">
-
-        <form method="post">
+        
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
-            <!-- Functional Location with Autocomplete -->
-            <p style="position: relative;">
-                {{ form.functional_location_search.label_tag }}
-                {{ form.functional_location_search }}
-                <div id="location-results" class="autocomplete-results"></div>
-            </p>
+            {% if form.non_field_errors %}
+                <div style="color:red; margin-bottom:15px;">{{ form.non_field_errors }}</div>
+            {% endif %}
 
-            <!-- Hidden ID field (This is the one that was invisible) -->
-            {{ form.functional_location }}
+            <!-- Wrapper for two columns -->
+            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                
+                <!-- LEFT COLUMN: Main Modification Fields -->
+                <div style="flex: 1;">
+                    <h5>Modification Details</h5>
+                    <p style="position: relative;">
+                        {{ form.functional_location_search.label_tag }}
+                        {{ form.functional_location_search }}
+                        <div id="location-results" class="autocomplete-results"></div>
+                        {{ form.functional_location.errors }}
+                    </p>
+                    {{ form.functional_location }}
 
+                    <p>{{ form.serial_number.label_tag }} {{ form.serial_number }} {{ form.serial_number.errors }}</p>
+                    <p>{{ form.manufacturer.label_tag }} {{ form.manufacturer }} {{ form.manufacturer.errors }}</p>
+                    <p>{{ form.model.label_tag }} {{ form.model }} {{ form.model.errors }}</p>
+                    <p>{{ form.note.label_tag }} {{ form.note }} {{ form.note.errors }}</p>
+                </div>
 
-            <p>
-                {{ form.serial_number.label_tag }}
-                {{ form.serial_number }}
-            </p>
+                <!-- RIGHT COLUMN: Supporting Documents -->
+                <div style="flex: 1;">
+                    <h5>Supporting Documents</h5>
+                    <p style="color:#666; margin-bottom:15px;">Upload any related documents.</p>
 
-            <p>
-                {{ form.manufacturer.label_tag }}
-                {{ form.manufacturer }}
-            </p>
+                    {{ doc_formset.management_form }}
 
-            <p>
-                {{ form.model.label_tag }}
-                {{ form.model }}
-            </p>
+                    <div id="document-formset-container">
+                        {% for doc_form in doc_formset %}
+                            <div class="document-form-row doc-row" style="border:1px solid #ddd; padding:15px; margin-bottom:15px; border-radius:6px; position:relative;">
+                                {% for hidden in doc_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                <p>{{ doc_form.file.label_tag }} {{ doc_form.file }}</p>
+                                <p>{{ doc_form.file_name.label_tag }} {{ doc_form.file_name }}</p>
+                                <p>{{ doc_form.description.label_tag }} {{ doc_form.description }}</p>
+                                <button type="button" class="remove-doc-btn btn btn-sm btn-danger">Remove</button>
+                            </div>
+                        {% endfor %}
+                    </div>
 
-            <p>
-                {{ form.note.label_tag }}
-                {{ form.note }}
-            </p>
-
-            <div style="margin-top:25px;">
-                <button type="submit" class="btn-primary-custom">
-                    Submit Change Request
-                </button>
-
-                <a href="{% url 'equipment:equipment_detail' view.equipment.pk %}"
-                   class="btn-secondary-custom">
-                    Cancel
-                </a>
+                    <button type="button" id="add-doc-btn" class="btn btn-info" style="margin-top:10px;">+ Add another document</button>
+                </div>
             </div>
+
+
+            <hr style="margin-top:40px;">
+
+            <h5>Uploaded Documents</h5>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Description</th>
+                        <th>File</th>
+                    </tr>
+                </thead>
+
+                <tbody id="uploaded-documents-body">
+                    {% for doc in uploaded_docs %}
+                    <tr>
+                        <td>{{ doc.file_name }}</td>
+                        <td>{{ doc.description }}</td>
+                        <td>
+                            <a href="{{ doc.file.url }}" target="_blank">Download</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+
+            <!-- SUBMIT BUTTONS (Full Width) -->
+            <div style="margin-top:40px; border-top:1px solid #eee; padding-top:20px;">
+                <button type="submit" class="btn-primary-custom">Submit Change Request</button>
+                <a href="{% url 'equipment:equipment_detail' view.equipment.pk %}" class="btn-secondary-custom">Cancel</a>
+            </div>
+
+            <script type="text/template" id="empty-form-template">
+                <div class="document-form-row doc-row" style="border:1px solid #ddd; padding:15px; margin-bottom:15px; border-radius:6px; position:relative;">
+                    <p>{{ doc_formset.empty_form.file.label_tag }} {{ doc_formset.empty_form.file }}</p>
+                    <p>{{ doc_formset.empty_form.file_name.label_tag }} {{ doc_formset.empty_form.file_name }}</p>
+                    <p>{{ doc_formset.empty_form.description.label_tag }} {{ doc_formset.empty_form.description }}</p>
+                    
+                    <button type="button" class="remove-doc-btn btn btn-sm btn-danger" style="background:#d9534f; color:white; border:none; padding:5px 10px; border-radius:4px;">
+                        Remove
+                    </button>
+                </div>
+            </script>
 
         </form>
 
-        <!-- Per‑field errors -->
-        <p>
-            {{ form.functional_location.errors }}
-            {{ form.serial_number.errors }}
-            {{ form.manufacturer.errors }}
-            {{ form.model.errors }}
-            {{ form.note.errors }}
-        </p>
 
         {% if view.equipment.is_active %}
         <div style="margin-top:50px;">
@@ -95,115 +132,129 @@
         </div>
         {% endif %}
 
-    </div> <!-- card -->
-</div> <!-- container -->
-
+    </div>
+</div>
 
 <script>
-/* ---------------------------------------------------------------------
-   Store initial values for change‑detection
------------------------------------------------------------------------- */
-/* ---------------------------------------------------------------------
-   Store initial values for change‑detection
------------------------------------------------------------------------- */
-const initial = {};
-document.querySelectorAll("form input, form select, form textarea").forEach(el => {
-    initial[el.id] = el.value;
-});
-
 document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form");
 
-    // --- 1) AUTOCOMPLETE LOGIC ---
-    const input = document.getElementById("location-search"); // Matches form.py id
-    const hidden = document.getElementById("id_functional_location"); // Django default ID
+    // 1. AUTOCOMPLETE & CHANGE DETECTION LOGIC
+    const trackedIds = ["id_functional_location", "id_serial_number", "id_manufacturer", "id_model", "id_note"];
+    const initial = {};
+    trackedIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) initial[id] = el.value;
+    });
+
+    const input = document.getElementById("location-search");
+    const hidden = document.getElementById("id_functional_location");
     const resultsBox = document.getElementById("location-results");
 
     if (input) {
-        const url = input.dataset.autocompleteUrl;
-
         input.addEventListener("keyup", function () {
             const query = input.value;
-            hidden.value = ""; // Clear ID if user starts typing
-
-            if (query.length < 2) {
-                resultsBox.style.display = "none";
-                return;
-            }
-
-            fetch(url + "?q=" + encodeURIComponent(query))
-                .then(response => response.json())
-                .then(data => {
+            hidden.value = "";
+            if (query.length < 2) { resultsBox.style.display = "none"; return; }
+            fetch(input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(query))
+                .then(r => r.json()).then(data => {
                     resultsBox.innerHTML = "";
                     data.results.forEach(item => {
-                        const option = document.createElement("div");
-                        option.classList.add("autocomplete-item");
-                        option.textContent = item.text;
-
-                        option.onclick = function () {
-                            input.value = item.text;
-                            hidden.value = item.id;
-                            resultsBox.style.display = "none";
-                        };
-                        resultsBox.appendChild(option);
+                        const div = document.createElement("div");
+                        div.className = "autocomplete-item";
+                        div.textContent = item.text;
+                        div.onclick = () => { input.value = item.text; hidden.value = item.id; resultsBox.style.display = "none"; };
+                        resultsBox.appendChild(div);
                     });
                     resultsBox.style.display = "block";
                 });
         });
+    }
 
-        // Hide results when clicking outside
-        document.addEventListener("click", function(e){
-            if (!resultsBox.contains(e.target) && e.target !== input){
-                resultsBox.style.display = "none";
+    // 2. FORMSET LOGIC (ADD/REMOVE)
+    const container = document.getElementById("document-formset-container");
+    const addButton = document.getElementById("add-doc-btn");
+    
+    // Find the Management Form "TOTAL_FORMS" field automatically
+    const totalFormsInput = document.querySelector('input[id$="-TOTAL_FORMS"]');
+    // Get the prefix (e.g., "equipmentdocumentchangerequest_set" or "form")
+    const prefix = totalFormsInput.id.replace('-TOTAL_FORMS', '').replace('id_', '');
+
+    addButton.addEventListener("click", function () {
+        const formCount = parseInt(totalFormsInput.value);
+        const template = document.getElementById("empty-form-template").innerHTML;
+        
+        // Replace the __prefix__ placeholder with the actual index
+        const newFormHtml = template.replace(/__prefix__/g, formCount);
+        
+        container.insertAdjacentHTML("beforeend", newFormHtml);
+        totalFormsInput.value = formCount + 1;
+    });
+
+    // Event Delegation for Remove buttons
+    container.addEventListener("click", function (e) {
+        if (e.target.classList.contains("remove-doc-btn")) {
+            const row = e.target.closest(".doc-row");
+            const deleteInput = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+
+            if (deleteInput) {
+                // If it's an existing form from DB, check DELETE and hide
+                deleteInput.checked = true;
+                row.style.display = "none";
+            } else {
+                // If it's a newly added row (not in DB yet), just remove it from DOM
+                row.remove();
+                // Decrement total forms
+                totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
+                
+                // Re-index remaining new rows to keep management form happy
+                reIndexForms(container, prefix, totalFormsInput);
             }
+        }
+    });
+
+    function reIndexForms(container, prefix, totalInput) {
+        const rows = container.querySelectorAll(".doc-row");
+        totalInput.value = rows.length;
+        rows.forEach((row, index) => {
+            row.querySelectorAll("input, textarea, label").forEach(el => {
+                if (el.name) el.name = el.name.replace(/\d+/, index);
+                if (el.id) el.id = el.id.replace(/\d+/, index);
+                if (el.htmlFor) el.htmlFor = el.htmlFor.replace(/\d+/, index);
+            });
         });
     }
 
-    // --- 2) FORM SUBMISSION & CHANGE DETECTION ---
-    const form = document.querySelector("form");
+    // 3. FINAL SUBMISSION VALIDATION
     form.addEventListener("submit", function (e) {
-        
-        // Validate autocomplete selection
-        if (input.value.trim() !== "" && hidden.value === "") {
+        if (input && hidden && input.value.trim() !== "" && hidden.value === "") {
             e.preventDefault();
-            alert("Please select a valid functional location from the list.");
-            input.focus();
+            alert("Please select a valid functional location.");
             return;
         }
 
         const changes = [];
-        document.querySelectorAll("form input, form select, form textarea").forEach(el => {
-            // Skip the search box and CSRF token for change detection
-            if (el.id === "location-search" || el.name === "csrfmiddlewaretoken") return;
-
-            const oldVal = initial[el.id];
-            const newVal = el.value;
-
-            if (oldVal != newVal) {
-                const label = document.querySelector(`label[for=${el.id}]`);
-                const labelText = label ? label.textContent : el.name;
-                changes.push(`• ${labelText.trim()}:\n    from: "${oldVal}"\n    to:   "${newVal}"`);
+        trackedIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && initial[id] != el.value) {
+                const label = document.querySelector(`label[for="${id}"]`)?.textContent || el.name;
+                changes.push(`• ${label.trim()}: from "${initial[id]}" to "${el.value}"`);
             }
         });
 
-        if (changes.length === 0) {
+        const hasFiles = Array.from(document.querySelectorAll('input[type="file"]')).some(i => i.files.length > 0);
+
+        if (changes.length === 0 && !hasFiles) {
             e.preventDefault();
-            alert("No fields have been changed. Nothing to submit.");
+            alert("No changes detected.");
             return;
         }
 
-        const message = "You are about to submit a CHANGE REQUEST.\n\n" +
-                        "Changes:\n" + changes.join("\n") + 
-                        "\n\nConfirm submission?";
-
-        if (!confirm(message)) {
+        if (!confirm("Confirm submission?\n\n" + (changes.join("\n") || "Document uploads only."))) {
             e.preventDefault();
         }
     });
 });
-
-function confirmRemoveEquipment() {
-    return confirm("Are you sure you want to request removal of this equipment?");
-}
 
 </script>
 

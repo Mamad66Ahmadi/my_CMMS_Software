@@ -14,9 +14,8 @@ def pending_requests_count(request):
     if request.user.is_staff:
         location = LocationTagChangeRequest.objects.filter(status="pending").count()
         equipment = EquipmentChangeRequest.objects.filter(status="pending").count()
-        document = EquipmentDocumentChangeRequest.objects.filter(status="pending").count()
 
-        total = location + equipment + document
+        total = location + equipment
 
         return {"pending_requests_count": total}
 

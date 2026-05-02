@@ -201,63 +201,7 @@
                 </div>
             </div>
 
-            <!-- ===== Document Requests ===== -->
-            <div class="card mb-0">
-                <div class="card-header border-bottom d-flex justify-content-between align-items-center"
-                     style="background-color:#bababa;">
-                    <span class="text-dark fw-semibold" style="font-size: 1.05rem;">
-                        Document Change Requests
-                    </span>
-                </div>
 
-                <div class="card-body">
-                    {% if document_requests %}
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped sortable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Action</th>
-                                    <th>Status</th>
-                                    <th>Requested By</th>
-                                    <th>Requested At</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for req in document_requests %}
-                                <tr>
-                                    <td>{{ req.id }}</td>
-                                    <td>{{ req.get_action_display }}</td>
-                                    <td>
-                                        <span class="badge 
-                                            {% if req.status == 'pending' %} bg-warning 
-                                            {% elif req.status == 'approved' %} bg-success 
-                                            {% elif req.status == 'approved_with_change' %} bg-info 
-                                            {% elif req.status == 'rejected' %} bg-danger 
-                                            {% endif %}
-                                        ">
-                                            {{ req.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>{{ req.requested_by }}</td>
-                                    <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="border rounded-1 bg-light p-4 text-center">
-                        <div class="text-muted mb-2" style="font-size: 1.25rem;">
-                            <i class="bi bi-info-circle"></i>
-                        </div>
-                        <p class="text-muted mb-0" style="font-size: 1rem; letter-spacing: 0.3px;">
-                            There are currently no pending document change requests.
-                        </p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
 
         </div>
     </div>

@@ -364,95 +364,42 @@ class EquipmentChangeRequest(BaseChangeRequest):
                 eq.modified_by = self.requested_by
                 eq.save(update_fields=["is_active", "modified_by"])
 
+
+            # ✅ apply document uploads
+            if self.equipment:  # covers CREATE and UPDATE
+                for doc_req in self.document_requests.all():
+                    EquipmentDocument.objects.create(
+                        equipment=self.equipment,
+                        file=doc_req.file,
+                        file_name=doc_req.file_name or doc_req.file.name,
+                        description=doc_req.description,
+                    )
+
             self.mark_approved(reviewer=reviewer)
             self.save(update_fields=["equipment"])
 
-# --------------------- Equipment Document Change Request -----------------------------
-class EquipmentDocumentChangeRequest(BaseChangeRequest):
+
+# ----------------------- Document --------------------------
+class EquipmentDocumentChangeRequest(models.Model):
     """
-    Request to create or update an EquipmentDocument.
+    Documents uploaded as part of an EquipmentChangeRequest.
+    These are only applied when the request is approved.
     """
 
-    document = models.ForeignKey(
-        EquipmentDocument,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="change_requests",
-        verbose_name="Target Document",
+    change_request = models.ForeignKey(
+        EquipmentChangeRequest,
+        on_delete=models.CASCADE,
+        related_name="document_requests",
     )
 
-    equipment = models.ForeignKey(
-        Equipment,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="document_change_requests",
-        verbose_name="Equipment",
-    )
-
-    file_name = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        verbose_name="File Name",
-    )
-    file = models.FileField(
-        upload_to=get_document_upload_path,
-        null=True,
-        blank=True,
-        verbose_name="Document File",
-    )
-
-    description = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-    )
-
-    def clean(self):
-        super().clean()
-
-        if self.action == self.Action.CREATE and self.document:
-            raise ValidationError("CREATE request must not have document set.")
-
-        if self.action == self.Action.UPDATE and not self.document:
-            raise ValidationError("UPDATE request must have a document.")
+    file = models.FileField(upload_to="equipment_request_documents/")
+    file_name = models.CharField(max_length=255, blank=True)
+    description = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
-        return f"[{self.get_action_display()}] Document Request #{self.pk}"
+        return f"Document request for ChangeRequest #{self.change_request.id}"
 
-    def approve_request(self, reviewer):
-        """
-        Apply the requested changes to EquipmentDocument and mark this request as approved.
-        """
-        from django.db import transaction
-
-        self._ensure_pending()
-
-        with transaction.atomic():
-            if self.action == self.Action.CREATE:
-                doc = EquipmentDocument.objects.create(
-                    equipment=self.equipment,
-                    file_name=self.file_name or (self.file.name if self.file else ""),
-                    file=self.file,
-                    description=self.description,
-                    created_by=self.requested_by,
-                )
-                self.document = doc
-
-            elif self.action == self.Action.UPDATE:
-                doc = self.document
-                if not doc:
-                    raise ValidationError("No target EquipmentDocument to update.")
-
-                doc.equipment = self.equipment
-                doc.file_name = self.file_name or doc.file_name
-                if self.file:
-                    doc.file = self.file
-                doc.description = self.description
-                doc.modified_by = reviewer
-                doc.save()
-
-            self.mark_approved(reviewer=reviewer)
-            self.save(update_fields=["document"])
+    class Meta:
+        ordering = ["change_request__id", "id"]
+        verbose_name = "Equipment Document Change"
+        verbose_name_plural = "Equipment Document Changes"

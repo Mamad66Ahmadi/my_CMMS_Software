@@ -1,8 +1,9 @@
 # equipment/forms/equipment_change_form.py
 from django import forms
+from django.forms import modelformset_factory, inlineformset_factory
 from django.urls import reverse_lazy
 from equipment.models.equipment_models import Equipment
-from equipment.models.request_equipment_models import EquipmentChangeRequest
+from equipment.models.request_equipment_models import EquipmentChangeRequest, EquipmentDocumentChangeRequest
 from equipment.models.equipment_models import LocationTag
 
 
@@ -69,3 +70,20 @@ class EquipmentChangeRequestForm(forms.ModelForm):
 
         return cleaned
 
+
+class EquipmentDocumentChangeRequestForm(forms.ModelForm):
+    class Meta:
+        model = EquipmentDocumentChangeRequest
+        fields = ["file", "file_name", "description"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 2}),
+        }
+
+# If you want multiple docs per request:
+EquipmentDocumentChangeRequestFormSet = inlineformset_factory(
+    EquipmentChangeRequest,
+    EquipmentDocumentChangeRequest,
+    form=EquipmentDocumentChangeRequestForm,
+    extra=1,          # how many empty rows to show initially
+    can_delete=True,  # allow user to remove a row
+)

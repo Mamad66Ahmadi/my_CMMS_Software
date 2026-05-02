@@ -1,5 +1,4 @@
 from django.contrib import admin
-from equipment.models import LocationTagChangeRequest
 from equipment.admin.location_tag_admin import LocationTagResource
 from .base_admin_mixin import *
 from .request_base_admin_mixin import *
@@ -64,6 +63,17 @@ class LocationTagChangeRequestAdmin(BaseChangeRequestAdmin):
     )
 
 
+class EquipmentDocumentChangeRequestInline(admin.TabularInline):
+    model = EquipmentDocumentChangeRequest
+    extra = 1  # how many empty rows to show by default
+    fields = ("file", "file_name", "description")
+    readonly_fields = ()
+    # if you want to disallow deleting once created:
+    # can_delete = False
+
+
+
+
 @admin.register(EquipmentChangeRequest)
 class EquipmentChangeRequestAdmin(BaseChangeRequestAdmin):
 
@@ -110,48 +120,8 @@ class EquipmentChangeRequestAdmin(BaseChangeRequestAdmin):
         }),
     )
 
+    inlines = [EquipmentDocumentChangeRequestInline]
 
-@admin.register(EquipmentDocumentChangeRequest)
-class EquipmentDocumentChangeRequestAdmin(BaseChangeRequestAdmin):
 
-    list_display = (
-        "id",
-        "document",
-        "action",
-        "colored_status",
-        "requested_by",
-        "requested_at",
-    )
 
-    list_select_related = (
-        "document",
-        "equipment",
-        "requested_by",
-        "reviewed_by",
-    )
 
-    fieldsets = (
-        ("Request Info", {
-            "fields": (
-                "action",
-                "status",
-                "document",
-            )
-        }),
-        ("Proposed Data", {
-            "fields": (
-                "equipment",
-                "file_name",
-                "file",
-                "description",
-            )
-        }),
-        ("Audit", {
-            "fields": (
-                "requested_by",
-                "requested_at",
-                "reviewed_by",
-                "reviewed_at",
-            )
-        }),
-    )
