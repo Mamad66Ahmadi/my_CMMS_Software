@@ -1,7 +1,18 @@
-<tr>
+<tr id="doc-row-{{ doc.id }}">
     <td>{{ doc.file_name }}</td>
-    <td>{{ doc.description }}</td>
+    <td>{{ doc.description|default:"-" }}</td>
     <td>
-        <a href="{{ doc.file.url }}" target="_blank">Download</a>
+        <a href="{{ doc.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
+    </td>
+    <td>
+        <!-- This button deletes the document via HTMX -->
+        <button type="button" 
+                class="btn btn-sm btn-danger"
+                hx-delete="{% url 'equipment:delete_request_document' doc.id %}"
+                hx-target="#doc-row-{{ doc.id }}"
+                hx-swap="outerHTML"
+                hx-confirm="Are you sure you want to remove this document?">
+            Remove
+        </button>
     </td>
 </tr>

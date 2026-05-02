@@ -371,7 +371,7 @@ class EquipmentChangeRequest(BaseChangeRequest):
                     EquipmentDocument.objects.create(
                         equipment=self.equipment,
                         file=doc_req.file,
-                        file_name=doc_req.file_name or doc_req.file.name,
+                        file_name=doc_req.file_name,
                         description=doc_req.description,
                     )
 
@@ -395,6 +395,11 @@ class EquipmentDocumentChangeRequest(models.Model):
     file = models.FileField(upload_to="equipment_request_documents/")
     file_name = models.CharField(max_length=255, blank=True)
     description = models.CharField(max_length=255, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.file_name and self.file:
+            self.file_name = self.file.name
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Document request for ChangeRequest #{self.change_request.id}"

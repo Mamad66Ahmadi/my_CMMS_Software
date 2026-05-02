@@ -79,11 +79,3 @@ class EquipmentDocumentChangeRequestForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 2}),
         }
 
-# If you want multiple docs per request:
-EquipmentDocumentChangeRequestFormSet = inlineformset_factory(
-    EquipmentChangeRequest,
-    EquipmentDocumentChangeRequest,
-    form=EquipmentDocumentChangeRequestForm,
-    extra=1,          # how many empty rows to show initially
-    can_delete=True,  # allow user to remove a row
-)

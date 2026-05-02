@@ -6,13 +6,14 @@ from django.shortcuts import get_object_or_404, redirect,render
 from django.urls import reverse_lazy, reverse
 from django.forms import inlineformset_factory 
 from django.db import transaction
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.contrib.auth.decorators import login_required
 
 
 from equipment.models.equipment_models import Equipment
 from equipment.models.request_equipment_models import EquipmentChangeRequest, EquipmentDocumentChangeRequest
 
-from equipment.forms.equioment_change_form import EquipmentChangeRequestForm, EquipmentDocumentChangeRequestForm, EquipmentDocumentChangeRequestFormSet
+from equipment.forms.equioment_change_form import EquipmentChangeRequestForm
 
 
 
@@ -176,26 +177,14 @@ class EquipmentDetail(LoginRequiredMixin, DetailView):
 
 
 #-------------------------------- Modification ------------------------------
-
-EquipmentDocumentChangeRequestFormSet = inlineformset_factory(
-    EquipmentChangeRequest,
-    EquipmentDocumentChangeRequest,
-    form=EquipmentDocumentChangeRequestForm,
-    extra=1,
-    can_delete=True,
-)
-
-
 class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
     model = EquipmentChangeRequest
     form_class = EquipmentChangeRequestForm
     template_name = "equipment/equipment_request_update_form.html"
-
     login_url = "/accounts/login/"
     redirect_field_name = "next"
 
     def dispatch(self, request, *args, **kwargs):
-        # Get the equipment instance here
         self.equipment = get_object_or_404(Equipment, pk=kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
@@ -209,39 +198,19 @@ class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
             "note": eq.note,
         }
 
-    # Override get_context_data to add the formset
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        if "doc_formset" not in context:
-            context["doc_formset"] = EquipmentDocumentChangeRequestFormSet()
-
-        context["equipment"] = self.equipment
+        context['equipment'] = self.equipment
+        context['pending_request'] = EquipmentChangeRequest.objects.filter(
+            equipment=self.equipment,
+            status=EquipmentChangeRequest.Status.PENDING,
+            requested_by=self.request.user
+        ).first()
         return context
 
-    # Override form_valid to handle saving the formset
-
-    def post(self, request, *args, **kwargs):
-        self.object = None
-        form = self.get_form()
-
-        doc_formset = EquipmentDocumentChangeRequestFormSet(
-            request.POST,
-            request.FILES,
-            instance=self.object,
-        )
-
-        if form.is_valid() and doc_formset.is_valid():
-            return self.forms_valid(form, doc_formset)
-        else:
-            return self.forms_invalid(form, doc_formset)
-
-
     @transaction.atomic
-    def forms_valid(self, form, doc_formset):
-        # 1. Fetch the existing pending request (created by HTMX) or create a new one
-        # We don't block here anymore; we just "take over" the existing draft
-        self.object, created = EquipmentChangeRequest.objects.get_or_create(
+    def form_valid(self, form):
+        self.object, _ = EquipmentChangeRequest.objects.get_or_create(
             equipment=self.equipment,
             status=EquipmentChangeRequest.Status.PENDING,
             defaults={
@@ -250,125 +219,60 @@ class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
             }
         )
 
-        # 2. Update the fields from the form into this instance
-        # We use the form to update self.object
         updated_instance = form.save(commit=False)
-        
-        # Copy fields from form to our object
-        self.object.functional_location = updated_instance.functional_location
-        self.object.serial_number = updated_instance.serial_number
-        self.object.manufacturer = updated_instance.manufacturer
-        self.object.model = updated_instance.model
-        self.object.note = updated_instance.note
+        for field in ["functional_location", "serial_number", "manufacturer", "model", "note"]:
+            setattr(self.object, field, getattr(updated_instance, field))
 
-        # 3. Detect changes (your existing logic)
+        # Detect changes, as you already do
         eq = self.equipment
         changes = {}
-        change_fields = ["functional_location", "serial_number", "manufacturer", "model", "note"]
-
-        for field in change_fields:
+        for field in ["functional_location", "serial_number", "manufacturer", "model", "note"]:
             old = getattr(eq, field, None)
-            new = form.cleaned_data.get(field)
+            new = getattr(self.object, field)
             if old != new:
                 changes[field] = {"old": str(old), "new": str(new)}
-
         self.object.changes = changes
         self.object.save()
 
-        # 4. Handle any REMAINING documents in the formset 
-        # (Those the user didn't click "Upload Now" for)
-        doc_formset.instance = self.object
-        doc_formset.save()
-
         return redirect(self.get_success_url())
-
-    def forms_invalid(self, form, doc_formset):
-        return self.render_to_response(
-            self.get_context_data(
-                form=form,
-                doc_formset=doc_formset,
-            )
-        )
-
 
     def get_success_url(self):
         return reverse_lazy("equipment:equipment_detail", kwargs={"pk": self.equipment.pk})
 
 
 
-
-
-
+@login_required
 def upload_request_document(request, equipment_id):
     if request.method != "POST":
         return HttpResponse(status=405)
-
-
     equipment = get_object_or_404(Equipment, pk=equipment_id)
-
-    uploaded_file = None
-    file_key = None
-
-    # Find the file input and its exact field name
-    for key, value in request.FILES.items():
-        if key.endswith("-file"):
-            uploaded_file = value
-            file_key = key
-            break
-
-    if not uploaded_file or not file_key:
-        return HttpResponse("Missing file", status=400)
-
-    # Extract the form index from something like:
-    # equipmentdocumentchangerequest_set-0-file
-    # -> equipmentdocumentchangerequest_set-0
-    prefix_without_field = file_key.rsplit("-file", 1)[0]
-
-    file_name = request.POST.get(f"{prefix_without_field}-file_name", "").strip()
-    description = request.POST.get(f"{prefix_without_field}-description", "").strip()
-
-    if not file_name:
-        file_name = uploaded_file.name
-
-    # If your model requires a parent change request, you must attach it here.
-    # Example if you already have a pending change request:
-    change_request, created = EquipmentChangeRequest.objects.get_or_create(
+    change_request, _ = EquipmentChangeRequest.objects.get_or_create(
         equipment=equipment,
         status=EquipmentChangeRequest.Status.PENDING,
         defaults={"requested_by": request.user}
     )
-
+    file = request.FILES.get("file")
+    if not file:
+        return HttpResponseBadRequest("Missing file")
+    file_name = request.POST.get("file_name") or file.name
+    description = request.POST.get("description")
     doc = EquipmentDocumentChangeRequest.objects.create(
         change_request=change_request,
-        file=uploaded_file,
+        file=file,
         file_name=file_name,
         description=description,
     )
-
-
     return render(request, "equipment/document_row.html", {"doc": doc})
 
-
-
-def cancel_pending_request(request, equipment_id):
-
+@login_required
+def delete_request_document(request, pk):
     if request.method != "DELETE":
         return HttpResponse(status=405)
-
-    pending = EquipmentChangeRequest.objects.filter(
-        equipment_id=equipment_id,
-        requested_by=request.user,
-        status=EquipmentChangeRequest.Status.PENDING
-    ).first()
-
-    if pending:
-        if not pending.changes:   # only delete draft requests
-            EquipmentDocumentChangeRequest.objects.filter(
-                change_request=pending
-            ).delete()
-
-            pending.delete()
-
-    return HttpResponse(
-        f'<script>window.location="{reverse("equipment:equipment_detail", args=[equipment_id])}"</script>'
+    doc = get_object_or_404(
+        EquipmentDocumentChangeRequest,
+        pk=pk,
+        change_request__requested_by=request.user,
+        change_request__status=EquipmentChangeRequest.Status.PENDING,
     )
+    doc.delete()
+    return HttpResponse("")
