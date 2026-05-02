@@ -121,13 +121,17 @@
 <style>
 /* --- BASIC SIDEBAR --- */
 .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 220px;
+    height: 100vh;
+
     background: #2c3136;
     color: #e0e0e0;
-    min-height: 100vh;
     padding: 15px;
     transition: width 0.25s ease;
-    overflow: hidden;
+    overflow-y: auto;   /* sidebar itself scrolls if content is long */
     font-size: 0.9rem;
     border-right: 1px solid #1f2327;
 }
@@ -223,13 +227,23 @@ const toggleBtn = document.getElementById("sidebarToggle");
 // Load saved state
 if (localStorage.getItem("sidebarCollapsed") === "true") {
     sidebar.classList.add("collapsed");
+    document.body.classList.add("sidebar-collapsed");
     toggleBtn.textContent = "»";
 }
 
 toggleBtn.addEventListener("click", () => {
     sidebar.classList.toggle("collapsed");
+
     const collapsed = sidebar.classList.contains("collapsed");
+
+    // Set body class
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+
+    // Change toggle icon
     toggleBtn.textContent = collapsed ? "»" : "«";
+
+    // Save state
     localStorage.setItem("sidebarCollapsed", collapsed);
+
 });
 </script>

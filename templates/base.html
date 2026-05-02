@@ -17,7 +17,11 @@
             font-family: 'Vazirmatn';
             src: url("{% static 'fonts/Vazirmatn-Regular.woff2' %}") format('woff2');
         }
-        body { font-family: 'Inter', 'Vazirmatn', sans-serif; display: flex; min-height: 100vh; margin: 0; }
+        body { 
+            font-family: 'Inter', 'Vazirmatn', sans-serif; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
         
         /* Sidebar Styles */
         .sidebar { 
@@ -55,6 +59,16 @@
             color: white;
             background-color: #555;
         }
+        .page-wrapper {
+            margin-left: 250px;
+        }
+
+        /* When collapsed */
+        body.sidebar-collapsed .page-wrapper {
+            margin-left: 60px;
+        }
+
+
         /* Style for the toggle icon (plus/minus) */
         .dropdown-toggle::after {
             font-family: "Font Awesome 5 Free"; /* Use Font Awesome */
@@ -72,10 +86,11 @@
 
         /* Main Content Layout */
         .page-wrapper { 
-            flex: 1; /* Takes remaining space */
+            margin-left: 250px;      /* Same as sidebar width */
+            min-height: 100vh;
+
             display: flex; 
-            flex-direction: column; 
-            overflow-y: auto; /* Allows scrolling if content exceeds height */
+            flex-direction: column;
         }
         .content { 
             padding: 20px; 
