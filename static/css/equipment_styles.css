@@ -7,7 +7,7 @@ body, .container {
 }
 
 .container {
-    padding: 20px;
+    padding: 20px 0px;  /* top/bottom 10, left/right 15 */
 }
 
 h1 {
