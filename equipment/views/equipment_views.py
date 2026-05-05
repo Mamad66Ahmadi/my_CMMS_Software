@@ -224,13 +224,15 @@ class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
             setattr(self.object, field, getattr(updated_instance, field))
 
         # Detect changes, as you already do
+        changes = self.object.changes or {}
         eq = self.equipment
-        changes = {}
         for field in ["functional_location", "serial_number", "manufacturer", "model", "note"]:
             old = getattr(eq, field, None)
             new = getattr(self.object, field)
             if old != new:
                 changes[field] = {"old": str(old), "new": str(new)}
+            else:
+                changes.pop(field,None)
         self.object.changes = changes
         self.object.save()
 
@@ -249,7 +251,10 @@ def upload_request_document(request, equipment_id):
     change_request, _ = EquipmentChangeRequest.objects.get_or_create(
         equipment=equipment,
         status=EquipmentChangeRequest.Status.PENDING,
-        defaults={"requested_by": request.user}
+        defaults={
+            "requested_by": request.user,
+            "action": EquipmentChangeRequest.Action.UPDATE,
+        }
     )
     file = request.FILES.get("file")
     if not file:
@@ -262,17 +267,69 @@ def upload_request_document(request, equipment_id):
         file_name=file_name,
         description=description,
     )
-    return render(request, "equipment/document_row.html", {"doc": doc})
 
+    # --- NEW: record document change in the JSON "changes" field ---
+    changes = change_request.changes or {}
+
+    # Rebuild a simple description of all documents attached to this request
+    docs_qs = change_request.document_requests.all()
+    docs_list = [
+        {
+            "id": d.pk,
+            "file_name": d.file_name,
+            "description": d.description,
+        }
+        for d in docs_qs
+    ]
+
+    changes["documents"] = {
+        "old": f"{docs_qs.count() - 1} documents" if docs_qs.count() > 1 else "0 documents",
+        "new": f"{docs_qs.count()} documents",
+        "details": docs_list,
+    }
+
+    change_request.changes = changes
+    change_request.save(update_fields=["changes"])
+
+    return render(request, "equipment/document_row.html", {"doc": doc})
 @login_required
 def delete_request_document(request, pk):
     if request.method != "DELETE":
         return HttpResponse(status=405)
+
     doc = get_object_or_404(
         EquipmentDocumentChangeRequest,
         pk=pk,
         change_request__requested_by=request.user,
         change_request__status=EquipmentChangeRequest.Status.PENDING,
     )
+
+    change_request = doc.change_request
     doc.delete()
+
+    # Update document info inside changes
+    changes = change_request.changes or {}
+    docs_qs = change_request.document_requests.all()
+
+    if docs_qs.exists():
+        docs_list = [
+            {
+                "id": d.pk,
+                "file_name": d.file_name,
+                "description": d.description,
+            }
+            for d in docs_qs
+        ]
+        changes["documents"] = {
+            "old": f"{docs_qs.count() + 1} documents",
+            "new": f"{docs_qs.count()} documents",
+            "details": docs_list,
+        }
+    else:
+        # No docs left: remove documents entry from changes
+        changes.pop("documents", None)
+
+    change_request.changes = changes
+    change_request.save(update_fields=["changes"])
+
     return HttpResponse("")

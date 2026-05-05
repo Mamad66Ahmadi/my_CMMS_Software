@@ -1,5 +1,5 @@
 from django.db import models
-from viewflow.fsm import FSMField, transition
+from django_fsm.fsm import FSMField, transition
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
@@ -26,7 +26,7 @@ class WorkOrderHeader(models.Model):
     reg_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_headers')
 
     def __str__(self):
-        return self.wo_number
+        return f"WO-{self.wo_number}"
 
     class Meta:
         verbose_name = "Work Order Header"

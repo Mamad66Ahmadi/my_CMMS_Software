@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'viewflow',
+    #'viewflow',
+    'django_fsm', # new added
     'simple_history',
     'import_export',
     'rest_framework',
