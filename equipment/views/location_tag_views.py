@@ -278,24 +278,33 @@ class LocationTagUpdateRequestView(LoginRequiredMixin, CreateView):
             )
             return self.form_invalid(form)
 
+        # --- FIX: Correct validation for loc_tag ---
         loc_tag = form.cleaned_data["loc_tag"]
-        if LocationTag.objects.filter(loc_tag=loc_tag).exists():
-            form.add_error("loc_tag", "A Location Tag with this code already exists.")
-            return self.form_invalid(form)
 
-        # 2. No pending request → create a new one (but don't save yet)
+        # Allow same value; forbid changing to an existing loc_tag
+        if loc_tag != self.tag.loc_tag:
+            if LocationTag.objects.filter(loc_tag=loc_tag).exists():
+                form.add_error("loc_tag", "Another Location Tag with this code already exists.")
+                return self.form_invalid(form)
+
+        # 2. No pending request → create a new one
         req = form.save(commit=False)
         req.action = LocationTagChangeRequest.Action.UPDATE
         req.location_tag = self.tag
         req.requested_by = self.request.user
 
+        # --- FIX: Make the request pending ---
+        req.status = LocationTagChangeRequest.Status.PENDING
+
         # 3. Detect changed fields
         tag = self.tag
         changes = {}
 
-        for field in ("loc_tag", "parent", "description", "long_tag",
-                        "obj_criticality", "obj_type", "obj_category",
-                        "unit", "train", "note", "mih_level"):
+        for field in (
+            "loc_tag", "parent", "description", "long_tag",
+            "obj_criticality", "obj_type", "obj_category",
+            "unit", "train", "note", "mih_level"
+        ):
             if field not in form.cleaned_data:
                 continue
             old_value = getattr(tag, field, None)
@@ -305,13 +314,11 @@ class LocationTagUpdateRequestView(LoginRequiredMixin, CreateView):
                     "old": str(old_value),
                     "new": str(new_value),
                 }
-        # 4. Save the differences to the JSONField
+
         req.changes = changes
 
-        # 5. Save request
+        # 4. Save the NEW request
         req.save()
-
-
 
         return redirect("equipment:location_tag_detail", loc_tag=self.tag.loc_tag)
 
@@ -334,6 +341,7 @@ class LocationTagCreateRequestView(LoginRequiredMixin, CreateView):
         req.action = LocationTagChangeRequest.Action.CREATE
         req.requested_by = self.request.user
         req.changes = {}  # no changes for creation
+        req.status = LocationTagChangeRequest.Status.PENDING
 
         req.save()
 

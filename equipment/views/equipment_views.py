@@ -1,14 +1,15 @@
 # equipment/views/equipment_views.py
 
 from django.core.paginator import Paginator
-from django.views.generic import TemplateView, DetailView, CreateView, FormView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView, DetailView, CreateView, FormView, View
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
 from django.db import transaction
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.contrib import messages
 
 from equipment.models.equipment_models import Equipment
 from equipment.models.request_equipment_models import (
@@ -493,3 +494,75 @@ def abandon_create_request(request, request_id):
     change_request.delete()
 
     return HttpResponse(status=204)
+
+
+# -------------------- Review ------------------------------------------
+class EquipmentRequestReviewView(LoginRequiredMixin, UserPassesTestMixin, View):
+
+    template_name = "equipment/equipment_request_review.html"
+
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
+
+    def get(self, request, pk):
+
+        req = get_object_or_404(
+            EquipmentChangeRequest,
+            pk=pk,
+            status=EquipmentChangeRequest.Status.PENDING
+        )
+ 
+        # You only have ONE form for equipment
+        FormClass = EquipmentChangeRequestForm
+
+        eq = req.equipment  # Might be None for CREATE requests
+
+        def merged(field, default=""):
+            if hasattr(req, field) and getattr(req, field):
+                return getattr(req, field)
+            if eq and hasattr(eq, field) and getattr(eq, field):
+                return getattr(eq, field)
+            return default
+
+        initial = {
+            "functional_location": merged("functional_location", None),
+            "serial_number": merged("serial_number", ""),
+            "manufacturer": merged("manufacturer", ""),
+            "model": merged("model", ""),
+            "note": merged("note", ""),
+        }
+
+        form = FormClass(initial=initial)
+
+        return render(request, self.template_name, {"req": req, "form": form})
+
+
+    def post(self, request, pk):
+
+        req = get_object_or_404(EquipmentChangeRequest, pk=pk)
+        action = request.POST.get("decision")
+
+        form = EquipmentChangeRequestForm(request.POST, request.FILES)
+
+        if not form.is_valid():
+            messages.error(request, "Invalid form data.")
+            return render(request, self.template_name, {"req": req, "form": form})
+
+        # --- Update request object with reviewer edits ---
+        for field, value in form.cleaned_data.items():
+            setattr(req, field, value)
+
+        req.save()
+
+        # --- APPROVE or REJECT ---
+        if action == "approve":
+            req.approve_request(reviewer=request.user)
+            messages.success(request, "Equipment request approved.")
+            return redirect("accounts:dashboard")
+
+        elif action == "reject":
+            req.mark_rejected(reviewer=request.user)
+            messages.warning(request, "Equipment request rejected.")
+            return redirect("accounts:dashboard")
+
+        return redirect("accounts:dashboard")

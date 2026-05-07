@@ -26,4 +26,5 @@ urlpatterns = [
     path("equipment/request/<int:request_id>/upload-document/",equipment_views.upload_create_request_document,name="upload_create_request_document",),
     path("equipment/request/<int:request_id>/cancel/",equipment_views.cancel_create_request,name="cancel_create_request",),
     path("equipment/create/abandon/<int:request_id>/",equipment_views.abandon_create_request,name="abandon_create_request",),
+    path("equipment-request/<int:pk>/review/",equipment_views.EquipmentRequestReviewView.as_view(),name="equipment_request_review",),
 ]

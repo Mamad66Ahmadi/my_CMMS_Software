@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %} Review Equipment Request {% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container" style="max-width:750px; margin-top:30px;">
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert-success">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="section-header">
+    Review Equipment Request
+</div>
+
+<div class="form-card">
+
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
+
+<p>{{ form.name.label_tag }} {{ form.name }}</p>
+<p>{{ form.tag.label_tag }} {{ form.tag }}</p>
+<p>{{ form.serial_number.label_tag }} {{ form.serial_number }}</p>
+<p>{{ form.model.label_tag }} {{ form.model }}</p>
+<p>{{ form.manufacturer.label_tag }} {{ form.manufacturer }}</p>
+<p>{{ form.unit.label_tag }} {{ form.unit }}</p>
+<p>{{ form.train.label_tag }} {{ form.train }}</p>
+<p>{{ form.description.label_tag }} {{ form.description }}</p>
+<p>{{ form.note.label_tag }} {{ form.note }}</p>
+
+{% if req.document_requests.count %}
+<div style="margin-top:20px;">
+    <strong>Attached Documents:</strong>
+    <ul>
+        {% for doc in req.document_requests.all %}
+            <li>
+                <a href="{{ doc.file.url }}" download>{{ doc.file.name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div style="margin-top:25px; display:flex; gap:10px;">
+
+    <button type="submit" name="decision" value="approve" class="btn-primary-custom">
+        Approve & Apply
+    </button>
+
+    <button type="submit" name="decision" value="reject" class="btn-secondary-custom">
+        Reject
+    </button>
+
+    <a href="{% url 'accounts:dashboard' %}" class="btn-secondary-custom">
+        Cancel
+    </a>
+
+</div>
+
+</form>
+
+</div>
+</div>
+
+{% endblock %}
