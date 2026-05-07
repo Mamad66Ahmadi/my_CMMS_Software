@@ -21,5 +21,9 @@ urlpatterns = [
     path("equipment-modification/<int:pk>/", equipment_views.EquipmentUpdateRequestView.as_view(), name="equipment_update_request"),
     path("equipment/<int:equipment_id>/upload-document/",equipment_views.upload_request_document,name="upload_request_document",),
     path("equipment/document/<int:pk>/delete/",equipment_views.delete_request_document,name="delete_request_document",),
-    
+    path("request/update/<int:request_id>/cancel/",equipment_views.cancel_update_request,name="cancel_update_request",),
+    path("equipment/request/create/",equipment_views.EquipmentCreateRequestView.as_view(),name="equipment_request_create",),
+    path("equipment/request/<int:request_id>/upload-document/",equipment_views.upload_create_request_document,name="upload_create_request_document",),
+    path("equipment/request/<int:request_id>/cancel/",equipment_views.cancel_create_request,name="cancel_create_request",),
+    path("equipment/create/abandon/<int:request_id>/",equipment_views.abandon_create_request,name="abandon_create_request",),
 ]

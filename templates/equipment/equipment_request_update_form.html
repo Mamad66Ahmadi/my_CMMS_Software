@@ -14,7 +14,7 @@
         <hr>
         
         <!-- MAIN FORM: Only for Equipment Fields -->
-        <form method="post" id="main-equipment-form">
+        <form method="post" id="main-equipment-form" hx-boost="false">
             {% csrf_token %}
 
             <div style="display: flex; gap: 30px; flex-wrap: wrap;">
@@ -94,8 +94,10 @@
             <div style="margin-top:40px; border-top:1px solid #eee; padding-top:20px;">
                 <button type="submit" class="btn-primary-custom">Submit Change Request</button>
                 <button type="button" class="btn-secondary-custom"
-                        hx-delete="#"
-                        hx-confirm="Discard this draft request?">
+                        hx-post="{% url 'equipment:cancel_update_request' pending_request.id %}"
+                        hx-confirm="Discard this draft request?"
+                        hx-target="body"
+                        hx-swap="none">
                     Cancel
                 </button>
             </div>

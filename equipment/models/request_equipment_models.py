@@ -26,6 +26,7 @@ class BaseChangeRequest(models.Model):
         REMOVE = "remove", "Remove"
 
     class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
         PENDING = "pending", "Pending"
         APPROVED_WITH_CHANGE = "approved_with_change", "Approved with Change"
         APPROVED = "approved", "Approved"
@@ -39,7 +40,7 @@ class BaseChangeRequest(models.Model):
     status = models.CharField(
         max_length=30,
         choices=Status.choices,
-        default=Status.PENDING,
+        default=Status.DRAFT,
         verbose_name="Status",
     )
 

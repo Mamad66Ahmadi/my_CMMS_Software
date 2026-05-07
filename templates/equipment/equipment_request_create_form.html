@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}New Equipment Request{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+
+<div class="container" style="max-width:1000px; margin-top:30px;">
+    <div class="section-header">Request New Equipment Creation</div>
+
+    <div class="form-card">
+        <p>You are requesting the creation of a <strong>New Equipment</strong> asset.</p>
+        <hr>
+        
+        <!-- MAIN FORM -->
+        <form method="post" id="main-equipment-form">
+            {% csrf_token %}
+
+            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                
+                <!-- LEFT COLUMN: Main Fields -->
+                <div style="flex: 1; min-width: 300px;">
+                    <h5>Equipment Details</h5>
+                    <p style="position: relative;">
+                        {{ form.functional_location_search.label_tag }}
+                        {{ form.functional_location_search }}
+                        <div id="location-results" class="autocomplete-results"></div>
+                        {{ form.functional_location }}
+                    </p>
+                    <p>{{ form.serial_number.label_tag }} {{ form.serial_number }}</p>
+                    <p>{{ form.manufacturer.label_tag }} {{ form.manufacturer }}</p>
+                    <p>{{ form.model.label_tag }} {{ form.model }}</p>
+                    <p>{{ form.note.label_tag }} {{ form.note }}</p>
+                </div>
+
+                <!-- RIGHT COLUMN: HTMX Upload System -->
+                <div style="flex: 1; min-width: 300px;">
+                    <h5>Upload Supporting Documents</h5>
+                    <div id="upload-box" style="border:2px dashed #ccc; padding:20px; border-radius:8px; background:#f9f9f9;">
+                        <p>
+                            <label>Select File:</label>
+                            <input type="file" name="file" id="id_new_file" class="form-control">
+                        </p>
+                        <p>
+                            <label>Display Name:</label>
+                            <input type="text" name="file_name" id="id_new_file_name" class="form-control" placeholder="Optional">
+                        </p>
+                        <p>
+                            <label>Description:</label>
+                            <textarea name="description" id="id_new_description" class="form-control" rows="2"></textarea>
+                        </p>
+                        
+                        <!-- NOTE: Using upload_create_request_document with pending_request.id -->
+                        <button type="button" 
+                                class="btn btn-success w-100"
+                                hx-post="{% url 'equipment:upload_create_request_document' pending_request.id %}" 
+                                hx-encoding="multipart/form-data"
+                                hx-include="#upload-box input, #upload-box textarea"
+                                hx-target="#uploaded-documents-body" 
+                                hx-swap="beforeend"
+                                hx-on::after-request="if(event.detail.successful) { 
+                                    document.getElementById('id_new_file').value = ''; 
+                                    document.getElementById('id_new_file_name').value = '';
+                                    document.getElementById('id_new_description').value = '';
+                                }">
+                            Upload & Add to List
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="margin-top:40px;">
+
+            <h5>Documents for this Request</h5>
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>File Name</th>
+                        <th>Description</th>
+                        <th>Preview</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="uploaded-documents-body">
+                    {% for doc in pending_request.document_requests.all %}
+                        {% include "equipment/document_row.html" %}
+                    {% empty %}
+                        <!-- Rows will appear here as they are uploaded -->
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div style="margin-top:40px; border-top:1px solid #eee; padding-top:20px;">
+                <button type="submit" name="action" value="submit" class="btn-primary-custom">Submit Creation Request</button>
+                <button type="submit" name="action" value="cancel" class="btn-secondary-custom"
+                        formaction="{% url 'equipment:cancel_create_request' pending_request.id %}"
+                        formmethod="post">
+                    Cancel
+                </button>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scripts (Autocomplete and HTMX CSRF) -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const requestId = "{{ pending_request.id }}";
+    const form = document.getElementById("main-equipment-form");
+    let isSubmitting = false;
+
+    /* ===============================
+       Disable auto-delete on submit
+    =============================== */
+
+    form.addEventListener("submit", function () {
+        isSubmitting = true;
+    });
+
+    /* ===============================
+       Auto delete draft on tab close
+    =============================== */
+
+    window.addEventListener("beforeunload", function () {
+        if (!requestId || isSubmitting) return;
+
+        navigator.sendBeacon(`/equipment/create/abandon/${requestId}/`);
+    });
+
+    /* ===============================
+       Functional location autocomplete
+    =============================== */
+
+    const input = document.getElementById("location-search");
+    const hidden = document.getElementById("id_functional_location");
+    const resultsBox = document.getElementById("location-results");
+
+    if (input) {
+        input.addEventListener("keyup", function () {
+            const query = input.value;
+            if (query.length < 2) {
+                resultsBox.style.display = "none";
+                return;
+            }
+
+            fetch(input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(query))
+                .then(r => r.json())
+                .then(data => {
+                    resultsBox.innerHTML = "";
+
+                    data.results.forEach(item => {
+                        const div = document.createElement("div");
+                        div.className = "autocomplete-item";
+                        div.textContent = item.text;
+
+                        div.onclick = () => {
+                            input.value = item.text;
+                            hidden.value = item.id;
+                            resultsBox.style.display = "none";
+                        };
+
+                        resultsBox.appendChild(div);
+                    });
+
+                    resultsBox.style.display = "block";
+                });
+        });
+    }
+
+    /* ===============================
+       HTMX CSRF (safe method)
+    =============================== */
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    document.body.addEventListener("htmx:configRequest", (event) => {
+        event.detail.headers["X-CSRFToken"] = getCookie("csrftoken");
+    });
+
+});
+</script>
+
+{% endblock %}

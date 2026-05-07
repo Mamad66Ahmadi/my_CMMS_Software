@@ -1,21 +1,69 @@
 # equipment/views/equipment_views.py
+
 from django.core.paginator import Paginator
-from django.views.generic import TemplateView, DetailView, CreateView
+from django.views.generic import TemplateView, DetailView, CreateView, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, redirect,render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
-from django.forms import inlineformset_factory 
 from django.db import transaction
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
-
+from django.views.decorators.http import require_POST
 
 from equipment.models.equipment_models import Equipment
-from equipment.models.request_equipment_models import EquipmentChangeRequest, EquipmentDocumentChangeRequest
+from equipment.models.request_equipment_models import (
+    EquipmentChangeRequest,
+    EquipmentDocumentChangeRequest,
+)
 
 from equipment.forms.equioment_change_form import EquipmentChangeRequestForm
 
 
+# ---------------------------------------------------------------------
+# Helper Functions
+# ---------------------------------------------------------------------
+
+def update_document_changes(change_request):
+    changes = change_request.changes or {}
+    docs_qs = change_request.document_requests.all()
+
+    if docs_qs.exists():
+        docs_list = [
+            {
+                "id": d.pk,
+                "file_name": d.file_name,
+                "description": d.description,
+            }
+            for d in docs_qs
+        ]
+
+        count = docs_qs.count()
+
+        changes["documents"] = {
+            "old": f"{count-1} documents" if count > 1 else "0 documents",
+            "new": f"{count} documents",
+            "details": docs_list,
+        }
+    else:
+        changes.pop("documents", None)
+
+    change_request.changes = changes
+    change_request.save(update_fields=["changes"])
+
+
+def delete_request_files(change_request):
+    docs = change_request.document_requests.all()
+
+    for doc in docs:
+        if doc.file:
+            doc.file.delete(save=False)
+
+    docs.delete()
+
+
+# ---------------------------------------------------------------------
+# Equipment List
+# ---------------------------------------------------------------------
 
 class EquipmentList(LoginRequiredMixin, TemplateView):
     template_name = "equipment/equipment_list.html"
@@ -24,7 +72,6 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # ---------------- Filters ----------------
         filters = {
             "functional_location": self.request.GET.get("functional_location", "").strip(),
             "serial_number": self.request.GET.get("serial_number", "").strip(),
@@ -41,21 +88,16 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
             "modified_by",
         )
 
-        # ---------------- Filtering ----------------
         if filters["functional_location"]:
             queryset = queryset.filter(
                 functional_location__loc_tag__icontains=filters["functional_location"]
             )
 
         if filters["serial_number"]:
-            queryset = queryset.filter(
-                serial_number__icontains=filters["serial_number"]
-            )
+            queryset = queryset.filter(serial_number__icontains=filters["serial_number"])
 
         if filters["manufacturer"]:
-            queryset = queryset.filter(
-                manufacturer__icontains=filters["manufacturer"]
-            )
+            queryset = queryset.filter(manufacturer__icontains=filters["manufacturer"])
 
         if filters["model"]:
             queryset = queryset.filter(model__icontains=filters["model"])
@@ -66,7 +108,6 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
         if filters["is_active"] == "true":
             queryset = queryset.filter(is_active=True)
 
-        # ---------------- Sorting ----------------
         sort_by = self.request.GET.get("sort", "functional_location")
         sort_order = self.request.GET.get("order", "asc")
 
@@ -91,7 +132,6 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
         else:
             queryset = queryset.order_by(sort_field)
 
-        # ---------------- Pagination ----------------
         per_page = self.request.GET.get("per_page", "25")
 
         try:
@@ -108,7 +148,6 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
         page_number = self.request.GET.get("page")
         equipments = paginator.get_page(page_number)
 
-        # ---------------- Context ----------------
         context["per_page"] = per_page
         context["page_obj"] = equipments
         context["equipments"] = equipments
@@ -116,14 +155,12 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
         context["sort_by"] = sort_by
         context["sort_order"] = sort_order
         context["filters"] = filters
-        context["total_equipments"] = queryset.count()
+        context["total_equipments"] = paginator.count
 
-        # Build sorting params without sort/order for column headers
         param_list = [f"{k}={v}" for k, v in filters.items() if v]
         param_list.append(f"per_page={per_page}")
         context["sort_params"] = "&".join(param_list)
 
-        # Build safe query string without 'page' param
         params = self.request.GET.copy()
         params.pop("page", None)
         context["query_params"] = params.urlencode()
@@ -131,34 +168,28 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
         return context
 
 
-# ----------------------------------------- Equipment Detail ------------------------------
-
+# ---------------------------------------------------------------------
+# Equipment Detail
+# ---------------------------------------------------------------------
 
 class EquipmentDetail(LoginRequiredMixin, DetailView):
     model = Equipment
     template_name = "equipment/equipment_detail.html"
     context_object_name = "equipment"
-
-    pk_url_kwarg = "pk"  # assuming URL pattern like path("<int:pk>/", ...)
-    login_url = "/accounts/login/"
-    redirect_field_name = "next"
+    pk_url_kwarg = "pk"
 
     queryset = Equipment.objects.select_related(
         "functional_location",
         "created_by",
         "modified_by",
-    ).prefetch_related(
-        "documents",
-    )
+    ).prefetch_related("documents")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         equipment = self.object
 
-        # Functional location of this equipment (for linking)
         context["functional_location"] = equipment.functional_location
-
-        # Related documents
         context["documents"] = equipment.documents.all()
 
         context["change_requests"] = (
@@ -175,17 +206,26 @@ class EquipmentDetail(LoginRequiredMixin, DetailView):
         return context
 
 
+# ---------------------------------------------------------------------
+# Equipment Update Request
+# ---------------------------------------------------------------------
 
-#-------------------------------- Modification ------------------------------
 class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
     model = EquipmentChangeRequest
     form_class = EquipmentChangeRequestForm
     template_name = "equipment/equipment_request_update_form.html"
-    login_url = "/accounts/login/"
-    redirect_field_name = "next"
 
     def dispatch(self, request, *args, **kwargs):
+
         self.equipment = get_object_or_404(Equipment, pk=kwargs["pk"])
+
+        self.draft_request, _ = EquipmentChangeRequest.objects.get_or_create(
+            equipment=self.equipment,
+            status=EquipmentChangeRequest.Status.DRAFT,
+            requested_by=request.user,
+            action=EquipmentChangeRequest.Action.UPDATE,
+        )
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
@@ -200,67 +240,71 @@ class EquipmentUpdateRequestView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['equipment'] = self.equipment
-        context['pending_request'] = EquipmentChangeRequest.objects.filter(
-            equipment=self.equipment,
-            status=EquipmentChangeRequest.Status.PENDING,
-            requested_by=self.request.user
-        ).first()
+        context["equipment"] = self.equipment
+        context["pending_request"] = self.draft_request
         return context
 
     @transaction.atomic
     def form_valid(self, form):
-        self.object, _ = EquipmentChangeRequest.objects.get_or_create(
-            equipment=self.equipment,
-            status=EquipmentChangeRequest.Status.PENDING,
-            defaults={
-                "requested_by": self.request.user,
-                "action": EquipmentChangeRequest.Action.UPDATE
-            }
-        )
 
+        self.object = self.draft_request
         updated_instance = form.save(commit=False)
+
         for field in ["functional_location", "serial_number", "manufacturer", "model", "note"]:
             setattr(self.object, field, getattr(updated_instance, field))
 
-        # Detect changes, as you already do
         changes = self.object.changes or {}
         eq = self.equipment
+
         for field in ["functional_location", "serial_number", "manufacturer", "model", "note"]:
             old = getattr(eq, field, None)
             new = getattr(self.object, field)
+
             if old != new:
                 changes[field] = {"old": str(old), "new": str(new)}
             else:
-                changes.pop(field,None)
+                changes.pop(field, None)
+
         self.object.changes = changes
+        self.object.status = EquipmentChangeRequest.Status.PENDING
         self.object.save()
 
         return redirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse_lazy("equipment:equipment_detail", kwargs={"pk": self.equipment.pk})
+        return reverse_lazy(
+            "equipment:equipment_detail",
+            kwargs={"pk": self.equipment.pk},
+        )
 
 
+# ---------------------------------------------------------------------
+# Update Request Documents
+# ---------------------------------------------------------------------
 
 @login_required
 def upload_request_document(request, equipment_id):
+
     if request.method != "POST":
         return HttpResponse(status=405)
+
     equipment = get_object_or_404(Equipment, pk=equipment_id)
+
     change_request, _ = EquipmentChangeRequest.objects.get_or_create(
         equipment=equipment,
-        status=EquipmentChangeRequest.Status.PENDING,
-        defaults={
-            "requested_by": request.user,
-            "action": EquipmentChangeRequest.Action.UPDATE,
-        }
+        status=EquipmentChangeRequest.Status.DRAFT,
+        requested_by=request.user,
+        action=EquipmentChangeRequest.Action.UPDATE,
     )
+
     file = request.FILES.get("file")
+
     if not file:
         return HttpResponseBadRequest("Missing file")
+
     file_name = request.POST.get("file_name") or file.name
     description = request.POST.get("description")
+
     doc = EquipmentDocumentChangeRequest.objects.create(
         change_request=change_request,
         file=file,
@@ -268,32 +312,14 @@ def upload_request_document(request, equipment_id):
         description=description,
     )
 
-    # --- NEW: record document change in the JSON "changes" field ---
-    changes = change_request.changes or {}
-
-    # Rebuild a simple description of all documents attached to this request
-    docs_qs = change_request.document_requests.all()
-    docs_list = [
-        {
-            "id": d.pk,
-            "file_name": d.file_name,
-            "description": d.description,
-        }
-        for d in docs_qs
-    ]
-
-    changes["documents"] = {
-        "old": f"{docs_qs.count() - 1} documents" if docs_qs.count() > 1 else "0 documents",
-        "new": f"{docs_qs.count()} documents",
-        "details": docs_list,
-    }
-
-    change_request.changes = changes
-    change_request.save(update_fields=["changes"])
+    update_document_changes(change_request)
 
     return render(request, "equipment/document_row.html", {"doc": doc})
+
+
 @login_required
 def delete_request_document(request, pk):
+
     if request.method != "DELETE":
         return HttpResponse(status=405)
 
@@ -301,35 +327,169 @@ def delete_request_document(request, pk):
         EquipmentDocumentChangeRequest,
         pk=pk,
         change_request__requested_by=request.user,
-        change_request__status=EquipmentChangeRequest.Status.PENDING,
+        change_request__status=EquipmentChangeRequest.Status.DRAFT,
     )
 
     change_request = doc.change_request
+
+    if doc.file:
+        doc.file.delete(save=False)
+
     doc.delete()
 
-    # Update document info inside changes
-    changes = change_request.changes or {}
-    docs_qs = change_request.document_requests.all()
-
-    if docs_qs.exists():
-        docs_list = [
-            {
-                "id": d.pk,
-                "file_name": d.file_name,
-                "description": d.description,
-            }
-            for d in docs_qs
-        ]
-        changes["documents"] = {
-            "old": f"{docs_qs.count() + 1} documents",
-            "new": f"{docs_qs.count()} documents",
-            "details": docs_list,
-        }
-    else:
-        # No docs left: remove documents entry from changes
-        changes.pop("documents", None)
-
-    change_request.changes = changes
-    change_request.save(update_fields=["changes"])
+    update_document_changes(change_request)
 
     return HttpResponse("")
+
+
+@login_required
+@require_POST
+def cancel_update_request(request, request_id):
+
+    change_request = get_object_or_404(
+        EquipmentChangeRequest,
+        pk=request_id,
+        requested_by=request.user,
+        status=EquipmentChangeRequest.Status.DRAFT,
+        action=EquipmentChangeRequest.Action.UPDATE,
+    )
+
+    equipment_id = change_request.equipment_id
+
+    delete_request_files(change_request)
+    change_request.delete()
+
+    response = HttpResponse()
+    response["HX-Redirect"] = reverse("equipment:equipment_detail", args=[equipment_id])
+
+    return response
+
+
+# ---------------------------------------------------------------------
+# Equipment Create Request
+# ---------------------------------------------------------------------
+
+class EquipmentCreateRequestView(LoginRequiredMixin, FormView):
+
+    form_class = EquipmentChangeRequestForm
+    template_name = "equipment/equipment_request_create_form.html"
+    success_url = reverse_lazy("equipment:equipment_list")
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        pending_request, _ = EquipmentChangeRequest.objects.get_or_create(
+            equipment=None,
+            status=EquipmentChangeRequest.Status.DRAFT,
+            requested_by=self.request.user,
+            action=EquipmentChangeRequest.Action.CREATE,
+        )
+
+        context["pending_request"] = pending_request
+        return context
+
+    @transaction.atomic
+    def form_valid(self, form):
+
+        pending_request = EquipmentChangeRequest.objects.get(
+            equipment=None,
+            status=EquipmentChangeRequest.Status.DRAFT,
+            requested_by=self.request.user,
+            action=EquipmentChangeRequest.Action.CREATE,
+        )
+
+        pending_request.functional_location = form.cleaned_data["functional_location"]
+        pending_request.serial_number = form.cleaned_data["serial_number"]
+        pending_request.manufacturer = form.cleaned_data["manufacturer"]
+        pending_request.model = form.cleaned_data["model"]
+        pending_request.note = form.cleaned_data["note"]
+
+        pending_request.status = EquipmentChangeRequest.Status.PENDING
+
+        changes = {}
+
+        for field in ["functional_location", "serial_number", "manufacturer", "model", "note"]:
+            val = getattr(pending_request, field)
+
+            if val:
+                changes[field] = {"old": None, "new": str(val)}
+
+        pending_request.changes = changes
+        pending_request.save()
+
+        return redirect(self.success_url)
+
+
+# ---------------------------------------------------------------------
+# Create Request Documents
+# ---------------------------------------------------------------------
+
+@login_required
+def upload_create_request_document(request, request_id):
+
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    change_request = get_object_or_404(
+        EquipmentChangeRequest,
+        pk=request_id,
+        requested_by=request.user,
+        status=EquipmentChangeRequest.Status.DRAFT,
+        action=EquipmentChangeRequest.Action.CREATE,
+    )
+
+    file = request.FILES.get("file")
+
+    if not file:
+        return HttpResponseBadRequest("Missing file")
+
+    file_name = request.POST.get("file_name") or file.name
+    description = request.POST.get("description")
+
+    doc = EquipmentDocumentChangeRequest.objects.create(
+        change_request=change_request,
+        file=file,
+        file_name=file_name,
+        description=description,
+    )
+
+    update_document_changes(change_request)
+
+    return render(request, "equipment/document_row.html", {"doc": doc})
+
+
+@login_required
+@require_POST
+def cancel_create_request(request, request_id):
+
+    change_request = get_object_or_404(
+        EquipmentChangeRequest,
+        pk=request_id,
+        requested_by=request.user,
+        status=EquipmentChangeRequest.Status.DRAFT,
+        action=EquipmentChangeRequest.Action.CREATE,
+    )
+
+    delete_request_files(change_request)
+    change_request.delete()
+
+    return redirect("equipment:equipment_list")
+
+
+@login_required
+@require_POST
+def abandon_create_request(request, request_id):
+
+    change_request = get_object_or_404(
+        EquipmentChangeRequest,
+        pk=request_id,
+        requested_by=request.user,
+        status=EquipmentChangeRequest.Status.DRAFT,
+        action=EquipmentChangeRequest.Action.CREATE,
+    )
+
+    delete_request_files(change_request)
+    change_request.delete()
+
+    return HttpResponse(status=204)
