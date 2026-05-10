@@ -495,8 +495,10 @@ def abandon_create_request(request, request_id):
 
     return HttpResponse(status=204)
 
+# ---------------------------------------------------------------------
+# Review Equipment Request 
+# ---------------------------------------------------------------------
 
-# -------------------- Review ------------------------------------------
 class EquipmentRequestReviewView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "equipment/equipment_request_review.html"
 
@@ -531,3 +533,46 @@ class EquipmentRequestReviewView(LoginRequiredMixin, UserPassesTestMixin, View):
         
         # If form invalid
         return render(request, self.template_name, {"req": req, "form": form})
+
+
+# ---------------------------------------------------------------------
+# Bulk Action Equipment Request 
+# ---------------------------------------------------------------------
+
+class BulkEquipmentActionsView(LoginRequiredMixin, UserPassesTestMixin, View):
+
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
+
+    def post(self, request):
+
+        ids = request.POST.getlist("selected_requests")
+        action = request.POST.get("bulk_action")
+
+        if not ids:
+            messages.warning(request, "No requests selected.")
+            return redirect("accounts:dashboard")
+
+        qs = EquipmentChangeRequest.objects.filter(id__in=ids)
+        count = 0
+
+        for req in qs:
+            try:
+                if action == "approve":
+                    req.approve_request(reviewer=request.user)
+
+                elif action == "reject":
+                    req.mark_rejected(reviewer=request.user)
+
+                count += 1
+
+            except Exception as e:
+                messages.error(request, f"Error in request {req.id}: {e}")
+
+        if action == "approve":
+            messages.success(request, f"{count} request(s) approved.")
+
+        elif action == "reject":
+            messages.warning(request, f"{count} request(s) rejected.")
+
+        return redirect("accounts:dashboard")

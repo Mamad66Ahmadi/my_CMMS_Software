@@ -1,6 +1,5 @@
 <div class="card mb-4">
-    <div class="card-header border-bottom d-flex justify-content-between align-items-center"
-        style="background-color:#e6e6e6;">
+    <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center">
         <span class="text-dark fw-semibold" style="font-size: 1.05rem;">
             Equipment Change Requests
         </span>
@@ -8,105 +7,118 @@
 
     <div class="card-body">
 
-        {% if equipment_requests %}
+        <form method="post" action="{% url 'equipment:bulk_equipment_actions' %}">
+            {% csrf_token %}
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped sortable">
-                <thead class="table-light">
-                <tr>
-                    <th>ID</th>
-                    <th>Equipment</th>
-                    <th>Action</th>
-                    <th>Status</th>
-                    <th>Changes</th>
-                    <th>Requested By</th>
-                    <th>Requested At</th>
-                </tr>
-                </thead>
+            {% if equipment_requests %}
 
-                <tbody>
-                {% for req in equipment_requests %}
-                <tr>
+            <div class="d-flex justify-content-end mb-2">
+                <button type="submit" name="bulk_action" value="approve" class="btn btn-success btn-sm me-2">
+                    Approve Selected
+                </button>
+                <button type="submit" name="bulk_action" value="reject" class="btn btn-danger btn-sm">
+                    Reject Selected
+                </button>
+            </div>
 
-                    <!-- ID (clickable to review page) -->
-                    <td>
-                        <a href="{% url 'equipment:equipment_request_review' req.id %}">
-                            {{ req.id }}
-                        </a>
-                    </td>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped sortable">
 
-                    <!-- Equipment (None for CREATE) -->
-                    <td>
-                        {% if req.action == req.Action.CREATE %}
-                            <span class="text-primary">New Equipment</span>
-                        {% elif req.equipment %}
-                            <a href="{% url 'equipment:equipment_detail' req.equipment.id %}">
-                                {{ req.equipment }}
+                    <thead class="table-light">
+                        <tr>
+                            <th class="no-sort" style="width:35px;">
+                                <input type="checkbox" id="select-all-equipment">
+                            </th>
+                            <th>ID</th>
+                            <th>Equipment</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Changes</th>
+                            <th>Requested By</th>
+                            <th>Requested At</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    {% for req in equipment_requests %}
+                    <tr>
+
+                        <td>
+                            <input type="checkbox"
+                                   name="selected_requests"
+                                   value="{{ req.id }}"
+                                   class="row-checkbox">
+                        </td>
+
+                        <td>
+                            <a href="{% url 'equipment:equipment_request_review' req.id %}">
+                                {{ req.id }}
                             </a>
-                        {% else %}
-                            <span class="text-muted">Unavailable</span>
-                        {% endif %}
-                    </td>
+                        </td>
 
-                    <!-- Action -->
-                    <td>{{ req.get_action_display }}</td>
-
-                    <!-- Status Badge -->
-                    <td>
-                        <span class="badge
-                            {% if req.status == 'pending' %} bg-warning
-                            {% elif req.status == 'approved' %} bg-success
-                            {% elif req.status == 'approved_with_change' %} bg-info
-                            {% elif req.status == 'rejected' %} bg-danger
+                        <td>
+                            {% if req.action == req.Action.CREATE %}
+                                <span class="text-primary">New Equipment</span>
+                            {% elif req.equipment %}
+                                <a href="{% url 'equipment:equipment_detail' req.equipment.id %}">
+                                    {{ req.equipment }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Unavailable</span>
                             {% endif %}
-                        ">
-                            {{ req.get_status_display }}
-                        </span>
-                    </td>
+                        </td>
 
-                    <!-- Changes -->
-                    <td style="max-width:300px;">
-                        {% if req.action == req.Action.CREATE %}
-                            {% for field, diff in req.changes.items %}
-                                <strong>{{ field }}</strong>: "{{ diff.new }}"<br>
-                            {% endfor %}
-                        {% else %}
-                            {% if req.changes %}
+                        <td>{{ req.get_action_display }}</td>
+
+                        <td>{{ req.get_status_display }}</td>
+
+                        <td style="max-width:300px;">
+                            {% if req.action == req.Action.CREATE %}
                                 {% for field, diff in req.changes.items %}
-                                    <strong>{{ field }}</strong>: "{{ diff.old }}" → "{{ diff.new }}"<br>
+                                    <strong>{{ field }}</strong>: {{ diff.new }}<br>
                                 {% endfor %}
                             {% else %}
-                                <span class="text-muted">No changes</span>
+                                {% if req.changes %}
+                                    {% for field, diff in req.changes.items %}
+                                        <strong>{{ field }}</strong>: "{{ diff.old }}" → "{{ diff.new }}"<br>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">No changes</span>
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
 
-                        {% if req.document_requests.count %}
-                            <div class="mt-2">
-                                <strong>Documents:</strong><br>
-                                {{ req.document_requests.count }} file(s)
-                            </div>
-                        {% endif %}
-                    </td>
+                            {% if req.document_requests.count %}
+                                <div class="mt-1">
+                                    <strong>Documents:</strong>
+                                    {{ req.document_requests.count }}
+                                </div>
+                            {% endif %}
+                        </td>
 
-                    <td>{{ req.requested_by }}</td>
-                    <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ req.requested_by }}</td>
+                        <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
 
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
 
-        {% else %}
-        <div class="border rounded-1 bg-light p-4 text-center">
-            <div class="text-muted mb-2" style="font-size: 1.25rem;">
-                <i class="bi bi-info-circle"></i>
+                </table>
             </div>
-            <p class="text-muted mb-0" style="font-size: 1rem; letter-spacing: 0.3px;">
-                There are currently no pending equipment change requests.
-            </p>
-        </div>
-        {% endif %}
+
+            {% else %}
+
+            <div class="border rounded-1 bg-light p-4 text-center">
+                <div class="text-muted mb-2" style="font-size: 1.25rem;">
+                    <i class="bi bi-info-circle"></i>
+                </div>
+                <p class="text-muted mb-0" style="font-size: 1rem; letter-spacing: 0.3px;">
+                    There are currently no pending equipment change requests.
+                </p>
+            </div>
+
+            {% endif %}
+
+        </form>
+
     </div>
 </div>
-

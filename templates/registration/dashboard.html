@@ -6,6 +6,7 @@
 
 {% block content %}
 
+
 <!-- ======== Asset Requests (Master Section) ======== -->
 
 {% if request.user.is_staff or request.user.is_superuser %}
@@ -51,3 +52,29 @@
 {% endif %}
 
 {% endblock content %}
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    function setupSelectAll(selectAllId) {
+
+        const selectAll = document.getElementById(selectAllId);
+        if (!selectAll) return;
+
+        const table = selectAll.closest("table");
+        const checkboxes = table.querySelectorAll(".row-checkbox");
+
+        selectAll.addEventListener("change", function () {
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+        });
+
+    }
+
+    setupSelectAll("select-all");
+    setupSelectAll("select-all-equipment");
+
+});
+</script>
+{% endblock %}

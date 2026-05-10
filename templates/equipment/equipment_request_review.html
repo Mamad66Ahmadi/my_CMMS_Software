@@ -10,6 +10,12 @@
 
 {% block content %}
 
+<!-- ======== Back to Dashboard Button ======== -->
+<div class="d-flex justify-content-end mb-3"> {# d-flex for alignment, mb-3 for margin-bottom #}
+    <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary">
+        Back to Dashboard
+    </a>
+</div>
 
 <div class="container" style="max-width:750px; margin-top:30px;">
 
