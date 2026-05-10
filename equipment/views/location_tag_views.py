@@ -14,7 +14,7 @@ from ..models import LocationTag, EquipmentDocument, Equipment, ObjectType, Obje
 
 from equipment.models import LocationTagChangeRequest
 
-from equipment.forms import LocationTagChangeRequestForm, LocationTagCreateRequestForm
+from equipment.forms import LocationTagRequestForm
 
 # ----------------------------------------- Location Tag List ------------------------------
 class LocationTagList(LoginRequiredMixin, TemplateView):
@@ -234,7 +234,7 @@ def locationtag_autocomplete(request):
 
 class LocationTagUpdateRequestView(LoginRequiredMixin, CreateView):
     model = LocationTagChangeRequest
-    form_class = LocationTagChangeRequestForm
+    form_class =  LocationTagRequestForm
     template_name = "equipment/location_tag_request_update_form.html"
 
     login_url = "/accounts/login/"
@@ -326,7 +326,7 @@ class LocationTagUpdateRequestView(LoginRequiredMixin, CreateView):
 
 class LocationTagCreateRequestView(LoginRequiredMixin, CreateView):
     model = LocationTagChangeRequest
-    form_class = LocationTagCreateRequestForm
+    form_class = LocationTagRequestForm
     template_name = "equipment/location_tag_request_create_form.html"
 
 
@@ -412,11 +412,6 @@ class LocationTagRequestReviewView(LoginRequiredMixin, UserPassesTestMixin, View
             status=LocationTagChangeRequest.Status.PENDING
         )
 
-        FormClass = (
-            LocationTagCreateRequestForm
-            if req.action == LocationTagChangeRequest.Action.CREATE
-            else LocationTagChangeRequestForm
-        )
 
         initial = {
             "loc_tag": req.loc_tag or getattr(req.location_tag, "loc_tag", ""),
@@ -429,16 +424,10 @@ class LocationTagRequestReviewView(LoginRequiredMixin, UserPassesTestMixin, View
             "train": req.train or getattr(req.location_tag, "train", None),
             "note": req.note or getattr(req.location_tag, "note", ""),
             "mih_level": req.mih_level or getattr(req.location_tag, "mih_level", ""),
-
             "parent": req.parent or getattr(req.location_tag, "parent", None),
-
-            "parent_search": (
-                (req.parent.long_tag if req.parent else None) or
-                (getattr(req.location_tag, "parent").long_tag if getattr(req.location_tag, "parent", None) else "")
-            )
         }
 
-        form = FormClass(initial=initial)
+        form = LocationTagRequestForm(initial=initial)
 
         return render(request, self.template_name, {"req": req, "form": form})
 
@@ -448,14 +437,9 @@ class LocationTagRequestReviewView(LoginRequiredMixin, UserPassesTestMixin, View
 
         action = request.POST.get("decision")
 
-        # Load proper form class
-        FormClass = (
-            LocationTagCreateRequestForm
-            if req.action == LocationTagChangeRequest.Action.CREATE
-            else LocationTagChangeRequestForm
-        )
 
-        form = FormClass(request.POST)
+
+        form = LocationTagRequestForm(request.POST)
 
         if not form.is_valid():
             messages.error(request, "Invalid form data.")

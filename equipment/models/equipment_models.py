@@ -154,7 +154,7 @@ class Equipment(TimeStampedModel):
         blank=True, 
         related_name='installed_equipments',
     )
-    serial_number = models.CharField(max_length=50, unique=True, null=True, blank=True, verbose_name="Serial Number")
+    serial_number = models.CharField(max_length=50, null=True, blank=True, verbose_name="Serial Number")
     
     note = models.TextField(max_length=500, null=True, blank=True)
     manufacturer = models.CharField(max_length=100, null=True, blank=True)

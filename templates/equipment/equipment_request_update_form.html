@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 {% load static %}
 
@@ -26,7 +27,7 @@
                         {{ form.functional_location_search.label_tag }}
                         {{ form.functional_location_search }}
                         <div id="location-results" class="autocomplete-results"></div>
-                        {{ form.functional_location }}
+                        {{ form.functional_location }} <!-- This is the hidden ID field -->
                     </p>
                     <p>{{ form.serial_number.label_tag }} {{ form.serial_number }}</p>
                     <p>{{ form.manufacturer.label_tag }} {{ form.manufacturer }}</p>
@@ -106,18 +107,25 @@
 </div>
 
 <script>
+console.log("AUTOCOMPLETE JS LOADED");
 document.addEventListener("DOMContentLoaded", function () {
-    // 1. AUTOCOMPLETE LOGIC (Keep this)
     const input = document.getElementById("location-search");
-    const hidden = document.getElementById("id_functional_location");
+    const hidden = document.querySelector('input[name="functional_location"]'); // More robust selector
     const resultsBox = document.getElementById("location-results");
 
     if (input) {
-        input.addEventListener("keyup", function () {
+        input.addEventListener("input", function () {
             const query = input.value;
-            if (query.length < 2) { resultsBox.style.display = "none"; return; }
+            hidden.value = ""; // Clear ID if user types manually
+
+            if (query.length < 2) { 
+                resultsBox.style.display = "none"; 
+                return; 
+            }
+
             fetch(input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(query))
-                .then(r => r.json()).then(data => {
+                .then(r => r.json())
+                .then(data => {
                     resultsBox.innerHTML = "";
                     data.results.forEach(item => {
                         const div = document.createElement("div");
@@ -125,7 +133,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         div.textContent = item.text;
                         div.onclick = () => { 
                             input.value = item.text; 
-                            hidden.value = item.id; 
+                            hidden.value = item.id; // Set the PK to the hidden field
                             resultsBox.style.display = "none"; 
                         };
                         resultsBox.appendChild(div);
@@ -134,11 +142,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
         });
     }
-
-    // 2. CSRF FOR HTMX (Crucial)
-    document.body.addEventListener('htmx:configRequest', (event) => {
-        event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
-    });
 });
 </script>
 {% endblock %}

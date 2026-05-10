@@ -25,6 +25,11 @@
                     <p style="position: relative;">
                         {{ form.functional_location_search.label_tag }}
                         {{ form.functional_location_search }}
+                        {% if form.functional_location_search.errors %}
+                            <div class="text-danger">
+                                {{ form.functional_location_search.errors }}
+                            </div>
+                        {% endif %}
                         <div id="location-results" class="autocomplete-results"></div>
                         {{ form.functional_location }}
                     </p>

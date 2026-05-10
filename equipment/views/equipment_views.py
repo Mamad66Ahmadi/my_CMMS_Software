@@ -17,7 +17,7 @@ from equipment.models.request_equipment_models import (
     EquipmentDocumentChangeRequest,
 )
 
-from equipment.forms.equioment_change_form import EquipmentChangeRequestForm
+from equipment.forms.equioment_change_form import EquipmentChangeRequestForm, EquipmentRequestReviewForm
 
 
 # ---------------------------------------------------------------------
@@ -498,71 +498,36 @@ def abandon_create_request(request, request_id):
 
 # -------------------- Review ------------------------------------------
 class EquipmentRequestReviewView(LoginRequiredMixin, UserPassesTestMixin, View):
-
     template_name = "equipment/equipment_request_review.html"
 
     def test_func(self):
         return self.request.user.is_staff or self.request.user.is_superuser
 
     def get(self, request, pk):
-
-        req = get_object_or_404(
-            EquipmentChangeRequest,
-            pk=pk,
-            status=EquipmentChangeRequest.Status.PENDING
-        )
- 
-        # You only have ONE form for equipment
-        FormClass = EquipmentChangeRequestForm
-
-        eq = req.equipment  # Might be None for CREATE requests
-
-        def merged(field, default=""):
-            if hasattr(req, field) and getattr(req, field):
-                return getattr(req, field)
-            if eq and hasattr(eq, field) and getattr(eq, field):
-                return getattr(eq, field)
-            return default
-
-        initial = {
-            "functional_location": merged("functional_location", None),
-            "serial_number": merged("serial_number", ""),
-            "manufacturer": merged("manufacturer", ""),
-            "model": merged("model", ""),
-            "note": merged("note", ""),
-        }
-
-        form = FormClass(initial=initial)
-
+        req = get_object_or_404(EquipmentChangeRequest, pk=pk, status=EquipmentChangeRequest.Status.PENDING)
+        form = EquipmentRequestReviewForm(instance=req)
         return render(request, self.template_name, {"req": req, "form": form})
 
-
     def post(self, request, pk):
+        req = get_object_or_404(EquipmentChangeRequest, pk=pk, status=EquipmentChangeRequest.Status.PENDING)
+        decision = request.POST.get("decision")
 
-        req = get_object_or_404(EquipmentChangeRequest, pk=pk)
-        action = request.POST.get("decision")
+        form = EquipmentRequestReviewForm(request.POST, request.FILES, instance=req)
 
-        form = EquipmentChangeRequestForm(request.POST, request.FILES)
+        if form.is_valid():
+            # 1. Save reviewer edits to the request object itself
+            req = form.save()
 
-        if not form.is_valid():
-            messages.error(request, "Invalid form data.")
-            return render(request, self.template_name, {"req": req, "form": form})
+            if decision == "approve":
+                # 2. Apply the (potentially edited) values to the main Equipment model
+                req.approve_request(reviewer=request.user)
+                messages.success(request, "Request approved and equipment updated.")
+                return redirect("accounts:dashboard")
 
-        # --- Update request object with reviewer edits ---
-        for field, value in form.cleaned_data.items():
-            setattr(req, field, value)
-
-        req.save()
-
-        # --- APPROVE or REJECT ---
-        if action == "approve":
-            req.approve_request(reviewer=request.user)
-            messages.success(request, "Equipment request approved.")
-            return redirect("accounts:dashboard")
-
-        elif action == "reject":
-            req.mark_rejected(reviewer=request.user)
-            messages.warning(request, "Equipment request rejected.")
-            return redirect("accounts:dashboard")
-
-        return redirect("accounts:dashboard")
+            elif decision == "reject":
+                req.mark_rejected(reviewer=request.user)
+                messages.warning(request, "Request rejected.")
+                return redirect("accounts:dashboard")
+        
+        # If form invalid
+        return render(request, self.template_name, {"req": req, "form": form})

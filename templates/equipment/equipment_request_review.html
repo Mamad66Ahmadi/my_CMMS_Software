@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %} Review Equipment Request {% endblock %}
+{% block title %} Request Review {% endblock %}
+
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
@@ -9,31 +10,41 @@
 
 {% block content %}
 
+
 <div class="container" style="max-width:750px; margin-top:30px;">
 
 {% if messages %}
     {% for message in messages %}
-        <div class="alert-success">{{ message }}</div>
+        <div class="alert-success">
+            {{ message }}
+        </div>
     {% endfor %}
 {% endif %}
-
 <div class="section-header">
-    Review Equipment Request
+Review Equipment {{ req.get_action_display }} Request
+—
+{% if req.equipment %}
+    {{ req.equipment }}
+{% else %}
+    New Equipment
+{% endif %}
 </div>
-
 <div class="form-card">
 
-<form method="post" enctype="multipart/form-data">
+<form method="post">
 {% csrf_token %}
+            
+{{ form.functional_location_search.label_tag }}
+{{ form.functional_location_search }}
 
-<p>{{ form.name.label_tag }} {{ form.name }}</p>
-<p>{{ form.tag.label_tag }} {{ form.tag }}</p>
+<div id="location-results" class="autocomplete-results"></div>
+
+{{ form.functional_location }}
+
+
 <p>{{ form.serial_number.label_tag }} {{ form.serial_number }}</p>
 <p>{{ form.model.label_tag }} {{ form.model }}</p>
 <p>{{ form.manufacturer.label_tag }} {{ form.manufacturer }}</p>
-<p>{{ form.unit.label_tag }} {{ form.unit }}</p>
-<p>{{ form.train.label_tag }} {{ form.train }}</p>
-<p>{{ form.description.label_tag }} {{ form.description }}</p>
 <p>{{ form.note.label_tag }} {{ form.note }}</p>
 
 {% if req.document_requests.count %}
@@ -41,33 +52,75 @@
     <strong>Attached Documents:</strong>
     <ul>
         {% for doc in req.document_requests.all %}
-            <li>
-                <a href="{{ doc.file.url }}" download>{{ doc.file.name }}</a>
-            </li>
+            <li><a href="{{ doc.file.url }}" download>{{ doc.file_name }}</a></li>
         {% endfor %}
     </ul>
 </div>
 {% endif %}
 
 <div style="margin-top:25px; display:flex; gap:10px;">
-
-    <button type="submit" name="decision" value="approve" class="btn-primary-custom">
-        Approve & Apply
-    </button>
-
-    <button type="submit" name="decision" value="reject" class="btn-secondary-custom">
-        Reject
-    </button>
-
-    <a href="{% url 'accounts:dashboard' %}" class="btn-secondary-custom">
-        Cancel
-    </a>
-
+    <button type="submit" name="decision" value="approve" class="btn-primary-custom">Approve & Apply</button>
+    <button type="submit" name="decision" value="reject" class="btn-secondary-custom">Reject</button>
+    <a href="{% url 'accounts:dashboard' %}" class="btn-secondary-custom">Cancel</a>
 </div>
-
 </form>
+</div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-</div>
-</div>
+    const input = document.getElementById("location-search");
+    const hidden = document.getElementById("id_functional_location");
+    const resultsBox = document.getElementById("location-results");
+
+    if (!input) return;
+
+    const url = input.dataset.autocompleteUrl;
+
+    input.addEventListener("keyup", function () {
+
+        const query = input.value.trim();
+        hidden.value = "";
+
+        if (query.length < 2) {
+            resultsBox.innerHTML = "";
+            resultsBox.style.display = "none";
+            return;
+        }
+
+        fetch(url + "?q=" + encodeURIComponent(query))
+            .then(r => r.json())
+            .then(data => {
+
+                resultsBox.innerHTML = "";
+
+                data.results.forEach(item => {
+
+                    const div = document.createElement("div");
+                    div.classList.add("autocomplete-item");
+                    div.textContent = item.text;
+
+                    div.onclick = function () {
+                        input.value = item.text;
+                        hidden.value = item.id;
+                        resultsBox.style.display = "none";
+                    };
+
+                    resultsBox.appendChild(div);
+                });
+
+                resultsBox.style.display = "block";
+        });
+    });
+
+    document.addEventListener("click", function(e) {
+        if (!resultsBox.contains(e.target) && e.target !== input) {
+            resultsBox.style.display = "none";
+        }
+    });
+
+});
+
+</script>
 
 {% endblock %}
