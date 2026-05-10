@@ -28,4 +28,5 @@ urlpatterns = [
     path("equipment/create/abandon/<int:request_id>/",equipment_views.abandon_create_request,name="abandon_create_request",),
     path("equipment-request/<int:pk>/review/",equipment_views.EquipmentRequestReviewView.as_view(),name="equipment_request_review",),
     path("equipment/bulk-actions/",equipment_views.BulkEquipmentActionsView.as_view(),name="bulk_equipment_actions",),
+    path("equipment/<int:pk>/remove-request/",equipment_views.EquipmentRemoveRequestView.as_view(),name="equipment_remove_request",),
 ]

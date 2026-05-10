@@ -92,17 +92,35 @@
                 </tbody>
             </table>
 
+
             <div style="margin-top:40px; border-top:1px solid #eee; padding-top:20px;">
-                <button type="submit" class="btn-primary-custom">Submit Change Request</button>
-                <button type="button" class="btn-secondary-custom"
+
+                <button type="submit" class="btn-primary-custom">
+                    Submit Change Request
+                </button>
+
+                <button type="button"
+                        class="btn-secondary-custom"
                         hx-post="{% url 'equipment:cancel_update_request' pending_request.id %}"
                         hx-confirm="Discard this draft request?"
                         hx-target="body"
                         hx-swap="none">
                     Cancel
                 </button>
+
             </div>
+
+
         </form>
+        <div style="margin-top:50px;">
+            <a href="{% url 'equipment:equipment_remove_request' equipment.pk %}"
+            class="btn btn-danger"
+            onclick="return confirmRemove();">
+                Request to Remove Equipment
+            </a>
+        </div>
+
+
     </div>
 </div>
 
@@ -143,5 +161,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+
+function confirmRemove() {
+    return confirm(
+        "Are you sure you want to submit a REMOVE request for this equipment?\n\n" +
+        "The equipment will be marked as inactive after approval."
+    );
+}
 </script>
 {% endblock %}

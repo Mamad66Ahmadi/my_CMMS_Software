@@ -495,6 +495,66 @@ def abandon_create_request(request, request_id):
 
     return HttpResponse(status=204)
 
+
+# ---------------------------------------------------------------------
+# Equipment Remove Request
+# ---------------------------------------------------------------------
+
+class EquipmentRemoveRequestView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+
+        equipment = get_object_or_404(Equipment, pk=pk)
+
+        # Prevent duplicate pending requests
+        existing = EquipmentChangeRequest.objects.filter(
+            equipment=equipment,
+            status=EquipmentChangeRequest.Status.PENDING
+        ).exists()
+
+        if existing:
+            messages.error(
+                request,
+                "There is already a pending request for this equipment."
+            )
+
+            return redirect(
+                "equipment:equipment_detail",
+                pk=equipment.pk
+            )
+
+        # Create REMOVE request
+        remove_request = EquipmentChangeRequest.objects.create(
+            equipment=equipment,
+            requested_by=request.user,
+
+            action=EquipmentChangeRequest.Action.REMOVE,
+            status=EquipmentChangeRequest.Status.PENDING,
+
+            functional_location=equipment.functional_location,
+            serial_number=equipment.serial_number,
+            manufacturer=equipment.manufacturer,
+            model=equipment.model,
+            note=equipment.note,
+
+            changes={
+                "action": {
+                    "old": "ACTIVE",
+                    "new": "REMOVE"
+                }
+            }
+        )
+
+        messages.success(
+            request,
+            f"Remove request submitted for equipment #{equipment.pk}."
+        )
+
+        return redirect(
+            "equipment:equipment_detail",
+            pk=equipment.pk
+        )
+
 # ---------------------------------------------------------------------
 # Review Equipment Request 
 # ---------------------------------------------------------------------

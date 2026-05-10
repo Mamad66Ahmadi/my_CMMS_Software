@@ -375,6 +375,7 @@ class LocationTagRemoveRequestView(LoginRequiredMixin, View):
         # Create a remove request
         LocationTagChangeRequest.objects.create(
             action=LocationTagChangeRequest.Action.REMOVE,
+            status=LocationTagChangeRequest.Status.PENDING,
             location_tag=tag,
             requested_by=request.user,
             loc_tag=tag.loc_tag,      # required model field
