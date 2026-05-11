@@ -15,6 +15,7 @@ urlpatterns = [
     path("tag-remove/<path:loc_tag>", location_tag_views.LocationTagRemoveRequestView.as_view(), name="location_tag_request_remove",),
     path("request-confirmation/<int:pk>/", location_tag_views.LocationTagRequestReviewView.as_view(), name="location_tag_request_review",),
     path("requests/location-tags/bulk/",location_tag_views.BulkLocationTagActionsView.as_view(),name="bulk_location_tag_actions",),
+    path("location-tags/export/",location_tag_views.LocationTagExportCSV.as_view(),name="location_tag_export_csv",),
 
     path("equipment/", equipment_views.EquipmentList.as_view(), name="equipment_list"),
     path("equipment/<int:pk>/", equipment_views.EquipmentDetail.as_view(), name="equipment_detail"),
@@ -29,4 +30,5 @@ urlpatterns = [
     path("equipment-request/<int:pk>/review/",equipment_views.EquipmentRequestReviewView.as_view(),name="equipment_request_review",),
     path("equipment/bulk-actions/",equipment_views.BulkEquipmentActionsView.as_view(),name="bulk_equipment_actions",),
     path("equipment/<int:pk>/remove-request/",equipment_views.EquipmentRemoveRequestView.as_view(),name="equipment_remove_request",),
+    path("equipment/export/",equipment_views.EquipmentExportCSV.as_view(),name="equipment_export_csv",),
 ]

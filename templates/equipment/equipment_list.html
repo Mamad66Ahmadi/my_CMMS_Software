@@ -14,12 +14,21 @@
 
     {% include "equipment/equipment_list/_filters.html" %}
 
-    <h1>
-        Equipment List
-        <span style="font-weight: normal;">
-            ( {{ total_equipments }} Objects )
-        </span>
-    </h1>
+
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            Equipment List
+            <span style="font-weight: normal;">( {{ total_equipments }} Objects )</span>
+        </h1>
+
+        <a href="{% url 'equipment:equipment_export_csv' %}?{{ request.GET.urlencode }}"
+        class="btn btn-success">
+            Download CSV
+        </a>
+    </div>
+
+
 
     {% if equipments %}
         {% include "equipment/equipment_list/_table.html" %}

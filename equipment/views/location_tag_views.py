@@ -4,11 +4,10 @@ from django.views.generic import DetailView,TemplateView, CreateView, View
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-
-
+import csv
 
 from ..models import LocationTag, EquipmentDocument, Equipment, ObjectType, ObjectCriticality, ObjectCategory, Unit
 
@@ -17,6 +16,51 @@ from equipment.models import LocationTagChangeRequest
 from equipment.forms import LocationTagRequestForm
 
 # ----------------------------------------- Location Tag List ------------------------------
+def get_filtered_location_tags(request):
+    filters = {
+        'loc_tag': request.GET.get('loc_tag', '').strip(),
+        'parent': request.GET.get('parent', '').strip(),
+        'unit': request.GET.get('unit', '').strip(),
+        'train': request.GET.get('train', '').strip(),
+        'criticality': request.GET.get('criticality', '').strip(),
+        'obj_type': request.GET.get('obj_type', '').strip(),
+        'obj_category': request.GET.get('obj_category', '').strip(),
+        'is_active': request.GET.get('is_active', 'true'),
+    }
+
+    queryset = LocationTag.objects.all()
+
+    if filters['loc_tag']:
+        queryset = queryset.filter(loc_tag__icontains=filters['loc_tag'])
+
+    if filters['parent']:
+        queryset = queryset.filter(parent__loc_tag__icontains=filters['parent'])
+
+    if filters['unit']:
+        queryset = queryset.filter(unit__unit_code__icontains=filters['unit'])
+
+    if filters['train']:
+        queryset = queryset.filter(train__icontains=filters['train'])
+
+    if filters['criticality']:
+        queryset = queryset.filter(
+            obj_criticality__obj_crt_level__icontains=filters['criticality']
+        )
+
+    if filters['obj_type']:
+        queryset = queryset.filter(obj_type__obj_type__icontains=filters['obj_type'])
+
+    if filters['obj_category']:
+        queryset = queryset.filter(
+            obj_category__category_name__icontains=filters['obj_category']
+        )
+
+    if filters['is_active'] == "true":
+        queryset = queryset.filter(is_active=True)
+
+    return queryset, filters
+
+
 class LocationTagList(LoginRequiredMixin, TemplateView):
     template_name = "equipment/location_tag_list.html"
     redirect_field_name = "next"
@@ -38,31 +82,8 @@ class LocationTagList(LoginRequiredMixin, TemplateView):
 
         }
 
-        queryset = LocationTag.objects.all()
+        queryset, filters = get_filtered_location_tags(self.request)
 
-        # Filtering logic
-        if filters['loc_tag']:
-            queryset = queryset.filter(loc_tag__icontains=filters['loc_tag'])
-
-        if filters['parent']:
-            queryset = queryset.filter(parent__loc_tag__icontains=filters['parent'])
-
-        if filters['unit']:
-            queryset = queryset.filter(unit__unit_code__icontains=filters['unit'])
-
-        if filters['train']:
-            queryset = queryset.filter(train__icontains=filters['train'])
-
-        if filters['criticality']:
-            queryset = queryset.filter(obj_criticality__obj_crt_level__icontains=filters['criticality'])
-
-        if filters['obj_type']:
-            queryset = queryset.filter(obj_type__obj_type__icontains=filters['obj_type'])
-
-        if filters['obj_category']:
-            queryset = queryset.filter(obj_category__category_name__icontains=filters['obj_category'])
-        if filters['is_active'] == "true":
-            queryset = queryset.filter(is_active=True)
 
         # Sorting
         sort_by = self.request.GET.get('sort', 'loc_tag')
@@ -142,6 +163,46 @@ class LocationTagList(LoginRequiredMixin, TemplateView):
         return context
 
 
+
+
+class LocationTagExportCSV(LoginRequiredMixin, View):
+
+    def get(self, request):
+
+        queryset, filters = get_filtered_location_tags(request)
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="location_tags.csv"'
+
+        writer = csv.writer(response)
+
+        writer.writerow([
+            "Location Tag","Parent","Unit","Train","Criticality","Type",
+            "Object Category","Long Tag","Description","Active",
+            "Note","MIH Level","Created At","Created By","Modified At","Modified By",
+        ])
+
+        for tag in queryset:
+            writer.writerow([
+                tag.loc_tag,
+                tag.parent.loc_tag if tag.parent else "",
+                tag.unit.unit_code if tag.unit else "",
+                tag.train,
+                tag.obj_criticality.obj_crt_level if tag.obj_criticality else "",
+                tag.obj_type.obj_type if tag.obj_type else "",
+                tag.obj_category.category_name if tag.obj_category else "",
+                tag.long_tag,
+                tag.description,
+                tag.is_active,
+                tag.note,
+                tag.mih_level,
+                tag.created_at.strftime("%Y-%m-%d %H:%M:%S") if tag.created_at else "",
+                tag.created_by.username if tag.created_by else "",
+                tag.modified_at.strftime("%Y-%m-%d %H:%M:%S") if tag.modified_at else "",
+                tag.modified_by.username if tag.modified_by else "",
+            ])
+
+        return response
 
 
 
@@ -500,4 +561,6 @@ class BulkLocationTagActionsView(LoginRequiredMixin,UserPassesTestMixin,View):
             messages.warning(request, f"{count} request(s) rejected.")
 
         return redirect("accounts:dashboard")
+
+
 

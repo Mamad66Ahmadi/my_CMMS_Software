@@ -10,6 +10,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.contrib import messages
+import csv
 
 from equipment.models.equipment_models import Equipment
 from equipment.models.request_equipment_models import (
@@ -65,6 +66,46 @@ def delete_request_files(change_request):
 # ---------------------------------------------------------------------
 # Equipment List
 # ---------------------------------------------------------------------
+def get_filtered_equipments(request):
+
+    filters = {
+        "functional_location": request.GET.get("functional_location", "").strip(),
+        "serial_number": request.GET.get("serial_number", "").strip(),
+        "manufacturer": request.GET.get("manufacturer", "").strip(),
+        "model": request.GET.get("model", "").strip(),
+        "note": request.GET.get("note", "").strip(),
+        "is_active": request.GET.get("is_active", "true"),
+    }
+
+    queryset = Equipment.objects.select_related(
+        "functional_location",
+        "functional_location__unit",
+        "created_by",
+        "modified_by",
+    )
+
+    if filters["functional_location"]:
+        queryset = queryset.filter(
+            functional_location__loc_tag__icontains=filters["functional_location"]
+        )
+
+    if filters["serial_number"]:
+        queryset = queryset.filter(serial_number__icontains=filters["serial_number"])
+
+    if filters["manufacturer"]:
+        queryset = queryset.filter(manufacturer__icontains=filters["manufacturer"])
+
+    if filters["model"]:
+        queryset = queryset.filter(model__icontains=filters["model"])
+
+    if filters["note"]:
+        queryset = queryset.filter(note__icontains=filters["note"])
+
+    if filters["is_active"] == "true":
+        queryset = queryset.filter(is_active=True)
+
+    return queryset, filters
+
 
 class EquipmentList(LoginRequiredMixin, TemplateView):
     template_name = "equipment/equipment_list.html"
@@ -73,41 +114,8 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        filters = {
-            "functional_location": self.request.GET.get("functional_location", "").strip(),
-            "serial_number": self.request.GET.get("serial_number", "").strip(),
-            "manufacturer": self.request.GET.get("manufacturer", "").strip(),
-            "model": self.request.GET.get("model", "").strip(),
-            "note": self.request.GET.get("note", "").strip(),
-            "is_active": self.request.GET.get("is_active", "true"),
-        }
+        queryset, filters = get_filtered_equipments(self.request)
 
-        queryset = Equipment.objects.select_related(
-            "functional_location",
-            "functional_location__unit",
-            "created_by",
-            "modified_by",
-        )
-
-        if filters["functional_location"]:
-            queryset = queryset.filter(
-                functional_location__loc_tag__icontains=filters["functional_location"]
-            )
-
-        if filters["serial_number"]:
-            queryset = queryset.filter(serial_number__icontains=filters["serial_number"])
-
-        if filters["manufacturer"]:
-            queryset = queryset.filter(manufacturer__icontains=filters["manufacturer"])
-
-        if filters["model"]:
-            queryset = queryset.filter(model__icontains=filters["model"])
-
-        if filters["note"]:
-            queryset = queryset.filter(note__icontains=filters["note"])
-
-        if filters["is_active"] == "true":
-            queryset = queryset.filter(is_active=True)
 
         sort_by = self.request.GET.get("sort", "functional_location")
         sort_order = self.request.GET.get("order", "asc")
@@ -169,6 +177,50 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
         return context
 
 
+class EquipmentExportCSV(LoginRequiredMixin, View):
+
+    def get(self, request):
+
+
+        queryset, filters = get_filtered_equipments(request)
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="equipments.csv"'
+
+        writer = csv.writer(response)
+
+        writer.writerow([
+            "ID",
+            "Functional Location",
+            "Unit",
+            "Serial Number",
+            "Manufacturer",
+            "Model",
+            "Note",
+            "Active",
+            "Created At",
+            "Created By",
+            "Modified At",
+            "Modified By",
+        ])
+
+        for eq in queryset:
+            writer.writerow([
+                eq.id,
+                eq.functional_location.loc_tag if eq.functional_location else "",
+                eq.functional_location.unit.unit_code if eq.functional_location and eq.functional_location.unit else "",
+                eq.serial_number,
+                eq.manufacturer,
+                eq.model,
+                eq.note,
+                eq.is_active,
+                eq.created_at.strftime("%Y-%m-%d %H:%M:%S") if eq.created_at else "",
+                eq.created_by.username if eq.created_by else "",
+                eq.modified_at.strftime("%Y-%m-%d %H:%M:%S") if eq.modified_at else "",
+                eq.modified_by.username if eq.modified_by else "",
+            ])
+
+        return response
 # ---------------------------------------------------------------------
 # Equipment Detail
 # ---------------------------------------------------------------------

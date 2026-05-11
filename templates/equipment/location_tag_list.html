@@ -16,10 +16,17 @@
 
     {% include "equipment/location_tag_list/_filters.html" %}
 
-    <h1>
-        Location Tags
-        <span style="font-weight: normal;">( {{ total_location_tags }} Objects )</span>
-    </h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">
+            Location Tags
+            <span style="font-weight: normal;">( {{ total_location_tags }} Objects )</span>
+        </h1>
+
+        <a href="{% url 'equipment:location_tag_export_csv' %}?{{ request.GET.urlencode }}"
+        class="btn btn-success">
+            Download CSV
+        </a>
+    </div>
 
     {% if location_tags %}
         {% include "equipment/location_tag_list/_table.html" %}
@@ -27,6 +34,8 @@
     {% else %}
         <p>No location tags found.</p>
     {% endif %}
+
+
 
 </div>
 
