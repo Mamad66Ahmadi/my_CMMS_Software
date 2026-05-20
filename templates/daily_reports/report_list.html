@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Daily Reports{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
+
+<div class="container">
+
+<h5>Filter Pane</h5>
+
+<form method="get" action="">
+<div class="filter-bar">
+
+<div class="filter-group">
+<label class="filter-label">Date From</label>
+<input type="date" name="date_from" class="filter-input"
+value="{{ filters.date_from }}">
+</div>
+
+<div class="filter-group">
+<label class="filter-label">Date To</label>
+<input type="date" name="date_to" class="filter-input"
+value="{{ filters.date_to }}">
+</div>
+
+<div class="filter-group">
+<label class="filter-label">WO Number</label>
+<input type="text" name="wo_number" class="filter-input"
+placeholder="Search..."
+value="{{ filters.wo_number }}">
+</div>
+
+<div class="filter-group">
+<label class="filter-label">Location Tag</label>
+<input type="text" name="location_tag" class="filter-input"
+placeholder="Tag..."
+value="{{ filters.location_tag }}">
+</div>
+
+<div class="filter-group">
+<label class="filter-label">Status</label>
+<select name="status" class="filter-input">
+<option value="">All</option>
+<option value="completed" {% if filters.status == "completed" %}selected{% endif %}>Completed</option>
+<option value="ongoing" {% if filters.status == "ongoing" %}selected{% endif %}>Ongoing</option>
+<option value="waiting" {% if filters.status == "waiting" %}selected{% endif %}>Waiting</option>
+</select>
+</div>
+
+<div class="filter-group">
+<label class="filter-label">Department</label>
+<input type="text" name="department" class="filter-input"
+placeholder="Department"
+value="{{ filters.department }}">
+</div>
+
+<div class="filter-group">
+<label class="filter-label">Rows Per Page</label>
+<select name="per_page" class="filter-input">
+<option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+<option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+<option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+<option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+</select>
+</div>
+
+<div class="filter-actions">
+<button type="submit" class="btn-search">Apply</button>
+
+{% if filters.date_from or filters.date_to or filters.wo_number or filters.location_tag or filters.status or filters.department %}
+<a href="{% url 'daily_reports:report_list' %}" class="btn-clear">
+Clear All
+</a>
+{% endif %}
+</div>
+
+</div>
+</form>
+
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h1 class="mb-0">
+Daily Reports
+<span style="font-weight: normal;">
+({{ reports.paginator.count }} Records)
+</span>
+</h1>
+
+<a href="{% url 'daily_reports:report_export_csv' %}?{{ query_params }}"
+class="btn btn-success">
+Export CSV
+</a>
+</div>
+
+
+{% if reports %}
+<div class="table-scroll-container">
+<table>
+<thead>
+<tr>
+
+{% include "daily_reports/_table_header.html" with column="date" label="Date" %}
+{% include "daily_reports/_table_header.html" with column="day" label="Day" sort_by=sort_by query_params=query_params %}
+
+{% include "daily_reports/_table_header.html" with column="location_tag" label="Location Tag" %}
+{% include "daily_reports/_table_header.html" with column="father_tag" label="Father Tag" %}
+
+{% include "daily_reports/_table_header.html" with column="year_count" label="Year Count" %}
+{% include "daily_reports/_table_header.html" with column="month_count" label="Month Count" %}
+
+{% include "daily_reports/_table_header.html" with column="wo_number" label="WO Number" %}
+{% include "daily_reports/_table_header.html" with column="status" label="Status" %}
+
+{% include "daily_reports/_table_header.html" with column="description" label="Description" sort_by=sort_by query_params=query_params %}
+{% include "daily_reports/_table_header.html" with column="employees" label="Employees" sort_by=sort_by query_params=query_params %}
+
+
+{% include "daily_reports/_table_header.html" with column="department" label="Department" %}
+{% include "daily_reports/_table_header.html" with column="actual_start" label="Actual Start" %}
+{% include "daily_reports/_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=query_params %}
+{% include "daily_reports/_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=query_params %}
+{% include "daily_reports/_table_header.html" with column="modified_by" label="Modified By" sort_by=sort_by query_params=query_params %}
+{% include "daily_reports/_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=query_params %}
+
+</tr>
+</thead>
+
+<tbody>
+{% for r in reports %}
+<tr>
+
+<td>{{ r.date|date:"Y-m-d" }}</td>
+<td>{{ r.date|date:"D" }}</td>
+
+<td>{{ r.location_tag.loc_tag }}</td>
+
+<td>
+{% if r.father_tag %}
+{{ r.father_tag.loc_tag }}
+{% else %}
+-
+{% endif %}
+</td>
+
+<td>{{ r.year_count }}</td>
+<td>{{ r.month_count }}</td>
+
+<td>{{ r.wo_number|default:"-" }}</td>
+
+<td>
+{% if r.status == "completed" %}
+<span class="status-badge status-completed">Completed</span>
+{% elif r.status == "ongoing" %}
+<span class="status-badge status-ongoing">Ongoing</span>
+{% else %}
+<span class="status-badge status-waiting">Waiting</span>
+{% endif %}
+</td>
+
+<td style="text-align:left;">{{ r.description|truncatechars:80 }}</td>
+<td>{{ r.employees|default:"-" }}</td>
+
+<td>
+{% if r.department %}
+{{ r.department.name }}
+{% else %}
+-
+{% endif %}
+</td>
+
+<td>
+{% if r.actual_start %}
+{{ r.actual_start|date:"Y-m-d" }}
+{% else %}
+-
+{% endif %}
+</td>
+
+<td>{{ r.created_by.username }}</td>
+<td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+
+<td>{{ r.modified_by.username|default:"-" }}</td>
+<td>{{ r.modified_at|date:"Y-m-d H:i" }}</td>
+
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+{% include "equipment/common/_pagination.html" with page_obj=reports %}
+
+{% else %}
+<p>No reports found.</p>
+{% endif %}
+
+</div>
+
+
+<script>
+window.addEventListener("beforeunload", function () {
+localStorage.setItem("scrollPosReports", window.scrollY);
+});
+
+window.addEventListener("load", function () {
+const pos = localStorage.getItem("scrollPosReports");
+if (pos !== null) {
+window.scrollTo(0, parseInt(pos));
+}
+});
+</script>
+
+{% endblock %}

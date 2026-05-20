@@ -2,7 +2,6 @@
 from django.db import models
 from simple_history.models import HistoricalRecords
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 
 
 
