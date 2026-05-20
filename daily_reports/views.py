@@ -1,14 +1,16 @@
 # daily_reports/views.py
 
 import csv
-from datetime import date
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, Q, OuterRef, Subquery, IntegerField
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.views import View
 from django.views.generic import TemplateView
+from datetime import timedelta
+from django.utils import timezone
 
 from .models import DailyReport
 
@@ -32,11 +34,17 @@ def get_filtered_reports(request):
         "modified_by",
     ).all()
 
-    if filters["date_from"]:
-        queryset = queryset.filter(date__gte=filters["date_from"])
+    # ✅ If no date filters → default to last 14 days
+    if not filters["date_from"] and not filters["date_to"]:
+        today = timezone.now().date()
+        fourteen_days_ago = today - timedelta(days=14)
+        queryset = queryset.filter(date__gte=fourteen_days_ago)
+    else:
+        if filters["date_from"]:
+            queryset = queryset.filter(date__gte=filters["date_from"])
 
-    if filters["date_to"]:
-        queryset = queryset.filter(date__lte=filters["date_to"])
+        if filters["date_to"]:
+            queryset = queryset.filter(date__lte=filters["date_to"])
 
     if filters["wo_number"]:
         queryset = queryset.filter(wo_number__icontains=filters["wo_number"])
@@ -53,6 +61,48 @@ def get_filtered_reports(request):
     return queryset, filters
 
 
+def annotate_running_counts(queryset):
+    year_count_subquery = (
+        DailyReport.objects.filter(
+            location_tag=OuterRef("location_tag"),
+            date__year=OuterRef("date__year"),
+        )
+        .filter(
+            Q(date__lt=OuterRef("date")) |
+            Q(date=OuterRef("date"), id__lte=OuterRef("id"))
+        )
+        .values("location_tag")
+        .annotate(cnt=Count("id"))
+        .values("cnt")[:1]
+    )
+
+    month_count_subquery = (
+        DailyReport.objects.filter(
+            location_tag=OuterRef("location_tag"),
+            date__year=OuterRef("date__year"),
+            date__month=OuterRef("date__month"),
+        )
+        .filter(
+            Q(date__lt=OuterRef("date")) |
+            Q(date=OuterRef("date"), id__lte=OuterRef("id"))
+        )
+        .values("location_tag")
+        .annotate(cnt=Count("id"))
+        .values("cnt")[:1]
+    )
+
+    return queryset.annotate(
+        year_count=Coalesce(
+            Subquery(year_count_subquery, output_field=IntegerField()),
+            0
+        ),
+        month_count=Coalesce(
+            Subquery(month_count_subquery, output_field=IntegerField()),
+            0
+        ),
+    )
+
+
 class DailyReportList(LoginRequiredMixin, TemplateView):
     template_name = "daily_reports/report_list.html"
 
@@ -60,30 +110,13 @@ class DailyReportList(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         queryset, filters = get_filtered_reports(self.request)
-        today = date.today()
+        queryset = annotate_running_counts(queryset)
 
-        # Annotate counts for the same location_tag
-        queryset = queryset.annotate(
-            year_count=Count(
-                "location_tag__daily_reports",
-                filter=Q(location_tag__daily_reports__date__year=today.year),
-                distinct=True,
-            ),
-            month_count=Count(
-                "location_tag__daily_reports",
-                filter=Q(
-                    location_tag__daily_reports__date__year=today.year,
-                    location_tag__daily_reports__date__month=today.month,
-                ),
-                distinct=True,
-            ),
-        )
-
-        # Sorting
         sort_by = self.request.GET.get("sort", "-date")
+
         allowed_sort = {
             "date": "date",
-            "day": "date",  # same underlying field as date
+            "day": "date",
             "location_tag": "location_tag__loc_tag",
             "father_tag": "father_tag__loc_tag",
             "year_count": "year_count",
@@ -106,7 +139,6 @@ class DailyReportList(LoginRequiredMixin, TemplateView):
 
         queryset = queryset.order_by(sort_field, "-id")
 
-        # Pagination
         try:
             per_page = int(self.request.GET.get("per_page", 25))
         except ValueError:
@@ -135,23 +167,7 @@ class DailyReportList(LoginRequiredMixin, TemplateView):
 class DailyReportExportCSV(LoginRequiredMixin, View):
     def get(self, request):
         queryset, filters = get_filtered_reports(request)
-        today = date.today()
-
-        queryset = queryset.annotate(
-            year_count=Count(
-                "location_tag__daily_reports",
-                filter=Q(location_tag__daily_reports__date__year=today.year),
-                distinct=True,
-            ),
-            month_count=Count(
-                "location_tag__daily_reports",
-                filter=Q(
-                    location_tag__daily_reports__date__year=today.year,
-                    location_tag__daily_reports__date__month=today.month,
-                ),
-                distinct=True,
-            ),
-        ).order_by("-date", "-id")
+        queryset = annotate_running_counts(queryset).order_by("-date", "-id")
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="daily_reports.csv"'

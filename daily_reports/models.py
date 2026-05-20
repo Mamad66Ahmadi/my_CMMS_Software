@@ -116,3 +116,13 @@ class DailyReport(models.Model):
         ordering = ["-date"]
         verbose_name = "Daily Report"
         verbose_name_plural = "Daily Reports"
+        indexes = [
+            # 1. Critical for Running Counts (Year/Month)
+            # This index covers both subquery requirements:
+            # - location_tag + year + date
+            # - location_tag + year + month + date
+            models.Index(fields=["location_tag", "date"], name="idx_loc_date"),
+            
+            # 2. Helps performance on department filtering
+            models.Index(fields=["department", "date"], name="idx_dept_date"),
+        ]
