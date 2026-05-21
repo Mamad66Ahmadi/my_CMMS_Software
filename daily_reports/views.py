@@ -4,14 +4,13 @@ import csv
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Count, Q, OuterRef, Subquery, IntegerField
-from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.views import View
 from django.views.generic import TemplateView
 from datetime import timedelta
 from django.utils import timezone
 
+from .services import annotate_running_counts
 from .models import DailyReport
 
 
@@ -61,47 +60,6 @@ def get_filtered_reports(request):
     return queryset, filters
 
 
-def annotate_running_counts(queryset):
-    year_count_subquery = (
-        DailyReport.objects.filter(
-            location_tag=OuterRef("location_tag"),
-            date__year=OuterRef("date__year"),
-        )
-        .filter(
-            Q(date__lt=OuterRef("date")) |
-            Q(date=OuterRef("date"), id__lte=OuterRef("id"))
-        )
-        .values("location_tag")
-        .annotate(cnt=Count("id"))
-        .values("cnt")[:1]
-    )
-
-    month_count_subquery = (
-        DailyReport.objects.filter(
-            location_tag=OuterRef("location_tag"),
-            date__year=OuterRef("date__year"),
-            date__month=OuterRef("date__month"),
-        )
-        .filter(
-            Q(date__lt=OuterRef("date")) |
-            Q(date=OuterRef("date"), id__lte=OuterRef("id"))
-        )
-        .values("location_tag")
-        .annotate(cnt=Count("id"))
-        .values("cnt")[:1]
-    )
-
-    return queryset.annotate(
-        year_count=Coalesce(
-            Subquery(year_count_subquery, output_field=IntegerField()),
-            0
-        ),
-        month_count=Coalesce(
-            Subquery(month_count_subquery, output_field=IntegerField()),
-            0
-        ),
-    )
-
 
 class DailyReportList(LoginRequiredMixin, TemplateView):
     template_name = "daily_reports/report_list.html"
@@ -131,6 +89,8 @@ class DailyReportList(LoginRequiredMixin, TemplateView):
             "created_at": "created_at",
             "modified_by": "modified_by__username",
             "modified_at": "modified_at",
+            "parent_month_count": "parent_month_count",
+
         }
 
         sort_field = allowed_sort.get(sort_by.lstrip("-"), "date")
@@ -169,23 +129,28 @@ class DailyReportExportCSV(LoginRequiredMixin, View):
         queryset, filters = get_filtered_reports(request)
         queryset = annotate_running_counts(queryset).order_by("-date", "-id")
 
-        response = HttpResponse(content_type="text/csv")
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = 'attachment; filename="daily_reports.csv"'
 
+        # ✅ important for Excel Persian support
+        response.write("\ufeff")
+
         writer = csv.writer(response)
+
         writer.writerow([
             "Date",
             "Day",
             "Location Tag",
-            "Father Tag",
-            "Year Count",
             "Month Count",
-            "WO Number",
+            "Year Count",
             "Status",
+            "WO Number",
             "Description",
-            "Employees",
-            "Department",
             "Actual Start",
+            "Department",
+            "Parent Tag",
+            "Parent 30d Count",
+            "Employees",
             "Created By",
             "Created At",
             "Modified By",
@@ -197,15 +162,16 @@ class DailyReportExportCSV(LoginRequiredMixin, View):
                 r.date.strftime("%Y-%m-%d") if r.date else "",
                 r.date.strftime("%a") if r.date else "",
                 r.location_tag.loc_tag if r.location_tag else "",
-                r.father_tag.loc_tag if r.father_tag else "",
-                r.year_count,
                 r.month_count,
-                r.wo_number or "",
+                r.year_count,
                 r.get_status_display() if r.status else "",
+                r.wo_number or "",
                 r.description or "",
-                r.employees or "",
-                r.department.name if r.department else "",
                 r.actual_start.strftime("%Y-%m-%d") if r.actual_start else "",
+                r.department.name if r.department else "",
+                r.location_tag.equipment_parent.loc_tag if r.location_tag and r.location_tag.equipment_parent else "",
+                r.parent_month_count,
+                r.employees or "",
                 r.created_by.username if r.created_by else "",
                 r.created_at.strftime("%Y-%m-%d %H:%M") if r.created_at else "",
                 r.modified_by.username if r.modified_by else "",

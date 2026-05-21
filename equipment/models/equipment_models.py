@@ -115,8 +115,8 @@ class LocationTag(TimeStampedModel):
     )
     
     description = models.CharField(max_length=255, null=True, blank=True)
-    long_tag = models.CharField(max_length=250, null=True, blank=True)
-    
+    long_tag = models.CharField(max_length=250, db_index=True, null=True, blank=True)
+
     # Foreign Keys
     obj_criticality = models.ForeignKey(ObjectCriticality, on_delete=models.SET_NULL, null=True, blank=True, related_name='tag_locations')
     obj_type = models.ForeignKey(ObjectType, on_delete=models.SET_NULL, null=True, blank=True, related_name='tag_locations')
@@ -127,6 +127,38 @@ class LocationTag(TimeStampedModel):
     note = models.TextField(max_length=500, null=True, blank=True)
     mih_level = models.CharField(max_length=150, null=True, blank=True)
     
+    @property
+    def equipment_parent(self):
+        if not self.parent:
+            return None
+
+        parent_tag = self.parent.loc_tag if self.parent else None
+        unit_tag = str(self.unit) if self.unit else None
+
+        if parent_tag == unit_tag:
+            return self
+
+        return self.parent
+
+    @property
+    def equipment_path_prefix(self):
+        if not self.long_tag:
+            return ""
+
+        parent_tag = self.parent.loc_tag if self.parent else None
+        unit_tag = str(self.unit) if self.unit else None
+
+        # This tag itself is equipment (parent is the unit)
+        if parent_tag == unit_tag:
+            return self.long_tag
+
+        parts = self.long_tag.split("/")
+
+        if len(parts) >= 2:
+            return "/".join(parts[:2])
+
+        return self.long_tag
+
     def __str__(self):
         return self.loc_tag
     

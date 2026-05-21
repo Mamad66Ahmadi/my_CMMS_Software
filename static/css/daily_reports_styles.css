@@ -398,3 +398,59 @@ th:not(.sorted) .sort-arrow { display: none; }
     padding: 10px;
     word-break: break-word;
 }
+
+.persian-text {
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+    direction: rtl;
+    unicode-bidi: plaintext;
+}
+
+.report-row {
+    cursor: pointer;
+}
+
+.report-row:hover {
+    background-color: #f5f7fa;
+}
+.report-modal {
+    border-radius: 10px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.detail-item .label {
+    font-weight: 600;
+    color: #555;
+}
+
+.description-box {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.description-box .label {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* Persian / RTL support */
+
+.rtl-text {
+    direction: rtl;
+    text-align: right;
+    unicode-bidi: plaintext;
+    font-family: "Vazirmatn", "Tahoma", sans-serif;
+}
+
+/* row hover */
+
+.report-row:hover {
+    background: #f5f7fa;
+    cursor: pointer;
+}
