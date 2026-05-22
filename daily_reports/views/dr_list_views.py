@@ -1,4 +1,4 @@
-# daily_reports/views.py
+# daily_reports/views/dr_list_views.py
 
 import csv
 
@@ -9,9 +9,10 @@ from django.views import View
 from django.views.generic import TemplateView
 from datetime import timedelta
 from django.utils import timezone
+from django.shortcuts import render
 
-from .services import annotate_running_counts
-from .models import DailyReport
+from daily_reports.services import annotate_running_counts
+from daily_reports.models import DailyReport
 
 
 def get_filtered_reports(request):
@@ -179,3 +180,7 @@ class DailyReportExportCSV(LoginRequiredMixin, View):
             ])
 
         return response
+
+
+def report_detail_template(request):
+    return render(request, 'daily_reports/_report_datail_content.html')

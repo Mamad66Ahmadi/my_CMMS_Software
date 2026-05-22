@@ -1,0 +1,58 @@
+<form method="post" id="daily-report-form" class="needs-validation" novalidate>
+    {% csrf_token %}
+    
+    <!-- Outer Container with border and padding -->
+    <div class="p-4 border rounded bg-light shadow-sm">
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.date.label }}</label>
+                {{ form.date }}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.department.label }}</label>
+                {{ form.department }}
+            </div>
+        </div>
+
+    <div class="mb-3 position-relative">
+        <label class="form-label">Location Tag</label>
+        {{ form.location_tag_search }}
+        <div id="location-results" class="autocomplete-results"></div>
+        <!-- Keep this hidden so it takes 0px space -->
+        <div class="d-none">{{ form.location_tag }}</div> 
+    </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.wo_number.label }}</label>
+                {{ form.wo_number }}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.actual_start.label }}</label>
+                {{ form.actual_start }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">{{ form.description.label }}</label>
+            {{ form.description }}
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.status.label }}</label>
+                {{ form.status }}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.employees.label }}</label>
+                {{ form.employees }}
+            </div>
+        </div>
+
+    </div> <!-- End of Bordered Container -->
+
+    <div class="modal-footer mt-3">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary px-4">Save Report</button>
+    </div>
+</form>
