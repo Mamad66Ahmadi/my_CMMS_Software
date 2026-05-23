@@ -51,7 +51,6 @@ class DailyReport(models.Model):
     status = models.CharField(
         max_length=20,
         choices=DailyReportStatus.choices,
-        default=DailyReportStatus.ONGOING,
         db_index=True
     )
 

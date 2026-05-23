@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Ensure the modal is wide enough for the new table columns */
+    .modal-lg { max-width: 900px !important; }
+</style>
+
+<div class="container p-5">
+    <h1>Daily Report Portal</h1>
+    
+    <div class="" style="width: 400px;">
+        <label class="form-label fw-bold">Select Location</label>
+        <input type="text" id="main-location-search" class="form-control" 
+               data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}" 
+               placeholder="Search location...">
+        <div id="main-location-results" class="list-group mt-1" style="position:absolute; z-index:1000; width: 368px;"></div>
+        <input type="hidden" id="main-location-id">
+        <button class="btn btn-success mt-3 w-100" onclick="openReportModal()">Add Report</button>
+    </div>
+</div>
+
+<!-- Modal Structure (Added modal-lg) -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Recent Activity</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Content injected here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// ============================================================================
+// STATE MANAGEMENT
+// ============================================================================
+let selectedReportId = null;
+
+// ============================================================================
+// AUTOCOMPLETE FUNCTIONALITY
+// ============================================================================
+function initializeLocationAutocomplete() {
+    const searchInput = document.getElementById('main-location-search');
+    const resultsBox = document.getElementById('main-location-results');
+    const hiddenIdInput = document.getElementById('main-location-id');
+    
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+            resultsBox.innerHTML = '';
+            return;
+        }
+        
+        const autocompleteUrl = e.target.dataset.autocompleteUrl;
+        fetch(`${autocompleteUrl}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                resultsBox.innerHTML = '';
+                data.results.forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'list-group-item list-group-item-action';
+                    btn.textContent = item.text;
+                    btn.onclick = () => selectLocation(item, searchInput, hiddenIdInput, resultsBox);
+                    resultsBox.appendChild(btn);
+                });
+            })
+            .catch(error => console.error('Autocomplete error:', error));
+    });
+}
+
+function selectLocation(item, searchInput, hiddenIdInput, resultsBox) {
+    searchInput.value = item.text;
+    hiddenIdInput.value = item.id;
+    resultsBox.innerHTML = '';
+}
+
+// ============================================================================
+// MODAL MANAGEMENT
+// ============================================================================
+function cleanupModal() {
+    const modalEl = document.getElementById('reportModal');
+    const existingModal = bootstrap.Modal.getInstance(modalEl);
+    
+    if (existingModal) {
+        existingModal.dispose();
+    }
+    
+    // Remove any leftover backdrops
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    
+    // Reset body state
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+}
+
+function closeModal() {
+    const modalEl = document.getElementById('reportModal');
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    
+    if (modalInstance) {
+        modalInstance.hide();
+    }
+    
+    // Clean up after hiding
+    setTimeout(() => {
+        cleanupModal();
+    }, 300);
+}
+
+function showModal(content) {
+    const modalEl = document.getElementById('reportModal');
+    const modalBody = modalEl.querySelector('.modal-body');
+    
+    modalBody.innerHTML = content;
+    
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function openReportModal() {
+    const locId = document.getElementById('main-location-id').value;
+    
+    if (!locId) {
+        alert("Please select a location first!");
+        return;
+    }
+    
+    cleanupModal();
+    
+    fetch(`{% url 'daily_reports:recent_reports' %}?location_id=${locId}`)
+        .then(response => response.text())
+        .then(html => showModal(html))
+        .catch(error => {
+            console.error('Error loading recent reports:', error);
+            alert('Failed to load recent reports. Please try again.');
+        });
+}
+
+// ============================================================================
+// REPORT SELECTION
+// ============================================================================
+function handleReportSelection(radioElement) {
+    selectedReportId = radioElement.value;
+    const continueBtn = document.getElementById('continueReportBtn');
+    
+    if (continueBtn) {
+        continueBtn.disabled = !selectedReportId;
+    }
+}
+
+function selectRow(radioId) {
+    const radio = document.getElementById(radioId);
+    
+    if (!radio) return;
+    
+    radio.checked = true;
+    handleReportSelection(radio);
+    
+    // Visual feedback
+    document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('table-active'));
+    radio.closest('tr').classList.add('table-active');
+}
+
+// ============================================================================
+// FORM LOADING
+// ============================================================================
+async function loadCreateForm() {
+    const locId = document.getElementById('main-location-id').value;
+    
+    if (!locId) {
+        alert("Please select a location first.");
+        return;
+    }
+    
+    try {
+        const response = await fetch(`{% url 'daily_reports:report_create' %}?location_id=${locId}`);
+        const html = await response.text();
+        
+        document.querySelector('#reportModal .modal-body').innerHTML = html;
+    } catch (error) {
+        console.error('Error loading form:', error);
+        alert('Failed to load form. Please try again.');
+    }
+}
+
+async function continueReport() {
+    if (!selectedReportId) return;
+    
+    const locId = document.getElementById('main-location-id').value;
+    
+    try {
+        // Fetch report details and form in parallel
+        // UPDATED LINE BELOW:
+        const [reportResponse, formResponse] = await Promise.all([
+            fetch(`{% url 'daily_reports:report_details' 0 %}`.replace('0', selectedReportId)),
+            fetch(`{% url 'daily_reports:report_create' %}?location_id=${locId}`)
+        ]);
+        
+        const reportData = await reportResponse.json();
+        const formHtml = await formResponse.text();
+        
+        // Inject form
+        document.querySelector('#reportModal .modal-body').innerHTML = formHtml;
+        
+        // Populate fields
+        populateFormFields(reportData);
+        
+    } catch (error) {
+        console.error('Error continuing report:', error);
+        alert('Failed to load report details. Please try again.');
+    }
+}
+
+
+function populateFormFields(data) {
+    const fieldMap = {
+        'actual_start': data.actual_start,
+        'wo_number': data.wo_number,
+        'employees': data.employees
+    };
+    
+    Object.entries(fieldMap).forEach(([fieldName, value]) => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field && value !== null && value !== undefined) {
+            field.value = value;
+
+            field.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    initializeLocationAutocomplete();
+});
+
+
+document.addEventListener('submit', async function (e) {
+    const form = e.target;
+    if (!form || form.id !== 'reportForm') return;
+
+    e.preventDefault();
+
+    const saveBtn = form.querySelector('#saveReportBtn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    // ... inside the submit listener ...
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+        });
+
+        // Debug: Log the raw text in case JSON parsing fails
+        const textResponse = await response.text();
+        console.log("Raw Server Response:", textResponse); 
+
+        const data = JSON.parse(textResponse);
+
+        if (data.success) {
+            closeModal();
+        } else if (data.html) {
+            document.querySelector('#reportModal .modal-body').innerHTML = data.html;
+        }
+    } catch (err) {
+        console.error("Fetch Error:", err);
+        alert('An error occurred. Check the console.');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+    }
+
+}, true);
+
+
+// Expose functions to global scope for inline event handlers
+window.openReportModal = openReportModal;
+window.loadCreateForm = loadCreateForm;
+window.handleReportSelection = handleReportSelection;
+window.continueReport = continueReport;
+window.selectRow = selectRow;
+window.closeModal = closeModal;
+</script>
+
+
+{% endblock %}

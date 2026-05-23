@@ -1,0 +1,172 @@
+<!-- templates/daily_reports/_recent_reports.html -->
+
+<div class="modal-header border-bottom-0 pb-2">
+    <div class="w-100 text-center">
+        <h5 class="fw-bold mb-2" style="color: #0a4228;">
+            {% if location_tag %}
+                {{ location_tag }}
+            {% else %}
+                <!-- Fallback if context is missing -->
+                Location Detail
+            {% endif %}
+        </h5>
+    </div>
+</div>
+
+<div class="modal-body px-4 py-3">
+    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-hover table-bordered align-middle text-center mb-0">
+            <thead class="table-dark sticky-top">
+                <tr>
+                    <th style="width: 3%;"></th>
+                    <th style="width: 14%;">Date</th>
+                    <th style="width: 14%;">Actual Start</th>
+                    <th style="width: 11%;">Order #</th>
+                    <th style="width: 8%;">Status</th>
+                    <th style="width: 50%;">Description</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white">
+                {% for report in reports %}
+                <tr onclick="selectRow('report_{{ report.id }}')" 
+                    style="cursor: pointer; transition: background-color 0.15s ease;"
+                    onmouseover="this.style.backgroundColor='#f8f9fa'" 
+                    onmouseout="if(!document.getElementById('report_{{ report.id }}').checked) this.style.backgroundColor=''">
+                    <td>
+                        <input type="radio" 
+                               name="selected_report" 
+                               value="{{ report.id }}" 
+                               id="report_{{ report.id }}" 
+                               class="form-check-input"
+                               style="pointer-events: none; cursor: pointer;">
+                    </td>
+                    <td class="fw-medium">{{ report.date|date:"Y-m-d" }}</td>
+                    <td>{{ report.actual_start|date:"Y-m-d" }}</td> 
+                    <td class="text-primary fw-semibold">{{ report.wo_number }}</td>
+                    <td>
+                        <span class="badge rounded-pill
+                            {% if report.status == 'completed' %}bg-success
+                            {% elif report.status == 'ongoing' %}bg-warning text-dark
+                            {% elif report.status == 'waiting' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ report.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-start" dir="auto">
+                        <small>{{ report.description|truncatechars:80 }}</small>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2 mb-0">No recent reports found for this location.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal-footer border-top pt-3 pb-3 px-4 bg-light">
+    <div class="row w-100 g-2">
+        <div class="col-12 col-md-4">
+            <button type="button" 
+                    class="btn btn-outline-secondary w-100 shadow-sm" 
+                    onclick="closeModal()">
+                <i class="bi bi-x-circle"></i> Cancel
+            </button>
+        </div>
+        <div class="col-12 col-md-4">
+            <button type="button" 
+                    id="continueReportBtn" 
+                    class="btn btn-secondary w-100 shadow-sm" 
+                    onclick="continueReport()" 
+                    disabled>
+                <i class="bi bi-pencil-square"></i> Continue Selected
+            </button>
+        </div>
+        <div class="col-12 col-md-4">
+            <button type="button" 
+                    class="btn btn-primary w-100 shadow-sm" 
+                    onclick="loadCreateForm()">
+                <i class="bi bi-plus-circle"></i> Add New Report
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Highlight selected row */
+    input[type="radio"]:checked {
+        accent-color: #0a4228;
+    }
+    
+    /* Sticky header for scrollable table */
+    .table thead.sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    /* Better table borders */
+    .table-bordered td, .table-bordered th {
+        border-color: #dee2e6;
+    }
+    
+    /* Smooth transitions */
+    .btn {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Badge styling */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.35em 0.65em;
+        font-weight: 600;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .modal-footer .row {
+            gap: 0.5rem;
+        }
+        
+        .table {
+            font-size: 0.875rem;
+        }
+    }
+</style>
+
+<script>
+    // Enable/disable continue button based on selection
+    document.addEventListener('DOMContentLoaded', function() {
+        const radios = document.querySelectorAll('input[name="selected_report"]');
+        const continueBtn = document.getElementById('continueReportBtn');
+        
+        radios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                continueBtn.disabled = false;
+                // Highlight selected row
+                document.querySelectorAll('tbody tr').forEach(tr => {
+                    tr.style.backgroundColor = '';
+                });
+                this.closest('tr').style.backgroundColor = '#e7f3ff';
+            });
+        });
+    });
+    
+    function selectRow(radioId) {
+        const radio = document.getElementById(radioId);
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change'));
+    }
+
+
+</script>

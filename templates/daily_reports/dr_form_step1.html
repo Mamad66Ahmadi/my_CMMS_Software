@@ -1,0 +1,20 @@
+<!-- daily_reports/dr_form_step1.html -->
+<form id="report-form" method="post" action="{% url 'daily_reports:report_create' %}">
+    {% csrf_token %}
+    
+    <div id="step-1-content">
+        <h5>Select Location</h5>
+        <div class="form-group">
+            <label>Location Tag</label>
+            <input type="text" id="location-search" class="form-control" 
+                   data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}" 
+                   placeholder="Type to search..." autocomplete="off">
+            <div id="location-results" class="list-group" style="position:absolute; z-index:1000; width:90%;"></div>
+        </div>
+        
+        <!-- Hidden field to hold the ID -->
+        {{ form.location_tag }}
+        
+        <button type="button" class="btn btn-secondary mt-3" onclick="goToStep2()">Next</button>
+    </div>
+</form>
