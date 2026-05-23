@@ -94,6 +94,8 @@ class RecentReportsPartialView(LoginRequiredMixin, View):
     def get(self, request):
         location_id = request.GET.get('location_id')
         location = get_object_or_404(LocationTag, id=location_id)
+        print(f"DEBUG location_id: {location_id}")
+        print(f"DEBUG user.department: {request.user.department}")
         
         reports = DailyReport.objects.filter(
             location_tag_id=location_id,

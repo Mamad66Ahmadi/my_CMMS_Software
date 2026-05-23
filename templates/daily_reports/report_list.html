@@ -8,17 +8,14 @@
 <div class="container-fluid">
     {% include "daily_reports/dr_filter.html" %}
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <!-- Grouped Title and Button on the left -->
+        <!-- Grouped Title and Portal on the left -->
         <div class="d-flex align-items-center gap-3">
             <h1 class="mb-0">
                 Daily Reports
                 <span style="font-weight: normal; font-size: 1.2rem;">({{ reports.paginator.count }} Records)</span>
             </h1>
-            
-            <!-- Button is now right after the H1 -->
-            <button type="button" class="btn btn-primary" id="add-report-btn">
-                Add Report
-            </button>
+
+            {% include "daily_reports/_report_portal.html" %}
         </div>
 
         <!-- Export button remains on the right -->
@@ -40,7 +37,9 @@
 {% include "daily_reports/_report_modal.html" %}
 
 <script>
-// 1. Row Click Logic
+// ============================================================================
+// ROW CLICK LOGIC
+// ============================================================================
 document.querySelectorAll(".report-row").forEach(row => {
     row.addEventListener("click", function() {
         const clickedRow = this;
@@ -49,98 +48,249 @@ document.querySelectorAll(".report-row").forEach(row => {
             .then(html => {
                 document.getElementById("reportModalContent").innerHTML = html;
                 document.getElementById("m-date").textContent = clickedRow.dataset.date;
-                // ... add your other fields ...
                 new bootstrap.Modal(document.getElementById("reportModal")).show();
             });
     });
 });
 
-// 2. Add Report Logic (This was missing!)
-document.getElementById("add-report-btn").addEventListener("click", function () {
-    fetch("{% url 'daily_reports:report_create' %}")
-        .then(response => response.text())
-        .then(html => {
-            const modalContent = document.getElementById("reportModalContent");
-            modalContent.innerHTML = html;
-            
-            // --- UPDATED: Auto-fill current DATE ---
-            const dateInput = document.getElementById("id_actual_start");
-            if (dateInput) {
-                const now = new Date();
-                // Format to YYYY-MM-DD (required by HTML5 date input)
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                dateInput.value = `${year}-${month}-${day}`;
-            }
+// ============================================================================
+// STATE MANAGEMENT
+// ============================================================================
+let selectedReportId = null;
 
-            const modal = new bootstrap.Modal(document.getElementById("reportModal"));
-            modal.show();
-            // ... rest of your existing logic
-        });
-});
-// Add this to your existing script block in report_list.html
-function initAutocomplete() {
-    const input = document.getElementById("location-search");
-    const resultsBox = document.getElementById("location-results");
-    const hidden = document.getElementById("id_location_tag");
+// ============================================================================
+// AUTOCOMPLETE FUNCTIONALITY
+// ============================================================================
+function initializeLocationAutocomplete() {
+    const searchInput = document.getElementById('main-location-search');
+    const resultsBox = document.getElementById('main-location-results');
+    const hiddenIdInput = document.getElementById('main-location-id');
 
-    if (!input) {
-        console.log("Input not found in DOM");
-        return;
-    }
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.trim();
 
-    input.addEventListener("keyup", function () {
-        const query = input.value;
-        const url = input.getAttribute("data-autocomplete-url");
-        
-        if (query.length < 2) { 
-            resultsBox.style.display = "none"; 
-            return; 
+        if (query.length < 2) {
+            resultsBox.innerHTML = '';
+            return;
         }
 
-        fetch(url + "?q=" + encodeURIComponent(query))
-            .then(r => r.json())
+        const autocompleteUrl = e.target.dataset.autocompleteUrl;
+        fetch(`${autocompleteUrl}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
             .then(data => {
-                resultsBox.innerHTML = "";
+                resultsBox.innerHTML = '';
                 data.results.forEach(item => {
-                    const div = document.createElement("div");
-                    div.className = "autocomplete-item p-2 border-bottom";
-                    div.style.cursor = "pointer";
-                    div.style.backgroundColor = "white";
-                    div.textContent = item.text;
-                    div.onclick = () => {
-                        input.value = item.text;
-                        hidden.value = item.id;
-                        resultsBox.style.display = "none";
-                    };
-                    resultsBox.appendChild(div);
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'list-group-item list-group-item-action';
+                    btn.textContent = item.text;
+                    btn.onclick = () => selectLocation(item, searchInput, hiddenIdInput, resultsBox);
+                    resultsBox.appendChild(btn);
                 });
-                resultsBox.style.display = "block";
-            });
+            })
+            .catch(error => console.error('Autocomplete error:', error));
     });
 }
 
-document.addEventListener('submit', function(e) {
-    if (e.target && e.target.id === 'daily-report-form') {
-        const deptField = document.getElementById('id_department');
-        const userDept = "{{ request.user.department.id }}"; // Assuming user.department has an ID
-        
-        // Confirmation for Department
-        if (deptField.value !== userDept) {
-            if (!confirm("You are selecting a department different from your own. Do you wish to continue?")) {
-                e.preventDefault(); // Stop form submission
-                return false;
-            }
-        }
-        
-        // Note: Django will return errors if status/location are empty.
-        // We can optionally add HTML5 'required' attributes in __init__ for instant browser feedback:
-        // self.fields['status'].widget.attrs['required'] = 'required'
+function selectLocation(item, searchInput, hiddenIdInput, resultsBox) {
+    searchInput.value = item.text;
+    hiddenIdInput.value = item.id;
+    resultsBox.innerHTML = '';
+}
+
+// ============================================================================
+// MODAL MANAGEMENT
+// ============================================================================
+function cleanupModal() {
+    const modalEl = document.getElementById('reportModal');
+    const existingModal = bootstrap.Modal.getInstance(modalEl);
+
+    if (existingModal) {
+        existingModal.dispose();
     }
+
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+}
+
+function closeModal() {
+    const modalEl = document.getElementById('reportModal');
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+
+    if (modalInstance) {
+        modalInstance.hide();
+    }
+
+    setTimeout(() => {
+        cleanupModal();
+    }, 300);
+}
+
+function showModal(content) {
+    const modalEl = document.getElementById('reportModal');
+    // Fix: was modalEl.querySelector('.modal-body')
+    document.getElementById('reportModalContent').innerHTML = content;
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function openReportModal() {
+    const locId = document.getElementById('main-location-id').value;
+
+    if (!locId) {
+        alert("Please select a location first!");
+        return;
+    }
+
+    cleanupModal();
+
+    fetch(`{% url 'daily_reports:recent_reports' %}?location_id=${locId}`)
+        .then(response => response.text())
+        .then(html => showModal(html))
+        .catch(error => {
+            console.error('Error loading recent reports:', error);
+            alert('Failed to load recent reports. Please try again.');
+        });
+}
+
+// ============================================================================
+// REPORT SELECTION
+// ============================================================================
+function handleReportSelection(radioElement) {
+    selectedReportId = radioElement.value;
+    const continueBtn = document.getElementById('continueReportBtn');
+
+    if (continueBtn) {
+        continueBtn.disabled = !selectedReportId;
+    }
+}
+
+function selectRow(radioId) {
+    const radio = document.getElementById(radioId);
+
+    if (!radio) return;
+
+    radio.checked = true;
+    handleReportSelection(radio);
+
+    document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('table-active'));
+    radio.closest('tr').classList.add('table-active');
+}
+
+// ============================================================================
+// FORM LOADING
+async function loadCreateForm() {
+    const locId = document.getElementById('main-location-id').value;
+    if (!locId) { alert("Please select a location first."); return; }
+
+    try {
+        const response = await fetch(`{% url 'daily_reports:report_create' %}?location_id=${locId}`);
+        const html = await response.text();
+        // Fix: was document.querySelector('#reportModal .modal-body')
+        document.getElementById('reportModalContent').innerHTML = html;
+    } catch (error) {
+        console.error('Error loading form:', error);
+        alert('Failed to load form. Please try again.');
+    }
+}
+
+async function continueReport() {
+    if (!selectedReportId) return;
+    const locId = document.getElementById('main-location-id').value;
+
+    try {
+        const [reportResponse, formResponse] = await Promise.all([
+            fetch(`{% url 'daily_reports:report_details' 0 %}`.replace('0', selectedReportId)),
+            fetch(`{% url 'daily_reports:report_create' %}?location_id=${locId}`)
+        ]);
+
+        const reportData = await reportResponse.json();
+        const formHtml = await formResponse.text();
+        // Fix: was document.querySelector('#reportModal .modal-body')
+        document.getElementById('reportModalContent').innerHTML = formHtml;
+
+        populateFormFields(reportData);
+    } catch (error) {
+        console.error('Error continuing report:', error);
+        alert('Failed to load report details. Please try again.');
+    }
+}
+
+
+function populateFormFields(data) {
+    const fieldMap = {
+        'actual_start': data.actual_start,
+        'wo_number': data.wo_number,
+        'employees': data.employees
+    };
+
+    Object.entries(fieldMap).forEach(([fieldName, value]) => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field && value !== null && value !== undefined) {
+            field.value = value;
+            field.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    initializeLocationAutocomplete();
 });
 
-</script>
+// ============================================================================
+// FORM SUBMIT HANDLER
+// ============================================================================
+document.addEventListener('submit', async function(e) {
+    const form = e.target;
+    if (!form || form.id !== 'reportForm') return;
 
+    e.preventDefault();
+
+    const saveBtn = form.querySelector('#saveReportBtn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+        });
+
+        const textResponse = await response.text();
+        console.log("Raw Server Response:", textResponse);
+
+        const data = JSON.parse(textResponse);
+
+        if (data.success) {
+            closeModal();
+        } else if (data.html) {
+            document.querySelector('#reportModal .modal-body').innerHTML = data.html;
+        }
+    } catch (err) {
+        console.error("Fetch Error:", err);
+        alert('An error occurred. Check the console.');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+    }
+
+}, true);
+
+// Expose functions to global scope for inline event handlers
+window.openReportModal = openReportModal;
+window.loadCreateForm = loadCreateForm;
+window.handleReportSelection = handleReportSelection;
+window.continueReport = continueReport;
+window.selectRow = selectRow;
+window.closeModal = closeModal;
+</script>
 
 {% endblock %}

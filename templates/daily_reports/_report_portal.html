@@ -1,0 +1,13 @@
+<!-- daily_reports/_report_portal.html -->
+<div class="d-flex align-items-center gap-2" style="position: relative;">
+    <div style="position: relative;">
+        <input type="text" id="main-location-search" class="form-control"
+               data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}"
+               placeholder="Search location..."
+               style="width: 280px;">
+        <div id="main-location-results" class="list-group mt-1"
+             style="position:absolute; z-index:1000; width: 280px;"></div>
+        <input type="hidden" id="main-location-id">
+    </div>
+    <button class="btn btn-primary" onclick="openReportModal()">Add Report</button>
+</div>
