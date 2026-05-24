@@ -1,119 +1,92 @@
 {% load static %}
-
 {% load jalali_date %}
 
-
 <table>
+    <thead>
+        <tr>
+            {% include "daily_reports/_table_header.html" with column="date" label="Date" %}
+            {% include "daily_reports/_table_header.html" with column="day" label="Day" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/_table_header.html" with column="location_tag" label="Location Tag" %}
+            {% include "daily_reports/_table_header.html" with column="month_count" label="Count<br>(Monthly)" %}
+            {% include "daily_reports/_table_header.html" with column="year_count" label="Count<br>(Yearly)" %}
+            {% include "daily_reports/_table_header.html" with column="status" label="Status" %}
+            {% include "daily_reports/_table_header.html" with column="wo_number" label="WO Number" %}
+            {% include "daily_reports/_table_header.html" with column="description" label="Description" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/_table_header.html" with column="actual_start" label="Actual Start" %}
+            {% include "daily_reports/_table_header.html" with column="department" label="Department" %}
+            {% include "daily_reports/_table_header.html" with column="father_tag" label="Parent Tag" %}
+            {% include "daily_reports/_table_header.html" with column="parent_month_count" label="Parent Count<br>(Monthly)" %}
+            {% include "daily_reports/_table_header.html" with column="employees" label="Employees" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/_table_header.html" with column="modified_by" label="Modified By" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=query_params %}
+        </tr>
+    </thead>
 
-<thead>
-<tr>
+    <tbody>
+        {% for r in reports %}
+        <tr class="report-row" 
+            data-pk="{{ r.id }}"
+            data-date="{{ r.date|date:'Y-m-d' }}"
+            data-day="{{ r.date|date:'D' }}"
+            data-tag="{{ r.location_tag.loc_tag }}"
+            data-wo="{{ r.wo_number|default:'-' }}"
+            data-status="{{ r.get_status_display }}"
+            data-desc="{{ r.description }}"
+            data-start="{{ r.actual_start|date:'Y-m-d' }}"
+            data-dept="{{ r.department.name|default:'-' }}"
+            data-parent="{% if r.location_tag.equipment_parent %}{{ r.location_tag.equipment_parent.loc_tag }}{% else %}-{% endif %}"
+            data-employees="{{ r.employees|default:'-' }}">
 
-{% include "daily_reports/_table_header.html" with column="date" label="Date" %}
-{% include "daily_reports/_table_header.html" with column="day" label="Day" sort_by=sort_by query_params=query_params %}
-{% include "daily_reports/_table_header.html" with column="location_tag" label="Location Tag" %}
-
-{% include "daily_reports/_table_header.html" with column="month_count" label="Count<br>(Monthly)" %}
-{% include "daily_reports/_table_header.html" with column="year_count" label="Count<br>(Yearly)" %}
-
-{% include "daily_reports/_table_header.html" with column="status" label="Status" %}
-{% include "daily_reports/_table_header.html" with column="wo_number" label="WO Number" %}
-
-{% include "daily_reports/_table_header.html" with column="description" label="Description" sort_by=sort_by query_params=query_params %}
-
-{% include "daily_reports/_table_header.html" with column="actual_start" label="Actual Start" %}
-{% include "daily_reports/_table_header.html" with column="department" label="Department" %}
-
-{% include "daily_reports/_table_header.html" with column="father_tag" label="Parent Tag" %}
-{% include "daily_reports/_table_header.html" with column="parent_month_count" label="Parent Count<br>(Monthly)" %}
-
-{% include "daily_reports/_table_header.html" with column="employees" label="Employees" sort_by=sort_by query_params=query_params %}
-
-{% include "daily_reports/_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=query_params %}
-{% include "daily_reports/_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=query_params %}
-
-{% include "daily_reports/_table_header.html" with column="modified_by" label="Modified By" sort_by=sort_by query_params=query_params %}
-{% include "daily_reports/_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=query_params %}
-
-</tr>
-</thead>
-
-
-<tbody>
-{% for r in reports %}
-<tr class="report-row"
-    data-date="{{ r.date|date:'Y-m-d' }}"
-    data-day="{{ r.date|date:'D' }}"
-    data-tag="{{ r.location_tag.loc_tag }}"
-    data-wo="{{ r.wo_number|default:'-' }}"
-    data-status="{{ r.get_status_display }}"
-    data-desc="{{ r.description }}"
-    data-start="{{ r.actual_start|date:'Y-m-d' }}"
-    data-dept="{{ r.department.name|default:'-' }}"
-    data-parent="{% if r.location_tag.equipment_parent %}{{ r.location_tag.equipment_parent.loc_tag }}{% else %}-{% endif %}"
-    data-employees="{{ r.employees|default:'-' }}">
-
-<td title="{{ r.date|to_jalali }}">{{ r.date|date:"Y-m-d" }}</td>
-<td class="weekday-{{ r.date|date:'l' }}">
-    {{ r.date|date:"D" }}
-</td>
-<td>{{ r.location_tag.loc_tag }}</td>
-
-<td>{{ r.month_count }}</td>
-<td>{{ r.year_count }}</td>
-
-<td>
-{% if r.status == "completed" %}
-<span class="status-badge status-completed">Completed</span>
-{% elif r.status == "ongoing" %}
-<span class="status-badge status-ongoing">Ongoing</span>
-{% else %}
-<span class="status-badge status-waiting">Waiting</span>
-{% endif %}
-</td>
-
-<td>{{ r.wo_number|default:"-" }}</td>
-
-<td class="persian-text">
-    <bdi>{{ r.description|truncatechars:80 }}</bdi>
-</td>
-
-<td>
-{% if r.actual_start %}
-{{ r.actual_start|date:"Y-m-d" }}
-{% else %}
--
-{% endif %}
-</td>
-
-<td>
-{% if r.department %}
-{{ r.department.name }}
-{% else %}
--
-{% endif %}
-</td>
-
-<td>
-{% if r.location_tag.equipment_parent %}
-{{ r.location_tag.equipment_parent.loc_tag }}
-{% else %}
--
-{% endif %}
-</td>
-
-<td>{{ r.parent_month_count }}</td>
-
-<td class="persian-text">{{ r.employees|default:"-" }}</td>
-
-<td>{{ r.created_by.username }}</td>
-<td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
-
-<td>{{ r.modified_by.username|default:"-" }}</td>
-<td>{{ r.modified_at|date:"Y-m-d H:i" }}</td>
-
-</tr>
-{% endfor %}
-</tbody>
-
-
+            <td title="{{ r.date|to_jalali }}">{{ r.date|date:"Y-m-d" }}</td>
+            <td class="weekday-{{ r.date|date:'l' }}">
+                {{ r.date|date:"D" }}
+            </td>
+            <td>{{ r.location_tag.loc_tag }}</td>
+            <td>{{ r.month_count }}</td>
+            <td>{{ r.year_count }}</td>
+            <td>
+                {% if r.status == "completed" %}
+                <span class="status-badge status-completed">Completed</span>
+                {% elif r.status == "ongoing" %}
+                <span class="status-badge status-ongoing">Ongoing</span>
+                {% else %}
+                <span class="status-badge status-waiting">Waiting</span>
+                {% endif %}
+            </td>
+            <td>{{ r.wo_number|default:"-" }}</td>
+            <td class="persian-text">
+                <bdi>{{ r.description|truncatechars:80 }}</bdi>
+            </td>
+            <td>
+                {% if r.actual_start %}
+                {{ r.actual_start|date:"Y-m-d" }}
+                {% else %}
+                -
+                {% endif %}
+            </td>
+            <td>
+                {% if r.department %}
+                {{ r.department.name }}
+                {% else %}
+                -
+                {% endif %}
+            </td>
+            <td>
+                {% if r.location_tag.equipment_parent %}
+                {{ r.location_tag.equipment_parent.loc_tag }}
+                {% else %}
+                -
+                {% endif %}
+            </td>
+            <td>{{ r.parent_month_count }}</td>
+            <td class="persian-text">{{ r.employees|default:"-" }}</td>
+            <td>{{ r.created_by.username }}</td>
+            <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ r.modified_by.username|default:"-" }}</td>
+            <td>{{ r.modified_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>

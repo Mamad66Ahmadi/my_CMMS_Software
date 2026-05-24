@@ -1,0 +1,89 @@
+{# daily_reports/_report_detail_content.html #}
+
+<div class="modal-header bg-dark text-white border-bottom">
+    <h5 class="modal-title fw-bold mb-0">
+        Daily Report:
+        <span class="text-primary">
+            {{ report.location_tag.loc_tag|default:"N/A" }}
+        </span>
+    </h5>
+    <button type="button" class="btn-close btn-close-white"
+            data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body p-4">
+    <div class="row g-4">
+        <!-- Line 1: Date, Actual Start, Status -->
+        <div class="col-sm-4">
+            <label class="text-muted small d-block">Date</label>
+            <span class="fw-bold">{{ report.date|date:"Y-m-d" }}</span>
+        </div>
+        <div class="col-sm-4">
+            <label class="text-muted small d-block">Actual Start</label>
+            <span class="fw-bold {% if report.actual_start == report.date %}text-success{% endif %}">
+                {{ report.actual_start|date:"Y-m-d"|default:"—" }}
+            </span>
+        </div>
+        <div class="col-sm-4">
+            <label class="text-muted small d-block">Status</label>
+            <span class="badge 
+                {% if report.status == 'completed' %}bg-success
+                {% elif report.status == 'ongoing' %}bg-warning text-dark
+                {% elif report.status == 'waiting' %}bg-danger
+                {% else %}bg-secondary{% endif %}">
+                {{ report.get_status_display }}
+            </span>
+        </div>
+
+        <!-- Line 2: Location, Parent, Dept -->
+        <div class="col-sm-4">
+            <label class="text-muted small d-block">Location Tag</label>
+            <span class="fw-semibold">{{ report.location_tag.loc_tag|default:"—" }}</span>
+        </div>
+        <div class="col-sm-4">
+            <label class="text-muted small d-block">Parent Tag</label>
+            <span class="fw-semibold">{{ report.location_tag.parent.loc_tag|default:"—" }}</span>
+        </div>
+        <div class="col-sm-4">
+            <label class="text-muted small d-block">Unit</label>
+            <span class="fw-semibold">{{ report.location_tag.unit|default:"—" }}</span>
+        </div>
+
+
+        <div class="col-sm-4">
+            <label class="text-muted small d-block">Department</label>
+            <span class="fw-semibold">{{ report.department.name|default:"—" }}</span>
+        </div>
+        <div class="col-sm-4">
+            <label class="text-muted small d-block">Employees</label>
+            <span class="">{{ report.employees|default:"—" }}</span>
+        </div>
+
+        <!-- Line 3: Description (Intelligent Alignment) -->
+        <div class="col-12 mt-3">
+            <label class="text-muted small d-block">Description</label>
+            <div class="p-3 bg-light border rounded w-100" 
+                dir="auto" 
+                style="white-space: pre-wrap; font-size: 0.95rem; text-align: start; unicode-bidi: plaintext; text-indent: 0;">{{ report.description|default:"No description provided." }}</div>
+        </div>
+
+
+    </div>
+
+    <hr class="my-4">
+
+    <!-- Footer: Created/Modified -->
+    <div class="row text-muted small">
+        <div class="col-6">
+            <strong>Created By:</strong> {{ report.created_by.username|default:"—" }}<br>
+            <strong>Date:</strong> {{ report.created_at|date:"Y-m-d H:i"|default:"—" }}
+        </div>
+        <div class="col-6 text-end">
+            <strong>Modified By:</strong> {{ report.modified_by.username|default:"—" }}<br>
+            <strong>Date:</strong> {{ report.modified_at|date:"Y-m-d H:i"|default:"—" }}
+        </div>
+    </div>
+</div>
+<div class="modal-footer bg-light border-top">
+    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
+</div>

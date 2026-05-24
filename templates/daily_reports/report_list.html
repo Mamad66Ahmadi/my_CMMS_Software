@@ -8,17 +8,17 @@
 <div class="container-fluid">
     {% include "daily_reports/dr_filter.html" %}
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <!-- Grouped Title and Portal on the left -->
+        <!-- Title on the left -->
         <div class="d-flex align-items-center gap-3">
             <h1 class="mb-0">
                 Daily Reports
-                <span style="font-weight: normal; font-size: 1.2rem;">({{ reports.paginator.count }} Records)</span>
+                <span style="font-weight: normal; font-size: 1.2rem;">
+                    ({{ reports.paginator.count }} Records)
+                </span>
             </h1>
-
-            {% include "daily_reports/_report_portal.html" %}
         </div>
 
-        <!-- Export button remains on the right -->
+        <!-- Export button on the right -->
         <div>
             <a href="{% url 'daily_reports:report_export_csv' %}?{{ query_params }}" class="btn btn-success">
                 Export CSV
@@ -27,7 +27,9 @@
     </div>
 
     {% if reports %}
-        <div class="table-scroll-container">{% include "daily_reports/dr_table.html" %}</div>
+        <div class="table-scroll-container">
+            {% include "daily_reports/dr_table.html" %}
+        </div>
         {% include "equipment/common/_pagination.html" with page_obj=reports %}
     {% else %}
         <p>No reports found.</p>
@@ -38,65 +40,25 @@
 
 <script>
 // ============================================================================
-// ROW CLICK LOGIC
+// ROW CLICK LOGIC – open read-only detail in modal
 // ============================================================================
 document.querySelectorAll(".report-row").forEach(row => {
     row.addEventListener("click", function() {
         const clickedRow = this;
-        fetch("{% url 'daily_reports:report_detail_template' %}")
+        const pk = clickedRow.dataset.pk;
+
+        fetch(`/daily-reports/reports/${pk}/detail/`)
             .then(res => res.text())
             .then(html => {
                 document.getElementById("reportModalContent").innerHTML = html;
-                document.getElementById("m-date").textContent = clickedRow.dataset.date;
                 new bootstrap.Modal(document.getElementById("reportModal")).show();
+            })
+            .catch(err => {
+                console.error("Error loading report detail template:", err);
+                alert("Failed to load report details.");
             });
     });
 });
-
-// ============================================================================
-// STATE MANAGEMENT
-// ============================================================================
-let selectedReportId = null;
-
-// ============================================================================
-// AUTOCOMPLETE FUNCTIONALITY
-// ============================================================================
-function initializeLocationAutocomplete() {
-    const searchInput = document.getElementById('main-location-search');
-    const resultsBox = document.getElementById('main-location-results');
-    const hiddenIdInput = document.getElementById('main-location-id');
-
-    searchInput.addEventListener('input', function(e) {
-        const query = e.target.value.trim();
-
-        if (query.length < 2) {
-            resultsBox.innerHTML = '';
-            return;
-        }
-
-        const autocompleteUrl = e.target.dataset.autocompleteUrl;
-        fetch(`${autocompleteUrl}?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                resultsBox.innerHTML = '';
-                data.results.forEach(item => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'list-group-item list-group-item-action';
-                    btn.textContent = item.text;
-                    btn.onclick = () => selectLocation(item, searchInput, hiddenIdInput, resultsBox);
-                    resultsBox.appendChild(btn);
-                });
-            })
-            .catch(error => console.error('Autocomplete error:', error));
-    });
-}
-
-function selectLocation(item, searchInput, hiddenIdInput, resultsBox) {
-    searchInput.value = item.text;
-    hiddenIdInput.value = item.id;
-    resultsBox.innerHTML = '';
-}
 
 // ============================================================================
 // MODAL MANAGEMENT
@@ -130,167 +92,64 @@ function closeModal() {
 
 function showModal(content) {
     const modalEl = document.getElementById('reportModal');
-    // Fix: was modalEl.querySelector('.modal-body')
     document.getElementById('reportModalContent').innerHTML = content;
 
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
 }
 
-function openReportModal() {
-    const locId = document.getElementById('main-location-id').value;
-
-    if (!locId) {
-        alert("Please select a location first!");
-        return;
-    }
-
-    cleanupModal();
-
-    fetch(`{% url 'daily_reports:recent_reports' %}?location_id=${locId}`)
-        .then(response => response.text())
-        .then(html => showModal(html))
-        .catch(error => {
-            console.error('Error loading recent reports:', error);
-            alert('Failed to load recent reports. Please try again.');
-        });
-}
-
 // ============================================================================
-// REPORT SELECTION
+// FORM SUBMIT HANDLER (for #reportForm inside the modal, if used)
 // ============================================================================
-function handleReportSelection(radioElement) {
-    selectedReportId = radioElement.value;
-    const continueBtn = document.getElementById('continueReportBtn');
+document.addEventListener(
+    'submit',
+    async function(e) {
+        const form = e.target;
+        if (!form || form.id !== 'reportForm') return;
 
-    if (continueBtn) {
-        continueBtn.disabled = !selectedReportId;
-    }
-}
+        e.preventDefault();
 
-function selectRow(radioId) {
-    const radio = document.getElementById(radioId);
+        const saveBtn = form.querySelector('#saveReportBtn');
+        if (saveBtn) saveBtn.disabled = true;
 
-    if (!radio) return;
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+            });
 
-    radio.checked = true;
-    handleReportSelection(radio);
+            const textResponse = await response.text();
+            console.log("Raw Server Response:", textResponse);
 
-    document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('table-active'));
-    radio.closest('tr').classList.add('table-active');
-}
+            const data = JSON.parse(textResponse);
 
-// ============================================================================
-// FORM LOADING
-async function loadCreateForm() {
-    const locId = document.getElementById('main-location-id').value;
-    if (!locId) { alert("Please select a location first."); return; }
-
-    try {
-        const response = await fetch(`{% url 'daily_reports:report_create' %}?location_id=${locId}`);
-        const html = await response.text();
-        // Fix: was document.querySelector('#reportModal .modal-body')
-        document.getElementById('reportModalContent').innerHTML = html;
-    } catch (error) {
-        console.error('Error loading form:', error);
-        alert('Failed to load form. Please try again.');
-    }
-}
-
-async function continueReport() {
-    if (!selectedReportId) return;
-    const locId = document.getElementById('main-location-id').value;
-
-    try {
-        const [reportResponse, formResponse] = await Promise.all([
-            fetch(`{% url 'daily_reports:report_details' 0 %}`.replace('0', selectedReportId)),
-            fetch(`{% url 'daily_reports:report_create' %}?location_id=${locId}`)
-        ]);
-
-        const reportData = await reportResponse.json();
-        const formHtml = await formResponse.text();
-        // Fix: was document.querySelector('#reportModal .modal-body')
-        document.getElementById('reportModalContent').innerHTML = formHtml;
-
-        populateFormFields(reportData);
-    } catch (error) {
-        console.error('Error continuing report:', error);
-        alert('Failed to load report details. Please try again.');
-    }
-}
-
-
-function populateFormFields(data) {
-    const fieldMap = {
-        'actual_start': data.actual_start,
-        'wo_number': data.wo_number,
-        'employees': data.employees
-    };
-
-    Object.entries(fieldMap).forEach(([fieldName, value]) => {
-        const field = document.querySelector(`[name="${fieldName}"]`);
-        if (field && value !== null && value !== undefined) {
-            field.value = value;
-            field.dispatchEvent(new Event('change'));
+            if (data.success) {
+                closeModal();
+                // Optionally: location.reload(); if you want to refresh the list
+            } else if (data.html) {
+                // Re-render form with validation errors
+                const contentContainer = document.getElementById('reportModalContent');
+                if (contentContainer) {
+                    contentContainer.innerHTML = data.html;
+                }
+            }
+        } catch (err) {
+            console.error("Fetch Error:", err);
+            alert('An error occurred. Check the console.');
+        } finally {
+            if (saveBtn) saveBtn.disabled = false;
         }
-    });
-}
+    },
+    true
+);
 
-// ============================================================================
-// INITIALIZATION
-// ============================================================================
-document.addEventListener('DOMContentLoaded', function() {
-    initializeLocationAutocomplete();
-});
-
-// ============================================================================
-// FORM SUBMIT HANDLER
-// ============================================================================
-document.addEventListener('submit', async function(e) {
-    const form = e.target;
-    if (!form || form.id !== 'reportForm') return;
-
-    e.preventDefault();
-
-    const saveBtn = form.querySelector('#saveReportBtn');
-    if (saveBtn) saveBtn.disabled = true;
-
-    try {
-        const response = await fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-        });
-
-        const textResponse = await response.text();
-        console.log("Raw Server Response:", textResponse);
-
-        const data = JSON.parse(textResponse);
-
-        if (data.success) {
-            closeModal();
-        } else if (data.html) {
-            document.querySelector('#reportModal .modal-body').innerHTML = data.html;
-        }
-    } catch (err) {
-        console.error("Fetch Error:", err);
-        alert('An error occurred. Check the console.');
-    } finally {
-        if (saveBtn) saveBtn.disabled = false;
-    }
-
-}, true);
-
-// Expose functions to global scope for inline event handlers
-window.openReportModal = openReportModal;
-window.loadCreateForm = loadCreateForm;
-window.handleReportSelection = handleReportSelection;
-window.continueReport = continueReport;
-window.selectRow = selectRow;
+// Expose to global scope if still needed elsewhere
 window.closeModal = closeModal;
+window.showModal = showModal;
 </script>
 
 {% endblock %}

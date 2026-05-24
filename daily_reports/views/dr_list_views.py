@@ -182,5 +182,20 @@ class DailyReportExportCSV(LoginRequiredMixin, View):
         return response
 
 
-def report_detail_template(request):
-    return render(request, 'daily_reports/_report_datail_content.html')
+from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def report_detail_template(request, pk):
+    report = get_object_or_404(
+        DailyReport.objects.select_related(
+            "location_tag",
+            "location_tag__parent",
+            "location_tag__unit",
+            "department",
+            "created_by",
+            "modified_by",
+        ),
+        pk=pk
+    )
+    return render(request, "daily_reports/_report_detail_content.html", {"report": report})
