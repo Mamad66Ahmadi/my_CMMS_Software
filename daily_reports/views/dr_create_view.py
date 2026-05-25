@@ -110,20 +110,25 @@ class DailyReportCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        # Save the object first
-        self.object = form.save()
+        # 1. Create the instance but don't save to DB yet
+        self.object = form.save(commit=False)
         
+        # 2. Assign the current user to the 'created_by' field 
+        # (Ensure your model field name is 'created_by')
+        self.object.created_by = self.request.user
+        
+        # 3. Now save to the database
+        self.object.save()
+        
+        # 4. Handle many-to-many fields (like employees) if they exist
+        form.save_m2m()
+
         action = self.request.POST.get('_save_action')
         
         if action == 'add_another':
-            messages.success(self.request, "Report saved. You can add another.")
-            # Redirect back to the start (Step 1)
+            messages.success(self.request, "Report saved. Starting a new search.")
             return redirect('daily_reports:create_report')
             
-        elif action == 'continue':
-            messages.success(self.request, "Report saved.")
-            return redirect('daily_reports:create_report', pk=self.object.pk)
-            
-        else:
-            messages.success(self.request, "Report saved successfully.")
-            return redirect(self.get_success_url())
+        # Standard Save
+        messages.success(self.request, "Report saved successfully.")
+        return redirect(self.get_success_url())
