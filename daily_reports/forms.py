@@ -1,9 +1,25 @@
 # daily_reports/forms.py
 from django import forms
-from django.utils import timezone
 
 from .models import DailyReport, DailyReportStatus
 from equipment.models.equipment_models import LocationTag
+
+
+class LocationSearchForm(forms.Form):
+    """Step 1: Just the location tag"""
+    location_tag = forms.ModelChoiceField(
+        queryset=LocationTag.objects.all(),
+        widget=forms.HiddenInput(attrs={"id": "id_location_tag"}),
+        required=True
+    )
+
+class ReportSelectionForm(forms.Form):
+    """Step 2: Selection of an existing report or 'New'"""
+    # This will be a radio button choice
+    report_choice = forms.ChoiceField(
+        widget=forms.RadioSelect,
+        required=False # Optional because they might click "New Report" button instead
+    )
 
 class DailyReportForm(forms.ModelForm):
     location_tag = forms.ModelChoiceField(

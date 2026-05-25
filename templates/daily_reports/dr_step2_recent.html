@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
+
+<div class="container py-4">
+    <!-- Updated Header: Matches Step 3 Layout -->
+    <div class="mb-3 d-flex justify-content-between align-items-end">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Step 2: Recent History</h4>
+            <p class="text-muted small mb-0">Review previous entries or start a continuation report.</p>
+        </div>
+        <div class="text-end">
+            <span class="small text-uppercase fw-bold text-secondary d-block mb-1">Selected Tag</span>
+            <span class="badge bg-dark px-3 py-2 fs-6 border border-secondary shadow-sm">
+                 {{ location.loc_tag|default:"Equipment Tag" }}
+            </span>
+        </div>
+    </div>
+
+    <form method="GET" action="{% url 'daily_reports:create_report' %}">
+        <input type="hidden" name="location_tag" value="{{ location.id }}">
+
+        <!-- Card Container for Table AND Buttons -->
+        <div class="card border border-secondary border-opacity-25 shadow-sm mb-4">
+            <div class="card-header bg-light py-2">
+                <span class="small fw-bold text-uppercase text-secondary">History & Actions</span>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                        <thead class="table-dark">
+                            <tr class="align-middle">
+                                <th class="ps-3" width="70">Select</th>
+                                <th>Latest Date</th>
+                                <th>WO #</th>
+                                <th>Description</th>
+                                <th>Actual Start</th>
+                                <th>Status</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in recent_reports %}
+                            <tr class="clickable-row">
+                                <td class="ps-3"><input type="radio" name="source_report" value="{{ report.last_id }}"></td>
+                                <td>{{ report.latest_date|date:"Y-m-d" }}</td>
+                                <td>{{ report.wo_number|default:"N/A" }}</td>
+                                <td class="text-truncate" style="max-width: 250px;" dir="auto">
+                                    <bdi>{{ report.last_description|default:"-"|truncatechars:60 }}</bdi>
+                                </td>
+                                <td>{{ report.earliest_start|date:"Y-m-d" }}</td>
+                                <td>
+                                    {% if report.last_status == "completed" %}
+                                        <span class="status-badge status-completed">Completed</span>
+                                    {% elif report.last_status == "ongoing" %}
+                                        <span class="status-badge status-ongoing">Ongoing</span>
+                                    {% else %}
+                                        <span class="status-badge status-waiting">Waiting</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-secondary rounded-pill">{{ report.report_count }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">No history found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer within the Card for Buttons -->
+            <div class="card-footer bg-white p-3 border-top border-secondary border-opacity-10">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <!-- Left Group -->
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'daily_reports:create_report' %}" 
+                           class="btn btn-sm btn-outline-secondary px-3 text-uppercase fw-bold">
+                            <i class="bi bi-arrow-left"></i> Back to Step 1
+                        </a>
+                        <a href="{% url 'daily_reports:report_list' %}" 
+                           class="btn btn-sm btn-danger px-3 text-uppercase fw-bold"
+                           onclick="return confirm('Are you sure?');">
+                            Cancel
+                        </a>
+                    </div>
+
+                    <!-- Right Group -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="mode" value="new" 
+                                class="btn btn-sm btn-enterprise-outline px-3 text-uppercase fw-bold">
+                            <i class="bi bi-file-earmark-plus"></i> New Report
+                        </button>
+                        <button type="submit" id="continue-btn" name="mode" value="continue" 
+                                class="btn btn-sm btn-enterprise-primary px-3 text-uppercase fw-bold" 
+                                disabled>
+                            <i class="bi bi-arrow-repeat"></i> Continue
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('.clickable-row');
+        const radioButtons = document.querySelectorAll('input[name="source_report"]');
+        const continueBtn = document.getElementById('continue-btn');
+
+        function updateButtonState() {
+            const isAnyChecked = Array.from(radioButtons).some(radio => radio.checked);
+            continueBtn.disabled = !isAnyChecked;
+
+            // Optional: Add a highlight class to the selected row
+            rows.forEach(row => {
+                const radio = row.querySelector('input[type="radio"]');
+                if (radio.checked) {
+                    row.classList.add('table-primary-subtle'); // Bootstrap class for light highlight
+                } else {
+                    row.classList.remove('table-primary-subtle');
+                }
+            });
+        }
+
+        // Handle clicking anywhere on the row
+        rows.forEach(row => {
+            row.addEventListener('click', function(e) {
+                const radio = this.querySelector('input[type="radio"]');
+                
+                // If the user clicked the radio itself, don't do anything (let the browser handle it)
+                // Otherwise, manually check the radio
+                if (e.target !== radio) {
+                    radio.checked = true;
+                }
+                
+                updateButtonState();
+            });
+        });
+
+        // Handle direct radio button changes (keyboard navigation, etc.)
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', updateButtonState);
+        });
+
+        // Initialize state
+        updateButtonState();
+    });
+</script>
+
+{% endblock %}

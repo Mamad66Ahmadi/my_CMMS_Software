@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
+
+<div class="container py-5">
+    <div class="mb-4 text-center">
+        <h4 class="fw-bold text-dark mb-1">Step 1: Select Equipment</h4>
+        <p class="text-muted small">Search for the location tag to begin the report.</p>
+    </div>
+
+    <div class="card border border-secondary border-opacity-25 shadow-sm mx-auto" style="max-width: 600px;">
+        <div class="card-body p-4">
+            <!-- Ensure this URL matches your urls.py name="create_report" -->
+            <form method="GET" action="{% url 'daily_reports:create_report' %}">
+                <div class="position-relative mb-4">
+                    <label class="form-label text-uppercase fw-bold text-secondary small">Location Tag Search</label>
+                    
+                    <!-- Search Input -->
+                    <input type="text" id="location-search-input" class="form-control" 
+                           placeholder="Search for tag (e.g. 103-K-101)..." 
+                           autocomplete="off" 
+                           data-autocomplete-url="/equipment/locationtag-autocomplete/">
+                    
+                    <!-- Results Dropdown -->
+                    <div id="location-results-container" class="list-group mt-1 shadow-lg position-absolute w-100" style="z-index: 1050;"></div>
+                    
+                    <!-- The Hidden Field from the Form -->
+                    {{ form.location_tag }}
+                    
+                    {% if form.location_tag.errors %}
+                        <div class="text-danger small mt-1">{{ form.location_tag.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+                
+                <!-- 2. FOOTER: Standardized with Cancel on Left, Next on Right -->
+                <div class="card-footer bg-white p-3 border-top border-secondary border-opacity-10">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        
+                        <!-- Left Group: Navigation -->
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'daily_reports:report_list' %}" 
+                            class="btn btn-sm btn-danger px-3 text-uppercase fw-bold"
+                            onclick="return confirm('Are you sure you want to exit?');">
+                                Cancel
+                            </a>
+                        </div>
+
+                        <!-- Right Group: Actions -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" id="submit-btn" 
+                                    class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm" 
+                                    disabled>
+                                Next: View History <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('location-search-input');
+    const resultsDiv = document.getElementById('location-results-container');
+    const hiddenInput = document.getElementById('id_location_tag');
+    const submitBtn = document.getElementById('submit-btn');
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value;
+        
+        // Clear results if query is too short
+        if (query.length < 2) { 
+            resultsDiv.innerHTML = ''; 
+            return; 
+        }
+
+        // Fetch results from the hardcoded URL
+        fetch(`${searchInput.dataset.autocompleteUrl}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                resultsDiv.innerHTML = '';
+                const items = data.results || [];
+
+                if (items.length === 0) {
+                    const noResult = document.createElement('div');
+                    noResult.className = 'list-group-item disabled small text-muted';
+                    noResult.textContent = 'No results found';
+                    resultsDiv.appendChild(noResult);
+                    return;
+                }
+
+                items.forEach(item => {
+                    const el = document.createElement('a');
+                    el.href = '#';
+                    el.className = 'list-group-item list-group-item-action py-2 px-3 small';
+                    el.textContent = item.text; 
+                    
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        // 1. Fill the visible input with the tag name
+                        searchInput.value = item.text;
+                        // 2. Fill the hidden input with the ID
+                        hiddenInput.value = item.id;
+                        // 3. Clear the dropdown
+                        resultsDiv.innerHTML = '';
+                        // 4. Enable the button
+                        submitBtn.disabled = false;
+                    });
+                    resultsDiv.appendChild(el);
+                });
+            })
+            .catch(err => console.error('Autocomplete Error:', err));
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+            resultsDiv.innerHTML = '';
+        }
+    });
+});
+</script>
+{% endblock %}

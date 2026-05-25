@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
+
+<div class="container py-4">
+    <div class="mb-3">
+        <h4 class="fw-bold text-dark mb-1">Add New Daily Report</h4>
+        <p class="text-muted small mb-0">Search for a location tag and fill in work details.</p>
+    </div>
+
+    <div class="card border border-secondary border-opacity-25 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post" id="reportForm" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger shadow-sm border-0 mb-3 py-2 small">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <!-- Reduced grid gap from g-4 to g-3 for tighter spacing -->
+                <div class="row g-3">
+                    <!-- Location Search -->
+
+                    <!-- Location Search -->
+                    <div class="col-md-4 position-relative">
+                        <label class="form-label text-uppercase fw-bold text-secondary">
+                            Location Tag <span class="mandatory-star">*</span>
+                        </label>
+                        <input type="text" id="location-search" class="form-control" placeholder="Search...">
+                        <div id="location-results" class="list-group mt-1 shadow-lg"></div>
+                        {{ form.location_tag }}
+                        {% if form.location_tag.errors %}
+                            <div class="text-danger small mt-1">{{ form.location_tag.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Date -->
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary">
+                            Report Date <span class="mandatory-star">*</span>
+                        </label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                            <div class="text-danger small mt-1">{{ form.date.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actual Start -->
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary">
+                            Actual Start <span class="mandatory-star">*</span>
+                        </label>
+                        {{ form.actual_start }}
+                        {% if form.actual_start.errors %}
+                            <div class="text-danger small mt-1">{{ form.actual_start.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary">
+                            Status <span class="mandatory-star">*</span>
+                        </label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div class="text-danger small mt-1">{{ form.status.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Department -->
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary">
+                            Department <span class="mandatory-star">*</span>
+                        </label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                            <div class="text-danger small mt-1">{{ form.department.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description (Full Width) -->
+                    <div class="col-12">
+                        <label class="form-label text-uppercase fw-bold text-secondary">
+                            Description <span class="mandatory-star">*</span>
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1" style="font-size: 0.75rem;">
+                                {{ form.description.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Employees (Full Width) -->
+                    <div class="col-12">
+                        <label class="form-label text-uppercase fw-bold text-secondary">
+                            Employees
+                        </label>
+                        {{ form.employees }}
+                        {% if form.employees.errors %}
+                            <div class="text-danger small mt-1" style="font-size: 0.75rem;">
+                                {{ form.employees.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                <hr class="my-4 border-secondary opacity-25">
+
+                <!-- Django-admin style responsive actions -->
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <!-- Left side: Cancel -->
+                    <div>
+                        <a href="{% url 'daily_reports:report_list' %}" 
+                           class="btn btn-sm btn-enterprise-cancel px-3 text-uppercase fw-bold">
+                            Cancel
+                        </a>
+                    </div>
+
+                    <!-- Right side: Actions -->
+                    <div class="d-flex flex-wrap gap-2">
+
+                        <button type="submit" name="_save_action" value="save" 
+                                class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+                            Save
+                        </button>
+
+                        <button type="submit" name="_save_action" value="add_another" 
+                                class="btn btn-sm btn-enterprise-outline px-3 text-uppercase fw-bold">
+                            Save and add another
+                        </button>
+                        
+                        <button type="submit" name="_save_action" value="continue" 
+                                class="btn btn-sm btn-enterprise-outline px-3 text-uppercase fw-bold">
+                            Save and continue editing
+                        </button>
+                        
+
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('location-search');
+    const resultsDiv = document.getElementById('location-results');
+    const hiddenInput = document.getElementById('id_location_tag');
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value;
+        if (query.length < 2) {
+            resultsDiv.innerHTML = '';
+            return;
+        }
+
+        fetch(`${searchInput.dataset.autocompleteUrl}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                resultsDiv.innerHTML = '';
+                
+                // Get the array out of the nested "results" key
+                const items = data.results || [];
+                
+                items.forEach(item => {
+                    const el = document.createElement('a');
+                    el.href = '#';
+                    el.className = 'list-group-item list-group-item-action py-1.5 px-3 small';
+                    el.style.fontSize = '0.825rem';
+                    
+                    // Match the "text" key returned by your backend API
+                    el.textContent = item.text; 
+                    
+                    el.onclick = (e) => {
+                        e.preventDefault();
+                        searchInput.value = item.text;
+                        hiddenInput.value = item.id;
+                        resultsDiv.innerHTML = '';
+                        searchInput.classList.add('is-valid');
+                    };
+                    resultsDiv.appendChild(el);
+                });
+            })
+            .catch(error => console.error('Autocomplete fetch error:', error));
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+            resultsDiv.innerHTML = '';
+        }
+    });
+});
+</script>
+{% endblock %}
