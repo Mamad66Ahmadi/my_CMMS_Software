@@ -6,29 +6,37 @@
 <link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
 
 <div class="container-fluid">
-    {% include "daily_reports/dr_filter.html" %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <!-- Title on the left -->
+    {% include "daily_reports/dr_list/_dr_filter.html" %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        
+        <!-- Left Group: Title, Count, and Add Button -->
         <div class="d-flex align-items-center gap-3">
+            <!-- Title & Count -->
             <h1 class="mb-0">
-                Daily Reports
-                <span style="font-weight: normal; font-size: 1.2rem;">
+                Daily Reports 
+                <span class="text-muted fw-normal" style="font-size: 1.2rem;">
                     ({{ reports.paginator.count }} Records)
                 </span>
             </h1>
+
+            <!-- Add Button (Placed next to count) -->
+            <a href="{% url 'daily_reports:create_report' %}" class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i>Add New
+            </a>
         </div>
 
-        <!-- Export button on the right -->
+        <!-- Right Group: Export Button -->
         <div>
-            <a href="{% url 'daily_reports:report_export_csv' %}?{{ query_params }}" class="btn btn-success">
-                Export CSV
+            <a href="{% url 'daily_reports:report_export_csv' %}?{{ query_params }}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV
             </a>
         </div>
     </div>
 
+
     {% if reports %}
         <div class="table-scroll-container">
-            {% include "daily_reports/dr_table.html" %}
+            {% include "daily_reports/dr_list/_dr_table.html" %}
         </div>
         {% include "equipment/common/_pagination.html" with page_obj=reports %}
     {% else %}
@@ -36,7 +44,7 @@
     {% endif %}
 </div>
 
-{% include "daily_reports/_report_modal.html" %}
+{% include "daily_reports/dr_list/_report_modal.html" %}
 
 <script>
 // ============================================================================

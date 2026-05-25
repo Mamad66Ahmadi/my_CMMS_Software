@@ -10,6 +10,8 @@ from django.views.generic import TemplateView
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.decorators import login_required
 
 from daily_reports.services import annotate_running_counts
 from daily_reports.models import DailyReport
@@ -182,8 +184,7 @@ class DailyReportExportCSV(LoginRequiredMixin, View):
         return response
 
 
-from django.shortcuts import get_object_or_404, render
-from django.contrib.auth.decorators import login_required
+
 
 @login_required
 def report_detail_template(request, pk):
@@ -198,4 +199,17 @@ def report_detail_template(request, pk):
         ),
         pk=pk
     )
-    return render(request, "daily_reports/_report_detail_content.html", {"report": report})
+
+    is_same_dept = (request.user.department is not None and 
+                    request.user.department == report.department)
+    
+    is_within_time_limit = (timezone.now() - report.created_at) <= timedelta(days=7)
+    
+    can_edit = request.user.is_staff or (is_same_dept and is_within_time_limit)
+    can_add = request.user.is_staff or is_same_dept
+
+    return render(request, "daily_reports/dr_list/_report_detail_content.html", {
+        "report": report,
+        "can_add": can_add,
+        "can_edit": can_edit,
+    })  

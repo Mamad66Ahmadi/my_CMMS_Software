@@ -4,23 +4,23 @@
 <table>
     <thead>
         <tr>
-            {% include "daily_reports/_table_header.html" with column="date" label="Date" %}
-            {% include "daily_reports/_table_header.html" with column="day" label="Day" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/_table_header.html" with column="location_tag" label="Location Tag" %}
-            {% include "daily_reports/_table_header.html" with column="month_count" label="Count<br>(Monthly)" %}
-            {% include "daily_reports/_table_header.html" with column="year_count" label="Count<br>(Yearly)" %}
-            {% include "daily_reports/_table_header.html" with column="status" label="Status" %}
-            {% include "daily_reports/_table_header.html" with column="wo_number" label="WO Number" %}
-            {% include "daily_reports/_table_header.html" with column="description" label="Description" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/_table_header.html" with column="actual_start" label="Actual Start" %}
-            {% include "daily_reports/_table_header.html" with column="department" label="Department" %}
-            {% include "daily_reports/_table_header.html" with column="father_tag" label="Parent Tag" %}
-            {% include "daily_reports/_table_header.html" with column="parent_month_count" label="Parent Count<br>(Monthly)" %}
-            {% include "daily_reports/_table_header.html" with column="employees" label="Employees" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/_table_header.html" with column="modified_by" label="Modified By" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="date" label="Date" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="day" label="Day" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="location_tag" label="Location Tag" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="month_count" label="Count<br>(Monthly)" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="year_count" label="Count<br>(Yearly)" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="status" label="Status" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="wo_number" label="WO Number" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="description" label="Description" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="actual_start" label="Actual Start" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="department" label="Department" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="father_tag" label="Parent Tag" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="parent_month_count" label="Parent Count<br>(Monthly)" %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="employees" label="Employees" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="modified_by" label="Modified By" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=query_params %}
         </tr>
     </thead>
 

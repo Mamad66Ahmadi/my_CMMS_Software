@@ -93,9 +93,6 @@ class DailyReport(models.Model):
         if self.location_tag:
             self.father_tag = self.location_tag.parent
 
-        if self.location_tag:
-            self.father_tag = self.location_tag.parent
-
         # Only set default if it's absolutely blank
         if not self.department and self.created_by and hasattr(self.created_by, 'department'):
             self.department = self.created_by.department

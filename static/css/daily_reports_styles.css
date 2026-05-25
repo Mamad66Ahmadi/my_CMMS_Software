@@ -2,7 +2,8 @@
    GLOBAL / BASE
 -------------------------------------------------------------- */
 
-body, .container {
+body,
+.container {
     font-family: 'Inter', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -86,6 +87,41 @@ h1 {
     font-size: 14px;
     margin-bottom: 10px;
     border-radius: 5px;
+}
+
+/* Enterprise Buttons - Slate / Navy Theme */
+.btn-enterprise-primary {
+    background-color: #1e293b !important; /* Premium Dark Slate */
+    border-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+.btn-enterprise-primary:hover {
+    background-color: #0f172a !important;
+    border-color: #0f172a !important;
+}
+
+.btn-enterprise-outline {
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    background-color: #ffffff !important;
+}
+
+.btn-enterprise-outline:hover {
+    background-color: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+
+.btn-enterprise-cancel {
+    color: #64748b !important;
+    border-color: transparent !important;
+    background: transparent !important;
+}
+
+.btn-enterprise-cancel:hover {
+    color: #0f172a !important;
+    background-color: #f1f5f9 !important;
 }
 
 
@@ -190,11 +226,13 @@ tr:hover td {
     background-color: #eef5f7;
 }
 
-th, td {
+th,
+td {
     border-right: 1px solid #edf2f4;
 }
 
-th:last-child, td:last-child {
+th:last-child,
+td:last-child {
     border-right: none;
 }
 
@@ -223,9 +261,17 @@ tbody tr:hover td {
     opacity: 0.8;
 }
 
-.sort-arrow.asc::before { content: '\25B2'; }
-.sort-arrow.desc::before { content: '\25BC'; }
-th:not(.sorted) .sort-arrow { display: none; }
+.sort-arrow.asc::before {
+    content: '\25B2';
+}
+
+.sort-arrow.desc::before {
+    content: '\25BC';
+}
+
+th:not(.sorted) .sort-arrow {
+    display: none;
+}
 
 
 /* --------------------------------------------------------------
@@ -357,23 +403,76 @@ th:not(.sorted) .sort-arrow { display: none; }
     color: #1F4E5F;
 }
 
+/* Generic Bootstrap-like form styling (IFS-style tweaks) */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+}
+
+.form-control,
+.form-select,
+#location-search {
+    font-size: 0.825rem !important;
+    padding: 0.35rem 0.75rem !important;
+    border-radius: 4px !important;
+    border-color: #cbd5e1 !important; /* Subtle gray border */
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #64748b !important;
+    box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.15) !important;
+}
+
+/* Mandatory asterisk */
+.mandatory-star {
+    color: #ef4444;
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+/* Slightly smaller, rounded cards for form pages */
+.card {
+    border-radius: 6px !important;
+}
+
 
 /* --------------------------------------------------------------
    AUTOCOMPLETE
 -------------------------------------------------------------- */
 
+/* Dropdown container (if you use .autocomplete-results div) */
+.autocomplete-results {
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background: white;
+    width: 100% !important; /* Matches parent width */
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    position: absolute;
+    z-index: 1050;
+}
+
+/* Items inside autocomplete dropdown */
 .autocomplete-item {
-    padding: 5px 5px;
+    padding: 10px 15px;
     font-size: 13px;
     cursor: pointer;
-    border-bottom: 1px solid #d2d0d0;
+    border-bottom: 1px solid #f1f1f1;
     border-left: 1px solid #d2d0d0;
     border-right: 1px solid #d2d0d0;
     background-color: #fdfefe;
+    transition: background 0.2s;
 }
 
 .autocomplete-item:hover {
-    background-color: #f1f6f8;
+    background-color: #f8f9fa !important;
+    color: #0d6efd;
 }
 
 
@@ -399,6 +498,11 @@ th:not(.sorted) .sort-arrow { display: none; }
     word-break: break-word;
 }
 
+
+/* --------------------------------------------------------------
+   REPORT LIST / MODAL
+-------------------------------------------------------------- */
+
 .persian-text {
     font-family: "Vazirmatn", Tahoma, sans-serif;
     direction: rtl;
@@ -410,8 +514,9 @@ th:not(.sorted) .sort-arrow { display: none; }
 }
 
 .report-row:hover {
-    background-color: #f5f7fa;
+    background: #f5f7fa;
 }
+
 .report-modal {
     border-radius: 10px;
 }
@@ -439,7 +544,10 @@ th:not(.sorted) .sort-arrow { display: none; }
     margin-bottom: 8px;
 }
 
-/* Persian / RTL support */
+
+/* --------------------------------------------------------------
+   RTL SUPPORT
+-------------------------------------------------------------- */
 
 .rtl-text {
     direction: rtl;
@@ -448,40 +556,84 @@ th:not(.sorted) .sort-arrow { display: none; }
     font-family: "Vazirmatn", "Tahoma", sans-serif;
 }
 
-/* row hover */
-
-.report-row:hover {
-    background: #f5f7fa;
-    cursor: pointer;
-}
-/* Form Field Styling */
-.form-label { font-weight: 600; color: #495057; }
-.form-control, .form-select { border-radius: 4px; border: 1px solid #ced4da; }
-
-/* Autocomplete Dropdown Styling */
-.autocomplete-results {
-    border: 1px solid #dee2e6 !important;
-    border-radius: 0 0 4px 4px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    background: white;
-    width: 100% !important; /* Matches parent width */
-    max-height: 200px;
-    overflow-y: auto;
-    display: none;
-    position: absolute;
-    z-index: 1050;
+/* --------------------------------------------------------------
+   Create form
+-------------------------------------------------------------- */
+.form-label {
+    font-size: 0.72rem !important;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
 }
 
-.autocomplete-item {
-    padding: 10px 15px;
-    border-bottom: 1px solid #f1f1f1;
-    cursor: pointer;
-    transition: background 0.2s;
+/* Safely make all Django-rendered inputs/selects smaller */
+.form-control, 
+.form-select,
+#location-search {
+    font-size: 0.825rem !important;
+    padding: 0.35rem 0.75rem !important;
+    border-radius: 4px !important;
+    border-color: #cbd5e1 !important; /* Subtle gray border */
 }
 
-.autocomplete-item:hover {
-    background-color: #f8f9fa !important;
-    color: #0d6efd;
+.form-control:focus, 
+.form-select:focus {
+    border-color: #64748b !important;
+    box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.15) !important;
 }
 
+/* Enterprise Buttons - Slate / Navy Theme */
+.btn-enterprise-primary {
+    background-color: #1e293b !important; /* Premium Dark Slate */
+    border-color: #1e293b !important;
+    color: #ffffff !important;
+}
+.btn-enterprise-primary:hover {
+    background-color: #0f172a !important;
+    border-color: #0f172a !important;
+}
 
+.btn-enterprise-outline {
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    background-color: #ffffff !important;
+}
+.btn-enterprise-outline:hover {
+    background-color: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+
+.btn-enterprise-cancel {
+    color: #64748b !important;
+    border-color: transparent !important;
+    background: transparent !important;
+}
+.btn-enterprise-cancel:hover {
+    color: #0f172a !important;
+    background-color: #f1f5f9 !important;
+}
+
+/* Small layout adjustments */
+.card {
+    border-radius: 6px !important;
+}
+.mandatory-star {
+    color: #ef4444;
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+/* Multi-language support for Textareas and Selects */
+.multi-lang-input {
+    direction: auto !important;
+    text-align: start !important;
+    font-family: 'Inter', 'Vazirmatn', 'Tahoma', sans-serif !important;
+    unicode-bidi: plaintext;
+}
+
+/* Optional: Specifically for the multi-select (Employees) */
+/* This ensures the chosen options in a multi-select also follow auto-direction */
+select.multi-lang-input option {
+    direction: auto;
+    text-align: inherit;
+}
