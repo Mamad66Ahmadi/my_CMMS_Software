@@ -30,7 +30,7 @@ class DailyReportForm(forms.ModelForm):
             "employees": forms.Textarea(attrs={
                 "class": "form-control multi-lang-input", 
                 "rows": 2, 
-                'placeholder': 'List names separated by commas (e.g., عباس شاه امیری، سیدعلی میرمحمدی)'
+                'placeholder': 'List names separated by commas (e.g., عباس نیکبخت واحدی، سیدعلی میرمحمدی)'
             }),
             "wo_number": forms.TextInput(attrs={"class": "form-control"}),
             "department": forms.Select(attrs={"class": "form-select"}),
