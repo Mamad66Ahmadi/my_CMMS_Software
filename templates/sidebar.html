@@ -59,12 +59,19 @@
                 </button>
             </h6>
             <div id="reportsCollapse"
-                 class="accordion-collapse collapse"
-                 data-bs-parent="#sidebarAccordion">
+                class="accordion-collapse collapse"
+                data-bs-parent="#sidebarAccordion">
                 <div class="accordion-body p-0">
-                    <a href="{% url 'daily_reports:report_list' %}" class="dropdown-item">View Logs</a>
+                    <a href="{% url 'daily_reports:report_list' %}" class="dropdown-item">
+                        <i class="bi bi-list-ul me-2"></i>View Logs
+                    </a>
+                    <!-- New Link Added Here -->
+                    <a href="{% url 'daily_reports:create_report' %}" class="dropdown-item">
+                        <i class="bi bi-plus-circle me-2"></i>Add Daily Report
+                    </a>
                 </div>
             </div>
+
 
         <!-- ASSETS SECTION -->
         <hr class="section-divider">
