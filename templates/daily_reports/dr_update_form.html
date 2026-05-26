@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
+
+<div class="container py-4">
+    <!-- Header: Edit Mode -->
+    <div class="mb-3 d-flex justify-content-between align-items-end">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Edit Daily Report</h4>
+            <p class="text-muted small mb-0">Modify the details of the existing record.</p>
+        </div>
+        <div class="text-end">
+            <span class="small text-uppercase fw-bold text-secondary d-block mb-1">Location Tag</span>
+            <span class="badge bg-dark px-3 py-2 fs-6 border border-secondary shadow-sm">
+                 {{ location.loc_tag }}
+            </span>
+        </div>
+    </div>
+
+    <div class="card border border-secondary border-opacity-25 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {{ form.location_tag }}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger shadow-sm border-0 mb-3 py-2 small">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">Report Date <span class="mandatory-star">*</span></label>
+                        {{ form.date }}
+                        {% if form.date.errors %}<div class="text-danger extra-small mt-1">{{ form.date.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">Actual Start <span class="mandatory-star">*</span></label>
+                        {{ form.actual_start }}
+                        {% if form.actual_start.errors %}<div class="text-danger extra-small mt-1">{{ form.actual_start.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">Status <span class="mandatory-star">*</span></label>
+                        {{ form.status }}
+                        {% if form.status.errors %}<div class="text-danger extra-small mt-1">{{ form.status.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">WO Number</label>
+                        {{ form.wo_number }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">Department <span class="mandatory-star">*</span></label>
+                        {{ form.department }}
+                        {% if form.department.errors %}<div class="text-danger extra-small mt-1">{{ form.department.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">Description <span class="mandatory-star">*</span></label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="text-danger extra-small mt-1">{{ form.description.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">Employees</label>
+                        {{ form.employees }}
+                    </div>
+                </div>
+
+                <hr class="my-4 border-secondary opacity-25">
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <!-- Left Group: Navigation & Destructive Actions -->
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'daily_reports:report_list' %}" 
+                        class="btn btn-sm btn-outline-secondary px-3 text-uppercase fw-bold"
+                        onclick="return confirm('Are you sure? Unsaved changes will be lost.');">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </a>
+
+                        <!-- Delete Button -->
+                        <button type="submit" name="delete_report" 
+                                class="btn btn-sm btn-outline-danger px-3 text-uppercase fw-bold"
+                                onclick="return confirm('WARNING: Are you sure you want to permanently DELETE this report? This action cannot be undone.');">
+                            <i class="bi bi-trash3 me-1"></i> Delete Report
+                        </button>
+                    </div>
+
+                    <!-- Right Group: Primary Action -->
+                    <div class="d-flex">
+                        <button type="submit" class="btn btn-sm btn-enterprise-primary px-5 text-uppercase fw-bold shadow-sm">
+                            Update Report
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.views.generic import CreateView
+from django.views.generic import CreateView, UpdateView
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.contrib import messages
@@ -132,3 +132,67 @@ class DailyReportCreateView(LoginRequiredMixin, CreateView):
         # Standard Save
         messages.success(self.request, "Report saved successfully.")
         return redirect(self.get_success_url())
+
+
+
+# ---------------------------------------------- Update ----------------------------
+from datetime import timedelta
+from django.utils import timezone
+from django.core.exceptions import PermissionDenied
+
+class DailyReportUpdateView(LoginRequiredMixin, UpdateView):
+    model = DailyReport
+    form_class = DailyReportForm
+    template_name = "daily_reports/dr_update_form.html"
+    success_url = reverse_lazy("daily_reports:report_list")
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Enforce the 7-day / same department logic globally for this view.
+        """
+        report = self.get_object()
+        
+        is_staff = request.user.is_staff
+        is_same_dept = (request.user.department is not None and 
+                        request.user.department == report.department)
+        is_within_time_limit = (timezone.now() - report.created_at) <= timedelta(days=7)
+
+        # The core permission logic
+        if not (is_staff or (is_same_dept and is_within_time_limit)):
+            messages.error(request, "You do not have permission to edit this report (limit: 7 days).")
+            # Or raise PermissionDenied if you want a 403 page
+            return redirect("daily_reports:report_list") 
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['location'] = self.object.location_tag
+        
+        # Logic for deleting: Staff can always delete, 
+        # but regular users might only be allowed if within the same window
+        # (Using the same logic as 'can_edit' since this IS the edit page)
+        context['can_delete'] = True 
+        return context
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        if hasattr(self.object, 'modified_by'):
+            self.object.modified_by = self.request.user
+        self.object.save()
+        form.save_m2m()
+        messages.success(self.request, "Report updated successfully.")
+        return redirect(self.get_success_url())
+    
+    def post(self, request, *args, **kwargs):
+        if 'delete_report' in request.POST:
+            self.object = self.get_object()
+            # Double check permission before actual deletion
+            if request.user.is_staff or (request.user.department == self.object.department):
+                self.object.delete()
+                messages.success(request, "Report deleted successfully.")
+                return redirect(self.success_url)
+            else:
+                messages.error(request, "You are not authorized to delete this report.")
+                return redirect(self.success_url)
+        return super().post(request, *args, **kwargs)

@@ -12,6 +12,7 @@ urlpatterns = [
     path("reports/<int:pk>/detail/", dr_list_views.report_detail_template, name="report_detail_template"),
     # Create
     path("create/", dr_create_view.DailyReportCreateView.as_view(), name="create_report"),
+    path('edit/<int:pk>/', dr_create_view.DailyReportUpdateView.as_view(), name='update_report'),
 
         
 
