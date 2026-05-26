@@ -12,9 +12,12 @@ from django.utils import timezone
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+
 
 from daily_reports.services import annotate_running_counts
 from daily_reports.models import DailyReport
+
 
 
 def get_filtered_reports(request):
@@ -23,8 +26,12 @@ def get_filtered_reports(request):
         "date_to": request.GET.get("date_to", "").strip(),
         "wo_number": request.GET.get("wo_number", "").strip(),
         "location_tag": request.GET.get("location_tag", "").strip(),
+        "parent_tag": request.GET.get("parent_tag", "").strip(),
         "status": request.GET.get("status", "").strip(),
         "department": request.GET.get("department", "").strip(),
+        "unit": request.GET.get("unit", "").strip(),
+        "train": request.GET.get("train", "").strip(),
+        "description": request.GET.get("description", "").strip(),
     }
 
     queryset = DailyReport.objects.select_related(
@@ -36,7 +43,7 @@ def get_filtered_reports(request):
         "modified_by",
     ).all()
 
-    # ✅ If no date filters → default to last 14 days
+    # --- Date Filtering ---
     if not filters["date_from"] and not filters["date_to"]:
         today = timezone.now().date()
         fourteen_days_ago = today - timedelta(days=14)
@@ -44,24 +51,47 @@ def get_filtered_reports(request):
     else:
         if filters["date_from"]:
             queryset = queryset.filter(date__gte=filters["date_from"])
-
         if filters["date_to"]:
             queryset = queryset.filter(date__lte=filters["date_to"])
 
-    if filters["wo_number"]:
-        queryset = queryset.filter(wo_number__icontains=filters["wo_number"])
+    # --- Multi-Value Filtering (Comma Separated) Helper ---
+    def apply_multi_value_filter(qs, filter_str, field_lookup):
+        if not filter_str:
+            return qs
+        values = [x.strip() for x in filter_str.split(",") if x.strip()]
+        if not values:
+            return qs
+        
+        query = Q()
+        for val in values:
+            query |= Q(**{f"{field_lookup}__icontains": val})
+        return qs.filter(query)
 
-    if filters["location_tag"]:
-        queryset = queryset.filter(location_tag__loc_tag__icontains=filters["location_tag"])
+    # Apply existing filters
+    queryset = apply_multi_value_filter(queryset, filters["wo_number"], "wo_number")
+    queryset = apply_multi_value_filter(queryset, filters["location_tag"], "location_tag__loc_tag")
+    queryset = apply_multi_value_filter(queryset, filters["department"], "department__name")
 
+    queryset = apply_multi_value_filter(queryset, filters["unit"], "location_tag__unit__unit_code")
+    queryset = apply_multi_value_filter(queryset, filters["train"], "location_tag__train")
+    queryset = apply_multi_value_filter(queryset, filters["description"], "description")
+    
+    # Parent Tag (Checking both father_tag and the direct parent loc_tag)
+    if filters["parent_tag"]:
+        p_values = [x.strip() for x in filters["parent_tag"].split(",") if x.strip()]
+        p_query = Q()
+        for val in p_values:
+            p_query |= (
+                Q(location_tag__loc_tag__icontains=val) |            # Exact/Matches current location
+                Q(location_tag__parent__loc_tag__icontains=val) |     # Matches parent of current location
+                Q(father_tag__loc_tag__icontains=val)                 # Matches report's father tag
+            )
+        queryset = queryset.filter(p_query)
+    # --- Single Value Filtering ---
     if filters["status"]:
         queryset = queryset.filter(status=filters["status"])
 
-    if filters["department"]:
-        queryset = queryset.filter(department__name__icontains=filters["department"])
-
     return queryset, filters
-
 
 
 class DailyReportList(LoginRequiredMixin, TemplateView):
