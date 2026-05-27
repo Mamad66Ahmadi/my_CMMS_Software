@@ -1,188 +1,140 @@
 from django.db import models
-from django_fsm.fsm import FSMField, transition
-from django.utils import timezone
 from django.contrib.auth import get_user_model
 
-from equipment import LocationTag
-from accounts.models import Department  # Import Department from accounts app (this app has User and Department models)
+from django.core.validators import MinValueValidator
+from django.utils import timezone
 
-
+from equipment.models.equipment_models import LocationTag, TimeStampedModel
 # ----------------------    Getting user model object    ----------------------------------
 User = get_user_model()
 
-# ----------------------    Work Order Header (The Parent)    ----------------------------------
-class WorkOrderHeader(models.Model):
-    """
-    Represents the main Work Order (The Fault).
-    This holds the WO Number and the Object (Equipment).
-    """
-    wo_number = models.AutoField(primary_key=True, verbose_name="WO Number")
-    obj_tag = models.ForeignKey(LocationTag, on_delete=models.PROTECT, related_name='work_order_headers')
+# ----------------------    Abstract Base Class    ----------------------------------
+class WorkOrderStatus(models.TextChoices):
+    FAULT_REPORTED = "FAULT_REPORTED", "Fault Reported"
+    FAULT_APPROVED = "FAULT_APPROVED", "Fault Approved"
+    PLANNED = "PLANNED", "Planned"
+    IN_PROGRESS = "IN_PROGRESS", "In Progress"
+    WORK_DONE = "WORK_DONE", "Work Done"
+    CLOSED = "CLOSED", "Closed"
+    CANCELLED = "CANCELLED", "Cancelled"
+
+
+# class WorkType(TimeStampedModel):
+#     work_type_code = models.CharField(max_length=20, unique=True, verbose_name="Work Type Code")
+#     work_type_desc = models.TextField(max_length=100, null=True, blank=True)
     
+    
+#     def __str__(self):
+#         return self.work_type_code
+
+#     class Meta:
+#         verbose_name = "Work Type"
+#         ordering = ['work_type_code']
+
+
+# class Symptoms(TimeStampedModel):
+#     symptom_code = models.CharField(max_length=20, unique=True)
+#     symptom_desc = models.TextField(max_length=75, null=True, blank=True)
+    
+    
+#     def __str__(self):
+#         return self.symptom_code 
+
+#     class Meta:
+#         verbose_name = "Symptom"
+#         ordering = ['symptom_code']
+
+
+# class Cause(TimeStampedModel):
+#     cause_code = models.CharField(max_length=20, unique=True)    
+    
+#     def __str__(self):
+#         return self.cause_code 
+
+#     class Meta:
+#         verbose_name = "Cause"
+#         ordering = ['cause_code']
+
+class Priority(TimeStampedModel):
+    priority_code = models.CharField(max_length=20, unique=True)
+    priority_level = models.IntegerField(default=3, help_text="Numeric importance: 1 (High) to 5 (Low)")
+
+    def __str__(self):
+        return self.priority_code 
+
+    class Meta:
+        verbose_name = "Priority"
+        verbose_name_plural = "Priorities"
+        ordering = ['priority_level']
+
+# ----------------------------------------- WORK ORDER -------------------------------------------------
+class WorkOrder(models.Model):
+    wo_number = models.CharField(max_length=50, unique=True, db_index=True)
+    location_tag = models.ForeignKey(LocationTag, on_delete=models.PROTECT, related_name="work_orders")
+
+    # Scoping
+#    work_type = models.ForeignKey(WorkType, on_delete=models.PROTECT, related_name="work_orders")
+    priority = models.ForeignKey(Priority, on_delete=models.PROTECT, related_name="work_orders")
+
+    # Fault details
     fault_description = models.TextField()
+#    symptoms = models.ForeignKey(Symptoms, on_delete=models.PROTECT, related_name="work_orders",)
 
-    # System Fields
-    reg_date = models.DateTimeField(auto_now_add=True)
-    reg_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_headers')
+#    cause = models.ForeignKey(Cause, on_delete=models.PROTECT, related_name="work_orders")
+#    cause_description = models.TextField()
 
-    def __str__(self):
-        return f"WO-{self.wo_number}"
+    # Workflow Status
+    status = models.CharField(
+        max_length=20, choices=WorkOrderStatus.choices, default=WorkOrderStatus.FAULT_REPORTED, db_index=True,)
+
+    # Departments
+    requester_department = models.ForeignKey(
+        "accounts.Department", on_delete=models.PROTECT, related_name="requested_dep_work_orders")
+    executing_department = models.ForeignKey(
+        "accounts.Department", on_delete=models.PROTECT, related_name="executing_dep_work_orders")
+    
+    # Work Order audit
+    fault_reported_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="fault_reported_work_orders",)
+    fault_reported_at = models.DateTimeField(auto_now_add=True)
+
+    fault_approved_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="fault_approved_work_orders",)
+    fault_approved_at = models.DateTimeField(null=True, blank=True)
+
+    planner = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="planner_work_orders",)
+
+    remarks = models.TextField(null=True, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="updated_work_orders")
+
 
     class Meta:
-        verbose_name = "Work Order Header"
-        verbose_name_plural = "Work Order Headers"
-        ordering = ['-wo_number']
-
-
-# ----------------------    Work Order Task (The Child)    ----------------------------------
-class WorkOrderTask(models.Model):
-    """
-    Represents individual tasks within a Work Order.
-    Task 1, Task 2, etc.
-    """
-    # Link to the Parent Header
-    wo_header = models.ForeignKey(WorkOrderHeader, on_delete=models.CASCADE, related_name='tasks', verbose_name="WO Number")
-    
-    # Auto-increment Task Number (1, 2, 3...)
-    task = models.IntegerField()
-    
-    directive = models.CharField(max_length=255)
-    description = models.TextField()
-    
-    department_requester = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='requested_tasks')
-    department_executive = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='executive_tasks')
-    work_leader = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='led_tasks')
-    
-    status = FSMField(
-        default='draft', 
-        protected=True,
-        choices=[
-            ('draft', 'Draft'),
-            ('planned', 'Planned'),
-            ('released', 'Released'),
-            ('started', 'Started'),
-            ('reported', 'Reported'),
-            ('finished', 'Finished'),
-        ],
-    )
-    
-    reg_date = models.DateTimeField(auto_now_add=True)
-    reg_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_tasks')
-    modified_date = models.DateField(auto_now=True)
-    modified_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='modified_tasks')
-
-    plan_start = models.DateTimeField(null=True, blank=True)
-    plan_finish = models.DateTimeField(null=True, blank=True)
-    planned_at = models.DateTimeField(null=True, blank=True)
-    planned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='planned_tasks')
-
-    released_at = models.DateTimeField(null=True, blank=True)
-    released_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='released_tasks')
-
-    actual_start = models.DateTimeField(null=True, blank=True)
-    actual_finish = models.DateTimeField(null=True, blank=True)
-    started_at = models.DateTimeField(null=True, blank=True)
-    started_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='started_tasks')
-
-    reported_at = models.DateTimeField(null=True, blank=True)
-    reported_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reported_tasks')
-
-    finished_at = models.DateTimeField(null=True, blank=True)
-    finished_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='finished_tasks')
-
-
+        ordering = ["-wo_number"]
+        indexes = [
+            models.Index(fields=["wo_number", "status"]),
+            models.Index(fields=["location_tag"]),
+        ]
 
     def __str__(self):
-        return f"WO-{self.wo_header.wo_number} / Task {self.task}"
+        return self.wo_number
+    
+
+class WorkOrderHistory(models.Model):
+    """
+    Lightweight audit trail for tracking status transitions and ownership 
+    changes without duplicating the entire WorkOrder data.
+    """
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name="history")
+    
+    old_status = models.CharField(max_length=20, choices=WorkOrderStatus.choices)
+    new_status = models.CharField(max_length=20, choices=WorkOrderStatus.choices)
+    
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    
+    transition_note = models.TextField(blank=True, help_text="Reason for status change or cancellation")
 
     class Meta:
-        verbose_name = "Work Order Task"
-        verbose_name_plural = "Work Order Tasks"
-        unique_together = ('wo_header', 'task') 
-        ordering = ['-wo_header__wo_number', '-task']
-
-    def save(self, *args, **kwargs):
-        """
-        Override save to automatically calculate the next Task Number.
-        """
-        if self.wo_header and not self.task:
-            # Get the highest task number for this specific Work Order Header
-            last_task = WorkOrderTask.objects.filter(wo_header=self.wo_header).order_by('-task').first()
-            
-            if last_task:
-                self.task = last_task.task + 1
-            else:
-                # If this is the first task, start at 1
-                self.task = 1
-        
-        super().save(*args, **kwargs)
-
-    # ---------------------- FSM Transitions ----------------------
-    
-    @transition(field=status, source='draft', target='planned')
-    def plan(self, user=None):
-        """Transition: Draft -> Planned"""
-        self.planned_at = timezone.now()
-        self.planned_by = user
-
-    @transition(field=status, source='planned', target='draft')
-    def plan_rework(self, user=None):
-        """Transition: Planned -> Draft"""
-        self.planned_at = None
-        self.planned_by = None
-
-    @transition(field=status, source='planned', target='released')
-    def release(self, user=None):
-        """Transition: Planned -> Released"""
-        self.released_at = timezone.now()
-        self.released_by = user
-
-    @transition(field=status, source='released', target='planned')
-    def release_rework(self, user=None):
-        """Transition: Released -> Planned"""
-        self.released_at = None
-        self.released_by = None
-        self.planned_at = timezone.now()
-        self.planned_by = user
-
-    @transition(field=status, source='released', target='started')
-    def start(self, user=None):
-        """Transition: Released -> Started"""
-        self.started_at = timezone.now()
-        self.started_by = user
-
-    @transition(field=status, source='started', target='released')
-    def start_rework(self, user=None):
-        """Transition: Started -> Released"""
-        self.started_at = None
-        self.started_by = None
-        self.released_at = timezone.now()
-        self.released_by = user
-
-    @transition(field=status, source='started', target='reported')
-    def report(self, user=None):
-        """Transition: Started -> Reported"""
-        self.reported_at = timezone.now()
-        self.reported_by = user
-
-    @transition(field=status, source='reported', target='started')
-    def report_rework(self, user=None):
-        """Transition: Reported -> Started"""
-        self.reported_at = None
-        self.reported_by = None
-        self.started_at = timezone.now()
-        self.started_by = user
-
-    @transition(field=status, source='reported', target='finished')
-    def finish(self, user=None):
-        """Transition: Reported -> Finished"""
-        self.finished_at = timezone.now()
-        self.finished_by = user
-
-    @transition(field=status, source='finished', target='reported')
-    def finish_rework(self, user=None):
-        """Transition: Finished -> Reported"""
-        self.finished_at = None
-        self.finished_by = None
-        self.reported_at = timezone.now()
-        self.reported_by = user
+        verbose_name = "Work Order History"
+        verbose_name_plural = "Work Order Histories"
+        ordering = ['-changed_at']

@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'accounts',
     'equipment',
  #   'maintenance',
- #   'work_orders',
+   'work_orders',
    'daily_reports',
  #   'permits',
 ]
