@@ -1,11 +1,14 @@
+from datetime import timedelta
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.views.generic import TemplateView
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 
-from work_orders.models.fault_report_models import FaultReport
+from work_orders.models.fault_report_models import FaultReport,FaultReportStatus 
 
 
 def get_filtered_fault_reports(request):
@@ -22,6 +25,8 @@ def get_filtered_fault_reports(request):
         "reviewed_by": request.GET.get("reviewed_by", "").strip(),
         "directive": request.GET.get("directive", "").strip(),
         "is_breakdown": request.GET.get("is_breakdown", "").strip(),
+        "date_from": request.GET.get("date_from", "").strip(),
+        "date_to": request.GET.get("date_to", "").strip(),
     }
 
     queryset = FaultReport.objects.select_related(
@@ -57,8 +62,18 @@ def get_filtered_fault_reports(request):
     queryset = apply_multi_value_filter(queryset, filters["planner"], "planner__username")
     queryset = apply_multi_value_filter(queryset, filters["directive"], "directive")
 
+    # Status filter:
+    # Default = only SUBMITTED and APPROVED
+    # If user explicitly chooses a status, respect it
     if filters["status"]:
         queryset = queryset.filter(status=filters["status"])
+    else:
+        queryset = queryset.filter(
+            status__in=[
+                FaultReportStatus.SUBMITTED,
+                FaultReportStatus.APPROVED,
+            ]
+        )
 
     if filters["priority"]:
         queryset = queryset.filter(priority_id=filters["priority"])
@@ -68,6 +83,19 @@ def get_filtered_fault_reports(request):
 
     if filters["is_breakdown"] in ["true", "false"]:
         queryset = queryset.filter(is_breakdown=(filters["is_breakdown"] == "true"))
+
+    # Date filter:
+    # Default = only last 30 days
+    # If user provides date_from/date_to, use those instead
+    if filters["date_from"]:
+        queryset = queryset.filter(reported_at__date__gte=filters["date_from"])
+    if filters["date_to"]:
+        queryset = queryset.filter(reported_at__date__lte=filters["date_to"])
+
+    if not filters["date_from"] and not filters["date_to"]:
+        queryset = queryset.filter(
+            reported_at__gte=timezone.now() - timedelta(days=30)
+        )
 
     return queryset, filters
 

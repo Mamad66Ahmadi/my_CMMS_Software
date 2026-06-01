@@ -90,8 +90,9 @@ class FaultReport(models.Model):
             sequence.last_number += 1
             sequence.save(update_fields=["last_number"])
             return f"FR-{year2}{sequence.last_number:05d}"
-
+        
     def clean(self):
+        """Validation logic to ensure workflow integrity."""
         if not self.location_tag and not self.equipment:
             raise ValidationError("Provide at least one of location_tag or equipment.")
 
@@ -102,17 +103,23 @@ class FaultReport(models.Model):
                     "equipment": "Selected equipment does not belong to selected location tag."
                 })
 
-        # Approved / Rejected / Converted must have supervisor review
-        if self.status in (FaultReportStatus.APPROVED, FaultReportStatus.REJECTED, FaultReportStatus.CONVERTED):
+        # APPROVED must have supervisor review info
+        if self.status == FaultReportStatus.APPROVED:
             if not self.reviewed_by or not self.reviewed_at:
-                raise ValidationError("Approved/Rejected/Converted reports must have reviewed_by and reviewed_at.")
+                raise ValidationError("Approved reports must have supervisor 'reviewed_by' and 'reviewed_at'.")
 
-        # Converted must have planner action
+        # CONVERTED must have both supervisor and planner info
         if self.status == FaultReportStatus.CONVERTED:
-            if not self.planner:
-                raise ValidationError("Converted reports must have a planner.")
-            if not self.planner_reviewed_at:
-                raise ValidationError("Converted reports must have planner_reviewed_at.")
+            if not self.reviewed_by or not self.reviewed_at:
+                raise ValidationError("Converted reports must have supervisor review data.")
+            if not self.planner or not self.planner_reviewed_at:
+                raise ValidationError("Converted reports must have planner review data.")
+
+        # REJECTED must have at least one person responsible
+        if self.status == FaultReportStatus.REJECTED:
+            # If no planner info, supervisor info MUST exist
+            if not self.planner_reviewed_at and not self.reviewed_at:
+                 raise ValidationError("Rejected reports must have review data (Supervisor or Planner).")
 
     def save(self, *args, **kwargs):
         if self.equipment and not self.location_tag:
@@ -122,53 +129,59 @@ class FaultReport(models.Model):
         super().save(*args, **kwargs)
 
     def approve(self, user, comment: str = ""):
+        """Handled by Supervisor: SUBMITTED -> APPROVED"""
         if self.status != FaultReportStatus.SUBMITTED:
-            raise ValidationError("Only submitted fault reports can be approved.")
+            raise ValidationError(f"Cannot approve from status: {self.status}")
+        
         self.status = FaultReportStatus.APPROVED
         self.reviewed_by = user
         self.reviewed_at = timezone.now()
         self.review_comment = comment
+        
         self.full_clean()
         self.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_comment"])
 
     def reject(self, user, comment: str = ""):
         """
-        Allows:
-        - supervisor rejection from SUBMITTED
-        - planner rejection from APPROVED
+        Handles dual-stage rejection:
+        1. Supervisor rejects from SUBMITTED.
+        2. Planner rejects from APPROVED.
         """
         if self.status == FaultReportStatus.SUBMITTED:
-            # supervisor rejection
+            # Supervisor rejection
             self.status = FaultReportStatus.REJECTED
             self.reviewed_by = user
             self.reviewed_at = timezone.now()
             self.review_comment = comment
-            self.full_clean()
-            self.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_comment"])
 
         elif self.status == FaultReportStatus.APPROVED:
-            # planner rejection
+            # Planner rejection
             self.status = FaultReportStatus.REJECTED
             self.planner = user
             self.planner_reviewed_at = timezone.now()
-            # optional: append comment so both are preserved in one field
+            
+            # Combine planner comment with existing supervisor comment
             if comment:
+                header = f"--- Planner Rejection ({timezone.now().strftime('%Y-%m-%d %H:%M')}) ---"
                 if self.review_comment:
-                    self.review_comment = f"{self.review_comment}\nPlanner rejection: {comment}"
+                    self.review_comment = f"{self.review_comment}\n\n{header}\n{comment}"
                 else:
-                    self.review_comment = f"Planner rejection: {comment}"
-            self.full_clean()
-            self.save(update_fields=["status", "planner", "planner_reviewed_at", "review_comment"])
-
+                    self.review_comment = f"{header}\n{comment}"
         else:
-            raise ValidationError("This fault report cannot be rejected in its current status.")
+            raise ValidationError(f"This report cannot be rejected from its current status ({self.status}).")
+
+        self.full_clean()
+        self.save(update_fields=["status", "reviewed_by", "reviewed_at", "planner", "planner_reviewed_at", "review_comment"])
 
     def mark_converted(self, user):
+        """Handled by Planner: APPROVED -> CONVERTED"""
         if self.status != FaultReportStatus.APPROVED:
-            raise ValidationError("Only approved fault reports can be converted.")
+            raise ValidationError("Only approved fault reports can be converted to Work Orders.")
+            
         self.status = FaultReportStatus.CONVERTED
         self.planner = user
         self.planner_reviewed_at = timezone.now()
+        
         self.full_clean()
         self.save(update_fields=["status", "planner", "planner_reviewed_at"])
 
