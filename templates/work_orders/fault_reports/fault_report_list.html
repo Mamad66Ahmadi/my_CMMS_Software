@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Fault Reports{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/work_orders_styles.css' %}">
+
+<div class="container-fluid">
+
+    {% include "work_orders/fault_reports/_fr_filter.html" %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="mb-0">
+                Fault Reports
+                <span class="text-muted fw-normal" style="font-size: 1.2rem;">
+                    ({{ fault_reports.paginator.count }} Records)
+                </span>
+            </h1>
+
+            <a href="#"
+               class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i>Add New
+            </a>
+        </div>
+    </div>
+
+    {% if fault_reports %}
+        <div class="table-scroll-container">
+            {% include "work_orders/fault_reports/_fr_table.html" %}
+        </div>
+
+        {% include "equipment/common/_pagination.html" with page_obj=fault_reports %}
+    {% else %}
+        <p>No fault reports found.</p>
+    {% endif %}
+</div>
+
+{% include "work_orders/fault_reports/_fault_report_modal.html" %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".fault-report-row").forEach(row => {
+        row.addEventListener("click", function () {
+            const detailUrl = this.dataset.detailUrl;
+            if (!detailUrl) return;
+
+            fetch(detailUrl)
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
+                    return res.text();
+                })
+                .then(html => {
+                    document.getElementById("faultReportModalContent").innerHTML = html;
+                    new bootstrap.Modal(document.getElementById("faultReportModal")).show();
+                })
+                .catch(err => {
+                    console.error("Error loading fault report detail template:", err);
+                    alert("Failed to load fault report details.");
+                });
+        });
+    });
+});
+
+function cleanupFaultReportModal() {
+    const modalEl = document.getElementById("faultReportModal");
+    const existingModal = bootstrap.Modal.getInstance(modalEl);
+
+    if (existingModal) {
+        existingModal.dispose();
+    }
+
+    document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+}
+
+function closeFaultReportModal() {
+    const modalEl = document.getElementById("faultReportModal");
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+
+    if (modalInstance) {
+        modalInstance.hide();
+    }
+
+    setTimeout(() => {
+        cleanupFaultReportModal();
+    }, 300);
+}
+
+window.closeFaultReportModal = closeFaultReportModal;
+</script>
+
+{% endblock %}

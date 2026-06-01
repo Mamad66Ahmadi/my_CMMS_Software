@@ -47,6 +47,7 @@ urlpatterns = [
     path('',include('website.urls')),
     path('equipment/', include('equipment.urls')),
     path('daily-reports/', include('daily_reports.urls', namespace='daily_reports')),
+    path('work_orders/', include('work_orders.urls', namespace='work_orders')),
 
 
     # Swagger UI and API schema URLs

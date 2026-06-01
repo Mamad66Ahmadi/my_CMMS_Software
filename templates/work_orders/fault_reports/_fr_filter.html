@@ -1,0 +1,119 @@
+<h5>Filter Pane</h5>
+
+<form method="get" action="">
+    <div class="filter-bar" style="display: flex; flex-direction: column; gap: 15px;">
+
+        <!-- FIRST LINE -->
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+
+            <div class="filter-group">
+                <label class="filter-label">Report Number</label>
+                <input type="text" name="report_number" class="filter-input"
+                       placeholder="FR-2026-00001, FR-2026-00002, ..."
+                       value="{{ filters.report_number }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select name="status" class="filter-input">
+                    <option value="">All</option>
+                    <option value="SUBMITTED" {% if filters.status == "SUBMITTED" %}selected{% endif %}>Submitted</option>
+                    <option value="APPROVED" {% if filters.status == "APPROVED" %}selected{% endif %}>Approved</option>
+                    <option value="CONVERTED" {% if filters.status == "CONVERTED" %}selected{% endif %}>Converted</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Department</label>
+                <input type="text" name="reported_department" class="filter-input"
+                       placeholder="CBM, Rotary, ..."
+                       value="{{ filters.reported_department }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Reported By</label>
+                <input type="text" name="reported_by" class="filter-input"
+                       placeholder="username, ..."
+                       value="{{ filters.reported_by }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Planner</label>
+                <input type="text" name="planner" class="filter-input"
+                       placeholder="username, ..."
+                       value="{{ filters.planner }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Breakdown?</label>
+                <select name="is_breakdown" class="filter-input">
+                    <option value="">All</option>
+                    <option value="true" {% if filters.is_breakdown == "true" %}selected{% endif %}>Yes</option>
+                    <option value="false" {% if filters.is_breakdown == "false" %}selected{% endif %}>No</option>
+                </select>
+            </div>
+
+            <div class="filter-group" style="flex-grow: 1; min-width: 300px;">
+                <label class="filter-label">Short Text</label>
+                <input type="text" name="short_text" class="filter-input" style="width: 100%;"
+                       placeholder="Leak, vibration, noise, ..."
+                       value="{{ filters.short_text }}">
+            </div>
+
+        </div>
+
+        <!-- SECOND LINE -->
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+
+            <div class="filter-group">
+                <label class="filter-label">Location Tag</label>
+                <input type="text" name="location_tag" class="filter-input"
+                       placeholder="103-KM-101, ..."
+                       value="{{ filters.location_tag }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Equipment (Serial)</label>
+                <input type="text" name="equipment" class="filter-input"
+                       placeholder="serial, ..."
+                       value="{{ filters.equipment }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Priority (ID)</label>
+                <input type="text" name="priority" class="filter-input"
+                       placeholder="1, 2, ..."
+                       value="{{ filters.priority }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Symptom (ID)</label>
+                <input type="text" name="symptom" class="filter-input"
+                       placeholder="1, 2, ..."
+                       value="{{ filters.symptom }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Rows Per Page</label>
+                <select name="per_page" class="filter-input">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+
+            <div class="filter-actions" style="margin-top: 0; margin-right: auto; display: flex; gap: 8px;">
+                <button type="submit" class="btn-search">Apply</button>
+
+                {% if filters.report_number or filters.status or filters.location_tag or filters.equipment or filters.priority or filters.symptom or filters.reported_by or filters.reported_department or filters.planner or filters.short_text or filters.is_breakdown %}
+                    <a href="{% url 'work_orders:fault_report_list' %}" class="btn-clear">
+                        Clear All
+                    </a>
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div>
+</form>

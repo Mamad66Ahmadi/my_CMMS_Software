@@ -1,0 +1,133 @@
+{% load static %}
+
+<table>
+    <thead>
+        <tr>
+            {% include "daily_reports/dr_list/_table_header.html" with column="report_number" label="Report Number" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="reported_at" label="Reported At" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="equipment" label="Equipment (Serial)" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="priority" label="Priority" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="symptom" label="Symptom" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="reported_department" label="Department" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="reported_by" label="Reported By" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="reviewed_by" label="Reviewed By" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="planner" label="Planner" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="planner_reviewed_at" label="Planner Reviewed At" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="is_breakdown" label="Breakdown?" sort_by=sort_by query_params=query_params %}
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for fr in fault_reports %}
+        <tr class="fault-report-row"
+            data-pk="{{ fr.id }}"
+            data-detail-url="{% url 'work_orders:fault_report_detail_template' fr.id %}">
+
+            <td>{{ fr.report_number }}</td>
+
+            <td>
+                {% if fr.status == "SUBMITTED" %}
+                    <span class="status-badge status-waiting">Submitted</span>
+                {% elif fr.status == "APPROVED" %}
+                    <span class="status-badge status-ongoing">Approved</span>
+                {% elif fr.status == "REJECTED" %}
+                    <span class="status-badge bg-danger text-white">Rejected</span>
+                {% elif fr.status == "CONVERTED" %}
+                    <span class="status-badge status-completed">Converted</span>
+                {% else %}
+                    {{ fr.get_status_display }}
+                {% endif %}
+            </td>
+
+            <td>{{ fr.reported_at|date:"Y-m-d H:i" }}</td>
+
+            <td>
+                {% if fr.location_tag %}
+                    {{ fr.location_tag.loc_tag }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.equipment %}
+                    {{ fr.equipment.serial_number }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.priority %}
+                    {{ fr.priority }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.symptom %}
+                    {{ fr.symptom }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td class="persian-text">
+                <bdi>{{ fr.directive|default:"-"|truncatechars:80 }}</bdi>
+            </td>
+
+            <td>
+                {% if fr.reported_department %}
+                    {{ fr.reported_department.name }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.reported_by %}
+                    {{ fr.reported_by.username }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.reviewed_by %}
+                    {{ fr.reviewed_by.username }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.planner %}
+                    {{ fr.planner.username }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.planner_reviewed_at %}
+                    {{ fr.planner_reviewed_at|date:"Y-m-d H:i" }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.is_breakdown %}
+                    Yes
+                {% else %}
+                    No
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
