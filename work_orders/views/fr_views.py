@@ -1,20 +1,19 @@
-from datetime import timedelta
 import csv
 from django.http import HttpResponse
+from django.contrib import messages
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.views.generic import TemplateView, CreateView
 from django.views import View
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.urls import reverse_lazy
-from django.shortcuts import redirect
-from django.db.models import Q
 
 
-
+from equipment.models import LocationTag
 from work_orders.models.fault_report_models import FaultReport,FaultReportStatus
 from work_orders.forms import FaultReportCreateForm
 
@@ -297,15 +296,6 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
         return response
 
 
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.views.generic import CreateView
-
-from equipment.models import LocationTag
-from work_orders.forms import FaultReportCreateForm
-from work_orders.models.fault_report_models import FaultReport
-
 
 class FaultReportCreate(LoginRequiredMixin, CreateView):
     model = FaultReport
@@ -345,6 +335,9 @@ class FaultReportCreate(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
         obj.reported_department = dept
+
+        obj.status = FaultReportStatus.SUBMITTED
+        
         obj.save()
         self.object = obj
 

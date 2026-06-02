@@ -37,15 +37,14 @@ class FaultReportCreateForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
 
-        instance = FaultReport(
-            location_tag=cleaned.get("location_tag"),
-            equipment=cleaned.get("equipment"),
-            directive=cleaned.get("directive") or "",
-            fault_desc=cleaned.get("fault_desc") or "",
-            priority=cleaned.get("priority"),
-            symptom=cleaned.get("symptom"),
-            is_breakdown=cleaned.get("is_breakdown") or False,
-        )
+        instance = self.instance
+        instance.location_tag = cleaned.get("location_tag")
+        instance.equipment = cleaned.get("equipment")
+        instance.directive = cleaned.get("directive")
+        instance.fault_desc = cleaned.get("fault_desc")
+        instance.priority = cleaned.get("priority")
+        instance.symptom = cleaned.get("symptom")
+        instance.is_breakdown = cleaned.get("is_breakdown") or False
 
         try:
             instance.full_clean(exclude=[

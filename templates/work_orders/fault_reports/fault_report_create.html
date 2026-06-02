@@ -187,6 +187,7 @@
 {% endblock %}
 
 {% block extra_js %}
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('location-search-input');
@@ -195,58 +196,122 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!searchInput || !resultsDiv || !hiddenInput) return;
 
+    let currentItems = [];
+    let highlightedIndex = -1;
+
+    function clearResults() {
+        resultsDiv.innerHTML = '';
+        currentItems = [];
+        highlightedIndex = -1;
+    }
+
+    function renderResults(items) {
+        clearResults();
+
+        if (!items.length) {
+            const noResult = document.createElement('div');
+            noResult.className = 'list-group-item disabled small text-muted';
+            noResult.textContent = 'No results found';
+            resultsDiv.appendChild(noResult);
+            return;
+        }
+
+        currentItems = items;
+
+        items.forEach((item, index) => {
+            const el = document.createElement('a');
+            el.href = '#';
+            el.className = 'list-group-item list-group-item-action py-2 px-3 small';
+            el.textContent = item.text;
+            el.dataset.index = index;
+
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectItem(index);
+            });
+
+            resultsDiv.appendChild(el);
+        });
+    }
+
+    function updateHighlight() {
+        const elements = resultsDiv.querySelectorAll('.list-group-item-action');
+
+        elements.forEach((el, index) => {
+            if (index === highlightedIndex) {
+                el.classList.add('active');
+                el.scrollIntoView({ block: 'nearest' });
+            } else {
+                el.classList.remove('active');
+            }
+        });
+    }
+
+    function selectItem(index) {
+        const item = currentItems[index];
+        if (!item) return;
+
+        searchInput.value = item.text;
+        hiddenInput.value = item.id;
+        clearResults();
+
+        document.body.dispatchEvent(new Event('load-existing-faults'));
+    }
+
     searchInput.addEventListener('input', function() {
         const query = this.value.trim();
         hiddenInput.value = '';
+        highlightedIndex = -1;
+
+        document.getElementById('existing-faults-container').innerHTML = '';
 
         if (query.length < 2) {
-            resultsDiv.innerHTML = '';
+            clearResults();
             return;
         }
 
         fetch(`${searchInput.dataset.autocompleteUrl}?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
-                resultsDiv.innerHTML = '';
                 const items = data.results || [];
-
-                if (items.length === 0) {
-                    const noResult = document.createElement('div');
-                    noResult.className = 'list-group-item disabled small text-muted';
-                    noResult.textContent = 'No results found';
-                    resultsDiv.appendChild(noResult);
-                    return;
-                }
-
-                items.forEach(item => {
-                    const el = document.createElement('a');
-                    el.href = '#';
-                    el.className = 'list-group-item list-group-item-action py-2 px-3 small';
-                    el.textContent = item.text;
-
-                    el.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        searchInput.value = item.text;
-                        hiddenInput.value = item.id;
-                        resultsDiv.innerHTML = '';
-
-                        document.body.dispatchEvent(new Event('load-existing-faults'));
-                    });
-
-                    resultsDiv.appendChild(el);
-                });
+                renderResults(items);
             })
             .catch(err => {
                 console.error('Autocomplete Error:', err);
-                resultsDiv.innerHTML = '';
+                clearResults();
             });
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        if (!currentItems.length) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            highlightedIndex = (highlightedIndex + 1) % currentItems.length;
+            updateHighlight();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            highlightedIndex = highlightedIndex <= 0
+                ? currentItems.length - 1
+                : highlightedIndex - 1;
+            updateHighlight();
+        } else if (e.key === 'Enter') {
+            if (highlightedIndex >= 0) {
+                e.preventDefault();
+                selectItem(highlightedIndex);
+            }
+        } else if (e.key === 'Escape') {
+            clearResults();
+        }
     });
 
     document.addEventListener('click', function(e) {
         if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
-            resultsDiv.innerHTML = '';
+            clearResults();
         }
     });
 });
 </script>
+
+
 {% endblock %}
