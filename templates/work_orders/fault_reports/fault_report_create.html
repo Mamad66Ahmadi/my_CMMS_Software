@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Report a Fault{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
+
+<div class="container py-4">
+    <div class="mb-3 d-flex justify-content-between align-items-end flex-wrap gap-3">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Report a Fault:</h4>
+            <p class="text-muted small mb-0">Fill in the fault details and submit a new report.</p>
+        </div>
+    </div>
+
+    <div class="card border border-secondary border-opacity-25 shadow-sm">
+        <div class="card-body p-4">
+            <form method="post" id="faultReportForm" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger shadow-sm border-0 mb-3 py-2 small">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <!-- Location Tag Autocomplete -->
+                    <div class="col-md-6">
+                        <div class="position-relative">
+                            <label class="form-label text-uppercase fw-bold text-secondary small">
+                                Location Tag Search
+                            </label>
+
+                            <input
+                                type="text"
+                                id="location-search-input"
+                                class="form-control"
+                                placeholder="Search for tag (e.g. 103-K-101)..."
+                                autocomplete="off"
+                                data-autocomplete-url="/equipment/locationtag-autocomplete/"
+                                value="{{ location.loc_tag|default:'' }}"
+                            >
+
+                            <div id="location-results-container"
+                                 class="list-group mt-1 shadow-lg position-absolute w-100"
+                                 style="z-index: 1050;"></div>
+
+                            {{ form.location_tag }}
+
+                            {% if form.location_tag.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.location_tag.errors|striptags }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Equipment -->
+                    <div class="col-md-6">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">
+                            Equipment
+                        </label>
+                        {{ form.equipment }}
+                        {% if form.equipment.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.equipment.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Directive -->
+                    <div class="col-md-8">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">
+                            Directive <span class="mandatory-star">*</span>
+                        </label>
+                        {{ form.directive }}
+                        {% if form.directive.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.directive.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Breakdown -->
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">
+                            Breakdown?
+                        </label>
+                        <div class="form-check mt-2">
+                            {{ form.is_breakdown }}
+                            <label class="form-check-label small fw-semibold" for="{{ form.is_breakdown.id_for_label }}">
+                                Is Breakdown
+                            </label>
+                        </div>
+                        {% if form.is_breakdown.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.is_breakdown.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Priority -->
+                    <div class="col-md-6">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">
+                            Priority
+                        </label>
+                        {{ form.priority }}
+                        {% if form.priority.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.priority.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Symptom -->
+                    <div class="col-md-6">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">
+                            Symptom
+                        </label>
+                        {{ form.symptom }}
+                        {% if form.symptom.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.symptom.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Fault Description -->
+                    <div class="col-12">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">
+                            Fault Description <span class="mandatory-star">*</span>
+                        </label>
+                        {{ form.fault_desc }}
+                        {% if form.fault_desc.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.fault_desc.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr class="my-4 border-secondary opacity-25">
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'work_orders:fault_report_list' %}"
+                           class="btn btn-sm btn-danger px-3 text-uppercase fw-bold"
+                           onclick="return confirm('Are you sure? Unsaved changes will be lost.');">
+                            Cancel
+                        </a>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit"
+                                name="_save_action"
+                                value="save"
+                                class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+                            Save Fault Report
+                        </button>
+
+                        <button type="submit"
+                                name="_save_action"
+                                value="add_another"
+                                class="btn btn-sm btn-enterprise-outline px-3 text-uppercase fw-bold">
+                            Save & New
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div
+        id="fault-location-loader"
+        hx-get="{% url 'work_orders:fault_report_existing_faults_partial' %}"
+        hx-target="#existing-faults-container"
+        hx-trigger="load-existing-faults from:body"
+        hx-include="#id_location_tag"
+        hx-swap="innerHTML">
+    </div>
+
+    <div class="mt-4">
+        <div id="existing-faults-container"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('location-search-input');
+    const resultsDiv = document.getElementById('location-results-container');
+    const hiddenInput = document.getElementById('id_location_tag');
+
+    if (!searchInput || !resultsDiv || !hiddenInput) return;
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        hiddenInput.value = '';
+
+        if (query.length < 2) {
+            resultsDiv.innerHTML = '';
+            return;
+        }
+
+        fetch(`${searchInput.dataset.autocompleteUrl}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                resultsDiv.innerHTML = '';
+                const items = data.results || [];
+
+                if (items.length === 0) {
+                    const noResult = document.createElement('div');
+                    noResult.className = 'list-group-item disabled small text-muted';
+                    noResult.textContent = 'No results found';
+                    resultsDiv.appendChild(noResult);
+                    return;
+                }
+
+                items.forEach(item => {
+                    const el = document.createElement('a');
+                    el.href = '#';
+                    el.className = 'list-group-item list-group-item-action py-2 px-3 small';
+                    el.textContent = item.text;
+
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        searchInput.value = item.text;
+                        hiddenInput.value = item.id;
+                        resultsDiv.innerHTML = '';
+
+                        document.body.dispatchEvent(new Event('load-existing-faults'));
+                    });
+
+                    resultsDiv.appendChild(el);
+                });
+            })
+            .catch(err => {
+                console.error('Autocomplete Error:', err);
+                resultsDiv.innerHTML = '';
+            });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+            resultsDiv.innerHTML = '';
+        }
+    });
+});
+</script>
+{% endblock %}

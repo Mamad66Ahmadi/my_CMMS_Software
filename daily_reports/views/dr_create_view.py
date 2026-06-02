@@ -196,3 +196,5 @@ class DailyReportUpdateView(LoginRequiredMixin, UpdateView):
                 messages.error(request, "You are not authorized to delete this report.")
                 return redirect(self.success_url)
         return super().post(request, *args, **kwargs)
+
+

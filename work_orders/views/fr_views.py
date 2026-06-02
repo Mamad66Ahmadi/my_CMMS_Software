@@ -1,15 +1,22 @@
 from datetime import timedelta
-
+import csv
+from django.http import HttpResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, CreateView
+from django.views import View
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
-
-from work_orders.models.fault_report_models import FaultReport,FaultReportStatus 
+from django.urls import reverse_lazy
+from django.shortcuts import redirect
 from django.db.models import Q
+
+
+
+from work_orders.models.fault_report_models import FaultReport,FaultReportStatus
+from work_orders.forms import FaultReportCreateForm
 
 def get_filtered_fault_reports(request):
     filters = {
@@ -135,7 +142,7 @@ class FaultReportList(LoginRequiredMixin, TemplateView):
             "location_tag": "location_tag__loc_tag",
             "equipment": "equipment__serial_number",
             "priority": "priority__priority_level",
-            "symptom": "symptom__name",
+            "symptom": "symptom__symptom_code",
             "reported_by": "reported_by__username",
             "reported_department": "reported_department__name",
             "reported_at": "reported_at",
@@ -202,3 +209,186 @@ def fault_report_detail_template(request, pk):
             "fr": fr,
         },
     )
+
+
+class FaultReportExportCSV(LoginRequiredMixin, View):
+    def get(self, request):
+        queryset, filters = get_filtered_fault_reports(request)
+
+        sort_by = request.GET.get("sort", "-reported_at")
+
+        allowed_sort = {
+            "report_number": "report_number",
+            "status": "status",
+            "location_tag": "location_tag__loc_tag",
+            "equipment": "equipment__serial_number",
+            "priority": "priority__priority_level",
+            "symptom": "symptom__symptom_code",
+            "reported_by": "reported_by__username",
+            "reported_department": "reported_department__name",
+            "reported_at": "reported_at",
+            "reviewed_by": "reviewed_by__username",
+            "reviewed_at": "reviewed_at",
+            "planner": "planner__username",
+            "planner_reviewed_at": "planner_reviewed_at",
+            "directive": "directive",
+            "is_breakdown": "is_breakdown",
+        }
+
+        sort_field = allowed_sort.get(sort_by.lstrip("-"), "reported_at")
+        if sort_by.startswith("-"):
+            sort_field = f"-{sort_field}"
+
+        queryset = queryset.order_by(sort_field, "-id")
+
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="fault_reports.csv"'
+
+        # Important for Excel UTF-8 / Persian / Arabic support
+        response.write("\ufeff")
+
+        writer = csv.writer(response)
+
+        writer.writerow([
+            "Report Number",
+            "Status",
+            "Location Tag",
+            "Parent Tag",
+            "Unit",
+            "Train",
+            "Equipment Serial",
+            "Priority",
+            "Symptom",
+            "Reported By",
+            "Department",
+            "Reported At",
+            "Reviewed By",
+            "Reviewed At",
+            "Planner",
+            "Planner Reviewed At",
+            "Directive",
+            "Fault Desc"
+            "Breakdown",
+        ])
+
+        for fr in queryset:
+            writer.writerow([
+                fr.report_number or "",
+                fr.get_status_display() if fr.status else "",
+                fr.location_tag.loc_tag if fr.location_tag else "",
+                fr.location_tag.parent.loc_tag if fr.location_tag and fr.location_tag.parent else "",
+                fr.location_tag.unit.unit_code if fr.location_tag and fr.location_tag.unit else "",
+                fr.location_tag.train if fr.location_tag and fr.location_tag.train is not None else "",
+                fr.equipment.serial_number if fr.equipment else "",
+                fr.priority.priority_level if fr.priority else "",
+                fr.symptom.symptom_code if fr.symptom else "",
+                fr.reported_by.username if fr.reported_by else "",
+                fr.reported_department.name if fr.reported_department else "",
+                fr.reported_at.strftime("%Y-%m-%d %H:%M") if fr.reported_at else "",
+                fr.reviewed_by.username if fr.reviewed_by else "",
+                fr.reviewed_at.strftime("%Y-%m-%d %H:%M") if fr.reviewed_at else "",
+                fr.planner.username if fr.planner else "",
+                fr.planner_reviewed_at.strftime("%Y-%m-%d %H:%M") if fr.planner_reviewed_at else "",
+                fr.directive or "",
+                fr.fault_desc or "",
+                "Yes" if fr.is_breakdown else "No",
+            ])
+
+        return response
+
+
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
+
+from equipment.models import LocationTag
+from work_orders.forms import FaultReportCreateForm
+from work_orders.models.fault_report_models import FaultReport
+
+
+class FaultReportCreate(LoginRequiredMixin, CreateView):
+    model = FaultReport
+    form_class = FaultReportCreateForm
+    template_name = "work_orders/fault_reports/fault_report_create.html"
+    success_url = reverse_lazy("work_orders:fault_report_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        location_id = self.request.GET.get("location_tag") or self.request.POST.get("location_tag")
+
+        if location_id:
+            try:
+                context["location"] = LocationTag.objects.get(id=location_id)
+            except LocationTag.DoesNotExist:
+                pass
+
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        location_id = self.request.GET.get("location_tag")
+        if location_id:
+            initial["location_tag"] = location_id
+        return initial
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.reported_by = self.request.user
+
+        dept = getattr(self.request.user, "department", None)
+        if dept is None and hasattr(self.request.user, "profile"):
+            dept = getattr(self.request.user.profile, "department", None)
+
+        if dept is None:
+            form.add_error(None, "Your user has no department set. Please contact admin.")
+            return self.form_invalid(form)
+
+        obj.reported_department = dept
+        obj.save()
+        self.object = obj
+
+        action = self.request.POST.get("_save_action")
+
+        if action == "add_another":
+            messages.success(self.request, "Fault report saved. You can create another one.")
+            return redirect("work_orders:fault_report_add")
+
+        messages.success(self.request, "Fault report saved successfully.")
+        return redirect(self.get_success_url())
+
+
+
+
+
+
+class FaultsByLocationPartial(LoginRequiredMixin, View):
+    template_name = "work_orders/fault_reports/existing_faults_table.html"
+
+    def get(self, request, *args, **kwargs):
+        location_tag_id = request.GET.get("location_tag")
+
+        faults = FaultReport.objects.none()
+
+        if location_tag_id:
+            faults = (
+                FaultReport.objects
+                .filter(
+                    location_tag_id=location_tag_id,
+                    status__in=["SUBMITTED", "APPROVED"],
+                )
+                .select_related(
+                    "location_tag",
+                    "equipment",
+                    "reported_by",
+                    "reported_department",
+                    "planner",
+                )
+                .order_by("-reported_at")
+            )
+
+        context = {
+            "faults": faults,
+            "location_tag_id": location_tag_id,
+        }
+        return render(request, self.template_name, context)
