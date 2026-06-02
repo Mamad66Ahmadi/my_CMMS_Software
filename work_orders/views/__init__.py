@@ -1,0 +1,1 @@
+from .fr_views import *

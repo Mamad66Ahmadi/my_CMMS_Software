@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
 from work_orders.models.fault_report_models import FaultReport,FaultReportStatus 
-
+from django.db.models import Q
 
 def get_filtered_fault_reports(request):
     filters = {
@@ -17,20 +17,24 @@ def get_filtered_fault_reports(request):
         "status": request.GET.get("status", "").strip(),
         "location_tag": request.GET.get("location_tag", "").strip(),
         "equipment": request.GET.get("equipment", "").strip(),
+        "directive": request.GET.get("directive", "").strip(),
         "priority": request.GET.get("priority", "").strip(),
         "symptom": request.GET.get("symptom", "").strip(),
         "reported_by": request.GET.get("reported_by", "").strip(),
         "reported_department": request.GET.get("reported_department", "").strip(),
-        "planner": request.GET.get("planner", "").strip(),
-        "reviewed_by": request.GET.get("reviewed_by", "").strip(),
-        "directive": request.GET.get("directive", "").strip(),
         "is_breakdown": request.GET.get("is_breakdown", "").strip(),
+        "planner": request.GET.get("planner", "").strip(),
         "date_from": request.GET.get("date_from", "").strip(),
         "date_to": request.GET.get("date_to", "").strip(),
+        "parent_tag": request.GET.get("parent_tag", "").strip(),
+        "unit": request.GET.get("unit", "").strip(),
+        "train": request.GET.get("train", "").strip(),
     }
 
     queryset = FaultReport.objects.select_related(
         "location_tag",
+        "location_tag__parent",
+        "location_tag__unit",
         "equipment",
         "priority",
         "symptom",
@@ -53,19 +57,34 @@ def get_filtered_fault_reports(request):
             query |= Q(**{f"{field_lookup}__icontains": val})
         return qs.filter(query)
 
+    # Standard filters
     queryset = apply_multi_value_filter(queryset, filters["report_number"], "report_number")
     queryset = apply_multi_value_filter(queryset, filters["location_tag"], "location_tag__loc_tag")
     queryset = apply_multi_value_filter(queryset, filters["equipment"], "equipment__serial_number")
+    queryset = apply_multi_value_filter(queryset, filters["directive"], "directive")
     queryset = apply_multi_value_filter(queryset, filters["reported_by"], "reported_by__username")
     queryset = apply_multi_value_filter(queryset, filters["reported_department"], "reported_department__name")
-    queryset = apply_multi_value_filter(queryset, filters["reviewed_by"], "reviewed_by__username")
     queryset = apply_multi_value_filter(queryset, filters["planner"], "planner__username")
-    queryset = apply_multi_value_filter(queryset, filters["directive"], "directive")
 
-    # Status filter:
-    # Default = only SUBMITTED and APPROVED
-    # If user explicitly chooses a status, respect it
-    if filters["status"]:
+    # Unit / Train
+    queryset = apply_multi_value_filter(queryset, filters["unit"], "location_tag__unit__unit_code")
+    queryset = apply_multi_value_filter(queryset, filters["train"], "location_tag__train")
+
+    # Parent Tag logic similar to DailyReport
+    if filters["parent_tag"]:
+        p_values = [x.strip() for x in filters["parent_tag"].split(",") if x.strip()]
+        p_query = Q()
+        for val in p_values:
+            p_query |= (
+                Q(location_tag__loc_tag__icontains=val) |
+                Q(location_tag__parent__loc_tag__icontains=val)
+            )
+        queryset = queryset.filter(p_query)
+
+    # Status logic
+    if filters["status"] == "ALL":
+        pass
+    elif filters["status"]:
         queryset = queryset.filter(status=filters["status"])
     else:
         queryset = queryset.filter(
@@ -75,29 +94,29 @@ def get_filtered_fault_reports(request):
             ]
         )
 
+    # FK filters
     if filters["priority"]:
         queryset = queryset.filter(priority_id=filters["priority"])
 
     if filters["symptom"]:
         queryset = queryset.filter(symptom_id=filters["symptom"])
 
-    if filters["is_breakdown"] in ["true", "false"]:
-        queryset = queryset.filter(is_breakdown=(filters["is_breakdown"] == "true"))
+    # Boolean filter
+    if filters["is_breakdown"].lower() in ["true", "false"]:
+        queryset = queryset.filter(
+            is_breakdown=filters["is_breakdown"].lower() == "true"
+        )
 
-    # Date filter:
-    # Default = only last 30 days
-    # If user provides date_from/date_to, use those instead
+    # Date filters
     if filters["date_from"]:
         queryset = queryset.filter(reported_at__date__gte=filters["date_from"])
+
     if filters["date_to"]:
         queryset = queryset.filter(reported_at__date__lte=filters["date_to"])
 
-    if not filters["date_from"] and not filters["date_to"]:
-        queryset = queryset.filter(
-            reported_at__gte=timezone.now() - timedelta(days=30)
-        )
-
     return queryset, filters
+
+
 
 
 class FaultReportList(LoginRequiredMixin, TemplateView):

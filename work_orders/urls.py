@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import FaultReportList, fault_report_detail_template
+from work_orders.views.fr_views import FaultReportList, fault_report_detail_template
 
 app_name = "work_orders"
 

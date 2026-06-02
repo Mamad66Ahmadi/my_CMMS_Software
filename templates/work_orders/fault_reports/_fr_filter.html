@@ -9,16 +9,30 @@
             <div class="filter-group">
                 <label class="filter-label">Report Number</label>
                 <input type="text" name="report_number" class="filter-input"
-                       placeholder="FR-2026-00001, FR-2026-00002, ..."
+                       placeholder="FR-26..."
                        value="{{ filters.report_number }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">From Date</label>
+                <input type="date" name="date_from" class="filter-input"
+                       value="{{ filters.date_from }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">To Date</label>
+                <input type="date" name="date_to" class="filter-input"
+                       value="{{ filters.date_to }}">
             </div>
 
             <div class="filter-group">
                 <label class="filter-label">Status</label>
                 <select name="status" class="filter-input">
-                    <option value="">All</option>
+                    <option value="">Default (Sub + App)</option>
+                    <option value="ALL" {% if filters.status == "ALL" %}selected{% endif %}>All Statuses</option>
                     <option value="SUBMITTED" {% if filters.status == "SUBMITTED" %}selected{% endif %}>Submitted</option>
                     <option value="APPROVED" {% if filters.status == "APPROVED" %}selected{% endif %}>Approved</option>
+                    <option value="REJECTED" {% if filters.status == "REJECTED" %}selected{% endif %}>Rejected</option>
                     <option value="CONVERTED" {% if filters.status == "CONVERTED" %}selected{% endif %}>Converted</option>
                 </select>
             </div>
@@ -26,22 +40,8 @@
             <div class="filter-group">
                 <label class="filter-label">Department</label>
                 <input type="text" name="reported_department" class="filter-input"
-                       placeholder="CBM, Rotary, ..."
+                       placeholder="CBM..."
                        value="{{ filters.reported_department }}">
-            </div>
-
-            <div class="filter-group">
-                <label class="filter-label">Reported By</label>
-                <input type="text" name="reported_by" class="filter-input"
-                       placeholder="username, ..."
-                       value="{{ filters.reported_by }}">
-            </div>
-
-            <div class="filter-group">
-                <label class="filter-label">Planner</label>
-                <input type="text" name="planner" class="filter-input"
-                       placeholder="username, ..."
-                       value="{{ filters.planner }}">
             </div>
 
             <div class="filter-group">
@@ -53,13 +53,12 @@
                 </select>
             </div>
 
-            <div class="filter-group" style="flex-grow: 1; min-width: 300px;">
-                <label class="filter-label">Short Text</label>
-                <input type="text" name="short_text" class="filter-input" style="width: 100%;"
-                       placeholder="Leak, vibration, noise, ..."
-                       value="{{ filters.short_text }}">
+            <div class="filter-group" style="flex-grow: 1; min-width: 250px;">
+                <label class="filter-label">Directive/Description</label>
+                <input type="text" name="directive" class="filter-input" style="width: 100%;"
+                       placeholder="Leak, vibration..."
+                       value="{{ filters.directive }}">
             </div>
-
         </div>
 
         <!-- SECOND LINE -->
@@ -68,52 +67,74 @@
             <div class="filter-group">
                 <label class="filter-label">Location Tag</label>
                 <input type="text" name="location_tag" class="filter-input"
-                       placeholder="103-KM-101, ..."
+                       placeholder="103-KM-101, 103-KM-201,..."
                        value="{{ filters.location_tag }}">
             </div>
 
             <div class="filter-group">
-                <label class="filter-label">Equipment (Serial)</label>
+                <label class="filter-label">Parent Tag</label>
+                <input type="text" name="parent_tag" class="filter-input"
+                       placeholder="103-K-101, 103-K-201, ..."
+                       value="{{ filters.parent_tag }}">
+            </div>
+
+            <div class="filter-group" style="width: 100px;">
+                <label class="filter-label">Unit</label>
+                <input type="text" name="unit" class="filter-input"
+                       placeholder="103, 110, ..."
+                       value="{{ filters.unit }}">
+            </div>
+
+            <div class="filter-group" style="width: 80px;">
+                <label class="filter-label">Train</label>
+                <input type="text" name="train" class="filter-input"
+                       placeholder="1"
+                       value="{{ filters.train }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Equipment Serial</label>
                 <input type="text" name="equipment" class="filter-input"
-                       placeholder="serial, ..."
+                       placeholder="Serial..."
                        value="{{ filters.equipment }}">
             </div>
 
             <div class="filter-group">
-                <label class="filter-label">Priority (ID)</label>
-                <input type="text" name="priority" class="filter-input"
-                       placeholder="1, 2, ..."
-                       value="{{ filters.priority }}">
+                <label class="filter-label">Reported By</label>
+                <input type="text" name="reported_by" class="filter-input"
+                       placeholder="Username"
+                       value="{{ filters.reported_by }}">
             </div>
 
             <div class="filter-group">
-                <label class="filter-label">Symptom (ID)</label>
-                <input type="text" name="symptom" class="filter-input"
-                       placeholder="1, 2, ..."
-                       value="{{ filters.symptom }}">
+                <label class="filter-label">Planner</label>
+                <input type="text" name="planner" class="filter-input"
+                       placeholder="Username"
+                       value="{{ filters.planner }}">
             </div>
 
             <div class="filter-group">
                 <label class="filter-label">Rows Per Page</label>
                 <select name="per_page" class="filter-input">
                     <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
-                    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                    <option value="25" {% if per_page == 25 or not per_page %}selected{% endif %}>25</option>
                     <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
                     <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
                 </select>
             </div>
 
-            <div class="filter-actions" style="margin-top: 0; margin-right: auto; display: flex; gap: 8px;">
-                <button type="submit" class="btn-search">Apply</button>
+            <div class="filter-actions" style="margin-left: auto; display: flex; gap: 8px;">
+                <button type="submit"
+                        class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+                    Apply
+                </button>
 
-                {% if filters.report_number or filters.status or filters.location_tag or filters.equipment or filters.priority or filters.symptom or filters.reported_by or filters.reported_department or filters.planner or filters.short_text or filters.is_breakdown %}
-                    <a href="{% url 'work_orders:fault_report_list' %}" class="btn-clear">
+                {% if filters.report_number or filters.date_from or filters.date_to or filters.status or filters.reported_department or filters.is_breakdown or filters.directive or filters.location_tag or filters.parent_tag or filters.unit or filters.train or filters.equipment or filters.reported_by or filters.planner %}
+                    <a href="{% url 'work_orders:fault_report_list' %}" class="btn btn-outline-secondary btn-sm">
                         Clear All
                     </a>
                 {% endif %}
             </div>
-
         </div>
-
     </div>
 </form>
