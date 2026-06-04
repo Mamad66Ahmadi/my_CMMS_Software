@@ -14,7 +14,7 @@ class FaultReportCreateForm(forms.ModelForm):
             "fault_desc",
             "priority",
             "symptom",
-            "is_breakdown",
+            "executing_department"
         ]
         widgets = {
             "location_tag": forms.HiddenInput(),
@@ -31,7 +31,7 @@ class FaultReportCreateForm(forms.ModelForm):
             }),
             "priority": forms.Select(attrs={"class": "form-select"}),
             "symptom": forms.Select(attrs={"class": "form-select"}),
-            "is_breakdown": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "executing_department": forms.Select(attrs={"class": "form-select"}),
         }
 
     def clean(self):
@@ -44,7 +44,7 @@ class FaultReportCreateForm(forms.ModelForm):
         instance.fault_desc = cleaned.get("fault_desc")
         instance.priority = cleaned.get("priority")
         instance.symptom = cleaned.get("symptom")
-        instance.is_breakdown = cleaned.get("is_breakdown") or False
+        instance.executing_department = cleaned.get("executing_department") 
 
         try:
             instance.full_clean(exclude=[

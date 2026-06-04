@@ -37,20 +37,20 @@
                 </select>
             </div>
 
+            <!-- Reporting Department -->
             <div class="filter-group">
-                <label class="filter-label">Department</label>
+                <label class="filter-label">Reporting Department</label>
                 <input type="text" name="reported_department" class="filter-input"
-                       placeholder="CBM..."
+                       placeholder="CBM, Fix..."
                        value="{{ filters.reported_department }}">
             </div>
 
+            <!-- Executing Department (Replaced Breakdown) -->
             <div class="filter-group">
-                <label class="filter-label">Breakdown?</label>
-                <select name="is_breakdown" class="filter-input">
-                    <option value="">All</option>
-                    <option value="true" {% if filters.is_breakdown == "true" %}selected{% endif %}>Yes</option>
-                    <option value="false" {% if filters.is_breakdown == "false" %}selected{% endif %}>No</option>
-                </select>
+                <label class="filter-label">Executing Department</label>
+                <input type="text" name="executing_department" class="filter-input"
+                       placeholder="CBM, Fix..."
+                       value="{{ filters.executing_department }}">
             </div>
 
             <div class="filter-group" style="flex-grow: 1; min-width: 250px;">
@@ -67,21 +67,21 @@
             <div class="filter-group">
                 <label class="filter-label">Location Tag</label>
                 <input type="text" name="location_tag" class="filter-input"
-                       placeholder="103-KM-101, 103-KM-201,..."
+                       placeholder="103-KM-101, 103-KM-201..."
                        value="{{ filters.location_tag }}">
             </div>
 
             <div class="filter-group">
                 <label class="filter-label">Parent Tag</label>
                 <input type="text" name="parent_tag" class="filter-input"
-                       placeholder="103-K-101, 103-K-201, ..."
+                       placeholder="103-K-101, 103-K-201..."
                        value="{{ filters.parent_tag }}">
             </div>
 
             <div class="filter-group" style="width: 100px;">
                 <label class="filter-label">Unit</label>
                 <input type="text" name="unit" class="filter-input"
-                       placeholder="103, 110, ..."
+                       placeholder="103, 110..."
                        value="{{ filters.unit }}">
             </div>
 
@@ -129,7 +129,7 @@
                     Apply
                 </button>
 
-                {% if filters.report_number or filters.date_from or filters.date_to or filters.status or filters.reported_department or filters.is_breakdown or filters.directive or filters.location_tag or filters.parent_tag or filters.unit or filters.train or filters.equipment or filters.reported_by or filters.planner %}
+                {% if filters.report_number or filters.date_from or filters.date_to or filters.status or filters.reported_department or filters.executing_department or filters.directive or filters.location_tag or filters.parent_tag or filters.unit or filters.train or filters.equipment or filters.reported_by or filters.planner %}
                     <a href="{% url 'work_orders:fault_report_list' %}" class="btn btn-outline-secondary btn-sm">
                         Clear All
                     </a>

@@ -25,7 +25,8 @@
                             <th class="small text-uppercase text-secondary">Fault Description</th>
                             <th class="small text-uppercase text-secondary">Priority</th>
                             <th class="small text-uppercase text-secondary">Status</th>
-                            <th class="small text-uppercase text-secondary">Reported Department</th>
+                            <th class="small text-uppercase text-secondary">Reporting Dep.</th>
+                            <th class="small text-uppercase text-secondary">Executing Dep.</th>
                         </tr>
                     </thead>
 
@@ -61,7 +62,11 @@
                                 </td>
 
                                 <td class="small">
-                                    {{ fault.reported_department|default:"—" }}
+                                    {{ fault.reported_department.name|default:"—" }}
+                                </td>
+
+                                <td class="small">
+                                    {{ fault.executing_department.name|default:"—" }}
                                 </td>
                             </tr>
                         {% endfor %}

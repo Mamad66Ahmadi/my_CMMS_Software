@@ -28,7 +28,7 @@ def get_filtered_fault_reports(request):
         "symptom": request.GET.get("symptom", "").strip(),
         "reported_by": request.GET.get("reported_by", "").strip(),
         "reported_department": request.GET.get("reported_department", "").strip(),
-        "is_breakdown": request.GET.get("is_breakdown", "").strip(),
+        "executing_department": request.GET.get("executing_department", "").strip(),
         "planner": request.GET.get("planner", "").strip(),
         "date_from": request.GET.get("date_from", "").strip(),
         "date_to": request.GET.get("date_to", "").strip(),
@@ -46,6 +46,7 @@ def get_filtered_fault_reports(request):
         "symptom",
         "reported_by",
         "reported_department",
+        "executing_department",
         "reviewed_by",
         "planner",
     ).all()
@@ -71,7 +72,7 @@ def get_filtered_fault_reports(request):
     queryset = apply_multi_value_filter(queryset, filters["reported_by"], "reported_by__username")
     queryset = apply_multi_value_filter(queryset, filters["reported_department"], "reported_department__name")
     queryset = apply_multi_value_filter(queryset, filters["planner"], "planner__username")
-
+    queryset = apply_multi_value_filter(queryset, filters["executing_department"], "executing_department__name")
     # Unit / Train
     queryset = apply_multi_value_filter(queryset, filters["unit"], "location_tag__unit__unit_code")
     queryset = apply_multi_value_filter(queryset, filters["train"], "location_tag__train")
@@ -107,12 +108,6 @@ def get_filtered_fault_reports(request):
     if filters["symptom"]:
         queryset = queryset.filter(symptom_id=filters["symptom"])
 
-    # Boolean filter
-    if filters["is_breakdown"].lower() in ["true", "false"]:
-        queryset = queryset.filter(
-            is_breakdown=filters["is_breakdown"].lower() == "true"
-        )
-
     # Date filters
     if filters["date_from"]:
         queryset = queryset.filter(reported_at__date__gte=filters["date_from"])
@@ -144,13 +139,13 @@ class FaultReportList(LoginRequiredMixin, TemplateView):
             "symptom": "symptom__symptom_code",
             "reported_by": "reported_by__username",
             "reported_department": "reported_department__name",
+            "executing_department": "executing_department__name",
             "reported_at": "reported_at",
             "reviewed_by": "reviewed_by__username",
             "reviewed_at": "reviewed_at",
             "planner": "planner__username",
             "planner_reviewed_at": "planner_reviewed_at",
             "directive": "directive",
-            "is_breakdown": "is_breakdown",
         }
 
         sort_field = allowed_sort.get(sort_by.lstrip("-"), "reported_at")
@@ -195,6 +190,7 @@ def fault_report_detail_template(request, pk):
             "symptom",
             "reported_by",
             "reported_department",
+            "executing_department",
             "reviewed_by",
             "planner",
         ),
@@ -225,13 +221,13 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
             "symptom": "symptom__symptom_code",
             "reported_by": "reported_by__username",
             "reported_department": "reported_department__name",
+            "executing_department": "executing_department__name",
             "reported_at": "reported_at",
             "reviewed_by": "reviewed_by__username",
             "reviewed_at": "reviewed_at",
             "planner": "planner__username",
             "planner_reviewed_at": "planner_reviewed_at",
             "directive": "directive",
-            "is_breakdown": "is_breakdown",
         }
 
         sort_field = allowed_sort.get(sort_by.lstrip("-"), "reported_at")
@@ -259,7 +255,8 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
             "Priority",
             "Symptom",
             "Reported By",
-            "Department",
+            "Reported Department",
+            "Executing Department",
             "Reported At",
             "Reviewed By",
             "Reviewed At",
@@ -283,6 +280,7 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
                 fr.symptom.symptom_code if fr.symptom else "",
                 fr.reported_by.username if fr.reported_by else "",
                 fr.reported_department.name if fr.reported_department else "",
+                fr.executing_department.name if fr.executing_department else "",
                 fr.reported_at.strftime("%Y-%m-%d %H:%M") if fr.reported_at else "",
                 fr.reviewed_by.username if fr.reviewed_by else "",
                 fr.reviewed_at.strftime("%Y-%m-%d %H:%M") if fr.reviewed_at else "",
@@ -290,7 +288,6 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
                 fr.planner_reviewed_at.strftime("%Y-%m-%d %H:%M") if fr.planner_reviewed_at else "",
                 fr.directive or "",
                 fr.fault_desc or "",
-                "Yes" if fr.is_breakdown else "No",
             ])
 
         return response
@@ -326,9 +323,7 @@ class FaultReportCreate(LoginRequiredMixin, CreateView):
         obj = form.save(commit=False)
         obj.reported_by = self.request.user
 
-        dept = getattr(self.request.user, "department", None)
-        if dept is None and hasattr(self.request.user, "profile"):
-            dept = getattr(self.request.user.profile, "department", None)
+        dept = self.request.user.department
 
         if dept is None:
             form.add_error(None, "Your user has no department set. Please contact admin.")
@@ -375,6 +370,7 @@ class FaultsByLocationPartial(LoginRequiredMixin, View):
                     "equipment",
                     "reported_by",
                     "reported_department",
+                    "executing_department",
                     "planner",
                 )
                 .order_by("-reported_at")

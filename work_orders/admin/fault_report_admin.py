@@ -14,18 +14,18 @@ class FaultReportAdmin(admin.ModelAdmin):
         "priority",
         "reported_by",
         "reported_department",
+        "executing_department",
         "reported_at",
         "reviewed_by",
         "planner",
-        "is_breakdown",
     )
 
     list_filter = (
         "status",
-        "is_breakdown",
         "priority",
         "symptom",
         "reported_department",
+        "executing_department",
         "reported_at",
         "reviewed_at",
         "planner_reviewed_at",
@@ -47,6 +47,7 @@ class FaultReportAdmin(admin.ModelAdmin):
         "planner__first_name",
         "planner__last_name",
         "review_comment",
+        "executing_department__name",
     )
 
     autocomplete_fields = (
@@ -56,6 +57,7 @@ class FaultReportAdmin(admin.ModelAdmin):
         "symptom",
         "reported_by",
         "reported_department",
+        "executing_department",
         "reviewed_by",
         "planner",
     )
@@ -74,6 +76,7 @@ class FaultReportAdmin(admin.ModelAdmin):
         "symptom",
         "reported_by",
         "reported_department",
+        "executing_department", 
         "reviewed_by",
         "planner",
     )
@@ -100,7 +103,7 @@ class FaultReportAdmin(admin.ModelAdmin):
             "fields": (
                 "priority",
                 "symptom",
-                "is_breakdown",
+                 "executing_department",
             )
         }),
         ("Reporter Information", {

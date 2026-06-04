@@ -81,21 +81,15 @@
                             </div>
                         {% endif %}
                     </div>
-
-                    <!-- Breakdown -->
+                    <!-- Executing Department -->
                     <div class="col-md-4">
                         <label class="form-label text-uppercase fw-bold text-secondary small">
-                            Breakdown?
+                            Executing Department <span class="mandatory-star">*</span>
                         </label>
-                        <div class="form-check mt-2">
-                            {{ form.is_breakdown }}
-                            <label class="form-check-label small fw-semibold" for="{{ form.is_breakdown.id_for_label }}">
-                                Is Breakdown
-                            </label>
-                        </div>
-                        {% if form.is_breakdown.errors %}
+                        {{ form.executing_department }}
+                        {% if form.executing_department.errors %}
                             <div class="text-danger extra-small mt-1">
-                                {{ form.is_breakdown.errors|striptags }}
+                                {{ form.executing_department.errors|striptags }}
                             </div>
                         {% endif %}
                     </div>

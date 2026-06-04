@@ -28,13 +28,13 @@ class FaultReport(models.Model):
     priority = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True, blank=True, related_name="fault_reports")
     symptom = models.ForeignKey(Symptom, on_delete=models.SET_NULL, null=True, blank=True, related_name="fault_reports")
 
+    executing_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="fault_executing_dep")
     # Workflow Metadata
     reported_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="fault_reports_reported")
     reported_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="fault_reports_dep")
     reported_at = models.DateTimeField(auto_now_add=True)
 
     status = models.CharField(max_length=20, choices=FaultReportStatus.choices, default=FaultReportStatus.SUBMITTED, db_index=True)
-    is_breakdown = models.BooleanField(default=False)
 
     # Supervisor Stage
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="fault_reports_reviewed")

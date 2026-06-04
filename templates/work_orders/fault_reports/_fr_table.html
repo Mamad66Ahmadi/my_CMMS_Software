@@ -11,12 +11,17 @@
             {% include "daily_reports/dr_list/_table_header.html" with column="priority" label="Priority" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="symptom" label="Symptom" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="reported_department" label="Department" sort_by=sort_by query_params=query_params %}
+
+            <!-- Reporting Department -->
+            {% include "daily_reports/dr_list/_table_header.html" with column="reported_department" label="Reporting Dep." sort_by=sort_by query_params=query_params %}
+
+            <!-- Executing Department (NEW) -->
+            {% include "daily_reports/dr_list/_table_header.html" with column="executing_department" label="Executing Dep." sort_by=sort_by query_params=query_params %}
+
             {% include "daily_reports/dr_list/_table_header.html" with column="reported_by" label="Reported By" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="reviewed_by" label="Reviewed By" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="planner" label="Planner" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="planner_reviewed_at" label="Planner Reviewed At" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="is_breakdown" label="Breakdown?" sort_by=sort_by query_params=query_params %}
         </tr>
     </thead>
 
@@ -60,26 +65,14 @@
                 {% endif %}
             </td>
 
-            <td>
-                {% if fr.priority %}
-                    {{ fr.priority }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-
-            <td>
-                {% if fr.symptom %}
-                    {{ fr.symptom }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
+            <td>{{ fr.priority|default:"-" }}</td>
+            <td>{{ fr.symptom|default:"-" }}</td>
 
             <td class="persian-text">
                 <bdi>{{ fr.directive|default:"-"|truncatechars:80 }}</bdi>
             </td>
 
+            <!-- Reporting Department -->
             <td>
                 {% if fr.reported_department %}
                     {{ fr.reported_department.name }}
@@ -88,29 +81,18 @@
                 {% endif %}
             </td>
 
+            <!-- Executing Department -->
             <td>
-                {% if fr.reported_by %}
-                    {{ fr.reported_by.username }}
+                {% if fr.executing_department %}
+                    {{ fr.executing_department.name }}
                 {% else %}
                     -
                 {% endif %}
             </td>
 
-            <td>
-                {% if fr.reviewed_by %}
-                    {{ fr.reviewed_by.username }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-
-            <td>
-                {% if fr.planner %}
-                    {{ fr.planner.username }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
+            <td>{{ fr.reported_by.username|default:"-" }}</td>
+            <td>{{ fr.reviewed_by.username|default:"-" }}</td>
+            <td>{{ fr.planner.username|default:"-" }}</td>
 
             <td>
                 {% if fr.planner_reviewed_at %}
@@ -120,13 +102,6 @@
                 {% endif %}
             </td>
 
-            <td>
-                {% if fr.is_breakdown %}
-                    Yes
-                {% else %}
-                    No
-                {% endif %}
-            </td>
         </tr>
         {% endfor %}
     </tbody>
