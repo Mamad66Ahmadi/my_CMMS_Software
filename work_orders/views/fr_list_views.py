@@ -65,7 +65,6 @@ def get_filtered_fault_reports(request):
     queryset = apply_multi_value_filter(queryset, filters["report_number"], "report_number")
     queryset = apply_multi_value_filter(queryset, filters["location_tag"], "location_tag__loc_tag")
     queryset = apply_multi_value_filter(queryset, filters["equipment"], "equipment__serial_number")
-    queryset = apply_multi_value_filter(queryset, filters["directive"], "directive")
     queryset = apply_multi_value_filter(queryset, filters["reported_by"], "reported_by__username")
     queryset = apply_multi_value_filter(queryset, filters["reported_department"], "reported_department__name")
     queryset = apply_multi_value_filter(queryset, filters["planner"], "planner__username")
@@ -74,6 +73,14 @@ def get_filtered_fault_reports(request):
     queryset = apply_multi_value_filter(queryset, filters["unit"], "location_tag__unit__unit_code")
     queryset = apply_multi_value_filter(queryset, filters["train"], "location_tag__train")
 
+    # Directive OR Fault Description search
+    if filters["directive"]:
+        values = [x.strip() for x in filters["directive"].split(",") if x.strip()]
+        q = Q()
+        for val in values:
+            q |= Q(directive__icontains=val) | Q(fault_desc__icontains=val)
+        queryset = queryset.filter(q)
+        
     # Parent Tag logic similar to DailyReport
     if filters["parent_tag"]:
         p_values = [x.strip() for x in filters["parent_tag"].split(",") if x.strip()]
