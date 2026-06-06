@@ -117,7 +117,7 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
     model = FaultReport
     form_class = FaultReportCreateForm
     template_name = "work_orders/fault_reports/fault_report_review.html"
-
+    
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
 
@@ -140,8 +140,7 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
             if not FRP.can_resubmit(user, obj):
                 raise PermissionDenied()
 
-            obj.status = FaultReportStatus.SUBMITTED
-            obj.save()
+            obj.resubmit(user)
 
             messages.success(self.request, "Fault report resubmitted.")
             return redirect(self.get_success_url())
@@ -182,6 +181,13 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
             messages.success(self.request, "Fault report updated.")
 
         return redirect(self.get_success_url())
+    
+    def get_success_url(self):
+        url = reverse_lazy("work_orders:fault_report_list")
+        query = self.request.GET.urlencode()
+        if query:
+            url = f"{url}?{query}"
+        return url
 
 
 # -------------------------------------- Converting to the Work Order (last stage) view -------------------------
@@ -231,8 +237,8 @@ class FaultReportConvertView(LoginRequiredMixin, UpdateView):
             if not FRP.can_convert_action(user, obj):
                 raise PermissionDenied()
 
-            obj.status = FaultReportStatus.CONVERTED
-            obj.save()
+            obj.mark_converted(user)
+
 
             messages.success(self.request, "Fault report converted to Work Order.")
             return redirect(self.get_success_url())
@@ -246,4 +252,8 @@ class FaultReportConvertView(LoginRequiredMixin, UpdateView):
 
 
     def get_success_url(self):
-        return reverse_lazy("work_orders:fault_report_list")
+        url = reverse_lazy("work_orders:fault_report_list")
+        query = self.request.GET.urlencode()
+        if query:
+            url = f"{url}?{query}"
+        return url

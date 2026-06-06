@@ -224,7 +224,7 @@
 
             {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
 
-                <a href="{% url 'work_orders:fault_report_review' fr.id %}"
+                <a href="{% url 'work_orders:fault_report_review' fr.id %}?{{ request.GET.urlencode }}"
                    class="btn btn-primary px-4">
                     <i class="bi bi-pencil-square me-1"></i>
                     Edit / Approve
@@ -232,7 +232,7 @@
 
             {% elif request.user.role == "supervisor" and request.user.department == fr.reported_department %}
 
-                <a href="{% url 'work_orders:fault_report_review' fr.id %}"
+                <a href="{% url 'work_orders:fault_report_review' fr.id %}?{{ request.GET.urlencode }}"
                    class="btn btn-primary px-4">
                     <i class="bi bi-pencil-square me-1"></i>
                     Edit / Approve
@@ -240,7 +240,7 @@
 
             {% elif request.user == fr.reported_by %}
 
-                <a href="{% url 'work_orders:fault_report_review' fr.id %}"
+                <a href="{% url 'work_orders:fault_report_review' fr.id %}?{{ request.GET.urlencode }}"
                    class="btn btn-primary px-4">
                     <i class="bi bi-pencil-square me-1"></i>
                     Edit
@@ -256,7 +256,7 @@
 
             {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
 
-                <a href="{% url 'work_orders:fault_report_review' fr.id %}"
+                <a href="{% url 'work_orders:fault_report_review' fr.id %}?{{ request.GET.urlencode }}"
                    class="btn btn-primary px-4">
                     <i class="bi bi-pencil-square me-1"></i>
                     Edit
@@ -273,7 +273,7 @@
             {# Planner / Staff / Method #}
             {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
 
-                <a href="{% url 'work_orders:fault_report_convert' fr.id %}"
+                <a href="{% url 'work_orders:fault_report_convert' fr.id %}?{{ request.GET.urlencode }}"
                    class="btn btn-warning px-4">
                     <i class="bi bi-pencil-square me-1"></i>
                     Edit / Convert
@@ -282,7 +282,7 @@
             {# Supervisor of requester department #}
             {% elif request.user.role == "supervisor" and request.user.department == fr.reported_department %}
             
-                <a href="{% url 'work_orders:fault_report_convert' fr.id %}"
+                <a href="{% url 'work_orders:fault_report_convert' fr.id %}?{{ request.GET.urlencode }}"
                    class="btn btn-primary px-4">
                     <i class="bi bi-pencil-square me-1"></i>
                     Edit

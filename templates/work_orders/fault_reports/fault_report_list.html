@@ -49,8 +49,12 @@
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".fault-report-row").forEach(row => {
         row.addEventListener("click", function () {
-            const detailUrl = this.dataset.detailUrl;
-            if (!detailUrl) return;
+
+            const baseUrl = this.dataset.detailUrl;
+            if (!baseUrl) return;
+
+            const query = window.location.search;   // ✅ get list filters
+            const detailUrl = baseUrl + query;      // ✅ append filters
 
             fetch(detailUrl)
                 .then(res => {

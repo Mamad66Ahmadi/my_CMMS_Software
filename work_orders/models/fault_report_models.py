@@ -103,31 +103,29 @@ class FaultReport(models.Model):
         
         self.save()
 
-    def reject(self, user, comment: str = ""):
-        """
-        Handles context-aware rejection:
-        1. If SUBMITTED: Supervisor rejects (fills reviewed_by/at)
-        2. If APPROVED: Planner rejects (fills planner/at)
-        """
-        now = timezone.now()
-        if self.status == FaultReportStatus.SUBMITTED:
-            # Stage 1: Supervisor Rejection
-            self.reviewed_by = user
-            self.reviewed_at = now
-            self.review_comment = f"Rejected by Supervisor: {comment}"
-        
-        elif self.status == FaultReportStatus.APPROVED:
-            # Stage 2: Planner Rejection
-            self.planner = user
-            self.planner_reviewed_at = now
-            # Append planner comment to existing supervisor comment
-            planner_note = f"\n[Planner Rejection @ {now.strftime('%Y-%m-%d %H:%M')}]: {comment}"
-            self.review_comment = (self.review_comment or "") + planner_note
-        
-        else:
+    def reject(self, user, comment=""):
+        if self.status not in [FaultReportStatus.SUBMITTED, FaultReportStatus.APPROVED]:
             raise ValidationError(f"Cannot reject from status: {self.status}")
 
+        now = timezone.now()
+
         self.status = FaultReportStatus.REJECTED
+        self.reviewed_by = user
+        self.reviewed_at = now
+
+        if comment:
+            self.review_comment = comment
+
+        self.save()
+
+    def resubmit(self, user):
+        """Rejected -> Submitted"""
+        if self.status != FaultReportStatus.REJECTED:
+            raise ValidationError("Only rejected reports can be resubmitted.")
+
+        self.status = FaultReportStatus.SUBMITTED
+        self.reviewed_by = user
+        self.reviewed_at = timezone.now()
         self.save()
 
     class Meta:
