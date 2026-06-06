@@ -10,6 +10,8 @@ from django.core.exceptions import PermissionDenied
 from work_orders.models import FaultReport,FaultReportStatus
 from work_orders.forms import FaultReportCreateForm
 from equipment.models import LocationTag
+from work_orders.permissions.fault_report_permissions import FaultReportPermissions as FRP
+
 
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -109,13 +111,8 @@ class FaultsByLocationPartial(LoginRequiredMixin, View):
 
 
 
-from django.core.exceptions import PermissionDenied
-from django.contrib import messages
-from django.urls import reverse_lazy
-from django.shortcuts import redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import UpdateView
 
+# ----------------------------------------- Supervisor Approve/ Resubmit from reject View
 class FaultReportReviewView(LoginRequiredMixin, UpdateView):
     model = FaultReport
     form_class = FaultReportCreateForm
@@ -123,102 +120,46 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
-        user = request.user
-        obj = self.object
 
-        is_method_or_staff = (
-            user.is_staff or
-            (user.department and user.department.name == "Method")
-        )
-        is_planner = getattr(user, "role", None) == "planner"
+        if not FRP.can_review(request.user, self.object):
+            raise PermissionDenied()
 
-        is_supervisor = (
-            user.role == "supervisor" and
-            user.department == obj.reported_department
-        )
-
-        is_requester = user == obj.reported_by
-
-        # --------------------------------
-        # RULE 1: Staff / Method / Planner
-        # --------------------------------
-        if is_method_or_staff or is_planner:
-            if obj.status == FaultReportStatus.CONVERTED:
-                raise PermissionDenied("Converted reports cannot be edited.")
-            # Note: Staff/Method/Planner can access SUBMITTED, APPROVED, and REJECTED reports.
-            return super().dispatch(request, *args, **kwargs)
-
-        # --------------------------------
-        # RULE 2: Supervisor of requester department
-        # --------------------------------
-        if is_supervisor:
-            if obj.status != FaultReportStatus.SUBMITTED:
-                raise PermissionDenied("Supervisors can only access submitted reports.")
-            return super().dispatch(request, *args, **kwargs)
-
-        # --------------------------------
-        # RULE 3: Requester
-        # --------------------------------
-        if is_requester:
-            if obj.status != FaultReportStatus.SUBMITTED:
-                raise PermissionDenied("Requesters can only access submitted reports.")
-            return super().dispatch(request, *args, **kwargs)
-
-        # --------------------------------
-        # RULE 4: Everyone else
-        # --------------------------------
-        raise PermissionDenied()
-
+        return super().dispatch(request, *args, **kwargs)
+    
     def form_valid(self, form):
         obj = form.save(commit=False)
+
         action = self.request.POST.get("action")
         user = self.request.user
         comment = self.request.POST.get("comment", "").strip()
 
-        is_method_or_staff = (
-            user.is_staff or
-            (user.department and user.department.name == "Method")
-        )
-        is_planner = getattr(user, "role", None) == "planner"
-
-        is_supervisor = (
-            user.role == "supervisor" and
-            user.department == obj.reported_department
-        )
-
-        is_requester = user == obj.reported_by
-
-        # -------------------------------------------
-        # SECURE WORKFLOW: RE-SUBMIT REJECTED REPORT
-        # -------------------------------------------
+        # -----------------------------
+        # RESUBMIT
+        # -----------------------------
         if action == "resubmit":
-            # Double check current status is actually REJECTED
-            if self.get_object().status != FaultReportStatus.REJECTED:
-                raise PermissionDenied("Only rejected reports can be resubmitted.")
-                
-            if not (is_method_or_staff or is_planner):
-                raise PermissionDenied("Only planners or staff can resubmit a rejected report.")
+            if not FRP.can_resubmit(user, obj):
+                raise PermissionDenied()
 
             obj.status = FaultReportStatus.SUBMITTED
             obj.save()
-            messages.success(self.request, "Fault report status set back to 'Submitted'.")
+
+            messages.success(self.request, "Fault report resubmitted.")
             return redirect(self.get_success_url())
 
-        # -------------------------------------------
-        # REJECT VALIDATION
-        # -------------------------------------------
+        # -----------------------------
+        # REJECT validation
+        # -----------------------------
         if action == "reject" and not comment:
             form.add_error(None, "Comment is required when rejecting a fault report.")
             return self.form_invalid(form)
 
-        # Save other form edits
         obj.save()
 
         # -----------------------------
         # APPROVE
         # -----------------------------
         if action == "approve":
-            if not (is_method_or_staff or is_supervisor or is_planner):
+            if not FRP.can_approve(user, obj):
                 raise PermissionDenied()
 
             obj.approve(user)
@@ -228,7 +169,7 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
         # REJECT
         # -----------------------------
         elif action == "reject":
-            if not (is_method_or_staff or is_supervisor or is_requester or is_planner):
+            if not FRP.can_reject(user, obj):
                 raise PermissionDenied()
 
             obj.reject(user, comment)
@@ -242,8 +183,67 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
 
         return redirect(self.get_success_url())
 
+
+# -------------------------------------- Converting to the Work Order (last stage) view -------------------------
+class FaultReportConvertView(LoginRequiredMixin, UpdateView):
+    model = FaultReport
+    form_class = FaultReportCreateForm
+    template_name = "work_orders/fault_reports/fr_convert_to_wo.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if not FRP.can_convert(request.user, self.object):
+            raise PermissionDenied()
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.save()
+
+        action = self.request.POST.get("action")
+        comment = self.request.POST.get("comment", "").strip()
+        user = self.request.user
+
+        # -----------------------------
+        # Reject
+        # -----------------------------
+        if action == "reject":
+
+            if not comment:
+                form.add_error(None, "Comment is required when rejecting.")
+                return self.form_invalid(form)
+
+            if not FRP.can_reject(user, obj):
+                raise PermissionDenied()
+
+            obj.reject(user, comment)
+
+            messages.warning(self.request, "Fault report rejected.")
+            return redirect(self.get_success_url())
+
+        # -----------------------------
+        # Convert
+        # -----------------------------
+        elif action == "convert":
+
+            if not FRP.can_convert_action(user, obj):
+                raise PermissionDenied()
+
+            obj.status = FaultReportStatus.CONVERTED
+            obj.save()
+
+            messages.success(self.request, "Fault report converted to Work Order.")
+            return redirect(self.get_success_url())
+
+        # -----------------------------
+        # Edit
+        # -----------------------------
+        else:
+            messages.success(self.request, "Fault report updated.")
+            return redirect(self.get_success_url())
+
+
     def get_success_url(self):
         return reverse_lazy("work_orders:fault_report_list")
-
-
-
