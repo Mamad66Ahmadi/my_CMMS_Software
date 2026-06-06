@@ -213,47 +213,33 @@
 
         {% if fr.status != "CONVERTED" %}
 
-            {% if fr.status == "SUBMITTED" %}
+            {# Staff or Method (highest permission) #}
+            {% if request.user.is_staff or request.user.department.name == "Method" %}
 
-                {# ---------- EDIT / APPROVE ---------- #}
-                {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "supervisor" and request.user.department == fr.reported_department %}
-
-                    <a href="#" class="btn btn-primary px-4">
-                        <i class="bi bi-pencil-square me-1"></i>
-                        Edit / Approve Reported Fault
-                    </a>
-
-
-                {# ---------- EDIT ONLY (Requester) ---------- #}
-                {% elif request.user == fr.reported_by %}
-
-                    <a href="#" class="btn btn-primary px-4">
-                        <i class="bi bi-pencil-square me-1"></i>
-                        Edit Reported Fault
-                    </a>
+                <a href="{% url 'work_orders:fault_report_review' fr.id %}"
+                   class="btn btn-primary px-4">
+                    <i class="bi bi-pencil-square me-1"></i>
+                    Edit / Approve
+                </a>
 
 
-                {# ---------- APPROVE ONLY ---------- #}
-                {% elif request.user != fr.reported_by and request.user.role == "supervisor" and request.user.department == fr.reported_department %}
-                    <a href="#" class="btn btn-success px-4">
-                        <i class="bi bi-check-circle me-1"></i>
-                        Approve Reported Fault
-                    </a>
+            {# Supervisor of requester department (SUBMITTED only) #}
+            {% elif fr.status == "SUBMITTED" and request.user.role == "supervisor" and request.user.department == fr.reported_department %}
 
-                {% endif %}
+                <a href="{% url 'work_orders:fault_report_review' fr.id %}"
+                   class="btn btn-primary px-4">
+                    <i class="bi bi-pencil-square me-1"></i>
+                    Edit / Approve
+                </a>
 
+            {# Requester only (SUBMITTED only) #}
+            {% elif fr.status == "SUBMITTED" and request.user == fr.reported_by %}
 
-            {% else %}
-
-                {# APPROVED / REJECTED #}
-                {% if request.user.is_staff or request.user.department.name == "Method" %}
-
-                    <a href="#" class="btn btn-primary px-4">
-                        <i class="bi bi-gear me-1"></i>
-                        Edit / Approve Reported Fault
-                    </a>
-
-                {% endif %}
+                <a href="{% url 'work_orders:fault_report_review' fr.id %}"
+                   class="btn btn-primary px-4">
+                    <i class="bi bi-pencil-square me-1"></i>
+                    Edit
+                </a>
 
             {% endif %}
 
