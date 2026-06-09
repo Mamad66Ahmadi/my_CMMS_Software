@@ -1,0 +1,386 @@
+{% load static %}
+
+<style>
+/* ── Exact same class/variable system as the WO walkthrough widget ── */
+.fr-actor-pill {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+.fr-stage-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+.fr-stage-sub {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.fr-doc-card {
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-secondary);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.fr-doc-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.fr-field-row {
+  display: flex;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.fr-field-row:last-child { border-bottom: none; }
+.fr-field-label {
+  color: var(--color-text-secondary);
+  min-width: 160px;
+  flex-shrink: 0;
+}
+.fr-field-val {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+.fr-note-box {
+  border-left: 3px solid #378ADD;
+  background: var(--color-background-info);
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+.fr-status-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+/* status badge colours matching the walkthrough palette */
+.fr-badge-submitted { background: #FAEEDA; color: #633806; }
+.fr-badge-approved  { background: #E6F1FB; color: #0C447C; }
+.fr-badge-rejected  { background: #FAECE7; color: #712B13; }
+.fr-badge-converted { background: #E1F5EE; color: #085041; }
+
+/* modal shell styles */
+.fr-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 0.5px solid var(--color-border-secondary);
+}
+.fr-modal-body {
+  padding: 16px 20px 20px;
+}
+.fr-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 0.5px solid var(--color-border-tertiary);
+  gap: 8px;
+}
+
+/* buttons */
+.fr-btn {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fr-btn-primary {
+  background: #185FA5;
+  border-color: #185FA5;
+  color: #E6F1FB;
+}
+.fr-btn-warning {
+  background: #8a5800;
+  border-color: #8a5800;
+  color: #FAEEDA;
+}
+.fr-btn-group { display: flex; gap: 8px; }
+.fr-close-btn {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 0.5px solid var(--color-border-secondary);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  line-height: 1;
+}
+.fr-section-gap { margin-bottom: 10px; }
+
+/* ========= NEW two-column layout ========= */
+.fr-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.fr-two-col .fr-doc-card {
+  height: 100%;
+}
+</style>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- HEADER                                                 -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="fr-modal-header">
+
+  <div>
+    <div style="margin-bottom:8px">
+      <span class="fr-actor-pill
+        {% if fr.status == 'SUBMITTED' %}fr-badge-submitted
+        {% elif fr.status == 'APPROVED' %}fr-badge-approved
+        {% elif fr.status == 'REJECTED' %}fr-badge-rejected
+        {% elif fr.status == 'CONVERTED' %}fr-badge-converted
+        {% endif %}">
+        {% if fr.status == "SUBMITTED" %}
+          <i class="bi bi-hourglass-split me-1"></i>Waiting for Review
+        {% elif fr.status == "APPROVED" %}
+          <i class="bi bi-check2-circle me-1"></i>Approved — Waiting for Planner Action
+        {% elif fr.status == "REJECTED" %}
+          <i class="bi bi-x-circle me-1"></i>Rejected
+          {% if fr.planner %}(Planner){% elif fr.reviewed_by %}(Supervisor){% endif %}
+        {% elif fr.status == "CONVERTED" %}
+          <i class="bi bi-arrow-repeat me-1"></i>Converted to Work Order
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="fr-stage-title">
+      Fault Report: {{ fr.report_number }}
+    </div>
+    <div class="fr-stage-sub">
+      {{ fr.fault_desc|truncatechars:120|default:"No description provided." }}
+    </div>
+  </div>
+
+  <button class="fr-close-btn" onclick="closeFaultReportModal()" aria-label="Close">✕</button>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- BODY                                                   -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="fr-modal-body">
+
+  <!-- PRIMARY INFORMATION + OWNERSHIP (Two-column layout) -->
+  <div class="fr-two-col fr-section-gap">
+
+    <!-- 1. PRIMARY INFORMATION -->
+    <div class="fr-doc-card">
+      <div class="fr-doc-title">Primary Information</div>
+
+      <div class="fr-field-row">
+        <span class="fr-field-label">Location Tag</span>
+        <span class="fr-field-val">{{ fr.location_tag.loc_tag|default:"—" }}</span>
+      </div>
+      <div class="fr-field-row">
+        <span class="fr-field-label">Equipment</span>
+        <span class="fr-field-val">{{ fr.equipment.serial_number|default:"—" }}</span>
+      </div>
+      <div class="fr-field-row">
+        <span class="fr-field-label">Status</span>
+        <span class="fr-field-val">
+          <span class="fr-status-badge
+            {% if fr.status == 'CONVERTED' %}fr-badge-converted
+            {% elif fr.status == 'APPROVED' %}fr-badge-approved
+            {% elif fr.status == 'REJECTED' %}fr-badge-rejected
+            {% else %}fr-badge-submitted{% endif %}">
+            {{ fr.get_status_display }}
+          </span>
+        </span>
+      </div>
+      <div class="fr-field-row">
+        <span class="fr-field-label">Priority</span>
+        <span class="fr-field-val {% if fr.priority.priority_level <= 2 %}fr-badge-rejected{% endif %}"
+              style="{% if fr.priority.priority_level <= 2 %}padding:1px 7px;border-radius:5px;{% endif %}">
+          {{ fr.priority|default:"—" }}
+        </span>
+      </div>
+      <div class="fr-field-row">
+        <span class="fr-field-label">Symptom</span>
+        <span class="fr-field-val">{{ fr.symptom|default:"—" }}</span>
+      </div>
+    </div>
+
+    <!-- 2. OWNERSHIP -->
+    <div class="fr-doc-card">
+      <div class="fr-doc-title">Ownership</div>
+
+      <div class="fr-field-row">
+        <span class="fr-field-label">Reporting Department</span>
+        <span class="fr-field-val">{{ fr.reported_department.name|default:"—" }}</span>
+      </div>
+      <div class="fr-field-row">
+        <span class="fr-field-label">Executing Department</span>
+        <span class="fr-field-val">{{ fr.executing_department.name|default:"—" }}</span>
+      </div>
+      <div class="fr-field-row">
+        <span class="fr-field-label">Reported At</span>
+        <span class="fr-field-val">{{ fr.reported_at|date:"Y-m-d H:i"|default:"—" }}</span>
+      </div>
+      <div class="fr-field-row">
+        <span class="fr-field-label">Reported By</span>
+        <span class="fr-field-val">{{ fr.reported_by.username|default:"—" }}</span>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- 3. DIRECTIVE -->
+  <div class="fr-doc-card fr-section-gap">
+    <div class="fr-doc-title">Directive</div>
+    <div style="font-size:12px;color:var(--color-text-primary);line-height:1.6"
+         dir="auto">
+      {{ fr.directive|default:"—" }}
+    </div>
+  </div>
+
+  <!-- 4. FAULT DESCRIPTION -->
+  <div class="fr-doc-card fr-section-gap">
+    <div class="fr-doc-title">Reported Fault Description</div>
+    <div style="font-size:12px;color:var(--color-text-primary);line-height:1.6"
+         dir="auto">
+      {{ fr.fault_desc|default:"No description provided." }}
+    </div>
+  </div>
+
+  <!-- 5. REVIEW & PLANNING -->
+  <div class="fr-doc-card">
+    <div class="fr-doc-title">Review &amp; Planning</div>
+
+    <div class="fr-field-row">
+      <span class="fr-field-label">Reviewed By (Supervisor)</span>
+      <span class="fr-field-val">
+        {{ fr.reviewed_by.username|default:"—" }}
+        {% if fr.reviewed_at %}
+          <span style="font-weight:400;color:var(--color-text-secondary);margin-left:8px;font-size:11px">
+            {{ fr.reviewed_at|date:"Y-m-d H:i" }}
+          </span>
+        {% endif %}
+      </span>
+    </div>
+    <div class="fr-field-row">
+      <span class="fr-field-label">Planner</span>
+      <span class="fr-field-val">
+        {{ fr.planner.username|default:"—" }}
+        {% if fr.planner_reviewed_at %}
+          <span style="font-weight:400;color:var(--color-text-secondary);margin-left:8px;font-size:11px">
+            {{ fr.planner_reviewed_at|date:"Y-m-d H:i" }}
+          </span>
+        {% endif %}
+      </span>
+    </div>
+    <div class="fr-field-row">
+      <span class="fr-field-label">Review / Rejection Comments</span>
+      <span class="fr-field-val" style="font-style:italic;font-weight:400;color:var(--color-text-secondary)">
+        {{ fr.review_comment|default:"No comments." }}
+      </span>
+    </div>
+  </div>
+
+  <!-- note box -->
+  <div class="fr-note-box">
+    {% if fr.status == "SUBMITTED" %}
+      This report is awaiting supervisor review. No work order has been created yet — no resources committed, no cost posted.
+    {% elif fr.status == "APPROVED" %}
+      Approved and ready for conversion to a Work Order. The planner should review scope and create the WO with the appropriate operations.
+    {% elif fr.status == "REJECTED" %}
+      This report was rejected. The originator or planner may edit and resubmit with corrections.
+    {% elif fr.status == "CONVERTED" %}
+      This fault report has been converted to a Work Order. All further tracking happens at the WO level.
+    {% endif %}
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- FOOTER                                                 -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="fr-modal-footer">
+
+  <button type="button" class="fr-btn" onclick="closeFaultReportModal()">
+    Close
+  </button>
+
+  <div class="fr-btn-group">
+
+    {% if fr.status == "CONVERTED" %}
+
+    {% elif fr.status == "SUBMITTED" %}
+
+      {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
+        <a href="{% url 'work_orders:fault_report_review' fr.id %}?{{ request.GET.urlencode }}"
+           class="fr-btn fr-btn-primary">
+          <i class="bi bi-pencil-square"></i> Edit / Approve
+        </a>
+      {% elif request.user.role == "supervisor" and request.user.department == fr.reported_department %}
+        <a href="{% url 'work_orders:fault_report_review' fr.id %}?{{ request.GET.urlencode }}"
+           class="fr-btn fr-btn-primary">
+          <i class="bi bi-pencil-square"></i> Edit / Approve
+        </a>
+      {% elif request.user == fr.reported_by %}
+        <a href="{% url 'work_orders:fault_report_review' fr.id %}?{{ request.GET.urlencode }}"
+           class="fr-btn fr-btn-primary">
+          <i class="bi bi-pencil-square"></i> Edit
+        </a>
+      {% endif %}
+
+    {% elif fr.status == "REJECTED" %}
+
+      {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
+        <a href="{% url 'work_orders:fault_report_review' fr.id %}?{{ request.GET.urlencode }}"
+           class="fr-btn fr-btn-primary">
+          <i class="bi bi-pencil-square"></i> Edit
+        </a>
+      {% endif %}
+
+    {% elif fr.status == "APPROVED" %}
+
+      {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
+        <a href="{% url 'work_orders:fault_report_convert' fr.id %}?{{ request.GET.urlencode }}"
+           class="fr-btn fr-btn-warning">
+          <i class="bi bi-pencil-square"></i> Edit / Convert
+        </a>
+      {% elif request.user.role == "supervisor" and request.user.department == fr.reported_department %}
+        <a href="{% url 'work_orders:fault_report_convert' fr.id %}?{{ request.GET.urlencode }}"
+           class="fr-btn fr-btn-primary">
+          <i class="bi bi-pencil-square"></i> Edit
+        </a>
+      {% endif %}
+
+    {% endif %}
+
+  </div>
+</div>
