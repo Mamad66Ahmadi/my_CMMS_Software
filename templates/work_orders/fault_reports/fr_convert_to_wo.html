@@ -23,7 +23,6 @@
         </div>
     </div>
 
-
     <div class="card border border-secondary border-opacity-25 shadow-sm">
         <div class="card-body p-4">
             <form method="post" id="faultReportForm" novalidate>
@@ -74,22 +73,50 @@
                             Equipment
                         </label>
                         {{ form.equipment }}
+                        {% if form.equipment.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.equipment.errors|striptags }}
+                            </div>
+                        {% endif %}
                     </div>
 
                     <!-- Directive -->
-                    <div class="col-md-8">
+                    <div class="col-md-6">
                         <label class="form-label text-uppercase fw-bold text-secondary small">
                             Directive
                         </label>
                         {{ form.directive }}
+                        {% if form.directive.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.directive.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Project Code -->
+                    <div class="col-md-3">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">
+                            Project Code
+                        </label>
+                        {{ form.project_code }}
+                        {% if form.project_code.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.project_code.errors|striptags }}
+                            </div>
+                        {% endif %}
                     </div>
 
                     <!-- Executing Department -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label text-uppercase fw-bold text-secondary small">
                             Executing Department
                         </label>
                         {{ form.executing_department }}
+                        {% if form.executing_department.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.executing_department.errors|striptags }}
+                            </div>
+                        {% endif %}
                     </div>
 
                     <!-- Priority -->
@@ -98,6 +125,11 @@
                             Priority
                         </label>
                         {{ form.priority }}
+                        {% if form.priority.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.priority.errors|striptags }}
+                            </div>
+                        {% endif %}
                     </div>
 
                     <!-- Symptom -->
@@ -106,6 +138,11 @@
                             Symptom
                         </label>
                         {{ form.symptom }}
+                        {% if form.symptom.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.symptom.errors|striptags }}
+                            </div>
+                        {% endif %}
                     </div>
 
                     <!-- Fault Description -->
@@ -114,6 +151,11 @@
                             Fault Description
                         </label>
                         {{ form.fault_desc }}
+                        {% if form.fault_desc.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.fault_desc.errors|striptags }}
+                            </div>
+                        {% endif %}
                     </div>
 
                     <!-- Comment -->

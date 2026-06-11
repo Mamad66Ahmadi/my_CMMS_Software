@@ -12,6 +12,7 @@ class FaultReportAdmin(admin.ModelAdmin):
         "location_tag",
         "equipment",
         "priority",
+        "project_code",
         "reported_by",
         "reported_department",
         "executing_department",
@@ -24,6 +25,7 @@ class FaultReportAdmin(admin.ModelAdmin):
         "status",
         "priority",
         "symptom",
+        "project_code",
         "reported_department",
         "executing_department",
         "reported_at",
@@ -103,7 +105,9 @@ class FaultReportAdmin(admin.ModelAdmin):
             "fields": (
                 "priority",
                 "symptom",
-                 "executing_department",
+                "executing_department",
+                "project_code",
+
             )
         }),
         ("Reporter Information", {
@@ -135,11 +139,16 @@ class FaultReportAdmin(admin.ModelAdmin):
             "REJECTED": "#d9534f",    # red
             "CONVERTED": "#5cb85c",   # green
         }
+        short_labels = {
+            "CONVERTED": "Converted",
+        }
         color = colors.get(obj.status, "#777")
+        label = short_labels.get(obj.status, obj.get_status_display())
+
         return format_html(
             '<span style="color: white; background-color: {}; padding: 3px 8px; border-radius: 8px;">{}</span>',
             color,
-            obj.get_status_display()
+            label
         )
 
     status_badge.short_description = "Status"

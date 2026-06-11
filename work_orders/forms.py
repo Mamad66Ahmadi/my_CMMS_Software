@@ -11,10 +11,11 @@ class FaultReportCreateForm(forms.ModelForm):
             "location_tag",
             "equipment",
             "directive",
+            "project_code",
             "fault_desc",
             "priority",
             "symptom",
-            "executing_department"
+            "executing_department",
         ]
         widgets = {
             "location_tag": forms.HiddenInput(),
@@ -24,6 +25,7 @@ class FaultReportCreateForm(forms.ModelForm):
                 "maxlength": 255,
                 "placeholder": "Enter directive",
             }),
+            "project_code": forms.Select(attrs={"class": "form-select"}),
             "fault_desc": forms.Textarea(attrs={
                 "class": "form-control",
                 "rows": 4,
@@ -41,10 +43,11 @@ class FaultReportCreateForm(forms.ModelForm):
         instance.location_tag = cleaned.get("location_tag")
         instance.equipment = cleaned.get("equipment")
         instance.directive = cleaned.get("directive")
+        instance.project_code = cleaned.get("project_code")
         instance.fault_desc = cleaned.get("fault_desc")
         instance.priority = cleaned.get("priority")
         instance.symptom = cleaned.get("symptom")
-        instance.executing_department = cleaned.get("executing_department") 
+        instance.executing_department = cleaned.get("executing_department")
 
         try:
             instance.full_clean(exclude=[

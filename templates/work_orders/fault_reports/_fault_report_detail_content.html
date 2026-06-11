@@ -7,7 +7,6 @@
             <span class="text-primary">{{ fr.report_number }}</span>
         </h5>
 
-        {# Header note (comment) #}
         <div class="small text-white-50">
             {% if fr.status == "SUBMITTED" %}
                 <i class="bi bi-hourglass-split me-1"></i>
@@ -42,8 +41,6 @@
     <!-- 1️⃣ PRIMARY INFORMATION -->
     <!-- ========================= -->
     <div class="mb-4">
-
-
         <div class="row g-3">
 
             <div class="col-md-2">
@@ -74,9 +71,20 @@
                 </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="text-muted small d-block">Symptom</label>
                 <div class="fw-semibold">{{ fr.symptom|default:"—" }}</div>
+            </div>
+
+            <div class="col-md-2">
+                <label class="text-muted small d-block">Project Code</label>
+                <div class="fw-semibold">
+                    {% if fr.project_code %}
+                        {{ fr.project_code }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </div>
             </div>
 
         </div>
@@ -87,7 +95,6 @@
     <!-- 2️⃣ OWNERSHIP INFO -->
     <!-- ========================= -->
     <div class="mb-4">
-
         <div class="row g-3">
 
             <div class="col-md-2">
@@ -124,9 +131,9 @@
     <!-- ========================= -->
     <div class="col-12">
         <label class="text-muted small d-block">Directive</label>
-        <div class="p-2 bg-light border-start border-4 border-primary rounded" 
-                dir="auto" style="unicode-bidi: plaintext;">
-                {{ fr.directive|default:"—" }}
+        <div class="p-2 bg-light border-start border-4 border-primary rounded"
+             dir="auto" style="unicode-bidi: plaintext;">
+            {{ fr.directive|default:"—" }}
         </div>
     </div>
 
@@ -140,7 +147,7 @@
         </label>
 
         <div class="p-3 bg-light border rounded text-start"
-            dir="auto">
+             dir="auto">
             {{ fr.fault_desc|default:"No description provided." }}
         </div>
     </div>
@@ -158,7 +165,6 @@
 
         <div class="row g-4">
 
-            <!-- Supervisor -->
             <div class="col-md-6">
                 <label class="text-muted small d-block">
                     Reviewed By (Supervisor)
@@ -171,7 +177,6 @@
                 </div>
             </div>
 
-            <!-- Planner -->
             <div class="col-md-6">
                 <label class="text-muted small d-block">
                     Planner
@@ -184,7 +189,6 @@
                 </div>
             </div>
 
-            <!-- Comments -->
             <div class="col-12">
                 <div class="col-12 mt-2">
                     <label class="text-muted small d-block">Review/Rejection Comments</label>
@@ -210,16 +214,8 @@
 
     <div class="d-flex gap-2">
 
-        {# -------------------------------------- #}
-        {# 1️⃣ CONVERTED → NO BUTTONS #}
-        {# -------------------------------------- #}
         {% if fr.status == "CONVERTED" %}
-            {# No buttons #}
 
-
-        {# -------------------------------------- #}
-        {# 2️⃣ SUBMITTED #}
-        {# -------------------------------------- #}
         {% elif fr.status == "SUBMITTED" %}
 
             {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
@@ -248,10 +244,6 @@
 
             {% endif %}
 
-
-        {# -------------------------------------- #}
-        {# 3️⃣ REJECTED #}
-        {# -------------------------------------- #}
         {% elif fr.status == "REJECTED" %}
 
             {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
@@ -264,13 +256,8 @@
 
             {% endif %}
 
-
-        {# -------------------------------------- #}
-        {# 4️⃣ APPROVED #}
-        {# -------------------------------------- #}
         {% elif fr.status == "APPROVED" %}
 
-            {# Planner / Staff / Method #}
             {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
 
                 <a href="{% url 'work_orders:fault_report_convert' fr.id %}?{{ request.GET.urlencode }}"
@@ -279,9 +266,8 @@
                     Edit / Convert
                 </a>
 
-            {# Supervisor of requester department #}
             {% elif request.user.role == "supervisor" and request.user.department == fr.reported_department %}
-            
+
                 <a href="{% url 'work_orders:fault_report_convert' fr.id %}?{{ request.GET.urlencode }}"
                    class="btn btn-primary px-4">
                     <i class="bi bi-pencil-square me-1"></i>

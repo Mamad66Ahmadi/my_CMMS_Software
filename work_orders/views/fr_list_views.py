@@ -9,9 +9,8 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
-
-from work_orders.models.fault_report_models import FaultReport,FaultReportStatus
-
+from work_orders.models.fault_report_models import FaultReport, FaultReportStatus
+from work_orders.models import ProjectCode
 
 # ---------------------------------------------- Filter ------------------------------------------
 def get_filtered_fault_reports(request):
@@ -23,6 +22,7 @@ def get_filtered_fault_reports(request):
         "directive": request.GET.get("directive", "").strip(),
         "priority": request.GET.get("priority", "").strip(),
         "symptom": request.GET.get("symptom", "").strip(),
+        "project_code": request.GET.get("project_code", "").strip(),   # added
         "reported_by": request.GET.get("reported_by", "").strip(),
         "reported_department": request.GET.get("reported_department", "").strip(),
         "executing_department": request.GET.get("executing_department", "").strip(),
@@ -41,6 +41,7 @@ def get_filtered_fault_reports(request):
         "equipment",
         "priority",
         "symptom",
+        "project_code",   # added
         "reported_by",
         "reported_department",
         "executing_department",
@@ -69,6 +70,7 @@ def get_filtered_fault_reports(request):
     queryset = apply_multi_value_filter(queryset, filters["reported_department"], "reported_department__name")
     queryset = apply_multi_value_filter(queryset, filters["planner"], "planner__username")
     queryset = apply_multi_value_filter(queryset, filters["executing_department"], "executing_department__name")
+
     # Unit / Train
     queryset = apply_multi_value_filter(queryset, filters["unit"], "location_tag__unit__unit_code")
     queryset = apply_multi_value_filter(queryset, filters["train"], "location_tag__train")
@@ -80,7 +82,7 @@ def get_filtered_fault_reports(request):
         for val in values:
             q |= Q(directive__icontains=val) | Q(fault_desc__icontains=val)
         queryset = queryset.filter(q)
-        
+
     # Parent Tag logic similar to DailyReport
     if filters["parent_tag"]:
         p_values = [x.strip() for x in filters["parent_tag"].split(",") if x.strip()]
@@ -112,6 +114,9 @@ def get_filtered_fault_reports(request):
     if filters["symptom"]:
         queryset = queryset.filter(symptom_id=filters["symptom"])
 
+    if filters["project_code"]:
+        queryset = queryset.filter(project_code_id=filters["project_code"])
+
     # Date filters
     if filters["date_from"]:
         queryset = queryset.filter(reported_at__date__gte=filters["date_from"])
@@ -120,7 +125,6 @@ def get_filtered_fault_reports(request):
         queryset = queryset.filter(reported_at__date__lte=filters["date_to"])
 
     return queryset, filters
-
 
 
 # ---------------------------------------------------------- List View -----------------------------------------
@@ -141,6 +145,7 @@ class FaultReportList(LoginRequiredMixin, TemplateView):
             "equipment": "equipment__serial_number",
             "priority": "priority__priority_level",
             "symptom": "symptom__symptom_code",
+            "project_code": "project_code__project_code",   # added, adjust field if needed
             "reported_by": "reported_by__username",
             "reported_department": "reported_department__name",
             "executing_department": "executing_department__name",
@@ -179,9 +184,11 @@ class FaultReportList(LoginRequiredMixin, TemplateView):
             "sort_by": sort_by,
             "per_page": per_page,
             "query_params": query_dict.urlencode(),
+            "project_codes": ProjectCode.objects.all().order_by("project_code"),
         })
 
         return context
+
 
 # ------------------------------- Modal Datail View ------------------------------------
 @login_required
@@ -192,6 +199,7 @@ def fault_report_detail_template(request, pk):
             "equipment",
             "priority",
             "symptom",
+            "project_code",   # added
             "reported_by",
             "reported_department",
             "executing_department",
@@ -209,6 +217,7 @@ def fault_report_detail_template(request, pk):
         },
     )
 
+
 # -------------------------------------- Export CSV -------------------------------------------
 class FaultReportExportCSV(LoginRequiredMixin, View):
     def get(self, request):
@@ -223,6 +232,7 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
             "equipment": "equipment__serial_number",
             "priority": "priority__priority_level",
             "symptom": "symptom__symptom_code",
+            "project_code": "project_code__project_code",   # added
             "reported_by": "reported_by__username",
             "reported_department": "reported_department__name",
             "executing_department": "executing_department__name",
@@ -258,6 +268,7 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
             "Equipment Serial",
             "Priority",
             "Symptom",
+            "Project Code",
             "Reported By",
             "Reported Department",
             "Executing Department",
@@ -267,7 +278,7 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
             "Planner",
             "Planner Reviewed At",
             "Directive",
-            "Fault Desc"
+            "Fault Desc",
             "Breakdown",
         ])
 
@@ -282,6 +293,7 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
                 fr.equipment.serial_number if fr.equipment else "",
                 fr.priority.priority_level if fr.priority else "",
                 fr.symptom.symptom_code if fr.symptom else "",
+                fr.project_code.project_code if fr.project_code else "",   # adjust field if needed
                 fr.reported_by.username if fr.reported_by else "",
                 fr.reported_department.name if fr.reported_department else "",
                 fr.executing_department.name if fr.executing_department else "",
@@ -292,9 +304,7 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
                 fr.planner_reviewed_at.strftime("%Y-%m-%d %H:%M") if fr.planner_reviewed_at else "",
                 fr.directive or "",
                 fr.fault_desc or "",
+                "",
             ])
 
         return response
-
-
-

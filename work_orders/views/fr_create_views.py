@@ -6,17 +6,16 @@ from django.shortcuts import redirect, render
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 
-
-from work_orders.models import FaultReport,FaultReportStatus
+from work_orders.models import FaultReport, FaultReportStatus
 from work_orders.forms import FaultReportCreateForm
 from equipment.models import LocationTag
 from work_orders.permissions.fault_report_permissions import FaultReportPermissions as FRP
 
-
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
-#-------------------------------------------------- Fault Create (Stage one) -------------------------------------------
+
+# -------------------------------------------------- Fault Create (Stage one) -------------------------------------------
 class FaultReportCreate(LoginRequiredMixin, CreateView):
     model = FaultReport
     form_class = FaultReportCreateForm
@@ -53,11 +52,12 @@ class FaultReportCreate(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
         obj.reported_department = dept
-
         obj.status = FaultReportStatus.SUBMITTED
-        
+
+        # project_code is saved automatically if included in FaultReportCreateForm
         obj.save()
         self.object = obj
+        form.save_m2m()
 
         action = self.request.POST.get("_save_action")
 
@@ -69,16 +69,13 @@ class FaultReportCreate(LoginRequiredMixin, CreateView):
         return redirect(self.get_success_url())
 
 
-
-
-
 # ------------------------------------- Check for Duplicate Faults or Orders ------------------------------
 class FaultsByLocationPartial(LoginRequiredMixin, View):
     template_name = "work_orders/fault_reports/existing_faults_table.html"
 
     def get(self, request, *args, **kwargs):
         location_tag_id = request.GET.get("location_tag")
-        exclude_fault_id = request.GET.get("exclude_fault_id")  # <-- NEW
+        exclude_fault_id = request.GET.get("exclude_fault_id")
 
         faults = FaultReport.objects.none()
 
@@ -89,10 +86,11 @@ class FaultsByLocationPartial(LoginRequiredMixin, View):
                     location_tag_id=location_tag_id,
                     status__in=["SUBMITTED", "APPROVED"],
                 )
-                .exclude(id=exclude_fault_id)  # <-- NEW: ignore current fault
+                .exclude(id=exclude_fault_id)
                 .select_related(
                     "location_tag",
                     "equipment",
+                    "project_code",
                     "reported_by",
                     "reported_department",
                     "executing_department",
@@ -108,16 +106,12 @@ class FaultsByLocationPartial(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
 
-
-
-
-
-# ----------------------------------------- Supervisor Approve/ Resubmit from reject View
+# ----------------------------------------- Supervisor Approve / Resubmit from reject View
 class FaultReportReviewView(LoginRequiredMixin, UpdateView):
     model = FaultReport
     form_class = FaultReportCreateForm
     template_name = "work_orders/fault_reports/fault_report_review.html"
-    
+
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()
 
@@ -125,7 +119,7 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
             raise PermissionDenied()
 
         return super().dispatch(request, *args, **kwargs)
-    
+
     def form_valid(self, form):
         obj = form.save(commit=False)
 
@@ -141,7 +135,6 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
                 raise PermissionDenied()
 
             obj.resubmit(user)
-
             messages.success(self.request, "Fault report resubmitted.")
             return redirect(self.get_success_url())
 
@@ -152,7 +145,10 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
             form.add_error(None, "Comment is required when rejecting a fault report.")
             return self.form_invalid(form)
 
+        # project_code is saved automatically if included in form
         obj.save()
+        self.object = obj
+        form.save_m2m()
 
         # -----------------------------
         # APPROVE
@@ -181,7 +177,7 @@ class FaultReportReviewView(LoginRequiredMixin, UpdateView):
             messages.success(self.request, "Fault report updated.")
 
         return redirect(self.get_success_url())
-    
+
     def get_success_url(self):
         url = reverse_lazy("work_orders:fault_report_list")
         query = self.request.GET.urlencode()
@@ -206,7 +202,11 @@ class FaultReportConvertView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         obj = form.save(commit=False)
+
+        # project_code is saved automatically if included in form
         obj.save()
+        self.object = obj
+        form.save_m2m()
 
         action = self.request.POST.get("action")
         comment = self.request.POST.get("comment", "").strip()
@@ -216,7 +216,6 @@ class FaultReportConvertView(LoginRequiredMixin, UpdateView):
         # Reject
         # -----------------------------
         if action == "reject":
-
             if not comment:
                 form.add_error(None, "Comment is required when rejecting.")
                 return self.form_invalid(form)
@@ -225,7 +224,6 @@ class FaultReportConvertView(LoginRequiredMixin, UpdateView):
                 raise PermissionDenied()
 
             obj.reject(user, comment)
-
             messages.warning(self.request, "Fault report rejected.")
             return redirect(self.get_success_url())
 
@@ -233,13 +231,10 @@ class FaultReportConvertView(LoginRequiredMixin, UpdateView):
         # Convert
         # -----------------------------
         elif action == "convert":
-
             if not FRP.can_convert_action(user, obj):
                 raise PermissionDenied()
 
             obj.mark_converted(user)
-
-
             messages.success(self.request, "Fault report converted to Work Order.")
             return redirect(self.get_success_url())
 
@@ -249,7 +244,6 @@ class FaultReportConvertView(LoginRequiredMixin, UpdateView):
         else:
             messages.success(self.request, "Fault report updated.")
             return redirect(self.get_success_url())
-
 
     def get_success_url(self):
         url = reverse_lazy("work_orders:fault_report_list")

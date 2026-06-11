@@ -19,14 +19,14 @@
             </h1>
 
             <a href="{% url 'work_orders:fault_report_add' %}"
-            class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+               class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
                 <i class="bi bi-plus-lg me-1"></i>Add New
             </a>
         </div>
 
         <div>
             <a href="{% url 'work_orders:fault_report_export_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-            class="btn btn-sm btn-outline-success px-4 text-uppercase fw-bold shadow-sm">
+               class="btn btn-sm btn-outline-success px-4 text-uppercase fw-bold shadow-sm">
                 <i class="bi bi-download me-1"></i>Export CSV
             </a>
         </div>
@@ -49,12 +49,11 @@
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".fault-report-row").forEach(row => {
         row.addEventListener("click", function () {
-
             const baseUrl = this.dataset.detailUrl;
             if (!baseUrl) return;
 
-            const query = window.location.search;   // ✅ get list filters
-            const detailUrl = baseUrl + query;      // ✅ append filters
+            const query = window.location.search;
+            const detailUrl = baseUrl + query;
 
             fetch(detailUrl)
                 .then(res => {

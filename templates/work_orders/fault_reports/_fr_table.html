@@ -10,14 +10,10 @@
             {% include "daily_reports/dr_list/_table_header.html" with column="equipment" label="Equipment (Serial)" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="priority" label="Priority" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="symptom" label="Symptom" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="project_code" label="Project Code" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
-
-            <!-- Reporting Department -->
             {% include "daily_reports/dr_list/_table_header.html" with column="reported_department" label="Reporting Dep." sort_by=sort_by query_params=query_params %}
-
-            <!-- Executing Department (NEW) -->
             {% include "daily_reports/dr_list/_table_header.html" with column="executing_department" label="Executing Dep." sort_by=sort_by query_params=query_params %}
-
             {% include "daily_reports/dr_list/_table_header.html" with column="reported_by" label="Reported By" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="reviewed_by" label="Reviewed By" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="planner" label="Planner" sort_by=sort_by query_params=query_params %}
@@ -35,13 +31,13 @@
 
             <td>
                 {% if fr.status == "SUBMITTED" %}
-                    <span class="status-badge status-waiting">Submitted</span>
+                    <span class="status-badge status-waiting" title="Submitted">Submitted</span>
                 {% elif fr.status == "APPROVED" %}
-                    <span class="status-badge status-ongoing">Approved</span>
+                    <span class="status-badge status-ongoing" title="Approved">Approved</span>
                 {% elif fr.status == "REJECTED" %}
-                    <span class="status-badge bg-danger text-white">Rejected</span>
+                    <span class="status-badge bg-danger text-white" title="Rejected">Rejected</span>
                 {% elif fr.status == "CONVERTED" %}
-                    <span class="status-badge status-completed">Converted</span>
+                    <span class="status-badge status-completed" title="Converted">Converted</span>
                 {% else %}
                     {{ fr.get_status_display }}
                 {% endif %}
@@ -68,11 +64,18 @@
             <td>{{ fr.priority|default:"-" }}</td>
             <td>{{ fr.symptom|default:"-" }}</td>
 
+            <td>
+                {% if fr.project_code %}
+                    {{ fr.project_code }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
             <td class="persian-text">
                 <bdi>{{ fr.directive|default:"-"|truncatechars:80 }}</bdi>
             </td>
 
-            <!-- Reporting Department -->
             <td>
                 {% if fr.reported_department %}
                     {{ fr.reported_department.name }}
@@ -81,7 +84,6 @@
                 {% endif %}
             </td>
 
-            <!-- Executing Department -->
             <td>
                 {% if fr.executing_department %}
                     {{ fr.executing_department.name }}

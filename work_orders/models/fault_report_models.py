@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from equipment.models.equipment_models import LocationTag, Equipment
-from work_orders.models.base_models import Priority, Symptom
+from work_orders.models.base_models import Priority, Symptom,ProjectCode
 from work_orders.models.sequences import DocumentSequence
 
 User = get_user_model()
@@ -27,6 +27,7 @@ class FaultReport(models.Model):
 
     priority = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True, blank=True, related_name="fault_reports")
     symptom = models.ForeignKey(Symptom, on_delete=models.SET_NULL, null=True, blank=True, related_name="fault_reports")
+    project_code = models.ForeignKey(ProjectCode, on_delete=models.SET_NULL, null=True, blank=True, related_name="fault_reports")
 
     executing_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="fault_executing_dep")
     # Workflow Metadata

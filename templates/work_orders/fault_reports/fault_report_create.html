@@ -70,7 +70,7 @@
                     </div>
 
                     <!-- Directive -->
-                    <div class="col-md-8">
+                    <div class="col-md-6">
                         <label class="form-label text-uppercase fw-bold text-secondary small">
                             Directive <span class="mandatory-star">*</span>
                         </label>
@@ -81,8 +81,22 @@
                             </div>
                         {% endif %}
                     </div>
+
+                    <!-- Project Code -->
+                    <div class="col-md-3">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">
+                            Project Code
+                        </label>
+                        {{ form.project_code }}
+                        {% if form.project_code.errors %}
+                            <div class="text-danger extra-small mt-1">
+                                {{ form.project_code.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
                     <!-- Executing Department -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label text-uppercase fw-bold text-secondary small">
                             Executing Department <span class="mandatory-star">*</span>
                         </label>
@@ -306,6 +320,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
 
 {% endblock %}
