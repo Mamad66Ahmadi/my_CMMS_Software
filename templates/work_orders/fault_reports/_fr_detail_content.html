@@ -1,5 +1,24 @@
 {% load static %}
 
+<style>
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .section-title .title-text {
+        white-space: nowrap;
+    }
+
+    .section-title .title-line {
+        flex: 1;
+        height: 1px;
+        background-color: #d6dbe1;
+    }
+</style>
+
 <div class="modal-header bg-dark text-white border-bottom">
     <div class="d-flex flex-column">
         <h5 class="modal-title fw-bold mb-1">
@@ -37,23 +56,49 @@
 
 <div class="modal-body p-4">
 
-    <!-- ========================= -->
-    <!-- 1️⃣ PRIMARY INFORMATION -->
-    <!-- ========================= -->
+    <!-- 1️⃣ ASSET / FAULT REFERENCE -->
     <div class="mb-4">
-        <div class="row g-3">
+        <div class="section-title">
+            <h6 class="title-text text-uppercase text-secondary fw-bold small mb-0">
+                Asset / Fault Reference
+            </h6>
+            <div class="title-line"></div>
+        </div>
 
-            <div class="col-md-2">
+        <div class="row g-3">
+            <div class="col-md-3">
                 <label class="text-muted small d-block">Location Tag</label>
                 <div class="fw-semibold">{{ fr.location_tag.loc_tag|default:"—" }}</div>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label class="text-muted small d-block">Equipment</label>
                 <div class="fw-semibold">{{ fr.equipment.serial_number|default:"—" }}</div>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Project Code</label>
+                <div class="fw-semibold">{{ fr.project_code|default:"—" }}</div>
+            </div>
+
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Parent Work Order No.</label>
+                <div class="fw-semibold">{{ fr.parent_work_order_number|default:"—" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2️⃣ FAULT CLASSIFICATION -->
+    <div class="mb-4">
+        <div class="section-title">
+            <h6 class="title-text text-uppercase text-secondary fw-bold small mb-0">
+                Fault Classification
+            </h6>
+            <div class="title-line"></div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-3">
                 <label class="text-muted small d-block">Status</label>
                 <span class="badge 
                     {% if fr.status == 'CONVERTED' %}bg-success
@@ -64,145 +109,129 @@
                 </span>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label class="text-muted small d-block">Priority</label>
-                <div class="fw-bold {% if fr.priority.priority_level <= 2 %}text-danger{% endif %}">
+                <div class="fw-bold {% if fr.priority and fr.priority.priority_level <= 2 %}text-danger{% endif %}">
                     {{ fr.priority|default:"—" }}
                 </div>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label class="text-muted small d-block">Symptom</label>
                 <div class="fw-semibold">{{ fr.symptom|default:"—" }}</div>
             </div>
 
-            <div class="col-md-2">
-                <label class="text-muted small d-block">Project Code</label>
-                <div class="fw-semibold">
-                    {% if fr.project_code %}
-                        {{ fr.project_code }}
-                    {% else %}
-                        —
-                    {% endif %}
-                </div>
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Detection Method</label>
+                <div class="fw-semibold">{{ fr.detection_method|default:"—" }}</div>
             </div>
 
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Work Type</label>
+                <div class="fw-semibold">{{ fr.work_type|default:"—" }}</div>
+            </div>
         </div>
     </div>
 
-
-    <!-- ========================= -->
-    <!-- 2️⃣ OWNERSHIP INFO -->
-    <!-- ========================= -->
+    <!-- 3️⃣ DEPARTMENT / REPORTING INFO -->
     <div class="mb-4">
-        <div class="row g-3">
+        <div class="section-title">
+            <h6 class="title-text text-uppercase text-secondary fw-bold small mb-0">
+                Department / Reporting Info
+            </h6>
+            <div class="title-line"></div>
+        </div>
 
-            <div class="col-md-2">
-                <label class="text-muted small d-block">Reporting Dep.</label>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Reporting Department</label>
                 <div class="fw-semibold">{{ fr.reported_department.name|default:"—" }}</div>
             </div>
 
-            <div class="col-md-2">
-                <label class="text-muted small d-block">Executing Dep.</label>
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Executing Department</label>
                 <div class="fw-semibold">{{ fr.executing_department.name|default:"—" }}</div>
-            </div>
-
-            <div class="col-md-2">
-                <label class="text-muted small d-block">Reported At</label>
-                <div class="fw-semibold">
-                    {{ fr.reported_at|date:"Y-m-d H:i"|default:"—" }}
-                </div>
             </div>
 
             <div class="col-md-3">
                 <label class="text-muted small d-block">Reported By</label>
-                <div class="fw-semibold">
-                    {{ fr.reported_by.username|default:"—" }}
-                </div>
+                <div class="fw-semibold">{{ fr.reported_by.username|default:"—" }}</div>
             </div>
 
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Reported At</label>
+                <div class="fw-semibold">{{ fr.reported_at|date:"Y-m-d H:i"|default:"—" }}</div>
+            </div>
         </div>
     </div>
 
-
-
-    <!-- ========================= -->
-    <!-- 3️⃣ DIRECTIVE -->
-    <!-- ========================= -->
-    <div class="col-12">
-        <label class="text-muted small d-block">Directive</label>
-        <div class="p-2 bg-light border-start border-4 border-primary rounded"
-             dir="auto" style="unicode-bidi: plaintext;">
-            {{ fr.directive|default:"—" }}
+    <!-- 4️⃣ FAULT CONTENT -->
+    <div class="mb-4">
+        <div class="section-title">
+            <h6 class="title-text text-uppercase text-secondary fw-bold small mb-0">
+                Fault Content
+            </h6>
+            <div class="title-line"></div>
         </div>
-    </div>
 
+        <div class="mb-3">
+            <label class="text-muted small d-block">Directive</label>
+            <div class="p-2 bg-light border-start border-4 border-primary rounded"
+                 dir="auto" style="unicode-bidi: plaintext;">
+                {{ fr.directive|default:"—" }}
+            </div>
+        </div>
 
-    <!-- ========================= -->
-    <!-- 4️⃣ FAULT DESCRIPTION -->
-    <!-- ========================= -->
-    <div class="col-12 mt-3">
-        <label class="text-muted small d-block mb-1">
-            Reported Fault Description
-        </label>
-
-        <div class="p-3 bg-light border rounded text-start"
-             dir="auto">
-            {{ fr.fault_desc|default:"No description provided." }}
+        <div>
+            <label class="text-muted small d-block mb-1">Reported Fault Description</label>
+            <div class="p-3 bg-light border rounded text-start" dir="auto">
+                {{ fr.fault_desc|default:"No description provided." }}
+            </div>
         </div>
     </div>
 
     <hr class="my-4">
 
-
-    <!-- ========================= -->
-    <!-- 5️⃣ REVIEW SECTION -->
-    <!-- ========================= -->
+    <!-- 5️⃣ REVIEW / PLANNING -->
     <div>
-        <h6 class="text-uppercase text-secondary fw-bold small mb-3">
-            Review & Planning
-        </h6>
+        <div class="section-title">
+            <h6 class="title-text text-uppercase text-secondary fw-bold small mb-0">
+                Review & Planning
+            </h6>
+            <div class="title-line"></div>
+        </div>
 
         <div class="row g-4">
-
-            <div class="col-md-6">
-                <label class="text-muted small d-block">
-                    Reviewed By (Supervisor)
-                </label>
-                <div class="fw-semibold">
-                    {{ fr.reviewed_by.username|default:"—" }}
-                </div>
-                <div class="text-muted small">
-                    {{ fr.reviewed_at|date:"Y-m-d H:i"|default:"" }}
-                </div>
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Reviewed By (Supervisor)</label>
+                <div class="fw-semibold">{{ fr.reviewed_by.username|default:"—" }}</div>
             </div>
 
-            <div class="col-md-6">
-                <label class="text-muted small d-block">
-                    Planner
-                </label>
-                <div class="fw-semibold">
-                    {{ fr.planner.username|default:"—" }}
-                </div>
-                <div class="text-muted small">
-                    {{ fr.planner_reviewed_at|date:"Y-m-d H:i"|default:"" }}
-                </div>
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Reviewed At</label>
+                <div class="text-muted">{{ fr.reviewed_at|date:"Y-m-d H:i"|default:"—" }}</div>
+            </div>
+
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Planner</label>
+                <div class="fw-semibold">{{ fr.planner.username|default:"—" }}</div>
+            </div>
+
+            <div class="col-md-3">
+                <label class="text-muted small d-block">Planner Reviewed At</label>
+                <div class="text-muted">{{ fr.planner_reviewed_at|date:"Y-m-d H:i"|default:"—" }}</div>
             </div>
 
             <div class="col-12">
-                <div class="col-12 mt-2">
-                    <label class="text-muted small d-block">Review/Rejection Comments</label>
-                    <div class="p-2 border rounded bg-white text-muted" dir="auto" style="font-style: italic;">
-                        {{ fr.review_comment|default:"No comments." }}
-                    </div>
+                <label class="text-muted small d-block">Review / Rejection Comments</label>
+                <div class="p-2 border rounded bg-white text-muted" dir="auto" style="font-style: italic;">
+                    {{ fr.review_comment|default:"No comments." }}
                 </div>
             </div>
-
         </div>
     </div>
 
 </div>
-
 
 <div class="modal-footer bg-light border-top justify-content-between align-items-center">
 

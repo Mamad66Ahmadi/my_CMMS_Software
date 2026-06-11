@@ -10,7 +10,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
 from work_orders.models.fault_report_models import FaultReport, FaultReportStatus
-from work_orders.models import ProjectCode
+from work_orders.models import ProjectCode, DetectionMethod, WorkType
+
 
 # ---------------------------------------------- Filter ------------------------------------------
 def get_filtered_fault_reports(request):
@@ -22,7 +23,9 @@ def get_filtered_fault_reports(request):
         "directive": request.GET.get("directive", "").strip(),
         "priority": request.GET.get("priority", "").strip(),
         "symptom": request.GET.get("symptom", "").strip(),
-        "project_code": request.GET.get("project_code", "").strip(),   # added
+        "project_code": request.GET.get("project_code", "").strip(),
+        "detection_method": request.GET.get("detection_method", "").strip(),
+        "work_type": request.GET.get("work_type", "").strip(),
         "reported_by": request.GET.get("reported_by", "").strip(),
         "reported_department": request.GET.get("reported_department", "").strip(),
         "executing_department": request.GET.get("executing_department", "").strip(),
@@ -41,7 +44,9 @@ def get_filtered_fault_reports(request):
         "equipment",
         "priority",
         "symptom",
-        "project_code",   # added
+        "project_code",
+        "detection_method",
+        "work_type",
         "reported_by",
         "reported_department",
         "executing_department",
@@ -117,6 +122,12 @@ def get_filtered_fault_reports(request):
     if filters["project_code"]:
         queryset = queryset.filter(project_code_id=filters["project_code"])
 
+    if filters["detection_method"]:
+        queryset = queryset.filter(detection_method_id=filters["detection_method"])
+
+    if filters["work_type"]:
+        queryset = queryset.filter(work_type_id=filters["work_type"])
+
     # Date filters
     if filters["date_from"]:
         queryset = queryset.filter(reported_at__date__gte=filters["date_from"])
@@ -129,7 +140,7 @@ def get_filtered_fault_reports(request):
 
 # ---------------------------------------------------------- List View -----------------------------------------
 class FaultReportList(LoginRequiredMixin, TemplateView):
-    template_name = "work_orders/fault_reports/fault_report_list.html"
+    template_name = "work_orders/fault_reports/fr_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -145,7 +156,9 @@ class FaultReportList(LoginRequiredMixin, TemplateView):
             "equipment": "equipment__serial_number",
             "priority": "priority__priority_level",
             "symptom": "symptom__symptom_code",
-            "project_code": "project_code__project_code",   # added, adjust field if needed
+            "project_code": "project_code__project_code",
+            "detection_method": "detection_method__detection_code",
+            "work_type": "work_type__work_type_code",
             "reported_by": "reported_by__username",
             "reported_department": "reported_department__name",
             "executing_department": "executing_department__name",
@@ -185,12 +198,14 @@ class FaultReportList(LoginRequiredMixin, TemplateView):
             "per_page": per_page,
             "query_params": query_dict.urlencode(),
             "project_codes": ProjectCode.objects.all().order_by("project_code"),
+            "detection_methods": DetectionMethod.objects.all().order_by("detection_code"),
+            "work_types": WorkType.objects.all().order_by("work_type_code"),
         })
 
         return context
 
 
-# ------------------------------- Modal Datail View ------------------------------------
+# ------------------------------- Modal Detail View ------------------------------------
 @login_required
 def fault_report_detail_template(request, pk):
     fr = get_object_or_404(
@@ -199,7 +214,9 @@ def fault_report_detail_template(request, pk):
             "equipment",
             "priority",
             "symptom",
-            "project_code",   # added
+            "project_code",
+            "detection_method",
+            "work_type",
             "reported_by",
             "reported_department",
             "executing_department",
@@ -211,7 +228,7 @@ def fault_report_detail_template(request, pk):
 
     return render(
         request,
-        "work_orders/fault_reports/_fault_report_detail_content.html",
+        "work_orders/fault_reports/_fr_detail_content.html",
         {
             "fr": fr,
         },
@@ -232,7 +249,9 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
             "equipment": "equipment__serial_number",
             "priority": "priority__priority_level",
             "symptom": "symptom__symptom_code",
-            "project_code": "project_code__project_code",   # added
+            "project_code": "project_code__project_code",
+            "detection_method": "detection_method__detection_code",
+            "work_type": "work_type__work_type_code",
             "reported_by": "reported_by__username",
             "reported_department": "reported_department__name",
             "executing_department": "executing_department__name",
@@ -269,6 +288,8 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
             "Priority",
             "Symptom",
             "Project Code",
+            "Detection Method",
+            "Work Type",
             "Reported By",
             "Reported Department",
             "Executing Department",
@@ -293,7 +314,9 @@ class FaultReportExportCSV(LoginRequiredMixin, View):
                 fr.equipment.serial_number if fr.equipment else "",
                 fr.priority.priority_level if fr.priority else "",
                 fr.symptom.symptom_code if fr.symptom else "",
-                fr.project_code.project_code if fr.project_code else "",   # adjust field if needed
+                fr.project_code.project_code if fr.project_code else "",
+                fr.detection_method.detection_code if fr.detection_method else "",
+                fr.work_type.work_type_code if fr.work_type else "",
                 fr.reported_by.username if fr.reported_by else "",
                 fr.reported_department.name if fr.reported_department else "",
                 fr.executing_department.name if fr.executing_department else "",

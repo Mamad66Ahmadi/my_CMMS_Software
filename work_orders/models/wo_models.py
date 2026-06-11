@@ -6,8 +6,8 @@
 # from django.core.exceptions import ValidationError
 
 # from work_orders.models.base_models import *
-# from work_orders.models.status_models import *
-# from equipment.models.equipment_models import LocationTag
+# from work_orders.models.wo_status_models import *
+# from equipment.models.equipment_models import LocationTag,Equipment
 
 # # ----------------------    Getting user model object    ----------------------------------
 # User = get_user_model()
@@ -20,6 +20,8 @@
     
 #     # Scope & Location (Static for all tasks)
 #     location_tag = models.ForeignKey(LocationTag, on_delete=models.PROTECT, related_name="work_orders")
+#     equipment = models.ForeignKey(Equipment, on_delete=models.PROTECT, related_name="fault_reports", null=True, blank=True)
+
 #     work_type = models.ForeignKey(WorkType, on_delete=models.PROTECT, related_name="work_orders")
 #     priority = models.ForeignKey(Priority, on_delete=models.PROTECT, related_name="work_orders")
 #     project_code = models.ForeignKey(ProjectCode, on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders")

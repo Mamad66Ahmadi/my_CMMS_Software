@@ -19,7 +19,7 @@ User = get_user_model()
 class FaultReportCreate(LoginRequiredMixin, CreateView):
     model = FaultReport
     form_class = FaultReportCreateForm
-    template_name = "work_orders/fault_reports/fault_report_create.html"
+    template_name = "work_orders/fault_reports/fr_create.html"
     success_url = reverse_lazy("work_orders:fault_report_list")
 
     def get_context_data(self, **kwargs):
@@ -110,7 +110,7 @@ class FaultsByLocationPartial(LoginRequiredMixin, View):
 class FaultReportReviewView(LoginRequiredMixin, UpdateView):
     model = FaultReport
     form_class = FaultReportCreateForm
-    template_name = "work_orders/fault_reports/fault_report_review.html"
+    template_name = "work_orders/fault_reports/fr_review.html"
 
     def dispatch(self, request, *args, **kwargs):
         self.object = self.get_object()

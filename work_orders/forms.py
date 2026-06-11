@@ -12,6 +12,9 @@ class FaultReportCreateForm(forms.ModelForm):
             "equipment",
             "directive",
             "project_code",
+            "detection_method",
+            "work_type",
+            "parent_work_order_number",
             "fault_desc",
             "priority",
             "symptom",
@@ -26,6 +29,13 @@ class FaultReportCreateForm(forms.ModelForm):
                 "placeholder": "Enter directive",
             }),
             "project_code": forms.Select(attrs={"class": "form-select"}),
+            "detection_method": forms.Select(attrs={"class": "form-select"}),
+            "work_type": forms.Select(attrs={"class": "form-select"}),
+            "parent_work_order_number": forms.TextInput(attrs={
+                "class": "form-control",
+                "maxlength": 30,
+                "placeholder": "Enter parent work order number (optional)",
+            }),
             "fault_desc": forms.Textarea(attrs={
                 "class": "form-control",
                 "rows": 4,
@@ -44,6 +54,9 @@ class FaultReportCreateForm(forms.ModelForm):
         instance.equipment = cleaned.get("equipment")
         instance.directive = cleaned.get("directive")
         instance.project_code = cleaned.get("project_code")
+        instance.detection_method = cleaned.get("detection_method")
+        instance.work_type = cleaned.get("work_type")
+        instance.parent_work_order_number = cleaned.get("parent_work_order_number")
         instance.fault_desc = cleaned.get("fault_desc")
         instance.priority = cleaned.get("priority")
         instance.symptom = cleaned.get("symptom")

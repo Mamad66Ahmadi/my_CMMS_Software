@@ -11,6 +11,8 @@
             {% include "daily_reports/dr_list/_table_header.html" with column="priority" label="Priority" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="symptom" label="Symptom" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="project_code" label="Project Code" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="detection_method" label="Detection Method" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="work_type" label="Work Type" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="reported_department" label="Reporting Dep." sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="executing_department" label="Executing Dep." sort_by=sort_by query_params=query_params %}
@@ -67,6 +69,22 @@
             <td>
                 {% if fr.project_code %}
                     {{ fr.project_code }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.detection_method %}
+                    {{ fr.detection_method }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>
+                {% if fr.work_type %}
+                    {{ fr.work_type }}
                 {% else %}
                     -
                 {% endif %}

@@ -10,6 +10,7 @@ from work_orders.models.base_models import (
     AwaitingReason,
     ProjectCode,
     PerformedAction,
+    DetectionMethod,
 )
 
 
@@ -147,6 +148,22 @@ class PerformedActionAdmin(TimeStampedAdminMixin):
     fields = (
         "action_code",
         "action_desc",
+        "is_active",
+        "created_at",
+        "created_by",
+        "modified_at",
+        "modified_by",
+    )
+
+@admin.register(DetectionMethod)
+class DetectionMethodAdmin(TimeStampedAdminMixin):
+    list_display = ("detection_code", "detection_desc", "is_active", "created_at", "modified_at")
+    list_display_links = ("detection_code",)
+    search_fields = ("detection_code", "detection_desc")
+    ordering = ("detection_code",)
+    fields = (
+        "detection_code",
+        "detection_desc",
         "is_active",
         "created_at",
         "created_by",

@@ -12,7 +12,11 @@ class FaultReportAdmin(admin.ModelAdmin):
         "location_tag",
         "equipment",
         "priority",
+        "symptom",
         "project_code",
+        "detection_method",
+        "work_type",
+        "parent_work_order_number",
         "reported_by",
         "reported_department",
         "executing_department",
@@ -26,6 +30,8 @@ class FaultReportAdmin(admin.ModelAdmin):
         "priority",
         "symptom",
         "project_code",
+        "detection_method",
+        "work_type",
         "reported_department",
         "executing_department",
         "reported_at",
@@ -37,6 +43,7 @@ class FaultReportAdmin(admin.ModelAdmin):
         "report_number",
         "directive",
         "fault_desc",
+        "parent_work_order_number",
         "location_tag__loc_tag",
         "equipment__serial_number",
         "reported_by__username",
@@ -50,6 +57,9 @@ class FaultReportAdmin(admin.ModelAdmin):
         "planner__last_name",
         "review_comment",
         "executing_department__name",
+        "project_code__project_code",
+        "detection_method__detection_code",
+        "work_type__work_type_code",
     )
 
     autocomplete_fields = (
@@ -57,6 +67,9 @@ class FaultReportAdmin(admin.ModelAdmin):
         "equipment",
         "priority",
         "symptom",
+        "project_code",
+        "detection_method",
+        "work_type",
         "reported_by",
         "reported_department",
         "executing_department",
@@ -76,9 +89,12 @@ class FaultReportAdmin(admin.ModelAdmin):
         "equipment",
         "priority",
         "symptom",
+        "project_code",
+        "detection_method",
+        "work_type",
         "reported_by",
         "reported_department",
-        "executing_department", 
+        "executing_department",
         "reviewed_by",
         "planner",
     )
@@ -105,9 +121,11 @@ class FaultReportAdmin(admin.ModelAdmin):
             "fields": (
                 "priority",
                 "symptom",
-                "executing_department",
                 "project_code",
-
+                "detection_method",
+                "work_type",
+                "parent_work_order_number",
+                "executing_department",
             )
         }),
         ("Reporter Information", {

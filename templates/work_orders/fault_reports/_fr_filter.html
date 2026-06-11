@@ -1,10 +1,52 @@
 <h5>Filter Pane</h5>
 
+<style>
+    .filter-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        align-items: flex-end;
+        width: 100%;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .filter-group-sm {
+        flex: 0.6 1 0;
+    }
+
+    .filter-group-xs {
+        flex: 0.45 1 0;
+    }
+
+    .filter-group-wide {
+        flex: 2 1 0;
+    }
+
+    .filter-input {
+        width: 100%;
+    }
+
+    .filter-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        flex: 0.9 1 0;
+        justify-content: flex-end;
+        min-width: max-content;
+    }
+</style>
+
 <form method="get" action="">
     <div class="filter-bar" style="display: flex; flex-direction: column; gap: 15px;">
 
         <!-- FIRST LINE -->
-        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+        <div class="filter-row">
 
             <div class="filter-group">
                 <label class="filter-label">Report Number</label>
@@ -50,6 +92,10 @@
                        placeholder="CBM, Fix..."
                        value="{{ filters.executing_department }}">
             </div>
+        </div>
+
+        <!-- SECOND LINE -->
+        <div class="filter-row">
 
             <div class="filter-group">
                 <label class="filter-label">Project Code</label>
@@ -63,16 +109,29 @@
                 </select>
             </div>
 
-            <div class="filter-group" style="flex-grow: 1; min-width: 250px;">
-                <label class="filter-label">Directive/Description</label>
-                <input type="text" name="directive" class="filter-input" style="width: 100%;"
-                       placeholder="Leak, vibration..."
-                       value="{{ filters.directive }}">
+            <div class="filter-group">
+                <label class="filter-label">Detection Method</label>
+                <select name="detection_method" class="filter-input">
+                    <option value="">All</option>
+                    {% for dm in detection_methods %}
+                        <option value="{{ dm.id }}" {% if filters.detection_method == dm.id|stringformat:"s" %}selected{% endif %}>
+                            {{ dm }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
-        </div>
 
-        <!-- SECOND LINE -->
-        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+            <div class="filter-group">
+                <label class="filter-label">Work Type</label>
+                <select name="work_type" class="filter-input">
+                    <option value="">All</option>
+                    {% for wt in work_types %}
+                        <option value="{{ wt.id }}" {% if filters.work_type == wt.id|stringformat:"s" %}selected{% endif %}>
+                            {{ wt }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
 
             <div class="filter-group">
                 <label class="filter-label">Location Tag</label>
@@ -88,19 +147,23 @@
                        value="{{ filters.parent_tag }}">
             </div>
 
-            <div class="filter-group" style="width: 100px;">
+            <div class="filter-group filter-group-sm">
                 <label class="filter-label">Unit</label>
                 <input type="text" name="unit" class="filter-input"
                        placeholder="103, 110..."
                        value="{{ filters.unit }}">
             </div>
 
-            <div class="filter-group" style="width: 80px;">
+            <div class="filter-group filter-group-xs">
                 <label class="filter-label">Train</label>
                 <input type="text" name="train" class="filter-input"
                        placeholder="1"
                        value="{{ filters.train }}">
             </div>
+        </div>
+
+        <!-- THIRD LINE -->
+        <div class="filter-row">
 
             <div class="filter-group">
                 <label class="filter-label">Equipment Serial</label>
@@ -123,7 +186,14 @@
                        value="{{ filters.planner }}">
             </div>
 
-            <div class="filter-group">
+            <div class="filter-group filter-group-wide">
+                <label class="filter-label">Directive/Description</label>
+                <input type="text" name="directive" class="filter-input"
+                       placeholder="Leak, vibration..."
+                       value="{{ filters.directive }}">
+            </div>
+
+            <div class="filter-group filter-group-sm">
                 <label class="filter-label">Rows Per Page</label>
                 <select name="per_page" class="filter-input">
                     <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
@@ -133,13 +203,13 @@
                 </select>
             </div>
 
-            <div class="filter-actions" style="margin-left: auto; display: flex; gap: 8px;">
+            <div class="filter-actions">
                 <button type="submit"
                         class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
                     Apply
                 </button>
 
-                {% if filters.report_number or filters.date_from or filters.date_to or filters.status or filters.reported_department or filters.executing_department or filters.project_code or filters.directive or filters.location_tag or filters.parent_tag or filters.unit or filters.train or filters.equipment or filters.reported_by or filters.planner %}
+                {% if filters.report_number or filters.date_from or filters.date_to or filters.status or filters.reported_department or filters.executing_department or filters.project_code or filters.detection_method or filters.work_type or filters.directive or filters.location_tag or filters.parent_tag or filters.unit or filters.train or filters.equipment or filters.reported_by or filters.planner %}
                     <a href="{% url 'work_orders:fault_report_list' %}" class="btn btn-outline-secondary btn-sm">
                         Clear All
                     </a>

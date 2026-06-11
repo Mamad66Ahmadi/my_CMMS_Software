@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Convert Fault Report{% endblock %}
+{% block title %}Report a Fault{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
@@ -27,18 +27,8 @@
 <div class="container py-4">
     <div class="mb-3 d-flex justify-content-between align-items-end flex-wrap gap-3">
         <div>
-            <h4 class="fw-bold text-dark mb-1">
-                Convert Fault Report: {{ object.report_number }}
-            </h4>
-            <div class="d-flex align-items-center gap-2">
-                <p class="text-muted small mb-0">Edit the report or convert it to a Work Order.</p>
-
-                {% if object.status == "APPROVED" %}
-                    <span class="badge bg-success text-uppercase font-monospace px-2 py-1 small">
-                        Approved
-                    </span>
-                {% endif %}
-            </div>
+            <h4 class="fw-bold text-dark mb-1">Report a Fault:</h4>
+            <p class="text-muted small mb-0">Fill in the fault details and submit a new report.</p>
         </div>
     </div>
 
@@ -63,7 +53,7 @@
                     </div>
 
                     <div class="row g-3">
-                        <!-- Location Tag -->
+                        <!-- Location Tag Autocomplete -->
                         <div class="col-md-6">
                             <div class="position-relative">
                                 <label class="form-label text-uppercase fw-bold text-secondary small">
@@ -77,12 +67,12 @@
                                     placeholder="Search for tag (e.g. 103-K-101)..."
                                     autocomplete="off"
                                     data-autocomplete-url="/equipment/locationtag-autocomplete/"
-                                    value="{{ object.location_tag.loc_tag|default:'' }}"
+                                    value="{{ location.loc_tag|default:'' }}"
                                 >
 
                                 <div id="location-results-container"
                                      class="list-group mt-1 shadow-lg position-absolute w-100"
-                                     style="z-index:1050;"></div>
+                                     style="z-index: 1050;"></div>
 
                                 {{ form.location_tag }}
 
@@ -122,7 +112,7 @@
                         <!-- Directive -->
                         <div class="col-md-6">
                             <label class="form-label text-uppercase fw-bold text-secondary small">
-                                Directive
+                                Directive <span class="mandatory-star">*</span>
                             </label>
                             {{ form.directive }}
                             {% if form.directive.errors %}
@@ -187,7 +177,7 @@
                         <!-- Executing Department -->
                         <div class="col-md-3">
                             <label class="form-label text-uppercase fw-bold text-secondary small">
-                                Executing Department
+                                Executing Department <span class="mandatory-star">*</span>
                             </label>
                             {{ form.executing_department }}
                             {% if form.executing_department.errors %}
@@ -250,7 +240,7 @@
                         <!-- Fault Description -->
                         <div class="col-12">
                             <label class="form-label text-uppercase fw-bold text-secondary small">
-                                Fault Description
+                                Fault Description <span class="mandatory-star">*</span>
                             </label>
                             {{ form.fault_desc }}
                             {% if form.fault_desc.errors %}
@@ -262,112 +252,53 @@
                     </div>
                 </div>
 
-                <!-- 5️⃣ REVIEW ACTION NOTES -->
-                <div class="mb-4">
-                    <div class="section-title">
-                        <h6 class="title-text text-uppercase text-secondary fw-bold small mb-0">
-                            Review Action Notes
-                        </h6>
-                        <div class="title-line"></div>
-                    </div>
-
-                    <div class="row g-3">
-                        <!-- Comment -->
-                        <div class="col-12">
-                            <label class="form-label text-uppercase fw-bold text-secondary small">
-                                Review / Rejection Comment
-                            </label>
-                            <textarea name="comment"
-                                      id="reject-comment"
-                                      class="form-control"
-                                      rows="3"
-                                      placeholder="Required if rejecting.">{% if object.review_comment %}{{ object.review_comment }}{% endif %}</textarea>
-                        </div>
-                    </div>
-                </div>
-
                 <hr class="my-4 border-secondary opacity-25">
 
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-
-                    <a href="{% url 'work_orders:fault_report_list' %}"
-                       class="btn btn-sm btn-danger px-3 text-uppercase fw-bold"
-                       onclick="return confirm('Leave this page? Unsaved changes will be lost.');">
-                        Cancel
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'work_orders:fault_report_list' %}"
+                           class="btn btn-sm btn-danger px-3 text-uppercase fw-bold"
+                           onclick="return confirm('Are you sure? Unsaved changes will be lost.');">
+                            Cancel
+                        </a>
+                    </div>
 
                     <div class="d-flex flex-wrap gap-2">
-
                         <button type="submit"
-                                name="action"
-                                value="edit"
-                                class="btn btn-sm btn-enterprise-outline px-4 text-uppercase fw-bold">
-                            Save Changes
+                                name="_save_action"
+                                value="save"
+                                class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+                            Save Fault Report
                         </button>
 
-                        {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" or request.user.role == "supervisor" and request.user.department == object.reported_department %}
-
-                            <button type="submit"
-                                    name="action"
-                                    value="reject"
-                                    id="btn-reject"
-                                    class="btn btn-sm btn-danger px-4 text-uppercase fw-bold shadow-sm"
-                                    onclick="return confirm('Reject this fault report?');">
-                                Reject
-                            </button>
-
-                        {% endif %}
-
-                        {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
-
-                            <button type="submit"
-                                    name="action"
-                                    value="convert"
-                                    class="btn btn-sm btn-success px-4 text-uppercase fw-bold shadow-sm"
-                                    onclick="return confirm('Convert this fault report to a Work Order?');">
-                                Convert to Work Order
-                            </button>
-
-                        {% endif %}
-
+                        <button type="submit"
+                                name="_save_action"
+                                value="add_another"
+                                class="btn btn-sm btn-enterprise-outline px-3 text-uppercase fw-bold">
+                            Save & New
+                        </button>
                     </div>
                 </div>
-
             </form>
         </div>
     </div>
 
-    <!-- Duplicate Fault Loader -->
     <div
         id="fault-location-loader"
         hx-get="{% url 'work_orders:fault_report_existing_faults_partial' %}"
         hx-target="#existing-faults-container"
         hx-trigger="load-existing-faults from:body"
         hx-include="#id_location_tag"
-        hx-vals='{"exclude_fault_id": "{{ object.id }}"}'
         hx-swap="innerHTML">
     </div>
 
-    <!-- Duplicate Fault Table -->
     <div class="mt-4">
         <div id="existing-faults-container"></div>
     </div>
-
 </div>
 {% endblock %}
 
 
 {% block extra_js %}
 <script src="{% static 'js/fault_report_form.js' %}"></script>
-
-<script>
-document.getElementById('btn-reject')?.addEventListener('click', function (e) {
-    const r = document.getElementById('reject-comment');
-    if (r && !r.value.trim()) {
-        alert("Please write a rejection comment before rejecting.");
-        e.preventDefault();
-        r.focus();
-    }
-});
-</script>
 {% endblock %}

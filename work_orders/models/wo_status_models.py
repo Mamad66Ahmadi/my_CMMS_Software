@@ -1,4 +1,4 @@
-# # # work_orders/models/status_models.py
+# # # work_orders/models/wo_status_models.py
 
 # from django.db import models
 

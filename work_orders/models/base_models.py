@@ -96,3 +96,13 @@ class PerformedAction(TimeStampedModel):
         verbose_name = "Performed Action"
         verbose_name_plural = "Performed Actions"
         ordering = ["action_code"]
+
+class DetectionMethod(TimeStampedModel):
+    detection_code = models.CharField(max_length=25, unique=True)
+    detection_desc = models.CharField(max_length=75, blank=True, null=True)
+    def __str__(self):
+        return self.detection_code
+    class Meta:
+        verbose_name = "Detection Method"
+        verbose_name_plural = "Detection Methods"
+        ordering = ["detection_code"]

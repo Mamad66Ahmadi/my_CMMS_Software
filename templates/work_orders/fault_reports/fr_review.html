@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Convert Fault Report{% endblock %}
+{% block title %}Review Fault Report{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/daily_reports_styles.css' %}">
@@ -28,14 +28,19 @@
     <div class="mb-3 d-flex justify-content-between align-items-end flex-wrap gap-3">
         <div>
             <h4 class="fw-bold text-dark mb-1">
-                Convert Fault Report: {{ object.report_number }}
+                Review Fault Report: {{ object.report_number }}
             </h4>
             <div class="d-flex align-items-center gap-2">
-                <p class="text-muted small mb-0">Edit the report or convert it to a Work Order.</p>
+                <p class="text-muted small mb-0">Edit the report or update its status.</p>
 
-                {% if object.status == "APPROVED" %}
-                    <span class="badge bg-success text-uppercase font-monospace px-2 py-1 small">
-                        Approved
+                {% if object.status == "REJECTED" %}
+                    <span class="badge bg-danger text-uppercase font-monospace px-2 py-1 small">
+                        Rejected
+                    </span>
+
+                {% elif object.status == "SUBMITTED" %}
+                    <span class="badge bg-warning text-dark text-uppercase font-monospace px-2 py-1 small">
+                        Submitted
                     </span>
                 {% endif %}
             </div>
@@ -272,7 +277,7 @@
                     </div>
 
                     <div class="row g-3">
-                        <!-- Comment -->
+                        <!-- Review Comment -->
                         <div class="col-12">
                             <label class="form-label text-uppercase fw-bold text-secondary small">
                                 Review / Rejection Comment
@@ -281,7 +286,7 @@
                                       id="reject-comment"
                                       class="form-control"
                                       rows="3"
-                                      placeholder="Required if rejecting.">{% if object.review_comment %}{{ object.review_comment }}{% endif %}</textarea>
+                                      placeholder="Optional comment for approval or rejection. Required if rejecting.">{% if object.review_comment %}{{ object.review_comment }}{% endif %}</textarea>
                         </div>
                     </div>
                 </div>
@@ -305,28 +310,68 @@
                             Save Changes
                         </button>
 
-                        {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" or request.user.role == "supervisor" and request.user.department == object.reported_department %}
+                        {% if object.status == "REJECTED" %}
+                            
+                            {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
+                                <button type="submit"
+                                        name="action"
+                                        value="resubmit"
+                                        class="btn btn-sm btn-primary px-4 text-uppercase fw-bold shadow-sm"
+                                        onclick="return confirm('Change this report\'s status back to Submitted?');">
+                                    Set to Submitted
+                                </button>
+                            {% endif %}
 
-                            <button type="submit"
-                                    name="action"
-                                    value="reject"
-                                    id="btn-reject"
-                                    class="btn btn-sm btn-danger px-4 text-uppercase fw-bold shadow-sm"
-                                    onclick="return confirm('Reject this fault report?');">
-                                Reject
-                            </button>
+                        {% else %}
 
-                        {% endif %}
+                            {% if request.user.is_staff or request.user.department and request.user.department.name == "Method" or request.user.role == "planner" %}
 
-                        {% if request.user.is_staff or request.user.department.name == "Method" or request.user.role == "planner" %}
+                                <button type="submit"
+                                        name="action"
+                                        value="approve"
+                                        class="btn btn-sm btn-success px-4 text-uppercase fw-bold shadow-sm">
+                                    Approve
+                                </button>
 
-                            <button type="submit"
-                                    name="action"
-                                    value="convert"
-                                    class="btn btn-sm btn-success px-4 text-uppercase fw-bold shadow-sm"
-                                    onclick="return confirm('Convert this fault report to a Work Order?');">
-                                Convert to Work Order
-                            </button>
+                                <button type="submit"
+                                        name="action"
+                                        value="reject"
+                                        id="btn-reject"
+                                        class="btn btn-sm btn-danger px-4 text-uppercase fw-bold shadow-sm"
+                                        onclick="return confirm('Reject this fault report?');">
+                                    Reject
+                                </button>
+
+                            {% elif object.status == "SUBMITTED" and request.user.role == "supervisor" and request.user.department == object.reported_department %}
+
+                                <button type="submit"
+                                        name="action"
+                                        value="approve"
+                                        class="btn btn-sm btn-success px-4 text-uppercase fw-bold shadow-sm">
+                                    Approve
+                                </button>
+
+                                <button type="submit"
+                                        name="action"
+                                        value="reject"
+                                        id="btn-reject"
+                                        class="btn btn-sm btn-danger px-4 text-uppercase fw-bold shadow-sm"
+                                        onclick="return confirm('Reject this fault report?');">
+                                    Reject
+                                </button>
+
+                            {% elif object.status == "SUBMITTED" and request.user == object.reported_by %}
+
+                                <button type="submit"
+                                        name="action"
+                                        value="reject"
+                                        id="btn-reject"
+                                        class="btn btn-sm btn-danger px-4 text-uppercase fw-bold shadow-sm"
+                                        onclick="return confirm('Reject this fault report?');">
+                                    Reject
+                                </button>
+
+                            {% endif %}
 
                         {% endif %}
 
