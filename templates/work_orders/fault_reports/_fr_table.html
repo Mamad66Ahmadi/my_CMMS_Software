@@ -14,6 +14,7 @@
             {% include "daily_reports/dr_list/_table_header.html" with column="detection_method" label="Detection Method" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="work_type" label="Work Type" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="fault_description" label="Description" sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="reported_department" label="Reporting Dep." sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="executing_department" label="Executing Dep." sort_by=sort_by query_params=query_params %}
             {% include "daily_reports/dr_list/_table_header.html" with column="reported_by" label="Reported By" sort_by=sort_by query_params=query_params %}
@@ -92,6 +93,10 @@
 
             <td class="persian-text">
                 <bdi>{{ fr.directive|default:"-"|truncatechars:80 }}</bdi>
+            </td>
+
+            <td class="persian-text">
+                <bdi>{{ fr.fault_desc|default:"-"|truncatechars:80 }}</bdi>
             </td>
 
             <td>
