@@ -67,7 +67,7 @@
 
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="text-muted small d-block">Location Tag</label>
+                <label class="small d-block fw-bold" style="color:#0b0255;">Location Tag</label>
                 <div class="fw-semibold">{{ fr.location_tag.loc_tag|default:"—" }}</div>
             </div>
 
@@ -98,7 +98,8 @@
         </div>
 
         <div class="row g-3">
-            <div class="col-md-3">
+
+            <div class="col">
                 <label class="text-muted small d-block">Status</label>
                 <span class="badge 
                     {% if fr.status == 'CONVERTED' %}bg-success
@@ -109,28 +110,30 @@
                 </span>
             </div>
 
-            <div class="col-md-3">
+            <div class="col">
                 <label class="text-muted small d-block">Priority</label>
                 <div class="fw-bold {% if fr.priority and fr.priority.priority_level <= 2 %}text-danger{% endif %}">
                     {{ fr.priority|default:"—" }}
                 </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col">
                 <label class="text-muted small d-block">Symptom</label>
                 <div class="fw-semibold">{{ fr.symptom|default:"—" }}</div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col">
                 <label class="text-muted small d-block">Detection Method</label>
                 <div class="fw-semibold">{{ fr.detection_method|default:"—" }}</div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col">
                 <label class="text-muted small d-block">Work Type</label>
                 <div class="fw-semibold">{{ fr.work_type|default:"—" }}</div>
             </div>
+
         </div>
+
     </div>
 
     <!-- 3️⃣ DEPARTMENT / REPORTING INFO -->
@@ -144,13 +147,10 @@
 
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="text-muted small d-block">Reporting Department</label>
-                <div class="fw-semibold">{{ fr.reported_department.name|default:"—" }}</div>
-            </div>
-
-            <div class="col-md-3">
-                <label class="text-muted small d-block">Executing Department</label>
-                <div class="fw-semibold">{{ fr.executing_department.name|default:"—" }}</div>
+                <label class="small d-block fw-bold" style="color:#146c43;">Reporting Department</label>
+                <div class="fw-semibold">
+                    {{ fr.reported_department.name|default:"—" }}
+                </div>
             </div>
 
             <div class="col-md-3">
@@ -162,6 +162,15 @@
                 <label class="text-muted small d-block">Reported At</label>
                 <div class="fw-semibold">{{ fr.reported_at|date:"Y-m-d H:i"|default:"—" }}</div>
             </div>
+
+            <div class="col-md-3">
+                <label class="small d-block fw-bold" style="color:#842029;">Executing Department</label>
+                <div class="fw-semibold">
+                    {{ fr.executing_department.name|default:"—" }}
+                </div>
+            </div>
+
+
         </div>
     </div>
 
