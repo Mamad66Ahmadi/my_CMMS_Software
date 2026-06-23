@@ -4,10 +4,14 @@
 # from django.db import models
 # from django.contrib.auth import get_user_model
 # from django.core.exceptions import ValidationError
+# from django.db import transaction
+# from django.utils import timezone
 
 # from work_orders.models.base_models import *
 # from work_orders.models.wo_status_models import *
 # from equipment.models.equipment_models import LocationTag,Equipment
+# from work_orders.models.sequences import DocumentSequence
+
 
 # # ----------------------    Getting user model object    ----------------------------------
 # User = get_user_model()
@@ -17,58 +21,88 @@
 
 # class WorkOrder(models.Model):
 #     wo_number = models.CharField(max_length=50, unique=True, db_index=True)
-    
-#     # Scope & Location (Static for all tasks)
-#     location_tag = models.ForeignKey(LocationTag, on_delete=models.PROTECT, related_name="work_orders")
-#     equipment = models.ForeignKey(Equipment, on_delete=models.PROTECT, related_name="fault_reports", null=True, blank=True)
+#     fault_report = models.ForeignKey("FaultReport", on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders")
 
-#     work_type = models.ForeignKey(WorkType, on_delete=models.PROTECT, related_name="work_orders")
-#     priority = models.ForeignKey(Priority, on_delete=models.PROTECT, related_name="work_orders")
+#     # Location/Equipment
+#     location_tag = models.ForeignKey(LocationTag, on_delete=models.PROTECT, related_name="work_orders", null=True, blank=True)
+#     equipment = models.ForeignKey(Equipment, on_delete=models.PROTECT, related_name="work_orders", null=True, blank=True)
+
+#     directive = models.CharField(max_length=255)
+#     fault_desc = models.TextField()
+
+#     priority = models.ForeignKey(Priority, on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders")
+#     symptom = models.ForeignKey(Symptom, on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders")
+#     cause = models.ForeignKey(Cause, on_delete=models.PROTECT, null=True, blank=True, related_name="work_orders")
+#     cause_description = models.TextField(null=True, blank=True)
+
 #     project_code = models.ForeignKey(ProjectCode, on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders")
-    
-#     # Fault Details
-#     initial_directive = models.CharField(max_length=150, null=True, blank=True)
-#     fault_description = models.TextField(null=True, blank=True)
-#     symptom = models.ForeignKey(Symptom, on_delete=models.PROTECT,null=True, blank=True, related_name="work_orders")
+#     parent_work_order = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="child_work_orders")
+#     detection_method = models.ForeignKey(DetectionMethod, on_delete=models.SET_NULL, null=True,blank=True,related_name="work_orders",)
+#     work_type = models.ForeignKey(WorkType, on_delete=models.SET_NULL, null=True,blank=True, related_name="work_orders",)
+
+#     # Workflow Metadata
+#     reported_by = models.ForeignKey(User, on_delete=models.SET_NULL, null = True, related_name="work_orders_reported")
+#     reported_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="work_orders_rep_dep")
+#     reported_at = models.DateTimeField(auto_now_add=True)
+
+#     modified_by = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, related_name="work_orders_modifier")
+#     modified_at = models.DateTimeField(auto_now=True)
+
 
 #     # Status & Workflow
-#     status = models.CharField(
-#         max_length=30, 
-#         choices=WorkOrderStatus.choices, 
-#         default=WorkOrderStatus.REQUESTED, 
-#         db_index=True
-#     )
-    
-#     # Ownership
-#     fault_requester_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT,related_name="requested_dep_work_orders")
-#     requester = models.ForeignKey(User, on_delete=models.PROTECT, related_name="requested_work_orders")
-#     reg_date = models.DateTimeField(auto_now_add=True)
-#     # to who
-#     requested_executing_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="executing_dep_work_orders")
-    
-#     # Administrative Approval
-#     fault_approved_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="approved_work_orders")
-#     fault_approved_at = models.DateTimeField(null=True, blank=True)
-    
-#     # Audit
-#     modified_at = models.DateTimeField(auto_now=True)
-#     modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="modified_work_orders")
+#     status = models.CharField(max_length=20, choices=WorkOrderStatus.choices, default=WorkOrderStatus.CREATED, db_index=True)
+
+
+#     @classmethod
+#     def generate_wo_number(cls):
+#         """Generate a WO number in the format WO-YY##### (example: WO-2600001)."""
+
+#         year2 = timezone.now().strftime("%y")
+#         year4 = timezone.now().year
+
+#         with transaction.atomic():
+#             sequence, _ = DocumentSequence.objects.select_for_update().get_or_create(
+#                 code="WO",        
+#                 year=year4,
+#                 defaults={"last_number": 0},
+#             )
+
+#             sequence.last_number += 1
+#             sequence.save(update_fields=["last_number"])
+
+#             return f"WO-{year2}{sequence.last_number:05d}"
+
+#     def save(self, *args, **kwargs):
+#         if not self.wo_number:
+#             self.wo_number = self.generate_wo_number()
+
+#         # Auto derive location from equipment
+#         if self.equipment and not self.location_tag:
+#             self.location_tag = self.equipment.functional_location
+
+#         super().save(*args, **kwargs)
 
 #     class Meta:
-#         ordering = ["-wo_number"]
+#         ordering = ["-reported_at"]
+#         indexes = [
+#             models.Index(fields=["status"]),
+#             models.Index(fields=["reported_at"]),
+#         ]
 
 #     def __str__(self):
 #         return self.wo_number
 
 #     def clean(self):
-#         if self.status == WorkOrderStatus.SUPERVISOR_APPROVED:
-#             if not self.fault_approved_by:
-#                 raise ValidationError({"fault_approved_by": "Supervisor approval user is required."})
-#             if not self.fault_approved_at:
-#                 raise ValidationError({"fault_approved_at": "Supervisor approval time is required."})
+
+#         if not self.location_tag and not self.equipment:
+#             raise ValidationError(
+#                 "Either location_tag or equipment must be provided."
+#             )
+
 
 #     @property
 #     def task_status_summary(self):
+
 #         tasks = self.tasks.all()
 #         total = tasks.count()
 
@@ -76,14 +110,13 @@
 #             return "No tasks created"
 
 #         status_order = [
-#             TaskStatus.REQUESTED,
+#             TaskStatus.CREATED,
+#             TaskStatus.ESTIMATED,
 #             TaskStatus.PLANNED,
 #             TaskStatus.RELEASED,
 #             TaskStatus.IN_PROGRESS,
-#             TaskStatus.WORK_DONE,
-#             TaskStatus.REPORTED,
+#             TaskStatus.COMPLETED,
 #             TaskStatus.APPROVED,
-#             TaskStatus.CLOSED,
 #             TaskStatus.CANCELLED,
 #         ]
 
@@ -101,11 +134,40 @@
 #                 parts.append(f"{count} {label_map[status].lower()}")
 
 #         return f"From {total} tasks: " + ", ".join(parts)
+    
+#     def update_status_from_tasks(self):
+
+#         tasks = self.tasks.exclude(status=TaskStatus.CANCELLED)
+
+#         if not tasks.exists():
+#             self.status = WorkOrderStatus.CREATED
+#             self.save(update_fields=["status"])
+#             return
+
+#         statuses = set(tasks.values_list("status", flat=True))
+
+#         if all(s == TaskStatus.APPROVED for s in statuses):
+#             self.status = WorkOrderStatus.CLOSED
+
+#         elif all(s in [TaskStatus.COMPLETED, TaskStatus.APPROVED] for s in statuses):
+#             self.status = WorkOrderStatus.WORK_DONE
+
+#         elif TaskStatus.IN_PROGRESS in statuses:
+#             self.status = WorkOrderStatus.IN_EXECUTION
+
+#         elif TaskStatus.PLANNED in statuses or TaskStatus.RELEASED in statuses:
+#             self.status = WorkOrderStatus.PLANNED
+
+#         else:
+#             self.status = WorkOrderStatus.CREATED
+
+#         self.save(update_fields=["status"])
+
 # # --- The Detail: WorkOrderTask ---
 
 # class WorkOrderTask(models.Model):
 #     work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name="tasks")
-#     task_number = models.PositiveIntegerField(default=1)
+#     task_number = models.PositiveIntegerField(blank=True)
     
 #     # Task Scope
 #     task_requester_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="requested_tasks")
@@ -115,16 +177,9 @@
 
     
 #     # Execution Status
-#     status = models.CharField(
-#         max_length=30, 
-#         choices=TaskStatus.choices, 
-#         default=TaskStatus.REQUESTED, 
-#         db_index=True
-#     )
+#     status = models.CharField(max_length=30, choices=TaskStatus.choices, default=TaskStatus.CREATED, db_index=True)
     
 #     # Execution Reporting (Moved here from Header)
-#     cause = models.ForeignKey(Cause, on_delete=models.PROTECT, null=True, blank=True, related_name="tasks")
-#     cause_description = models.TextField(null=True, blank=True)
 #     performed_action = models.ForeignKey(PerformedAction, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks")
 #     work_done_description = models.TextField(null=True, blank=True)
 #     permit = models.CharField(max_length=20, null=True, blank=True)
@@ -174,3 +229,21 @@
 #                 raise ValidationError({
 #                     "actual_finish": "Actual finish cannot be before actual start."
 #                 })
+            
+
+#     def save(self, *args, **kwargs):
+
+#         if not self.pk and not self.task_number:
+#             last_task = (
+#                 WorkOrderTask.objects
+#                 .filter(work_order=self.work_order)
+#                 .order_by("-task_number")
+#                 .first()
+#             )
+
+#             self.task_number = 1 if not last_task else last_task.task_number + 1
+
+#         super().save(*args, **kwargs)
+
+#         # Update parent WO status
+#         self.work_order.update_status_from_tasks()
