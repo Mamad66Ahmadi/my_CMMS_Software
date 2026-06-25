@@ -21,7 +21,7 @@ User = get_user_model()
 
 class WorkOrder(models.Model):
     wo_number = models.CharField(max_length=50, unique=True, db_index=True)
-    fault_report = models.ForeignKey("FaultReport", on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders")
+    fault_report = models.OneToOneField("FaultReport", on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders")
 
     # Location/Equipment
     location_tag = models.ForeignKey(LocationTag, on_delete=models.PROTECT, related_name="work_orders", null=True, blank=True)
@@ -45,7 +45,7 @@ class WorkOrder(models.Model):
     reported_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="work_orders_rep_dep")
     reported_at = models.DateTimeField(auto_now_add=True)
 
-    modified_by = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, related_name="work_orders_modifier")
+    modified_by = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders_modifier")
     modified_at = models.DateTimeField(auto_now=True)
 
 

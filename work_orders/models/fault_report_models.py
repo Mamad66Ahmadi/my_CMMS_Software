@@ -66,24 +66,70 @@ class FaultReport(models.Model):
             return f"FR-{year2}{sequence.last_number:05d}"
         
     def clean(self):
+        super().clean()
+
+        # 1. Basic location/equipment validation
         if not self.location_tag and not self.equipment:
             raise ValidationError("Provide at least one of location_tag or equipment.")
 
         if self.equipment and self.location_tag:
             eq_loc = self.equipment.functional_location
             if eq_loc and eq_loc != self.location_tag:
-                raise ValidationError({"equipment": "Selected equipment does not belong to selected location tag."})
+                raise ValidationError({
+                    "equipment": "Selected equipment does not belong to selected location tag."
+                })
+
+        # 2. Immutability & Transition Validation
+        if self.pk:
+            # We fetch the status from the DB directly to see what it WAS
+            # using .only() for performance
+            original = FaultReport.objects.only('status').get(pk=self.pk)
+            
+            # If it was already converted, block all changes
+            if original.status == FaultReportStatus.CONVERTED:
+                raise ValidationError(
+                    "This fault report has already been converted and cannot be changed."
+                )
+
+            # Prevent jumping straight to CONVERTED without being APPROVED
+            if (self.status == FaultReportStatus.CONVERTED and 
+                original.status != FaultReportStatus.APPROVED):
+                raise ValidationError({
+                    "status": "A report must be Approved before it can be Converted."
+                })
 
     def save(self, *args, **kwargs):
-        # Auto-fill location from equipment if missing
+        # Determine if this is a status transition to CONVERTED
+        is_conversion = False
+        
+        if self.pk:
+            # Fetch the old status before saving
+            old_status = FaultReport.objects.filter(pk=self.pk).values_list('status', flat=True).first()
+            if old_status != FaultReportStatus.CONVERTED and self.status == FaultReportStatus.CONVERTED:
+                is_conversion = True
+
+        # 1. Auto-derive data
         if self.equipment and not self.location_tag:
             self.location_tag = self.equipment.functional_location
-        
-        # Generate sequence number for new reports
+
+        # 2. Sequence generation
         if not self.report_number:
             self.report_number = self.generate_report_number()
-            
-        super().save(*args, **kwargs)
+
+        # 3. Validation
+        # We call full_clean but exclude the check we just did manually if needed, 
+        # though standard call is usually fine here.
+        self.full_clean()
+
+        # 4. Atomic Save and Service Trigger
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+
+            if is_conversion:
+                # We import inside the method to prevent circular imports at the top of the file
+                from work_orders.services import convert_fault_report_to_work_order
+                convert_fault_report_to_work_order(self)
+
 
     def approve(self, user, comment: str = ""):
         """Handled by Supervisor: SUBMITTED -> APPROVED"""
