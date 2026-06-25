@@ -1,5 +1,6 @@
 from django.urls import path
 from work_orders.views import FaultReportList, fault_report_detail_template,FaultReportExportCSV, FaultReportCreate, FaultsByLocationPartial,FaultReportReviewView, FaultReportConvertView
+from work_orders.views import WorkOrderList, WorkOrderExportCSV, work_order_detail_template
 
 app_name = "work_orders"
 
@@ -11,4 +12,10 @@ urlpatterns = [
     path("fault-reports/existing-faults/", FaultsByLocationPartial.as_view(), name="fault_report_existing_faults_partial",),
     path("fault-reports/<int:pk>/review/",FaultReportReviewView.as_view(), name="fault_report_review",),
     path("fault-reports/<int:pk>/convert/",FaultReportConvertView.as_view(), name="fault_report_convert",),
+
+
+    # Work Order List View
+    path('work-orders-head/', WorkOrderList.as_view(), name='work_order_list'),
+    path('work-order/<int:pk>/detail-content/', work_order_detail_template, name='work_order_detail_template'),
+    path('work-orders/export/', WorkOrderExportCSV.as_view(), name='work_order_export_csv'),
 ]

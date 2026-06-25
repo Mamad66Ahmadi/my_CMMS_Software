@@ -1,0 +1,44 @@
+<table>
+    <thead>
+        <tr>
+            {% include "daily_reports/dr_list/_table_header.html" with column="wo_number" label="WO Number" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="priority" label="Priority" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="equipment" label="Equipment" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="reported_at" label="Created At" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="fault_report" label="Source FR" sort_by=sort_by query_params=query_params %}
+            {% include "daily_reports/dr_list/_table_header.html" with column="work_type" label="Work Type" sort_by=sort_by query_params=query_params %}
+            <th>Task Summary</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for wo in work_orders %}
+        <tr class="work-order-row" data-pk="{{ wo.id }}" data-detail-url="{% url 'work_orders:work_order_detail_template' wo.id %}">
+            <td class="fw-bold">{{ wo.wo_number }}</td>
+            <td>
+                {% if wo.status == "CREATED" %}
+                    <span class="status-badge status-waiting">Created</span>
+                {% elif wo.status == "IN_EXECUTION" %}
+                    <span class="status-badge status-ongoing">In Execution</span>
+                {% elif wo.status == "CLOSED" %}
+                    <span class="status-badge status-completed">Closed</span>
+                {% elif wo.status == "CANCELLED" %}
+                    <span class="status-badge bg-secondary text-white">Cancelled</span>
+                {% else %}
+                    <span class="status-badge status-planned">{{ wo.get_status_display }}</span>
+                {% endif %}
+            </td>
+            <td>{{ wo.priority|default:"-" }}</td>
+            <td>{{ wo.location_tag.loc_tag|default:"-" }}</td>
+            <td>{{ wo.equipment.serial_number|default:"-" }}</td>
+            <td class="persian-text"><bdi>{{ wo.directive|truncatechars:50 }}</bdi></td>
+            <td>{{ wo.reported_at|date:"Y-m-d" }}</td>
+            <td>{{ wo.fault_report.report_number|default:"Manual" }}</td>
+            <td>{{ wo.work_type|default:"-" }}</td>
+            <td style="font-size: 0.85rem; color: #666;">{{ wo.task_status_summary }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

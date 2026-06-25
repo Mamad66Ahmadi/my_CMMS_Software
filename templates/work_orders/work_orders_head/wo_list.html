@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Work Orders{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/work_orders_styles.css' %}">
+
+<div class="container-fluid">
+
+    {% include "work_orders/work_orders_head/_wo_filter.html" %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="mb-0" style="color: #1e3a5f; font-weight: 700;">
+                Work Orders
+                <span class="text-muted fw-normal" style="font-size: 1.2rem;">
+                    ({{ work_orders.paginator.count }} Records)
+                </span>
+            </h1>
+            <!-- Add New WO button if needed, otherwise created via FR conversion -->
+            <a href="{% url 'work_orders:fault_report_add' %}" class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i>Report New Fault
+            </a>
+        </div>
+
+        <div>
+            <a href="{% url 'work_orders:work_order_export_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+               class="btn btn-sm btn-outline-success px-4 text-uppercase fw-bold shadow-sm">
+                <i class="bi bi-download me-1"></i>Export CSV
+            </a>
+        </div>
+    </div>
+
+    {% if work_orders %}
+        <div class="table-scroll-container">
+            {% include "work_orders/work_orders_head/_wo_table.html" %}
+        </div>
+        {% include "equipment/common/_pagination.html" with page_obj=work_orders %}
+    {% else %}
+        <div class="alert alert-info">No work orders found matching your criteria.</div>
+    {% endif %}
+</div>
+
+{% include "work_orders/work_orders_head/_wo_modal.html" %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".work-order-row").forEach(row => {
+        row.addEventListener("click", function () {
+            const baseUrl = this.dataset.detailUrl;
+            if (!baseUrl) return;
+
+            const query = window.location.search;
+            const detailUrl = baseUrl + query;
+
+            fetch(detailUrl)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.text();
+                })
+                .then(html => {
+                    document.getElementById("workOrderModalContent").innerHTML = html;
+                    new bootstrap.Modal(document.getElementById("workOrderModal")).show();
+                })
+                .catch(err => {
+                    console.error("Error loading WO detail:", err);
+                    alert("Failed to load work order details.");
+                });
+        });
+    });
+});
+
+function closeWorkOrderModal() {
+    const modalEl = document.getElementById("workOrderModal");
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+}
+</script>
+{% endblock %}

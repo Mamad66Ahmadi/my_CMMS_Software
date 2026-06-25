@@ -1,0 +1,74 @@
+<div class="modal-header bg-light">
+    <h5 class="modal-title">Work Order: {{ wo.wo_number }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <div class="row g-3">
+        <!-- Identity Section -->
+        <div class="col-md-4">
+            <label class="text-muted small d-block">Status</label>
+            <strong>{{ wo.get_status_display }}</strong>
+        </div>
+        <div class="col-md-4">
+            <label class="text-muted small d-block">Priority</label>
+            <strong>{{ wo.priority|default:"-" }}</strong>
+        </div>
+        <div class="col-md-4">
+            <label class="text-muted small d-block">Work Type</label>
+            <strong>{{ wo.work_type|default:"-" }}</strong>
+        </div>
+
+        <hr>
+
+        <!-- Technical Section -->
+        <div class="col-md-6">
+            <label class="text-muted small d-block">Location Tag</label>
+            <strong>{{ wo.location_tag.loc_tag|default:"-" }}</strong>
+            <div class="text-muted small">{{ wo.location_tag.description }}</div>
+        </div>
+        <div class="col-md-6">
+            <label class="text-muted small d-block">Equipment</label>
+            <strong>{{ wo.equipment.serial_number|default:"-" }}</strong>
+            <div class="text-muted small">{{ wo.equipment.name }}</div>
+        </div>
+
+        <hr>
+
+        <!-- Description -->
+        <div class="col-12 persion-text">
+            <label class="text-muted small d-block">Directive</label>
+            <p class="mb-0"><bdi>{{ wo.directive }}</bdi></p>
+        </div>
+
+        {% if wo.tasks.all %}
+        <hr>
+        <div class="col-12">
+            <h6>Tasks Progress</h6>
+            <table class="table table-sm table-bordered mt-2">
+                <thead class="table-light">
+                    <tr>
+                        <th>Task #</th>
+                        <th>Executing Dept</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in wo.tasks.all %}
+                    <tr>
+                        <td>{{ task.task_number }}</td>
+                        <td>{{ task.task_executing_department }}</td>
+                        <td>{{ task.get_status_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<div class="modal-footer">
+    <a href="/admin/work_orders/workorder/{{ wo.id }}/change/" class="btn btn-sm btn-outline-primary" target="_blank">
+        <i class="bi bi-pencil-square"></i> Open in Admin
+    </a>
+    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+</div>

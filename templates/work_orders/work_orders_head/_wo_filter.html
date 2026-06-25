@@ -1,0 +1,196 @@
+<style>
+    .filter-row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        align-items: flex-end;
+        width: 100%;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .filter-group-sm {
+        flex: 0.6 1 0;
+    }
+
+    .filter-group-xs {
+        flex: 0.45 1 0;
+    }
+
+    .filter-group-wide {
+        flex: 2 1 0;
+    }
+
+    .filter-input {
+        width: 100%;
+    }
+
+    .filter-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        flex: 0.9 1 0;
+        justify-content: flex-end;
+        min-width: max-content;
+    }
+</style>
+
+<h5>Filter Pane</h5>
+
+<form method="get" action="">
+    <div class="filter-bar" style="display: flex; flex-direction: column; gap: 15px;">
+
+        <!-- FIRST LINE -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label class="filter-label">WO Number</label>
+                <input type="text" name="wo_number" class="filter-input"
+                       placeholder="WO-26..."
+                       value="{{ filters.wo_number }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">From Date</label>
+                <input type="date" name="date_from" class="filter-input"
+                       value="{{ filters.date_from }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">To Date</label>
+                <input type="date" name="date_to" class="filter-input"
+                       value="{{ filters.date_to }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select name="status" class="filter-input">
+                    <option value="">Default (Active)</option>
+                    <option value="ALL" {% if filters.status == "ALL" %}selected{% endif %}>All Statuses</option>
+                    <option value="CREATED" {% if filters.status == "CREATED" %}selected{% endif %}>Created</option>
+                    <option value="PLANNED" {% if filters.status == "PLANNED" %}selected{% endif %}>Planned</option>
+                    <option value="IN_EXECUTION" {% if filters.status == "IN_EXECUTION" %}selected{% endif %}>In Execution</option>
+                    <option value="WORK_DONE" {% if filters.status == "WORK_DONE" %}selected{% endif %}>Work Done</option>
+                    <option value="CLOSED" {% if filters.status == "CLOSED" %}selected{% endif %}>Closed</option>
+                    <option value="CANCELLED" {% if filters.status == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Source FR</label>
+                <input type="text" name="fault_report" class="filter-input"
+                       placeholder="FR-26..."
+                       value="{{ filters.fault_report }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Reporting Dept</label>
+                <input type="text" name="reported_department" class="filter-input"
+                       placeholder="CBM, Fix..."
+                       value="{{ filters.reported_department }}">
+            </div>
+        </div>
+
+        <!-- SECOND LINE -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label class="filter-label">Priority</label>
+                <select name="priority" class="filter-input">
+                    <option value="">All</option>
+                    {% for p in priorities %}
+                        <option value="{{ p.id }}" {% if filters.priority == p.id|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Work Type</label>
+                <select name="work_type" class="filter-input">
+                    <option value="">All</option>
+                    {% for wt in work_types %}
+                        <option value="{{ wt.id }}" {% if filters.work_type == wt.id|stringformat:"s" %}selected{% endif %}>{{ wt }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Location Tag</label>
+                <input type="text" name="location_tag" class="filter-input"
+                       placeholder="103-KM-101..."
+                       value="{{ filters.location_tag }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Parent Tag</label>
+                <input type="text" name="parent_tag" class="filter-input"
+                       placeholder="103-K-101..."
+                       value="{{ filters.parent_tag }}">
+            </div>
+
+            <div class="filter-group filter-group-sm">
+                <label class="filter-label">Unit</label>
+                <input type="text" name="unit" class="filter-input"
+                       placeholder="103..."
+                       value="{{ filters.unit }}">
+            </div>
+
+            <div class="filter-group filter-group-xs">
+                <label class="filter-label">Train</label>
+                <input type="text" name="train" class="filter-input"
+                       placeholder="1"
+                       value="{{ filters.train }}">
+            </div>
+        </div>
+
+        <!-- THIRD LINE -->
+        <div class="filter-row">
+            <div class="filter-group">
+                <label class="filter-label">Equipment Serial</label>
+                <input type="text" name="equipment" class="filter-input"
+                       placeholder="Serial..."
+                       value="{{ filters.equipment }}">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Reported By</label>
+                <input type="text" name="reported_by" class="filter-input"
+                       placeholder="Username"
+                       value="{{ filters.reported_by }}">
+            </div>
+
+            <div class="filter-group filter-group-wide">
+                <label class="filter-label">Directive/Description</label>
+                <input type="text" name="directive" class="filter-input"
+                       placeholder="Leak, vibration..."
+                       value="{{ filters.directive }}">
+            </div>
+
+            <div class="filter-group filter-group-sm">
+                <label class="filter-label">Rows Per Page</label>
+                <select name="per_page" class="filter-input">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if per_page == 25 or not per_page %}selected{% endif %}>25</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit"
+                        class="btn btn-sm btn-enterprise-primary px-4 text-uppercase fw-bold shadow-sm">
+                    Apply
+                </button>
+
+                {% if filters.wo_number or filters.date_from or filters.date_to or filters.status or filters.fault_report or filters.reported_department or filters.priority or filters.work_type or filters.location_tag or filters.parent_tag or filters.unit or filters.train or filters.equipment or filters.reported_by or filters.directive %}
+                    <a href="{% url 'work_orders:work_order_list' %}" class="btn btn-outline-secondary btn-sm">
+                        Clear All
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</form>
