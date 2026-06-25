@@ -1,0 +1,28 @@
+{% comment %}
+Expected: column, label, sort_by, query_params
+{% endcomment %}
+{% with asc=column desc="-"|add:column %}
+
+{% if sort_by == asc %}
+    <th class="sorted" style="cursor: pointer;"
+        onclick="window.location.href='?sort={{ desc }}&{{ query_params }}'">
+        {{ label }}
+        <span class="sort-arrow">▲</span>
+    </th>
+
+{% elif sort_by == desc %}
+    <th class="sorted" style="cursor: pointer;"
+        onclick="window.location.href='?sort={{ asc }}&{{ query_params }}'">
+        {{ label }}
+        <span class="sort-arrow">▼</span>
+    </th>
+
+{% else %}
+    <th style="cursor: pointer;"
+        onclick="window.location.href='?sort={{ asc }}&{{ query_params }}'">
+        {{ label }}
+        <span class="sort-arrow"></span>
+    </th>
+{% endif %}
+
+{% endwith %}

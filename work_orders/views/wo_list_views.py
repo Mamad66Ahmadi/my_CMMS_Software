@@ -8,6 +8,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views import View
 from django.views.generic import TemplateView
+from django.db.models import Count
+
 
 from work_orders.models.wo_models import WorkOrder
 from work_orders.models.wo_status_models import WorkOrderStatus
@@ -255,24 +257,25 @@ class WorkOrderExportCSV(LoginRequiredMixin, View):
         queryset, filters = get_filtered_work_orders(request)
 
         sort_by = request.GET.get("sort", "-reported_at")
+        queryset = queryset.annotate(task_count=Count("tasks"))
 
         allowed_sort = {
             "wo_number": "wo_number",
+            "task_count": "task_count",
             "status": "status",
+            "parent_work_order": "parent_work_order__wo_number",
             "location_tag": "location_tag__loc_tag",
-            "equipment": "equipment__serial_number",
+            "directive": "directive",
             "priority": "priority__priority_level",
+            "fault_desc": "fault_desc",
+            "work_type": "work_type__work_type_code",
             "symptom": "symptom__symptom_code",
+            "cause": "cause",
             "project_code": "project_code__project_code",
             "detection_method": "detection_method__detection_code",
-            "work_type": "work_type__work_type_code",
             "reported_by": "reported_by__username",
             "reported_department": "reported_department__name",
             "reported_at": "reported_at",
-            "modified_by": "modified_by__username",
-            "modified_at": "modified_at",
-            "directive": "directive",
-            "fault_report": "fault_report__report_number",
         }
 
         sort_field = allowed_sort.get(sort_by.lstrip("-"), "reported_at")
@@ -289,6 +292,7 @@ class WorkOrderExportCSV(LoginRequiredMixin, View):
 
         writer.writerow([
             "WO Number",
+            "Tasks Count",
             "Status",
             "Fault Report",
             "Location Tag",
@@ -314,6 +318,7 @@ class WorkOrderExportCSV(LoginRequiredMixin, View):
         for wo in queryset:
             writer.writerow([
                 wo.wo_number or "",
+                wo.task_count or 0,
                 wo.get_status_display() if wo.status else "",
                 wo.fault_report.report_number if wo.fault_report else "",
                 wo.location_tag.loc_tag if wo.location_tag else "",

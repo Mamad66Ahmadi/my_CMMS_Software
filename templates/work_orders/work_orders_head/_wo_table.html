@@ -1,42 +1,66 @@
 <table>
     <thead>
         <tr>
-            {% include "daily_reports/dr_list/_table_header.html" with column="wo_number" label="WO Number" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="priority" label="Priority" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="equipment" label="Equipment" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="reported_at" label="Created At" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="fault_report" label="Source FR" sort_by=sort_by query_params=query_params %}
-            {% include "daily_reports/dr_list/_table_header.html" with column="work_type" label="Work Type" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="wo_number" label="WO Number" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="task_count" label="Task Count" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="parent_work_order" label="Parent WO" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="priority" label="Priority" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="fault_desc" label="Fault Desc" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="work_type" label="Work Type" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="symptom" label="Symptom" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="cause" label="Cause" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="project_code" label="Project Code" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="detection_method" label="Detection Method" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="reported_by" label="Reported By" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="reported_department" label="Reported Dept" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="reported_at" label="Created At" sort_by=sort_by query_params=query_params %}
             <th>Task Summary</th>
         </tr>
     </thead>
+
     <tbody>
         {% for wo in work_orders %}
-        <tr class="work-order-row" data-pk="{{ wo.id }}" data-detail-url="{% url 'work_orders:work_order_detail_template' wo.id %}">
+        <tr class="work-order-row"
+            data-pk="{{ wo.id }}"
+            data-detail-url="{% url 'work_orders:work_order_detail_template' wo.id %}">
+            
             <td class="fw-bold">{{ wo.wo_number }}</td>
+            <td>{{ wo.tasks.count }}</td>
+
             <td>
                 {% if wo.status == "CREATED" %}
                     <span class="status-badge status-waiting">Created</span>
+                {% elif wo.status == "PLANNED" %}
+                    <span class="status-badge status-planned">Planned</span>
                 {% elif wo.status == "IN_EXECUTION" %}
                     <span class="status-badge status-ongoing">In Execution</span>
+                {% elif wo.status == "WORK_DONE" %}
+                    <span class="status-badge status-completed">Work Done</span>
                 {% elif wo.status == "CLOSED" %}
                     <span class="status-badge status-completed">Closed</span>
                 {% elif wo.status == "CANCELLED" %}
-                    <span class="status-badge bg-secondary text-white">Cancelled</span>
+                    <span class="status-badge status-cancelled">Cancelled</span>
                 {% else %}
                     <span class="status-badge status-planned">{{ wo.get_status_display }}</span>
                 {% endif %}
             </td>
-            <td>{{ wo.priority|default:"-" }}</td>
+
+            <td>{{ wo.parent_work_order.wo_number|default:"-" }}</td>
             <td>{{ wo.location_tag.loc_tag|default:"-" }}</td>
-            <td>{{ wo.equipment.serial_number|default:"-" }}</td>
-            <td class="persian-text"><bdi>{{ wo.directive|truncatechars:50 }}</bdi></td>
-            <td>{{ wo.reported_at|date:"Y-m-d" }}</td>
-            <td>{{ wo.fault_report.report_number|default:"Manual" }}</td>
+            <td class="persian-text"><bdi>{{ wo.directive|default:"-"|truncatechars:50 }}</bdi></td>
+            <td>{{ wo.priority|default:"-" }}</td>
+            <td class="persian-text"><bdi>{{ wo.fault_desc|default:"-"|truncatechars:50 }}</bdi></td>
             <td>{{ wo.work_type|default:"-" }}</td>
+            <td>{{ wo.symptom|default:"-" }}</td>
+            <td class="persian-text"><bdi>{{ wo.cause|default:"-"|truncatechars:40 }}</bdi></td>
+            <td>{{ wo.project_code|default:"-" }}</td>
+            <td>{{ wo.detection_method|default:"-" }}</td>
+            <td>{{ wo.reported_by|default:"-" }}</td>
+            <td>{{ wo.reported_department|default:"-" }}</td>
+            <td>{{ wo.reported_at|date:"Y-m-d H:i" }}</td>
             <td style="font-size: 0.85rem; color: #666;">{{ wo.task_status_summary }}</td>
         </tr>
         {% endfor %}
