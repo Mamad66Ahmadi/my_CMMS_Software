@@ -1,0 +1,58 @@
+{% load filter_tags %}
+
+<div class="cmms-filter__row">
+  <div class="cmms-filter__label">
+    <span class="cmms-filter__label-icon"><i class="ti ti-{{ field.icon }}" aria-hidden="true"></i></span>
+    {{ field.label }}
+  </div>
+  <div class="cmms-filter__inputs">
+    <!-- First operator -->
+    <select name="{{ field.name }}_op1" class="cmms-filter__select">
+      <option value="">--</option>
+      {% for key, label in operators.items %}
+        <option value="{{ key }}" {% if filters|lookup:field.name|lookup:'op1' == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- First value -->
+    {% if field.input_type == "select" %}
+      <select name="{{ field.name }}_val1" class="cmms-filter__select">
+        <option value="">{{ field.placeholder|default:"All" }}</option>
+        {% for val, display in choices %}
+          <option value="{{ val }}" {% if filters|lookup:field.name|lookup:'val1' == val|stringformat:"s" %}selected{% endif %}>{{ display }}</option>
+        {% endfor %}
+      </select>
+    {% else %}
+      <input type="{{ field.input_type }}" 
+             name="{{ field.name }}_val1" 
+             value="{{ filters|lookup:field.name|lookup:'val1'|default:'' }}" 
+             class="cmms-filter__input" 
+             placeholder="{{ field.placeholder|default:'' }}">
+    {% endif %}
+
+    <div class="cmms-filter__sep">and</div>
+
+    <!-- Second operator -->
+    <select name="{{ field.name }}_op2" class="cmms-filter__select">
+      <option value="">--</option>
+      {% for key, label in operators.items %}
+        <option value="{{ key }}" {% if filters|lookup:field.name|lookup:'op2' == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <!-- Second value -->
+    {% if field.input_type == "select" %}
+      <select name="{{ field.name }}_val2" class="cmms-filter__select">
+        <option value="">--</option>
+        {% for val, display in choices %}
+          <option value="{{ val }}" {% if filters|lookup:field.name|lookup:'val2' == val|stringformat:"s" %}selected{% endif %}>{{ display }}</option>
+        {% endfor %}
+      </select>
+    {% else %}
+      <input type="{{ field.input_type }}" 
+             name="{{ field.name }}_val2" 
+             value="{{ filters|lookup:field.name|lookup:'val2'|default:'' }}" 
+             class="cmms-filter__input">
+    {% endif %}
+  </div>
+</div>

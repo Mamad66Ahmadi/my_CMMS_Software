@@ -1,6 +1,6 @@
 from django.urls import path
 from work_orders.views import FaultReportList, fault_report_detail_template,FaultReportExportCSV, FaultReportCreate, FaultsByLocationPartial,FaultReportReviewView, FaultReportConvertView
-from work_orders.views import WorkOrderList, WorkOrderExportCSV, work_order_detail_template
+from work_orders.views import WorkOrderList, WorkOrderExportCSV, work_order_detail_template,WorkOrderSearchView
 
 app_name = "work_orders"
 
@@ -15,7 +15,8 @@ urlpatterns = [
 
 
     # Work Order List View
-    path('work-orders-head/', WorkOrderList.as_view(), name='work_order_list'),
-    path('work-order/<int:pk>/detail-content/', work_order_detail_template, name='work_order_detail_template'),
-    path('work-orders/export/', WorkOrderExportCSV.as_view(), name='work_order_export_csv'),
+    path("search/", WorkOrderSearchView.as_view(), name="wo_search"),
+    path("list/", WorkOrderList.as_view(), name="wo_list"),
+    path("export/csv/", WorkOrderExportCSV.as_view(), name="wo_export_csv"),
+    path("<int:pk>/detail-template/", work_order_detail_template, name="work_order_detail_template"),
 ]

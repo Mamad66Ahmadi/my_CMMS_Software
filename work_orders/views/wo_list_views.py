@@ -1,46 +1,166 @@
 import csv
+from datetime import datetime, time
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils.dateparse import parse_date
 from django.views import View
 from django.views.generic import TemplateView
-from django.db.models import Count
-
 
 from work_orders.models.wo_models import WorkOrder
 from work_orders.models.wo_status_models import WorkOrderStatus
-from work_orders.models import Priority, Symptom, ProjectCode, DetectionMethod, WorkType
+from work_orders.models import Priority, Symptom, ProjectCode, DetectionMethod, WorkType, Cause
+
+
+
+# -------------------------------------------------------
+# Operator helpers
+# -------------------------------------------------------
+TEXT_OPERATORS = {
+    "eq": "=",
+    "neq": "<>",
+    "contains": "contains",
+    "ncontains": "not contains",
+    "startswith": "starts with",
+    "endswith": "ends with",
+}
+
+NUMERIC_OPERATORS = {
+    "eq": "=",
+    "neq": "<>",
+    "gt": ">",
+    "gte": ">=",
+    "lt": "<",
+    "lte": "<=",
+}
+
+DROPDOWN_OPERATORS = {
+    "eq": "=",
+    "neq": "<>",
+}
+
+
+def apply_text_condition(queryset, field_name, operator, value):
+    if not operator or value is None:
+        return queryset
+
+    value = str(value).strip()
+    if value == "":
+        return queryset
+
+    if operator == "eq":
+        return queryset.filter(**{field_name: value})
+    elif operator == "neq":
+        return queryset.exclude(**{field_name: value})
+    elif operator == "contains":
+        return queryset.filter(**{f"{field_name}__icontains": value})
+    elif operator == "ncontains":
+        return queryset.exclude(**{f"{field_name}__icontains": value})
+    elif operator == "startswith":
+        return queryset.filter(**{f"{field_name}__istartswith": value})
+    elif operator == "endswith":
+        return queryset.filter(**{f"{field_name}__iendswith": value})
+
+    return queryset
+
+
+def apply_numeric_condition(queryset, field_name, operator, value):
+    if not operator or value in (None, ""):
+        return queryset
+
+    try:
+        numeric_value = int(value)
+    except (TypeError, ValueError):
+        return queryset
+
+    if operator == "eq":
+        return queryset.filter(**{field_name: numeric_value})
+    elif operator == "neq":
+        return queryset.exclude(**{field_name: numeric_value})
+    elif operator == "gt":
+        return queryset.filter(**{f"{field_name}__gt": numeric_value})
+    elif operator == "gte":
+        return queryset.filter(**{f"{field_name}__gte": numeric_value})
+    elif operator == "lt":
+        return queryset.filter(**{f"{field_name}__lt": numeric_value})
+    elif operator == "lte":
+        return queryset.filter(**{f"{field_name}__lte": numeric_value})
+
+    return queryset
+
+
+def apply_date_condition(queryset, field_name, operator, value):
+    if not operator or not value:
+        return queryset
+
+    parsed = parse_date(value)
+    if not parsed:
+        return queryset
+
+    start_dt = datetime.combine(parsed, time.min)
+    end_dt = datetime.combine(parsed, time.max)
+
+    if operator == "eq":
+        return queryset.filter(**{
+            f"{field_name}__gte": start_dt,
+            f"{field_name}__lte": end_dt,
+        })
+    elif operator == "neq":
+        return queryset.exclude(**{
+            f"{field_name}__gte": start_dt,
+            f"{field_name}__lte": end_dt,
+        })
+    elif operator == "gt":
+        return queryset.filter(**{f"{field_name}__gt": end_dt})
+    elif operator == "gte":
+        return queryset.filter(**{f"{field_name}__gte": start_dt})
+    elif operator == "lt":
+        return queryset.filter(**{f"{field_name}__lt": start_dt})
+    elif operator == "lte":
+        return queryset.filter(**{f"{field_name}__lte": end_dt})
+
+    return queryset
+
+
+def parse_wo_number(value):
+    if value in (None, ""):
+        return None
+
+    value = str(value).strip().upper()
+
+    if value.startswith("WO-"):
+        value = value[3:]
+
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+def apply_exact_condition(queryset, field_name, operator, value):
+    if not operator or value in (None, ""):
+        return queryset
+
+    value = str(value).strip()
+    if value == "":
+        return queryset
+
+    if operator == "eq":
+        return queryset.filter(**{field_name: value})
+    elif operator == "neq":
+        return queryset.exclude(**{field_name: value})
+
+    return queryset
 
 
 # -------------------------------------------------------
 # Filter helper
 # -------------------------------------------------------
 def get_filtered_work_orders(request):
-    filters = {
-        "wo_number": request.GET.get("wo_number", "").strip(),
-        "status": request.GET.get("status", "").strip(),
-        "location_tag": request.GET.get("location_tag", "").strip(),
-        "equipment": request.GET.get("equipment", "").strip(),
-        "directive": request.GET.get("directive", "").strip(),
-        "fault_desc": request.GET.get("fault_desc", "").strip(),
-        "priority": request.GET.get("priority", "").strip(),
-        "symptom": request.GET.get("symptom", "").strip(),
-        "project_code": request.GET.get("project_code", "").strip(),
-        "detection_method": request.GET.get("detection_method", "").strip(),
-        "work_type": request.GET.get("work_type", "").strip(),
-        "reported_by": request.GET.get("reported_by", "").strip(),
-        "reported_department": request.GET.get("reported_department", "").strip(),
-        "date_from": request.GET.get("date_from", "").strip(),
-        "date_to": request.GET.get("date_to", "").strip(),
-        "parent_tag": request.GET.get("parent_tag", "").strip(),
-        "unit": request.GET.get("unit", "").strip(),
-        "train": request.GET.get("train", "").strip(),
-        "fault_report": request.GET.get("fault_report", "").strip(),
-    }
+    filters = request.GET.copy()
 
     queryset = WorkOrder.objects.select_related(
         "fault_report",
@@ -50,6 +170,7 @@ def get_filtered_work_orders(request):
         "equipment",
         "priority",
         "symptom",
+        "cause",
         "project_code",
         "detection_method",
         "work_type",
@@ -59,57 +180,16 @@ def get_filtered_work_orders(request):
         "parent_work_order",
     ).all()
 
-    def apply_multi_value_filter(qs, filter_str, field_lookup):
-        if not filter_str:
-            return qs
+    # ---------------------------------------------------
+    # Default status behavior
+    # If user does not explicitly search status, show active-like statuses
+    # ---------------------------------------------------
+    status_op1 = filters.get("status_op1", "").strip()
+    status_val1 = filters.get("status_val1", "").strip()
+    status_op2 = filters.get("status_op2", "").strip()
+    status_val2 = filters.get("status_val2", "").strip()
 
-        values = [x.strip() for x in filter_str.split(",") if x.strip()]
-        if not values:
-            return qs
-
-        query = Q()
-        for val in values:
-            query |= Q(**{f"{field_lookup}__icontains": val})
-        return qs.filter(query)
-
-    # Text filters
-    queryset = apply_multi_value_filter(queryset, filters["wo_number"], "wo_number")
-    queryset = apply_multi_value_filter(queryset, filters["location_tag"], "location_tag__loc_tag")
-    queryset = apply_multi_value_filter(queryset, filters["equipment"], "equipment__serial_number")
-    queryset = apply_multi_value_filter(queryset, filters["reported_by"], "reported_by__username")
-    queryset = apply_multi_value_filter(queryset, filters["reported_department"], "reported_department__name")
-    queryset = apply_multi_value_filter(queryset, filters["fault_report"], "fault_report__report_number")
-
-    # Directive / description search
-    if filters["directive"] or filters["fault_desc"]:
-        q = Q()
-        if filters["directive"]:
-            for val in [x.strip() for x in filters["directive"].split(",") if x.strip()]:
-                q |= Q(directive__icontains=val)
-        if filters["fault_desc"]:
-            for val in [x.strip() for x in filters["fault_desc"].split(",") if x.strip()]:
-                q |= Q(fault_desc__icontains=val)
-        queryset = queryset.filter(q)
-
-    # Parent tag / unit / train
-    if filters["parent_tag"]:
-        p_query = Q()
-        for val in [x.strip() for x in filters["parent_tag"].split(",") if x.strip()]:
-            p_query |= (
-                Q(location_tag__loc_tag__icontains=val) |
-                Q(location_tag__parent__loc_tag__icontains=val)
-            )
-        queryset = queryset.filter(p_query)
-
-    queryset = apply_multi_value_filter(queryset, filters["unit"], "location_tag__unit__unit_code")
-    queryset = apply_multi_value_filter(queryset, filters["train"], "location_tag__train")
-
-    # Status
-    if filters["status"] == "ALL":
-        pass
-    elif filters["status"]:
-        queryset = queryset.filter(status=filters["status"])
-    else:
+    if not any([status_op1, status_val1, status_op2, status_val2]):
         queryset = queryset.filter(
             status__in=[
                 WorkOrderStatus.CREATED,
@@ -120,30 +200,193 @@ def get_filtered_work_orders(request):
             ]
         )
 
-    # FK filters
-    if filters["priority"]:
-        queryset = queryset.filter(priority_id=filters["priority"])
+    # ---------------------------------------------------
+    # Numeric fields
+    # ---------------------------------------------------
+    numeric_fields = {
+        "wo_number": "wo_number_numeric",
+        "train": "location_tag__train",
+    }
 
-    if filters["symptom"]:
-        queryset = queryset.filter(symptom_id=filters["symptom"])
+    for param_name, model_field in numeric_fields.items():
+        op1 = filters.get(f"{param_name}_op1", "").strip()
+        val1 = filters.get(f"{param_name}_val1", "").strip()
+        op2 = filters.get(f"{param_name}_op2", "").strip()
+        val2 = filters.get(f"{param_name}_val2", "").strip()
 
-    if filters["project_code"]:
-        queryset = queryset.filter(project_code_id=filters["project_code"])
+        if param_name == "wo_number":
+            val1 = parse_wo_number(val1) if val1 else None
+            val2 = parse_wo_number(val2) if val2 else None
 
-    if filters["detection_method"]:
-        queryset = queryset.filter(detection_method_id=filters["detection_method"])
+        queryset = apply_numeric_condition(queryset, model_field, op1, val1)
+        queryset = apply_numeric_condition(queryset, model_field, op2, val2)
 
-    if filters["work_type"]:
-        queryset = queryset.filter(work_type_id=filters["work_type"])
+    # ---------------------------------------------------
+    # Date fields
+    # ---------------------------------------------------
+    date_fields = {
+        "reported_at": "reported_at",
+    }
 
-    # Date filters
-    if filters["date_from"]:
-        queryset = queryset.filter(reported_at__date__gte=filters["date_from"])
+    for param_name, model_field in date_fields.items():
+        op1 = filters.get(f"{param_name}_op1", "").strip()
+        val1 = filters.get(f"{param_name}_val1", "").strip()
+        op2 = filters.get(f"{param_name}_op2", "").strip()
+        val2 = filters.get(f"{param_name}_val2", "").strip()
 
-    if filters["date_to"]:
-        queryset = queryset.filter(reported_at__date__lte=filters["date_to"])
+        queryset = apply_date_condition(queryset, model_field, op1, val1)
+        queryset = apply_date_condition(queryset, model_field, op2, val2)
 
-    return queryset, filters
+    # ---------------------------------------------------
+    # Dropdown / exact categorical fields
+    # Only eq / neq should be shown in UI
+    # ---------------------------------------------------
+    dropdown_fields = {
+        "status": "status",
+        "priority": "priority_id",
+        "symptom": "symptom_id",
+        "project_code": "project_code_id",
+        "detection_method": "detection_method_id",
+        "work_type": "work_type_id",
+        "cause": "cause_id",
+    }
+
+    for param_name, model_field in dropdown_fields.items():
+        op1 = filters.get(f"{param_name}_op1", "").strip()
+        val1 = filters.get(f"{param_name}_val1", "").strip()
+        op2 = filters.get(f"{param_name}_op2", "").strip()
+        val2 = filters.get(f"{param_name}_val2", "").strip()
+
+        queryset = apply_exact_condition(queryset, model_field, op1, val1)
+        queryset = apply_exact_condition(queryset, model_field, op2, val2)
+
+    # ---------------------------------------------------
+    # Text fields
+    # ---------------------------------------------------
+    text_fields = {
+        "fault_report": "fault_report__report_number",
+        "location_tag": "location_tag__loc_tag",
+        "equipment": "equipment__serial_number",
+        "directive": "directive",
+        "fault_desc": "fault_desc",
+        "reported_by": "reported_by__username",
+        "reported_department": "reported_department__name",
+        "parent_tag": "location_tag__parent__loc_tag",
+    }
+
+    for param_name, model_field in text_fields.items():
+        op1 = filters.get(f"{param_name}_op1", "").strip()
+        val1 = filters.get(f"{param_name}_val1", "").strip()
+        op2 = filters.get(f"{param_name}_op2", "").strip()
+        val2 = filters.get(f"{param_name}_val2", "").strip()
+
+        queryset = apply_text_condition(queryset, model_field, op1, val1)
+        queryset = apply_text_condition(queryset, model_field, op2, val2)
+
+    # ---------------------------------------------------
+    # Human-readable labels for dropdown filters
+    # ---------------------------------------------------
+    filters["priority_val1_label"] = get_object_label(Priority, filters.get("priority_val1"))
+    filters["priority_val2_label"] = get_object_label(Priority, filters.get("priority_val2"))
+
+    filters["symptom_val1_label"] = get_object_label(Symptom, filters.get("symptom_val1"))
+    filters["symptom_val2_label"] = get_object_label(Symptom, filters.get("symptom_val2"))
+
+    filters["project_code_val1_label"] = get_object_label(ProjectCode, filters.get("project_code_val1"))
+    filters["project_code_val2_label"] = get_object_label(ProjectCode, filters.get("project_code_val2"))
+
+    filters["detection_method_val1_label"] = get_object_label(DetectionMethod, filters.get("detection_method_val1"))
+    filters["detection_method_val2_label"] = get_object_label(DetectionMethod, filters.get("detection_method_val2"))
+
+    filters["work_type_val1_label"] = get_object_label(WorkType, filters.get("work_type_val1"))
+    filters["work_type_val2_label"] = get_object_label(WorkType, filters.get("work_type_val2"))
+
+    filters["cause_val1_label"] = get_object_label(Cause, filters.get("cause_val1"))
+    filters["cause_val2_label"] = get_object_label(Cause, filters.get("cause_val2"))
+
+    # Optional: human-readable status label too
+    status_choices = dict(WorkOrderStatus.choices)
+    filters["status_val1_label"] = status_choices.get(filters.get("status_val1"), filters.get("status_val1", ""))
+    filters["status_val2_label"] = status_choices.get(filters.get("status_val2"), filters.get("status_val2", ""))
+
+    return queryset.distinct(), filters
+
+# -------------------------------------------------------
+# Search / Filter Page View
+# -------------------------------------------------------
+
+FIELD_CONFIGS = [
+    {'name': 'wo_number',          'label': 'WO Number',        'icon': 'hash',                'input_type': 'text',   'placeholder': 'WO-2600010',    'operators': 'numeric'},
+    {'name': 'reported_at',        'label': 'Reported At',      'icon': 'calendar',            'input_type': 'date',   'placeholder': '',              'operators': 'numeric'},
+    {'name': 'status',             'label': 'Status',           'icon': 'circle-dot',          'input_type': 'select', 'placeholder': 'Default active', 'operators': 'dropdown'},
+    {'name': 'priority',           'label': 'Priority',         'icon': 'flag',                'input_type': 'select', 'placeholder': 'All',           'operators': 'dropdown'},
+    {'name': 'symptom',            'label': 'Symptom',          'icon': 'stethoscope',         'input_type': 'select', 'placeholder': 'All',           'operators': 'dropdown'},
+    {'name': 'cause',              'label': 'Cause',            'icon': 'circle-x',            'input_type': 'select', 'placeholder': 'All',           'operators': 'dropdown'},
+    {'name': 'project_code',       'label': 'Project Code',     'icon': 'folder-code',         'input_type': 'select', 'placeholder': 'All',           'operators': 'dropdown'},
+    {'name': 'detection_method',   'label': 'Detection Method', 'icon': 'radar',               'input_type': 'select', 'placeholder': 'All',           'operators': 'dropdown'},
+    {'name': 'work_type',          'label': 'Work Type',        'icon': 'tool',                'input_type': 'select', 'placeholder': 'All',           'operators': 'dropdown'},
+    {'name': 'fault_report',       'label': 'Fault Report',     'icon': 'file-alert',          'input_type': 'text',   'placeholder': 'FR-26...',      'operators': 'text'},
+    {'name': 'location_tag',       'label': 'Location Tag',     'icon': 'map-pin',             'input_type': 'text',   'placeholder': '103-KM-101...', 'operators': 'text'},
+    {'name': 'parent_tag',         'label': 'Parent Tag',       'icon': 'sitemap',             'input_type': 'text',   'placeholder': '103-K-101...',  'operators': 'text'},
+    {'name': 'equipment',          'label': 'Equipment Serial', 'icon': 'cpu',                 'input_type': 'text',   'placeholder': 'Serial...',     'operators': 'text'},
+    {'name': 'reported_by',        'label': 'Reported By',      'icon': 'user',                'input_type': 'text',   'placeholder': 'Username',      'operators': 'text'},
+    {'name': 'reported_department','label': 'Reporting Dept.',  'icon': 'building',            'input_type': 'text',   'placeholder': 'CBM, FIX...',   'operators': 'text'},
+    {'name': 'directive',          'label': 'Directive',        'icon': 'bolt',                'input_type': 'text',   'placeholder': 'Leak, vibration...', 'operators': 'text'},
+    {'name': 'fault_desc',         'label': 'Fault Description','icon': 'notes',               'input_type': 'text',   'placeholder': 'Description...','operators': 'text'},
+    {'name': 'train',              'label': 'Train',            'icon': 'train',               'input_type': 'number', 'placeholder': '1',             'operators': 'numeric'},
+]
+
+
+class WorkOrderSearchView(LoginRequiredMixin, TemplateView):
+    template_name = "work_orders/work_orders_head/wo_search.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request = self.request
+
+        # Build structured_filters for nested lookup in template tag
+        structured_filters = {
+            field['name']: {
+                'op1':  request.GET.get(f"{field['name']}_op1",  ""),
+                'val1': request.GET.get(f"{field['name']}_val1", ""),
+                'op2':  request.GET.get(f"{field['name']}_op2",  ""),
+                'val2': request.GET.get(f"{field['name']}_val2", ""),
+            }
+            for field in FIELD_CONFIGS
+        }
+
+        # Fetch querysets once
+        priorities        = Priority.objects.all().order_by("priority_level")
+        symptoms          = Symptom.objects.all().order_by("symptom_code")
+        project_codes     = ProjectCode.objects.all().order_by("project_code")
+        detection_methods = DetectionMethod.objects.all().order_by("detection_code")
+        work_types        = WorkType.objects.all().order_by("work_type_code")
+        causes            = Cause.objects.all().order_by("cause_code")
+
+        choices_map = {
+            'status':           list(WorkOrderStatus.choices),
+            'priority':         [(str(p.pk), str(p)) for p in priorities],
+            'symptom':          [(str(s.pk), str(s)) for s in symptoms],
+            'cause':            [(str(c.pk), str(c)) for c in causes],
+            'project_code':     [(str(pc.pk), str(pc)) for pc in project_codes],
+            'detection_method': [(str(dm.pk), str(dm)) for dm in detection_methods],
+            'work_type':        [(str(wt.pk), str(wt)) for wt in work_types],
+        }
+
+        operators_map = {
+            'numeric':  NUMERIC_OPERATORS,
+            'dropdown': DROPDOWN_OPERATORS,
+            'text':     TEXT_OPERATORS,
+        }
+
+        context.update({
+            'field_configs':      FIELD_CONFIGS,
+            'structured_filters': structured_filters,
+            'choices_map':        choices_map,
+            'operators_map':      operators_map,
+            'per_page':           request.GET.get('per_page', '25'),
+        })
+        return context
 
 
 # -------------------------------------------------------
@@ -160,7 +403,7 @@ class WorkOrderList(LoginRequiredMixin, TemplateView):
         sort_by = self.request.GET.get("sort", "-reported_at")
 
         allowed_sort = {
-            "wo_number": "wo_number",
+            "wo_number": "wo_number_numeric",
             "status": "status",
             "location_tag": "location_tag__loc_tag",
             "equipment": "equipment__serial_number",
@@ -205,15 +448,9 @@ class WorkOrderList(LoginRequiredMixin, TemplateView):
             "sort_by": sort_by,
             "per_page": per_page,
             "query_params": query_dict.urlencode(),
-            "priorities": Priority.objects.all().order_by("priority_level"),
-            "symptoms": Symptom.objects.all().order_by("symptom_code"),
-            "project_codes": ProjectCode.objects.all().order_by("project_code"),
-            "detection_methods": DetectionMethod.objects.all().order_by("detection_code"),
-            "work_types": WorkType.objects.all().order_by("work_type_code"),
         })
 
         return context
-
 
 # -------------------------------------------------------
 # Modal Detail View
@@ -252,25 +489,28 @@ def work_order_detail_template(request, pk):
 # -------------------------------------------------------
 # CSV Export
 # -------------------------------------------------------
+# -------------------------------------------------------
+# CSV Export
+# -------------------------------------------------------
 class WorkOrderExportCSV(LoginRequiredMixin, View):
     def get(self, request):
         queryset, filters = get_filtered_work_orders(request)
-
-        sort_by = request.GET.get("sort", "-reported_at")
         queryset = queryset.annotate(task_count=Count("tasks"))
 
+        sort_by = request.GET.get("sort", "-reported_at")
+
         allowed_sort = {
-            "wo_number": "wo_number",
+            "wo_number": "wo_number_numeric",
             "task_count": "task_count",
             "status": "status",
-            "parent_work_order": "parent_work_order__wo_number",
+            "parent_work_order": "parent_work_order__wo_number_numeric",
             "location_tag": "location_tag__loc_tag",
             "directive": "directive",
             "priority": "priority__priority_level",
             "fault_desc": "fault_desc",
             "work_type": "work_type__work_type_code",
             "symptom": "symptom__symptom_code",
-            "cause": "cause",
+            "cause": "cause__cause_code",
             "project_code": "project_code__project_code",
             "detection_method": "detection_method__detection_code",
             "reported_by": "reported_by__username",
@@ -342,3 +582,13 @@ class WorkOrderExportCSV(LoginRequiredMixin, View):
             ])
 
         return response
+
+
+def get_object_label(model, pk):
+    if pk in (None, ""):
+        return ""
+
+    try:
+        return str(model.objects.get(pk=pk))
+    except (model.DoesNotExist, ValueError, TypeError):
+        return str(pk)

@@ -21,6 +21,7 @@ User = get_user_model()
 
 class WorkOrder(models.Model):
     wo_number = models.CharField(max_length=50, unique=True, db_index=True)
+    wo_number_numeric = models.PositiveIntegerField(unique=True, db_index=True)
     fault_report = models.OneToOneField("FaultReport", on_delete=models.SET_NULL, null=True, blank=True, related_name="work_orders")
 
     # Location/Equipment
@@ -70,12 +71,18 @@ class WorkOrder(models.Model):
             sequence.last_number += 1
             sequence.save(update_fields=["last_number"])
 
-            return f"WO-{year2}{sequence.last_number:05d}"
+            numeric_part = int(f"{year2}{sequence.last_number:05d}")
+            wo_number = f"WO-{numeric_part}"
+
+            return wo_number, numeric_part
 
     def save(self, *args, **kwargs):
         if not self.wo_number:
-            self.wo_number = self.generate_wo_number()
+            self.wo_number, self.wo_number_numeric = self.generate_wo_number()
 
+        if self.wo_number and not self.wo_number_numeric:
+            self.wo_number_numeric = int(self.wo_number.replace("WO-", ""))
+            
         if self.equipment and not self.location_tag:
             self.location_tag = self.equipment.functional_location
 

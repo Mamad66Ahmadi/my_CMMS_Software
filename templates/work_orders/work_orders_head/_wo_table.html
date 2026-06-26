@@ -1,8 +1,8 @@
-<table>
+<table class="table table-hover align-middle">
     <thead>
         <tr>
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="wo_number" label="WO Number" sort_by=sort_by query_params=query_params %}
-            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="task_count" label="Task Count" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="task_count" label="#Tasks" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="parent_work_order" label="Parent WO" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=query_params %}
@@ -26,7 +26,7 @@
         <tr class="work-order-row"
             data-pk="{{ wo.id }}"
             data-detail-url="{% url 'work_orders:work_order_detail_template' wo.id %}">
-            
+
             <td class="fw-bold">{{ wo.wo_number }}</td>
             <td>{{ wo.tasks.count }}</td>
 

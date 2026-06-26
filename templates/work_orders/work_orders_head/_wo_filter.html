@@ -186,7 +186,7 @@
                 </button>
 
                 {% if filters.wo_number or filters.date_from or filters.date_to or filters.status or filters.fault_report or filters.reported_department or filters.priority or filters.work_type or filters.location_tag or filters.parent_tag or filters.unit or filters.train or filters.equipment or filters.reported_by or filters.directive %}
-                    <a href="{% url 'work_orders:work_order_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <a href="{% url 'work_orders:wo_list' %}" class="btn btn-outline-secondary btn-sm">
                         Clear All
                     </a>
                 {% endif %}
