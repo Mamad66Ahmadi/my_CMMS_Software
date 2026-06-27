@@ -69,7 +69,8 @@
         <input type="{{ field.input_type }}" 
               name="{{ field.name }}_val2" 
               value="{{ filters|lookup:field.name|lookup:'val2'|default:'' }}" 
-              class="cmms-filter__input">
+              class="cmms-filter__input"
+              placeholder="{{ field.placeholder|default:'' }}">
       </div>
     {% endif %}
   </div>
