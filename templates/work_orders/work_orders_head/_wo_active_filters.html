@@ -1,103 +1,11 @@
-{% if filters.wo_number_val1 %}
+{% if filters.active_filters %}
+  <div class="d-flex flex-wrap align-items-center gap-2">
     <span class="fw-bold text-muted">Active Filters:</span>
-    <span class="badge bg-light text-dark border">
-        WO Number
-        {% if filters.wo_number_op1 == 'eq' %} is
-        {% elif filters.wo_number_op1 == 'neq' %} is not
-        {% elif filters.wo_number_op1 == 'gt' %} is greater than
-        {% elif filters.wo_number_op1 == 'gte' %} is greater than or equal to
-        {% elif filters.wo_number_op1 == 'lt' %} is less than
-        {% elif filters.wo_number_op1 == 'lte' %} is less than or equal to
-        {% elif filters.wo_number_op1 == 'contains' %} contains
-        {% elif filters.wo_number_op1 == 'icontains' %} contains
-        {% endif %}
-        {{ filters.wo_number_val1 }}
-    </span>
-{% endif %}
 
-{% if filters.wo_number_val2 %}
-    <span class="badge bg-light text-dark border">
-        WO Number
-        {% if filters.wo_number_op2 == 'eq' %} is
-        {% elif filters.wo_number_op2 == 'neq' %} is not
-        {% elif filters.wo_number_op2 == 'gt' %} is greater than
-        {% elif filters.wo_number_op2 == 'gte' %} is greater than or equal to
-        {% elif filters.wo_number_op2 == 'lt' %} is less than
-        {% elif filters.wo_number_op2 == 'lte' %} is less than or equal to
-        {% elif filters.wo_number_op2 == 'contains' %} contains
-        {% elif filters.wo_number_op2 == 'icontains' %} contains
-        {% endif %}
-        {{ filters.wo_number_val2 }}
-    </span>
-{% endif %}
-
-{% if filters.priority_val1 %}
-    <span class="badge bg-light text-dark border">
-        Priority
-        {% if filters.priority_op1 == 'eq' %} is
-        {% elif filters.priority_op1 == 'neq' %} is not
-        {% endif %}
-        {{ filters.priority_val1_label }}
-    </span>
-{% endif %}
-
-{% if filters.project_code_val1 %}
-    <span class="badge bg-light text-dark border">
-        Project Code
-        {% if filters.project_code_op1 == 'eq' %} is
-        {% elif filters.project_code_op1 == 'neq' %} is not
-        {% endif %}
-        {{ filters.project_code_val1_label }}
-    </span>
-{% endif %}
-
-{% if filters.symptom_val1 %}
-    <span class="badge bg-light text-dark border">
-        Symptom
-        {% if filters.symptom_op1 == 'eq' %} is
-        {% elif filters.symptom_op1 == 'neq' %} is not
-        {% endif %}
-        {{ filters.symptom_val1_label }}
-    </span>
-{% endif %}
-
-
-{% if filters.detection_method_val1 %}
-    <span class="badge bg-light text-dark border">
-        Detection Method
-        {% if filters.detection_method_op1 == 'eq' %} is
-        {% elif filters.detection_method_op1 == 'neq' %} is not
-        {% endif %}
-        {{ filters.detection_method_val1_label }}
-    </span>
-{% endif %}
-
-{% if filters.work_type_val1 %}
-    <span class="badge bg-light text-dark border">
-        Work Type
-        {% if filters.work_type_op1 == 'eq' %} is
-        {% elif filters.work_type_op1 == 'neq' %} is not
-        {% endif %}
-        {{ filters.work_type_val1_label }}
-    </span>
-{% endif %}
-
-{% if filters.cause_val1 %}
-    <span class="badge bg-light text-dark border">
-        Cause
-        {% if filters.cause_op1 == 'eq' %} is
-        {% elif filters.cause_op1 == 'neq' %} is not
-        {% endif %}
-        {{ filters.cause_val1_label }}
-    </span>
-{% endif %}
-
-{% if filters.status_val1 %}
-    <span class="badge bg-light text-dark border">
-        Status
-        {% if filters.status_op1 == 'eq' %} is
-        {% elif filters.status_op1 == 'neq' %} is not
-        {% endif %}
-        {{ filters.status_val1_label }}
-    </span>
+    {% for item in filters.active_filters %}
+      <span class="badge bg-light text-dark border">
+        {{ item.field_label }} {{ item.operator_label }} {{ item.display_value }}
+      </span>
+    {% endfor %}
+  </div>
 {% endif %}

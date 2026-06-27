@@ -3,6 +3,13 @@
 {% block title %}Work Orders{% endblock %}
 
 {% block content %}
+
+{% if error_message %}
+<div class="alert alert-warning">
+    {{ error_message }}
+</div>
+{% endif %}
+
 <link rel="stylesheet" href="{% static 'css/work_orders_styles.css' %}">
 
 <div class="container-fluid">
