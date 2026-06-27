@@ -458,3 +458,19 @@ th:not(.sorted) .sort-arrow {
 
 
 
+.cmms-filter__input-group {
+  display: flex;
+  align-items: stretch;
+}
+
+.cmms-filter__prefix {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #ffffff;
+  border-right: none;
+  padding: 0 8px;
+  font-size: 0.9rem;
+  color: #555;
+}
+

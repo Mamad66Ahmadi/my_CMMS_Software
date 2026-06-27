@@ -25,11 +25,19 @@
         {% endfor %}
       </select>
     {% else %}
+    <div class="cmms-filter__input-group">
+      {% if field.name == "wo_number" %}
+        <span class="cmms-filter__prefix">WO-</span>
+      {% elif field.name == "fault_report" %}
+        <span class="cmms-filter__prefix">FR-</span>
+      {% endif %}
+
       <input type="{{ field.input_type }}" 
-             name="{{ field.name }}_val1" 
-             value="{{ filters|lookup:field.name|lookup:'val1'|default:'' }}" 
-             class="cmms-filter__input" 
-             placeholder="{{ field.placeholder|default:'' }}">
+            name="{{ field.name }}_val1" 
+            value="{{ filters|lookup:field.name|lookup:'val1'|default:'' }}" 
+            class="cmms-filter__input"
+            placeholder="{{ field.placeholder|default:'' }}">
+    </div>
     {% endif %}
 
     <div class="cmms-filter__sep">and</div>
@@ -51,10 +59,18 @@
         {% endfor %}
       </select>
     {% else %}
-      <input type="{{ field.input_type }}" 
-             name="{{ field.name }}_val2" 
-             value="{{ filters|lookup:field.name|lookup:'val2'|default:'' }}" 
-             class="cmms-filter__input">
+      <div class="cmms-filter__input-group">
+        {% if field.name == "wo_number" %}
+          <span class="cmms-filter__prefix">WO-</span>
+        {% elif field.name == "fault_report" %}
+          <span class="cmms-filter__prefix">FR-</span>
+        {% endif %}
+
+        <input type="{{ field.input_type }}" 
+              name="{{ field.name }}_val2" 
+              value="{{ filters|lookup:field.name|lookup:'val2'|default:'' }}" 
+              class="cmms-filter__input">
+      </div>
     {% endif %}
   </div>
 </div>

@@ -20,6 +20,16 @@ DATE_FIELDS = {
     "reported_at": "reported_at",
 }
 
+TEXT_FIELDS = {
+    "location_tag": "location_tag__loc_tag",
+    "parent_tag": "location_tag__parent__loc_tag",
+    "equipment": "equipment__serial_number",
+    "reported_by": "reported_by__username",
+    "reported_department": "reported_department__name",
+    "directive": "directive",
+    "fault_desc": "fault_desc",
+}
+
 DROPDOWN_FIELDS = {
     "status": "status",
     "priority": "priority_id",
@@ -30,16 +40,18 @@ DROPDOWN_FIELDS = {
     "cause": "cause_id",
 }
 
-TEXT_FIELDS = {
-    "fault_report": "fault_report__report_number",
-    "location_tag": "location_tag__loc_tag",
-    "equipment": "equipment__serial_number",
-    "directive": "directive",
-    "fault_desc": "fault_desc",
-    "reported_by": "reported_by__username",
-    "reported_department": "reported_department__name",
-    "parent_tag": "location_tag__parent__loc_tag",
-}
+
+
+def split_comma_values(value):
+    """
+    Splits comma separated values and strips whitespace.
+    """
+    if not value:
+        return []
+
+    return [v.strip() for v in str(value).split(",") if v.strip()]
+
+
 
 def get_object_label(model, pk):
     """Helper to get a human-readable label for a model instance given its PK."""
@@ -55,62 +67,84 @@ def get_object_label(model, pk):
 
 
 def apply_text_condition(queryset, field_name, operator, value):
-    """Applies text-based filtering conditions to a queryset."""
     if not operator or value is None:
         return queryset
 
-    value = str(value).strip()
-    if not value:
+    values = split_comma_values(value)
+
+    if not values:
         return queryset
 
-    # Using Q objects for complex lookups and to handle 'not' conditions cleanly
     q_object = Q()
-    if operator == "eq":
-        q_object = Q(**{field_name: value})
-    elif operator == "neq":
-        q_object = ~Q(**{field_name: value})
-    elif operator == "contains":
-        q_object = Q(**{f"{field_name}__icontains": value})
-    elif operator == "ncontains":
-        q_object = ~Q(**{f"{field_name}__icontains": value})
-    elif operator == "startswith":
-        q_object = Q(**{f"{field_name}__istartswith": value})
-    elif operator == "endswith":
-        q_object = Q(**{f"{field_name}__iendswith": value})
 
-    if q_object:
-        return queryset.filter(q_object)
-    return queryset
+    for val in values:
+
+        if operator == "eq":
+            q_object |= Q(**{field_name: val})
+
+        elif operator == "contains":
+            q_object |= Q(**{f"{field_name}__icontains": val})
+
+        elif operator == "startswith":
+            q_object |= Q(**{f"{field_name}__istartswith": val})
+
+        elif operator == "endswith":
+            q_object |= Q(**{f"{field_name}__iendswith": val})
+
+    if operator in ["neq", "ncontains"]:
+        for val in values:
+            if operator == "neq":
+                queryset = queryset.exclude(**{field_name: val})
+            elif operator == "ncontains":
+                queryset = queryset.exclude(**{f"{field_name}__icontains": val})
+        return queryset
+
+    return queryset.filter(q_object)
 
 
 def apply_numeric_condition(queryset, field_name, operator, value, strict=False):
-    """Applies numeric filtering conditions to a queryset."""
+
     if not operator or value in (None, ""):
         return queryset
 
-    try:
-        numeric_value = int(value)
-    except (TypeError, ValueError):
-        return queryset.none() if strict else queryset
+    values = split_comma_values(value)
+
+    if not values:
+        return queryset
 
     q_object = Q()
-    if operator == "eq":
-        q_object = Q(**{field_name: numeric_value})
-    elif operator == "neq":
-        q_object = ~Q(**{field_name: numeric_value})
-    elif operator == "gt":
-        q_object = Q(**{f"{field_name}__gt": numeric_value})
-    elif operator == "gte":
-        q_object = Q(**{f"{field_name}__gte": numeric_value})
-    elif operator == "lt":
-        q_object = Q(**{f"{field_name}__lt": numeric_value})
-    elif operator == "lte":
-        q_object = Q(**{f"{field_name}__lte": numeric_value})
 
-    if q_object:
-        return queryset.filter(q_object)
-    return queryset
+    for val in values:
 
+        try:
+            numeric_value = int(val)
+        except (TypeError, ValueError):
+            if strict:
+                return queryset.none()
+            continue
+
+        if operator == "eq":
+            q_object |= Q(**{field_name: numeric_value})
+
+        elif operator == "gt":
+            q_object |= Q(**{f"{field_name}__gt": numeric_value})
+
+        elif operator == "gte":
+            q_object |= Q(**{f"{field_name}__gte": numeric_value})
+
+        elif operator == "lt":
+            q_object |= Q(**{f"{field_name}__lt": numeric_value})
+
+        elif operator == "lte":
+            q_object |= Q(**{f"{field_name}__lte": numeric_value})
+
+        elif operator == "neq":
+            queryset = queryset.exclude(**{field_name: numeric_value})
+
+    if operator == "neq":
+        return queryset
+
+    return queryset.filter(q_object)
 
 def apply_date_condition(queryset, field_name, operator, value):
     """Applies date filtering conditions to a queryset."""
@@ -144,16 +178,22 @@ def apply_date_condition(queryset, field_name, operator, value):
 
 
 def parse_wo_number(value):
-    """Parses a WO number string, removing 'WO-' prefix and converting to integer."""
-    if value in (None, ""):
-        return None
-    value = str(value).strip().upper()
-    if value.startswith("WO-"):
-        value = value[3:]
-    try:
-        return int(value)
-    except ValueError:
-        return None # Not a valid integer after prefix removal
+    values = split_comma_values(value)
+
+    parsed = []
+
+    for val in values:
+        val = val.upper()
+
+        if val.startswith("WO-"):
+            val = val[3:]
+
+        if val.isdigit():
+            parsed.append(int(val))
+        else:
+            return None
+
+    return parsed
 
 
 def apply_exact_condition(queryset, field_name, operator, value):
@@ -289,26 +329,35 @@ def get_filtered_work_orders(request):
 
         if param_name == "wo_number":
 
-            parsed_val1 = parse_wo_number(val1)
-            parsed_val2 = parse_wo_number(val2)
+            parsed_vals1 = parse_wo_number(val1)
+            parsed_vals2 = parse_wo_number(val2)
 
-            # 🚨 If user typed something but parsing failed → return no results
-            if val1 and parsed_val1 is None:
+            if val1 and parsed_vals1 is None:
                 return WorkOrder.objects.none(), filters_data
 
-            if val2 and parsed_val2 is None:
+            if val2 and parsed_vals2 is None:
                 return WorkOrder.objects.none(), filters_data
 
-            queryset = apply_numeric_condition(
-                queryset, model_field, op1, parsed_val1
-            )
-            queryset = apply_numeric_condition(
-                queryset, model_field, op2, parsed_val2
-            )
+            queryset = apply_numeric_condition(queryset, model_field, op1, val1, strict=True)
+            queryset = apply_numeric_condition(queryset, model_field, op2, val2, strict=True)
+
         else:
             queryset = apply_numeric_condition(queryset, model_field, op1, val1)
             queryset = apply_numeric_condition(queryset, model_field, op2, val2)
 
+    # Fault report field
+    fr_field = "fault_report__report_number"
+
+    op1 = filters_data.get("fault_report_op1", "").strip()
+    val1 = filters_data.get("fault_report_val1", "").strip()
+    op2 = filters_data.get("fault_report_op2", "").strip()
+    val2 = filters_data.get("fault_report_val2", "").strip()
+
+    op1 = normalize_operator(op1, val1)
+    op2 = normalize_operator(op2, val2)
+
+    queryset = apply_fault_report_condition(queryset, fr_field, op1, val1)
+    queryset = apply_fault_report_condition(queryset, fr_field, op2, val2)
 
     # Date fields
     for param_name, model_field in DATE_FIELDS.items():
@@ -381,29 +430,45 @@ def get_filtered_work_orders(request):
 
 
 def apply_fault_report_condition(queryset, field_name, operator, value):
+
     if not operator or value in (None, ""):
         return queryset
 
-    value = str(value).strip().upper()
-    if value.startswith("FR-"):
-        value = value[3:]
+    values = split_comma_values(value)
 
-    if not value.isdigit():
-        return queryset.none()
+    q_object = Q()
 
-    formatted_value = f"FR-{value}"
+    for val in values:
 
-    if operator == "eq":
-        return queryset.filter(**{field_name: formatted_value})
-    elif operator == "neq":
-        return queryset.exclude(**{field_name: formatted_value})
-    elif operator == "startswith":
-        return queryset.filter(**{f"{field_name}__istartswith": formatted_value})
-    elif operator == "endswith":
-        return queryset.filter(**{f"{field_name}__iendswith": formatted_value})
-    elif operator == "contains":
-        return queryset.filter(**{f"{field_name}__icontains": formatted_value})
-    elif operator == "ncontains":
-        return queryset.exclude(**{f"{field_name}__icontains": formatted_value})
+        val = val.strip().upper()
 
-    return queryset
+        if val.startswith("FR-"):
+            val = val[3:]
+
+        if not val.isdigit():
+            return queryset.none()
+
+        formatted = f"FR-{val}"
+
+        if operator == "eq":
+            q_object |= Q(**{field_name: formatted})
+
+        elif operator == "contains":
+            q_object |= Q(**{f"{field_name}__icontains": formatted})
+
+        elif operator == "startswith":
+            q_object |= Q(**{f"{field_name}__istartswith": formatted})
+
+        elif operator == "endswith":
+            q_object |= Q(**{f"{field_name}__iendswith": formatted})
+
+        elif operator == "neq":
+            queryset = queryset.exclude(**{field_name: formatted})
+
+        elif operator == "ncontains":
+            queryset = queryset.exclude(**{f"{field_name}__icontains": formatted})
+
+    if operator in ["neq", "ncontains"]:
+        return queryset
+
+    return queryset.filter(q_object)
