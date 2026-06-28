@@ -429,29 +429,54 @@ def get_filtered_work_orders(request):
     return queryset.distinct(), filters_data # Return distinct queryset and filters dict
 
 
-def apply_fault_report_condition(queryset, field_name, operator, value):
-
-    if not operator or value in (None, ""):
-        return queryset
-
+def parse_fault_report_number(value):
     values = split_comma_values(value)
-
-    q_object = Q()
+    parsed = []
 
     for val in values:
-
         val = val.strip().upper()
 
         if val.startswith("FR-"):
             val = val[3:]
 
         if not val.isdigit():
-            return queryset.none()
+            return None
+
+        parsed.append(int(val))
+
+    return parsed
+
+
+def apply_fault_report_condition(queryset, field_name, operator, value):
+
+    if not operator or value in (None, ""):
+        return queryset
+
+    parsed_vals = parse_fault_report_number(value)
+
+    if parsed_vals is None:
+        return queryset.none()
+
+    q_object = Q()
+
+    for val in parsed_vals:
 
         formatted = f"FR-{val}"
 
         if operator == "eq":
             q_object |= Q(**{field_name: formatted})
+
+        elif operator == "gt":
+            q_object |= Q(**{f"{field_name}__gt": formatted})
+
+        elif operator == "gte":
+            q_object |= Q(**{f"{field_name}__gte": formatted})
+
+        elif operator == "lt":
+            q_object |= Q(**{f"{field_name}__lt": formatted})
+
+        elif operator == "lte":
+            q_object |= Q(**{f"{field_name}__lte": formatted})
 
         elif operator == "contains":
             q_object |= Q(**{f"{field_name}__icontains": formatted})

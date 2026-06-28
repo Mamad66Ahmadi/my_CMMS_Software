@@ -47,7 +47,7 @@ FIELD_CONFIGS = [
     {'name': 'project_code',       'label': 'Project Code',     'icon': 'folder-code',  'input_type': 'select', 'placeholder': 'All',                 'operators': 'dropdown'},
     {'name': 'detection_method',   'label': 'Detection Method', 'icon': 'radar',        'input_type': 'select', 'placeholder': 'All',                 'operators': 'dropdown'},
     {'name': 'work_type',          'label': 'Work Type',        'icon': 'tool',         'input_type': 'select', 'placeholder': 'All',                 'operators': 'dropdown'},
-    {'name': 'fault_report',       'label': 'Fault Report',     'icon': 'file-alert',   'input_type': 'text',   'placeholder': 'FR-26000200, 26000201...',            'operators': 'text'},
+    {'name': 'fault_report',       'label': 'Fault Report',     'icon': 'file-alert',   'input_type': 'text',   'placeholder': '26000200, 26000201...',            'operators': 'numeric'},
     {'name': 'location_tag',       'label': 'Location Tag',     'icon': 'map-pin',      'input_type': 'text',   'placeholder': '103-KM-101, 103-KM-201...',       'operators': 'text'},
     {'name': 'parent_tag',         'label': 'Parent Tag',       'icon': 'sitemap',      'input_type': 'text',   'placeholder': '103-K-101, 103-K-201...',        'operators': 'text'},
     {'name': 'equipment',          'label': 'Equipment Serial', 'icon': 'cpu',          'input_type': 'text',   'placeholder': 'Serial...',           'operators': 'text'},
