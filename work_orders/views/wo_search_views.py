@@ -3,6 +3,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.views.generic import TemplateView
+from django.db.models import Count
 
 # Import config and services
 from work_orders.services.wo_filter_config import *
@@ -42,7 +43,6 @@ class WorkOrderSearchView(LoginRequiredMixin, TemplateView):
         })
         return context
 
-
 class WorkOrderList(LoginRequiredMixin, TemplateView):
     template_name = "work_orders/work_orders_head/wo_list.html"
 
@@ -54,14 +54,27 @@ class WorkOrderList(LoginRequiredMixin, TemplateView):
         if not _has_any_filter(request):
             context.update({
                 "work_orders": None,
-                "error_message": "Please select at least one filter."
+                "error_message": "Please select at least one filter.",
+                "sort_by": "wo_number",
+                "per_page": 25,
+                "query_params": "",
             })
             return context
 
         queryset, filters = get_filtered_work_orders(request)
 
-        sort_by_param = request.GET.get("sort", "-reported_at")
-        sort_field = get_sort_field(sort_by_param, WORK_ORDER_LIST_SORT_FIELDS)
+        # Annotate task_count so the #Tasks column can be sorted
+        queryset = queryset.annotate(
+            task_count=Count("tasks", distinct=True)
+        )
+
+        # Default sorting: WO Number ascending
+        sort_by_param = request.GET.get("sort", "wo_number")
+        sort_field = get_sort_field(
+            sort_by_param,
+            WORK_ORDER_LIST_SORT_FIELDS,
+            default="wo_number",
+        )
 
         queryset = queryset.order_by(sort_field, "-id")
 

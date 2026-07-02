@@ -174,6 +174,7 @@ class WorkOrderTaskAdmin(admin.ModelAdmin):
             'fields': (
                 'work_order',
                 'task_number',
+                'is_main_task',
                 'location_tag_display',
                 'status',
                 'directive',

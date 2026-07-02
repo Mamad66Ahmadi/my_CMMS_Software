@@ -8,14 +8,14 @@
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="directive" label="Directive" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="priority" label="Priority" sort_by=sort_by query_params=query_params %}
-            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="fault_desc" label="Fault Desc" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="fault_desc" label="Fault Description" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="work_type" label="Work Type" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="symptom" label="Symptom" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="cause" label="Cause" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="project_code" label="Project Code" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="detection_method" label="Detection Method" sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="reported_by" label="Reported By" sort_by=sort_by query_params=query_params %}
-            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="reported_department" label="Reported Dept" sort_by=sort_by query_params=query_params %}
+            {% include "work_orders/work_orders_head/_wo_table_header.html" with column="reported_department" label="Reporting Dep." sort_by=sort_by query_params=query_params %}
             {% include "work_orders/work_orders_head/_wo_table_header.html" with column="reported_at" label="Created At" sort_by=sort_by query_params=query_params %}
             <th>Task Summary</th>
         </tr>
@@ -27,41 +27,81 @@
             data-pk="{{ wo.id }}"
             data-detail-url="{% url 'work_orders:work_order_detail_template' wo.id %}">
 
-            <td class="fw-bold">{{ wo.wo_number }}</td>
-            <td>{{ wo.tasks.count }}</td>
+            <!-- WO Number -->
+            <td>{{ wo.wo_number }}</td>
 
+            <!-- Task Count -->
+            <td>{{ wo.task_count }}</td>
+
+            <!-- Status Badge (matching fault report style) -->
             <td>
                 {% if wo.status == "CREATED" %}
-                    <span class="status-badge status-waiting">Created</span>
+                    <span class="status-badge status-waiting" title="Created">Created</span>
                 {% elif wo.status == "PLANNED" %}
-                    <span class="status-badge status-planned">Planned</span>
+                    <span class="status-badge status-planned" title="Planned">Planned</span>
                 {% elif wo.status == "IN_EXECUTION" %}
-                    <span class="status-badge status-ongoing">In Execution</span>
+                    <span class="status-badge status-ongoing" title="In Execution">In Execution</span>
                 {% elif wo.status == "WORK_DONE" %}
-                    <span class="status-badge status-completed">Work Done</span>
+                    <span class="status-badge status-completed" title="Work Done">Work Done</span>
                 {% elif wo.status == "CLOSED" %}
-                    <span class="status-badge status-completed">Closed</span>
+                    <span class="status-badge bg-success text-white" title="Closed">Closed</span>
                 {% elif wo.status == "CANCELLED" %}
-                    <span class="status-badge status-cancelled">Cancelled</span>
+                    <span class="status-badge bg-danger text-white" title="Cancelled">Cancelled</span>
                 {% else %}
-                    <span class="status-badge status-planned">{{ wo.get_status_display }}</span>
+                    {{ wo.get_status_display }}
                 {% endif %}
             </td>
 
+            <!-- Parent WO -->
             <td>{{ wo.parent_work_order.wo_number|default:"-" }}</td>
+
+            <!-- Location Tag -->
             <td>{{ wo.location_tag.loc_tag|default:"-" }}</td>
-            <td class="persian-text"><bdi>{{ wo.directive|default:"-"|truncatechars:50 }}</bdi></td>
+
+            <!-- Directive -->
+            <td class="persian-text">
+                <bdi>{{ wo.directive|default:"-"|truncatechars:80 }}</bdi>
+            </td>
+
+            <!-- Priority -->
             <td>{{ wo.priority|default:"-" }}</td>
-            <td class="persian-text"><bdi>{{ wo.fault_desc|default:"-"|truncatechars:50 }}</bdi></td>
+
+            <!-- Fault Desc -->
+            <td class="persian-text">
+                <bdi>{{ wo.fault_desc|default:"-"|truncatechars:80 }}</bdi>
+            </td>
+
+            <!-- Work Type -->
             <td>{{ wo.work_type|default:"-" }}</td>
+
+            <!-- Symptom -->
             <td>{{ wo.symptom|default:"-" }}</td>
-            <td class="persian-text"><bdi>{{ wo.cause|default:"-"|truncatechars:40 }}</bdi></td>
+
+            <!-- Cause -->
+            <td class="persian-text">
+                <bdi>{{ wo.cause|default:"-"|truncatechars:80 }}</bdi>
+            </td>
+
+            <!-- Project Code -->
             <td>{{ wo.project_code|default:"-" }}</td>
+
+            <!-- Detection Method -->
             <td>{{ wo.detection_method|default:"-" }}</td>
-            <td>{{ wo.reported_by|default:"-" }}</td>
-            <td>{{ wo.reported_department|default:"-" }}</td>
+
+            <!-- Reported By -->
+            <td>{{ wo.reported_by.username|default:"-" }}</td>
+
+            <!-- Department -->
+            <td>{{ wo.reported_department.name|default:"-" }}</td>
+
+            <!-- Created At -->
             <td>{{ wo.reported_at|date:"Y-m-d H:i" }}</td>
-            <td style="font-size: 0.85rem; color: #666;">{{ wo.task_status_summary }}</td>
+
+            <!-- Task Summary -->
+            <td style="font-size: 0.85rem; color: #666;">
+                {{ wo.task_status_summary }}
+            </td>
+
         </tr>
         {% endfor %}
     </tbody>

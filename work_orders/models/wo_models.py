@@ -176,6 +176,7 @@ class WorkOrderTask(models.Model):
     work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name="tasks")
     task_number = models.PositiveIntegerField(blank=True)
     
+    is_main_task = models.BooleanField(default=False)
     # Task Scope
     task_requester_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="requested_tasks")
     task_executing_department = models.ForeignKey("accounts.Department", on_delete=models.PROTECT, related_name="executing_tasks")
@@ -250,6 +251,8 @@ class WorkOrderTask(models.Model):
             )
 
         with transaction.atomic():
+
+            # --- Assign task_number for new tasks ---
             if is_new and not self.task_number:
                 WorkOrder.objects.select_for_update().get(pk=self.work_order_id)
 
@@ -259,12 +262,20 @@ class WorkOrderTask(models.Model):
                     .order_by("-task_number")
                     .first()
                 )
-
                 self.task_number = 1 if not last_task else last_task.task_number + 1
 
-            self.full_clean()
+            # --- Default main task assignment ---
+            # If first task created, make it main
+            if is_new and self.task_number == 1:
+                self.is_main_task = True
+
             super().save(*args, **kwargs)
 
+            # --- Ensure only one main task per WO ---        
+            if self.is_main_task:
+                WorkOrderTask.objects.filter(work_order=self.work_order).exclude(pk=self.pk).update(is_main_task=False)
+
+        # --- Status updating logic ---
         if is_new or old_status != self.status:
             self.work_order.update_status_from_tasks()
 
