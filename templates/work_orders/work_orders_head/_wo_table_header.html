@@ -1,3 +1,5 @@
+{% load wo_sort_tags %}
+
 {% comment %}
 Expected:
 column
@@ -6,28 +8,47 @@ sort_by
 query_params
 {% endcomment %}
 
+{% with next_sort=next_sort_value|default:'' %}
+{% next_sort_value sort_by column as next_sort %}
+{% sort_priority sort_by column as priority %}
+
 {% with asc=column desc="-"|add:column %}
 
-{% if sort_by == asc %}
-    <th class="sorted"
-        onclick="window.location.href='?sort={{ desc }}&{{ query_params }}'">
-        {{ label }}
-        <span class="sort-arrow">▲</span>
-    </th>
+    {% if asc in sort_by %}
+        <th class="sorted"
+            onclick="window.location.href='?sort={{ next_sort }}&{{ query_params }}'">
 
-{% elif sort_by == desc %}
-    <th class="sorted"
-        onclick="window.location.href='?sort={{ asc }}&{{ query_params }}'">
-        {{ label }}
-        <span class="sort-arrow">▼</span>
-    </th>
+            {{ label }}
 
-{% else %}
-    <th onclick="window.location.href='?sort={{ asc }}&{{ query_params }}'">
-        {{ label }}
-        <span class="sort-arrow"></span>
-    </th>
+            <span class="sort-priority">
+                {{ priority }}
+            </span>
 
-{% endif %}
+            <span class="sort-arrow">▲</span>
+        </th>
 
+    {% elif desc in sort_by %}
+        <th class="sorted"
+            onclick="window.location.href='?sort={{ next_sort }}&{{ query_params }}'">
+
+            {{ label }}
+
+            <span class="sort-priority">
+                {{ priority }}
+            </span>
+
+            <span class="sort-arrow">▼</span>
+        </th>
+
+    {% else %}
+        <th onclick="window.location.href='?sort={{ next_sort }}&{{ query_params }}'">
+
+            {{ label }}
+
+            <span class="sort-arrow"></span>
+        </th>
+
+    {% endif %}
+
+{% endwith %}
 {% endwith %}

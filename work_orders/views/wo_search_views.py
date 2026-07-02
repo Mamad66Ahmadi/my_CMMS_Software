@@ -9,7 +9,7 @@ from django.db.models import Count
 from work_orders.services.wo_filter_config import *
 from work_orders.services.wo_filter_choices import build_filter_choices_map
 from work_orders.services.wo_filter_service import get_filtered_work_orders
-from work_orders.services.wo_sorting import WORK_ORDER_LIST_SORT_FIELDS, get_sort_field
+from work_orders.services.wo_sorting import WORK_ORDER_LIST_SORT_FIELDS, get_sort_fields
 
 class WorkOrderSearchView(LoginRequiredMixin, TemplateView):
     template_name = "work_orders/work_orders_head/wo_search.html"
@@ -69,14 +69,15 @@ class WorkOrderList(LoginRequiredMixin, TemplateView):
         )
 
         # Default sorting: WO Number ascending
+        # Supports multi-column sorting, e.g. ?sort=wo_number,-priority,status
         sort_by_param = request.GET.get("sort", "wo_number")
-        sort_field = get_sort_field(
+        sort_fields = get_sort_fields(
             sort_by_param,
             WORK_ORDER_LIST_SORT_FIELDS,
             default="wo_number",
         )
 
-        queryset = queryset.order_by(sort_field, "-id")
+        queryset = queryset.order_by(*sort_fields, "-id")
 
         try:
             per_page = int(request.GET.get("per_page", 25))

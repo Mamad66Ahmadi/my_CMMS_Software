@@ -47,12 +47,13 @@ WORK_ORDER_EXPORT_SORT_FIELDS = {
 
 def get_sort_field(sort_param: str, allowed_sort_map: dict, default: str = "wo_number") -> str:
     """
-    Determines the database sort field based on the request's sort parameter.
-    Handles ascending/descending order.
+    Converts one UI sort key into one database order_by field.
 
-    Example:
-        sort=wo_number   -> wo_number_numeric
-        sort=-wo_number  -> -wo_number_numeric
+    Examples:
+        wo_number   -> wo_number_numeric
+        -wo_number  -> -wo_number_numeric
+        priority    -> priority__priority_level
+        -priority   -> -priority__priority_level
     """
 
     if not sort_param:
@@ -61,12 +62,65 @@ def get_sort_field(sort_param: str, allowed_sort_map: dict, default: str = "wo_n
     is_desc = sort_param.startswith("-")
     clean_sort = sort_param.lstrip("-")
 
-    sort_field = allowed_sort_map.get(
-        clean_sort,
-        allowed_sort_map[default],
-    )
+    sort_field = allowed_sort_map.get(clean_sort)
+
+    if not sort_field:
+        sort_field = allowed_sort_map[default]
+        is_desc = False
 
     if is_desc:
         return f"-{sort_field}"
 
     return sort_field
+
+
+def get_sort_fields(sort_param: str, allowed_sort_map: dict, default: str = "wo_number") -> list[str]:
+    """
+    Converts a comma-separated sort query string into multiple Django order_by fields.
+
+    Example:
+        sort=wo_number,-priority,status
+
+    Returns:
+        [
+            "wo_number_numeric",
+            "-priority__priority_level",
+            "status",
+        ]
+    """
+
+    if not sort_param:
+        sort_param = default
+
+    raw_fields = [
+        item.strip()
+        for item in sort_param.split(",")
+        if item.strip()
+    ]
+
+    if not raw_fields:
+        raw_fields = [default]
+
+    sort_fields = []
+    seen_fields = set()
+
+    for raw_field in raw_fields:
+        clean_field = raw_field.lstrip("-")
+
+        if clean_field in seen_fields:
+            continue
+
+        if clean_field not in allowed_sort_map:
+            continue
+
+        sort_fields.append(
+            get_sort_field(raw_field, allowed_sort_map, default=default)
+        )
+        seen_fields.add(clean_field)
+
+    if not sort_fields:
+        sort_fields.append(
+            get_sort_field(default, allowed_sort_map, default=default)
+        )
+
+    return sort_fields
