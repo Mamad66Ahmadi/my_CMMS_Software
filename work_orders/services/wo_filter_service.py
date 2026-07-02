@@ -7,6 +7,9 @@ from django.db.models import Q
 from work_orders.models.wo_models import WorkOrder
 from work_orders.models.wo_status_models import WorkOrderStatus
 from work_orders.models import Priority, Symptom, ProjectCode, DetectionMethod, WorkType, Cause
+from accounts.models import Department
+from work_orders.models import PerformedAction, AwaitingReason
+
 
 from .wo_filter_config import FIELD_CONFIGS, ACTIVE_FILTER_OPERATOR_LABELS
 
@@ -39,6 +42,24 @@ DROPDOWN_FIELDS = {
     "cause": "cause_id",
 }
 
+TASK_TEXT_FIELDS = {
+    "task_directive": "tasks__directive",
+    "permit": "tasks__permit",
+}
+
+TASK_DROPDOWN_FIELDS = {
+    "task_requester_department": "tasks__task_requester_department_id",
+    "task_executing_department": "tasks__task_executing_department_id",
+    "performed_action": "tasks__performed_action_id",
+    "awaiting_reason": "tasks__awaiting_reason_id",
+}
+
+TASK_DATE_FIELDS = {
+    "actual_start": "tasks__actual_start",
+    "actual_finish": "tasks__actual_finish",
+    "planned_start": "tasks__planned_start",
+    "planned_finish": "tasks__planned_finish",
+}
 
 
 def split_comma_values(value):
@@ -225,6 +246,8 @@ def normalize_operator(op: str, value: str, default: str = "eq") -> str:
     return op
 
 
+
+
 def build_active_filters(filters):
     """
     Builds a list of dictionaries representing active filters for display.
@@ -236,6 +259,8 @@ def build_active_filters(filters):
     dropdown_fields = {
         "status", "priority", "symptom", "project_code", "detection_method",
         "work_type", "cause",
+        "task_requester_department", "task_executing_department",
+        "performed_action", "awaiting_reason",
     }
 
     active_filters = []
@@ -276,12 +301,15 @@ def get_filtered_work_orders(request):
     """
     filters_data = request.GET.copy() # Use a different name to avoid shadowing
 
-    queryset = WorkOrder.objects.select_related(
+    queryset = (WorkOrder.objects.select_related(
         "fault_report", "location_tag", "location_tag__parent", "location_tag__unit",
         "equipment", "priority", "symptom", "cause", "project_code",
         "detection_method", "work_type", "reported_by", "reported_department",
         "modified_by", "parent_work_order",
-    ).all()
+    )
+    .prefetch_related(
+        "tasks","tasks__task_requester_department","tasks__task_executing_department",
+        "tasks__performed_action","tasks__awaiting_reason",))
 
     # --- Default status behavior ---
     # --- Status filtering ---
@@ -423,6 +451,69 @@ def get_filtered_work_orders(request):
         queryset = apply_text_condition(queryset, model_field, op1, val1)
         queryset = apply_text_condition(queryset, model_field, op2, val2)
 
+    # Task text fields
+    for param_name, model_field in TASK_TEXT_FIELDS.items():
+
+        op1 = filters_data.get(f"{param_name}_op1", "").strip()
+        val1 = filters_data.get(f"{param_name}_val1", "").strip()
+
+        op2 = filters_data.get(f"{param_name}_op2", "").strip()
+        val2 = filters_data.get(f"{param_name}_val2", "").strip()
+
+        op1 = normalize_operator(op1, val1)
+        op2 = normalize_operator(op2, val2)
+
+        queryset = apply_text_condition(queryset, model_field, op1, val1)
+        queryset = apply_text_condition(queryset, model_field, op2, val2)
+
+    # Task dropdown fields
+    for param_name, model_field in TASK_DROPDOWN_FIELDS.items():
+
+        op1 = filters_data.get(f"{param_name}_op1", "").strip()
+        val1 = filters_data.get(f"{param_name}_val1", "").strip()
+
+        op2 = filters_data.get(f"{param_name}_op2", "").strip()
+        val2 = filters_data.get(f"{param_name}_val2", "").strip()
+
+        op1 = normalize_operator(op1, val1)
+        op2 = normalize_operator(op2, val2)
+
+        q_object = Q()
+
+        if op1 and val1:
+
+            if op1 == "eq":
+                q_object |= Q(**{model_field: val1})
+
+            elif op1 == "neq":
+                queryset = queryset.exclude(**{model_field: val1})
+
+        if op2 and val2:
+
+            if op2 == "eq":
+                q_object |= Q(**{model_field: val2})
+
+            elif op2 == "neq":
+                queryset = queryset.exclude(**{model_field: val2})
+
+        if q_object:
+            queryset = queryset.filter(q_object)
+
+    # Task date fields
+    for param_name, model_field in TASK_DATE_FIELDS.items():
+
+        op1 = filters_data.get(f"{param_name}_op1", "").strip()
+        val1 = filters_data.get(f"{param_name}_val1", "").strip()
+
+        op2 = filters_data.get(f"{param_name}_op2", "").strip()
+        val2 = filters_data.get(f"{param_name}_val2", "").strip()
+
+        op1 = normalize_operator(op1, val1)
+        op2 = normalize_operator(op2, val2)
+
+        queryset = apply_date_condition(queryset, model_field, op1, val1)
+        queryset = apply_date_condition(queryset, model_field, op2, val2)
+
     # --- Human-readable labels for dropdown filters ---
     # These labels are needed for the active filters display
     filters_data["priority_val1_label"] = get_object_label(Priority, filters_data.get("priority_val1"))
@@ -448,6 +539,19 @@ def get_filtered_work_orders(request):
     filters_data["status_val1_label"] = status_choices.get(filters_data.get("status_val1"), filters_data.get("status_val1", ""))
     filters_data["status_val2_label"] = status_choices.get(filters_data.get("status_val2"), filters_data.get("status_val2", ""))
 
+
+    # Task dropdown labels
+    filters_data["task_requester_department_val1_label"] = get_object_label(Department, filters_data.get("task_requester_department_val1"))
+    filters_data["task_requester_department_val2_label"] = get_object_label(Department, filters_data.get("task_requester_department_val2"))
+
+    filters_data["task_executing_department_val1_label"] = get_object_label(Department, filters_data.get("task_executing_department_val1"))
+    filters_data["task_executing_department_val2_label"] = get_object_label(Department, filters_data.get("task_executing_department_val2"))
+
+    filters_data["performed_action_val1_label"] = get_object_label(PerformedAction, filters_data.get("performed_action_val1"))
+    filters_data["performed_action_val2_label"] = get_object_label(PerformedAction, filters_data.get("performed_action_val2"))
+
+    filters_data["awaiting_reason_val1_label"] = get_object_label(AwaitingReason, filters_data.get("awaiting_reason_val1"))
+    filters_data["awaiting_reason_val2_label"] = get_object_label(AwaitingReason, filters_data.get("awaiting_reason_val2"))
     # --- Build active filters for display ---
     filters_data["active_filters"] = build_active_filters(filters_data)
 
@@ -522,3 +626,5 @@ def apply_fault_report_condition(queryset, field_name, operator, value):
         return queryset
 
     return queryset.filter(q_object)
+
+

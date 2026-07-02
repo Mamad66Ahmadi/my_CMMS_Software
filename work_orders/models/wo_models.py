@@ -222,6 +222,18 @@ class WorkOrderTask(models.Model):
             models.UniqueConstraint(fields=['work_order', 'task_number'], name='unique_task_per_wo')
         ]
 
+        indexes = [
+            models.Index(fields=["task_requester_department"]),
+            models.Index(fields=["task_executing_department"]),
+            models.Index(fields=["performed_action"]),
+            models.Index(fields=["awaiting_reason"]),
+            models.Index(fields=["planned_start"]),
+            models.Index(fields=["planned_finish"]),
+            models.Index(fields=["actual_start"]),
+            models.Index(fields=["actual_finish"]),
+            models.Index(fields=["permit"]),
+        ]
+
     def __str__(self):
         return f"{self.work_order.wo_number}-{self.task_number}"
 

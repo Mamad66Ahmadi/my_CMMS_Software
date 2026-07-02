@@ -31,11 +31,12 @@ class WorkOrderSearchView(LoginRequiredMixin, TemplateView):
         context.update({
             'field_configs':      FIELD_CONFIGS,
             'structured_filters': structured_filters,
-            'choices_map':        build_filter_choices_map(), # Use the new service
-            'operators_map':      { # Keep this inline or move to config if it gets large
+            'choices_map':        build_filter_choices_map(), 
+            'operators_map':      { 
                 'numeric': NUMERIC_OPERATORS,
                 'dropdown': DROPDOWN_OPERATORS,
                 'text': TEXT_OPERATORS,
+                'date': DATE_OPERATORS,  # <-- Added mapping for date fields
             },
             'per_page':           request.GET.get('per_page', '25'),
         })

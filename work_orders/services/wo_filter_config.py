@@ -19,6 +19,15 @@ NUMERIC_OPERATORS = {
     "lte": "<=",
 }
 
+DATE_OPERATORS = {
+    "eq": "=",
+    "neq": "<>",
+    "gt": ">",
+    "gte": ">=",
+    "lt": "<",
+    "lte": "<=",
+}
+
 DROPDOWN_OPERATORS = {
     "eq": "=",
     "neq": "<>",
@@ -39,7 +48,7 @@ ACTIVE_FILTER_OPERATOR_LABELS = {
 
 FIELD_CONFIGS = [
     {'name': 'wo_number',          'label': 'WO Number',        'icon': 'hash',         'input_type': 'text',   'placeholder': '2600100, 2600101...',          'operators': 'numeric'},
-    {'name': 'reported_at',        'label': 'Reported At',      'icon': 'calendar',     'input_type': 'date',   'placeholder': '',                    'operators': 'numeric'},
+    {'name': 'reported_at',        'label': 'Reported At',      'icon': 'calendar',     'input_type': 'date',   'placeholder': '',                    'operators': 'date'}, # Change 'numeric' to 'date'
     {'name': 'status',             'label': 'Status',           'icon': 'circle-dot',   'input_type': 'select', 'placeholder': 'Default active',      'operators': 'dropdown'},
     {'name': 'priority',           'label': 'Priority',         'icon': 'flag',         'input_type': 'select', 'placeholder': 'All',                 'operators': 'dropdown'},
     {'name': 'symptom',            'label': 'Symptom',          'icon': 'stethoscope',  'input_type': 'select', 'placeholder': 'All',                 'operators': 'dropdown'},
@@ -56,4 +65,15 @@ FIELD_CONFIGS = [
     {'name': 'directive',          'label': 'Directive',        'icon': 'bolt',         'input_type': 'text',   'placeholder': 'Change, Overhaul...',  'operators': 'text'},
     {'name': 'fault_desc',         'label': 'Fault Description','icon': 'notes',        'input_type': 'text',   'placeholder': 'Leak, vibration...',      'operators': 'text'},
     {'name': 'train',              'label': 'Train',            'icon': 'train',        'input_type': 'number', 'placeholder': '1,2...',                   'operators': 'numeric'},
+
+    {'name': 'task_directive',     'label': 'Task Directive',   'icon': 'clipboard-text','input_type': 'text',  'placeholder': 'Inspection, repair...', 'operators': 'text'},
+    {'name': 'permit',             'label': 'Permit',           'icon': 'license',       'input_type': 'text',  'placeholder': 'Permit number...',      'operators': 'text'},
+    {'name': 'task_requester_department','label': 'Task Requester Dept.', 'icon': 'building','input_type': 'select', 'placeholder': 'All','operators': 'dropdown'},
+    {'name': 'task_executing_department','label': 'Task Executing Dept.', 'icon': 'factory','input_type': 'select', 'placeholder': 'All','operators': 'dropdown'},
+    {'name': 'performed_action',    'label': 'Performed Action','icon': 'check',        'input_type': 'select', 'placeholder': 'All',                  'operators': 'dropdown'},
+    {'name': 'awaiting_reason',     'label': 'Awaiting Reason', 'icon': 'clock-pause',  'input_type': 'select', 'placeholder': 'All',    'operators': 'dropdown'},
+    {'name': 'planned_start',       'label': 'Planned Start',   'icon': 'calendar-start','input_type': 'date', 'placeholder': '',        'operators': 'date'},
+    {'name': 'planned_finish',      'label': 'Planned Finish', 'icon': 'calendar-end',   'input_type': 'date', 'placeholder': '',        'operators': 'date'},
+    {'name': 'actual_start',        'label': 'Actual Start', 'icon': 'calendar-start',   'input_type': 'date', 'placeholder': '',        'operators': 'date'},
+    {'name': 'actual_finish',       'label': 'Actual Finish', 'icon': 'calendar-end',    'input_type': 'date', 'placeholder': '',        'operators': 'date'},
 ]
