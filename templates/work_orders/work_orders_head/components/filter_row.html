@@ -40,8 +40,13 @@
     </div>
     {% endif %}
 
-    <div class="cmms-filter__sep">and</div>
-
+    <div class="cmms-filter__sep">
+      {% if field.input_type == "select" %}
+        or
+      {% else %}
+        and
+      {% endif %}
+    </div>
     <!-- Second operator -->
     <select name="{{ field.name }}_op2" class="cmms-filter__select">
       <option value="">--</option>

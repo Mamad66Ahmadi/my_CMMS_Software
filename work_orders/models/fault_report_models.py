@@ -127,7 +127,7 @@ class FaultReport(models.Model):
 
             if is_conversion:
                 # We import inside the method to prevent circular imports at the top of the file
-                from work_orders.services import convert_fault_report_to_work_order
+                from work_orders.services.wo_creation_service import convert_fault_report_to_work_order
                 convert_fault_report_to_work_order(self)
 
 

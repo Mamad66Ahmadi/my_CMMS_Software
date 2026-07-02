@@ -31,7 +31,6 @@ TEXT_FIELDS = {
 }
 
 DROPDOWN_FIELDS = {
-    "status": "status",
     "priority": "priority_id",
     "symptom": "symptom_id",
     "project_code": "project_code_id",
@@ -80,7 +79,7 @@ def apply_text_condition(queryset, field_name, operator, value):
     for val in values:
 
         if operator == "eq":
-            q_object |= Q(**{field_name: val})
+            q_object |= Q(**{f"{field_name}__iexact": val})
 
         elif operator == "contains":
             q_object |= Q(**{f"{field_name}__icontains": val})
@@ -285,12 +284,11 @@ def get_filtered_work_orders(request):
     ).all()
 
     # --- Default status behavior ---
-    status_op1 = filters_data.get("status_op1", "").strip()
+    # --- Status filtering ---
+
     status_val1 = filters_data.get("status_val1", "").strip()
-    status_op2 = filters_data.get("status_op2", "").strip()
     status_val2 = filters_data.get("status_val2", "").strip()
 
-    # If no status filters are explicitly provided, apply a default set of active statuses
     ACTIVE_STATUSES = [
         WorkOrderStatus.CREATED,
         WorkOrderStatus.PLANNED,
@@ -298,23 +296,26 @@ def get_filtered_work_orders(request):
         WorkOrderStatus.WORK_DONE,
     ]
 
-    status_val1 = filters_data.get("status_val1")
-    status_val2 = filters_data.get("status_val2")
+    selected_statuses = []
 
-    # If user selected ALL → do not filter
-    if status_val1 == "ALL" or status_val2 == "ALL":
+    if status_val1:
+        selected_statuses.append(status_val1)
+
+    if status_val2:
+        selected_statuses.append(status_val2)
+
+    # If ALL is selected → no filtering
+    if "ALL" in selected_statuses:
         pass
 
     # If user selected specific statuses
-    elif status_val1 or status_val2:
-        if status_val1:
-            queryset = queryset.filter(status=status_val1)
-        if status_val2:
-            queryset = queryset.filter(status=status_val2)
+    elif selected_statuses:
+        queryset = queryset.filter(status__in=selected_statuses)
 
-    # Default behaviour
+    # Default behavior
     else:
         queryset = queryset.filter(status__in=ACTIVE_STATUSES)
+
 
     # --- Apply filters based on field types ---
     # Numeric fields
@@ -374,16 +375,40 @@ def get_filtered_work_orders(request):
 
     # Dropdown / exact categorical fields
     for param_name, model_field in DROPDOWN_FIELDS.items():
+
         op1 = filters_data.get(f"{param_name}_op1", "").strip()
         val1 = filters_data.get(f"{param_name}_val1", "").strip()
+
         op2 = filters_data.get(f"{param_name}_op2", "").strip()
         val2 = filters_data.get(f"{param_name}_val2", "").strip()
 
         op1 = normalize_operator(op1, val1)
         op2 = normalize_operator(op2, val2)
 
-        queryset = apply_exact_condition(queryset, model_field, op1, val1)
-        queryset = apply_exact_condition(queryset, model_field, op2, val2)
+        q_object = Q()
+
+        # First condition
+        if op1 and val1:
+
+            if op1 == "eq":
+                q_object |= Q(**{model_field: val1})
+
+            elif op1 == "neq":
+                queryset = queryset.exclude(**{model_field: val1})
+
+        # Second condition
+        if op2 and val2:
+
+            if op2 == "eq":
+                q_object |= Q(**{model_field: val2})
+
+            elif op2 == "neq":
+                queryset = queryset.exclude(**{model_field: val2})
+
+        # Apply OR conditions
+        if q_object:
+            queryset = queryset.filter(q_object)
+
 
     # Text fields
     for param_name, model_field in TEXT_FIELDS.items():

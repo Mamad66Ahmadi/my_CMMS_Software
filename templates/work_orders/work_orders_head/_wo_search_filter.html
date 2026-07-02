@@ -307,6 +307,31 @@
       .cmms-filter__inputs { padding: 10px 12px; }
       .cmms-filter__label { padding: 10px 12px; }
     }
+    .cmms-filter__logic {
+      height: 32px;
+      min-width: 72px;
+      padding: 0 8px;
+      border: 1px solid var(--cmms-border);
+      border-radius: var(--cmms-radius);
+      background: var(--cmms-primary-light);
+      color: var(--cmms-primary);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      outline: none;
+      cursor: pointer;
+      transition: all var(--cmms-transition);
+    }
+
+    .cmms-filter__logic:hover {
+      border-color: var(--cmms-primary);
+    }
+
+    .cmms-filter__logic:focus {
+      border-color: var(--cmms-primary);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+    }
+
   </style>
 
   <div class="cmms-card cmms-filter">
