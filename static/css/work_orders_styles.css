@@ -437,15 +437,15 @@ th:not(.sorted) .sort-arrow {
 
 
 /* ------------------------------------------------------------------
-   STATUS BADGES
+   STATUS BADGES (Enterprise CSS Fixes)
 ------------------------------------------------------------------ */
 
 .status-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-width: 85px;
-    padding: 4px 10px;
+    min-width: 95px;
+    padding: 5px 10px;
     border-radius: var(--radius-pill);
     font-size: 11px;
     font-weight: 700;
@@ -462,30 +462,83 @@ th:not(.sorted) .sort-arrow {
     flex-shrink: 0;
 }
 
-.status-completed {
-    background-color: var(--c-status-success-bg);
-    color: var(--c-status-success-text);
+/* 1. CREATED (Waiting / Slate Gray) */
+.status-created {
+    background-color: #f1f5f9;
+    color: #475569;
 }
-.status-completed::before {
-    background-color: var(--c-status-success-dot);
+.status-created::before {
+    background-color: #64748b;
 }
 
-.status-ongoing {
+/* 2. PLANNED (Blue) */
+.status-planned {
+    background-color: #eff6ff;
+    color: #1e40af;
+}
+.status-planned::before {
+    background-color: #3b82f6;
+}
+
+/* 3. IN EXECUTION (Amber / Yellow) */
+.status-execution {
     background-color: var(--c-status-warning-bg);
     color: var(--c-status-warning-text);
 }
-.status-ongoing::before {
+.status-execution::before {
     background-color: var(--c-status-warning-dot);
 }
 
-.status-waiting {
+/* 4. WORK DONE (Light Green) */
+.status-done {
+    background-color: #f0fdf4;
+    color: #166534;
+}
+.status-done::before {
+    background-color: #22c55e;
+}
+
+/* 5. CLOSED (Dark Green) */
+.status-closed {
+    background-color: var(--c-status-success-bg);
+    color: var(--c-status-success-text);
+}
+.status-closed::before {
+    background-color: var(--c-status-success-dot);
+}
+
+/* 6. CANCELLED (Red) */
+.status-cancelled {
     background-color: var(--c-status-danger-bg);
     color: var(--c-status-danger-text);
 }
-.status-waiting::before {
+.status-cancelled::before {
     background-color: var(--c-status-danger-dot);
 }
 
+/* Fallback badge style */
+.status-default {
+    background-color: var(--c-status-neutral-bg);
+    color: var(--c-status-neutral-text);
+}
+.status-default::before {
+    background-color: var(--c-status-neutral-dot);
+}
+
+
+/* ------------------------------------------------------------------
+   AUTO DIRECTION ALIGNMENT (English LTR / Persian RTL)
+------------------------------------------------------------------ */
+
+.align-start-cell {
+    text-align: start !important; /* Forces left-align for LTR, right-align for RTL */
+}
+
+.align-start-cell bdi {
+    display: block;
+    text-align: start;
+    unicode-bidi: plaintext;
+}
 
 /* ------------------------------------------------------------------
    COLLAPSIBLE SECTIONS

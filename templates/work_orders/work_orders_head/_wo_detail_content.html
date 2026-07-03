@@ -1,74 +1,369 @@
-<div class="modal-header bg-light">
-    <h5 class="modal-title">Work Order: {{ wo.wo_number }}</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
-<div class="modal-body">
-    <div class="row g-3">
-        <!-- Identity Section -->
-        <div class="col-md-4">
-            <label class="text-muted small d-block">Status</label>
-            <strong>{{ wo.get_status_display }}</strong>
-        </div>
-        <div class="col-md-4">
-            <label class="text-muted small d-block">Priority</label>
-            <strong>{{ wo.priority|default:"-" }}</strong>
-        </div>
-        <div class="col-md-4">
-            <label class="text-muted small d-block">Work Type</label>
-            <strong>{{ wo.work_type|default:"-" }}</strong>
+{% load static %}
+<div class="wo-modal-content">
+    <div class="modal-header wo-header wo-header--{{ wo.status }}">
+        <div class="wo-header-main">
+            <span class="wo-eyebrow">Work Order</span>
+            <h5 class="modal-title wo-title">{{ wo.wo_number }}</h5>
         </div>
 
-        <hr>
+        <button type="button" class="btn-close wo-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
 
-        <!-- Technical Section -->
-        <div class="col-md-6">
-            <label class="text-muted small d-block">Location Tag</label>
-            <strong>{{ wo.location_tag.loc_tag|default:"-" }}</strong>
-            <div class="text-muted small">{{ wo.location_tag.description }}</div>
+    <div class="modal-body wo-body">
+
+        <div class="wo-section">
+            <div class="wo-section-title">Identification</div>
+            <div class="wo-grid wo-grid--3">
+                <div class="wo-field">
+                    <label class="wo-label">Status</label>
+                    <div class="wo-value">{{ wo.get_status_display }}</div>
+                </div>
+                <div class="wo-field">
+                    <label class="wo-label">Priority</label>
+                    <div class="wo-value">{{ wo.get_priority_display|default:wo.priority|default:"—" }}</div>
+                </div>
+                <div class="wo-field">
+                    <label class="wo-label">Work Type</label>
+                    <div class="wo-value">{{ wo.work_type|default:"—" }}</div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6">
-            <label class="text-muted small d-block">Equipment</label>
-            <strong>{{ wo.equipment.serial_number|default:"-" }}</strong>
-            <div class="text-muted small">{{ wo.equipment.name }}</div>
+
+        <div class="wo-section">
+            <div class="wo-section-title">Technical reference</div>
+            <div class="wo-grid wo-grid--2">
+                <div class="wo-field">
+                    <label class="wo-label">Location tag</label>
+                    <div class="wo-value wo-value--mono">{{ wo.location_tag.loc_tag|default:"—" }}</div>
+                    <div class="wo-subtext">{{ wo.location_tag.description|default:"" }}</div>
+                </div>
+                <div class="wo-field">
+                    <label class="wo-label">Equipment</label>
+                    <div class="wo-value wo-value--mono">{{ wo.equipment.serial_number|default:"—" }}</div>
+                    <div class="wo-subtext">{{ wo.equipment.name|default:"" }}</div>
+                </div>
+            </div>
         </div>
 
-        <hr>
-
-        <!-- Description -->
-        <div class="col-12 persion-text">
-            <label class="text-muted small d-block">Directive</label>
-            <p class="mb-0"><bdi>{{ wo.directive }}</bdi></p>
+        <div class="wo-section">
+            <div class="wo-section-title">Directive</div>
+            <div class="wo-directive persian-text">
+                <bdi>{{ wo.directive|default:"—" }}</bdi>
+            </div>
         </div>
 
         {% if wo.tasks.all %}
-        <hr>
-        <div class="col-12">
-            <h6>Tasks Progress</h6>
-            <table class="table table-sm table-bordered mt-2">
-                <thead class="table-light">
-                    <tr>
-                        <th>Task #</th>
-                        <th>Executing Dept</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for task in wo.tasks.all %}
-                    <tr>
-                        <td>{{ task.task_number }}</td>
-                        <td>{{ task.task_executing_department }}</td>
-                        <td>{{ task.get_status_display }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="wo-section">
+            <div class="wo-section-title">Tasks progress</div>
+
+            <div class="wo-table-wrap">
+                <table class="wo-table">
+                    <thead>
+                        <tr>
+                            <th class="wo-col-num">Task #</th>
+                            <th class="persian-text">Directive</th>
+                            <th>Status</th>
+                            <th>Executing dept</th>
+                            <th>Reporting dept</th>
+                            <th>Awaiting code</th>
+                            <th>Planned start</th>
+                            <th>Planned finish</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in wo.tasks.all %}
+                        <tr>
+                            <!-- Task number -->
+                            <td class="wo-col-num wo-value--mono">{{ task.task_number }}</td>
+
+                            <!-- Directive -->
+                            <td class="persian-text task-directive-cell">
+                                <bdi dir="auto">{{ task.directive|default:"—" }}</bdi>
+                            </td>
+
+                            <!-- Status with badge -->
+                            <td>
+                                <span class="wo-badge wo-badge--sm wo-badge--status-{{ task.status }}">
+                                    <span class="wo-dot"></span>{{ task.get_status_display }}
+                                </span>
+                            </td>
+
+                            <!-- Executing Department -->
+                            <td>{{ task.task_executing_department|default:"—" }}</td>
+
+                            <!-- Reporting Department -->
+                            <td>{{ task.task_requester_department|default:"—" }}</td>
+
+                            <!-- Awaiting Code -->
+                            <td>{{ task.awaiting_reason|default:"—" }}</td>
+
+                            <!-- Planned Start (Corrected DateField formatting) -->
+                            <td class="wo-value--mono">
+                                {{ task.planned_start|date:"Y-m-d"|default:"—" }}
+                            </td>
+
+                            <!-- Planned Finish (Corrected DateField formatting) -->
+                            <td class="wo-value--mono">
+                                {{ task.planned_finish|date:"Y-m-d"|default:"—" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         {% endif %}
+
+    </div>
+
+    <div class="modal-footer wo-footer">
+        <a href="/admin/work_orders/workorder/{{ wo.id }}/change/" class="wo-btn wo-btn--ghost" target="_blank">
+            <i class="bi bi-pencil-square"></i> Open in admin
+        </a>
+        <button type="button" class="wo-btn wo-btn--primary" data-bs-dismiss="modal">Close</button>
     </div>
 </div>
-<div class="modal-footer">
-    <a href="/admin/work_orders/workorder/{{ wo.id }}/change/" class="btn btn-sm btn-outline-primary" target="_blank">
-        <i class="bi bi-pencil-square"></i> Open in Admin
-    </a>
-    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
-</div>
+
+<style>
+:root{
+    --wo-bg:#F4F5F7;
+    --wo-surface:#FFFFFF;
+    --wo-border:#DDE1E6;
+    --wo-border-strong:#C1C7CE;
+    --wo-text:#1B2430;
+    --wo-text-muted:#6B7684;
+    --wo-text-faint:#98A2AE;
+    --wo-accent:#1D4E89;
+    --wo-accent-soft:#E8F0F9;
+    --wo-font:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+    --wo-font-mono:'IBM Plex Mono','Consolas',ui-monospace,monospace;
+    --wo-font-fa:'Vazirmatn','Tahoma',sans-serif;
+
+    --wo-status-new-bg:#EEF0F2; --wo-status-new-fg:#4A5568;
+    --wo-status-open-bg:#E3EEFA; --wo-status-open-fg:#1D4E89;
+    --wo-status-in_progress-bg:#FDF3DA; --wo-status-in_progress-fg:#92620A;
+    --wo-status-on_hold-bg:#FBE8E4; --wo-status-on_hold-fg:#9C3B25;
+    --wo-status-completed-bg:#E1F3E8; --wo-status-completed-fg:#1F6E43;
+    --wo-status-cancelled-bg:#F1F2F4; --wo-status-cancelled-fg:#798091;
+
+    --wo-priority-critical-bg:#FBE8E4; --wo-priority-critical-fg:#9C3B25;
+    --wo-priority-high-bg:#FDF3DA; --wo-priority-high-fg:#92620A;
+    --wo-priority-medium-bg:#E3EEFA; --wo-priority-medium-fg:#1D4E89;
+    --wo-priority-low-bg:#EEF0F2; --wo-priority-low-fg:#5F6874;
+}
+
+.wo-modal-content{
+    background:var(--wo-surface);
+    font-family:var(--wo-font);
+    color:var(--wo-text);
+    border-radius:6px;
+    overflow:hidden;
+}
+
+/* Header */
+.wo-header{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px 20px;
+    background:var(--wo-surface);
+    border-bottom:1px solid var(--wo-border);
+    border-left:4px solid var(--wo-border-strong);
+}
+.wo-header--open{ border-left-color:var(--wo-status-open-fg); }
+.wo-header--in_progress{ border-left-color:var(--wo-status-in_progress-fg); }
+.wo-header--on_hold{ border-left-color:var(--wo-status-on_hold-fg); }
+.wo-header--completed{ border-left-color:var(--wo-status-completed-fg); }
+.wo-header--cancelled{ border-left-color:var(--wo-status-cancelled-fg); }
+
+.wo-header-main{ display:flex; flex-direction:column; gap:2px; }
+.wo-eyebrow{
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--wo-text-faint);
+}
+.wo-title{
+    margin:0;
+    font-family:var(--wo-font-mono);
+    font-size:17px;
+    font-weight:600;
+    color:var(--wo-text);
+    letter-spacing:.01em;
+}
+.wo-header-badges{
+    display:flex;
+    gap:8px;
+    margin-left:auto;
+    margin-right:8px;
+}
+.wo-close{ opacity:.6; }
+.wo-close:hover{ opacity:1; }
+
+/* Badges */
+.wo-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:3px;
+    white-space:nowrap;
+    line-height:1.4;
+}
+.wo-badge--sm{ font-size:11px; padding:2px 8px; }
+.wo-dot{
+    width:6px; height:6px;
+    border-radius:50%;
+    background:currentColor;
+    flex-shrink:0;
+}
+
+.wo-badge--status-new{ background:var(--wo-status-new-bg); color:var(--wo-status-new-fg); }
+.wo-badge--status-open{ background:var(--wo-status-open-bg); color:var(--wo-status-open-fg); }
+.wo-badge--status-in_progress{ background:var(--wo-status-in_progress-bg); color:var(--wo-status-in_progress-fg); }
+.wo-badge--status-on_hold{ background:var(--wo-status-on_hold-bg); color:var(--wo-status-on_hold-fg); }
+.wo-badge--status-completed{ background:var(--wo-status-completed-bg); color:var(--wo-status-completed-fg); }
+.wo-badge--status-cancelled{ background:var(--wo-status-cancelled-bg); color:var(--wo-status-cancelled-fg); }
+
+.wo-badge--priority-critical{ background:var(--wo-priority-critical-bg); color:var(--wo-priority-critical-fg); }
+.wo-badge--priority-high{ background:var(--wo-priority-high-bg); color:var(--wo-priority-high-fg); }
+.wo-badge--priority-medium{ background:var(--wo-priority-medium-bg); color:var(--wo-priority-medium-fg); }
+.wo-badge--priority-low{ background:var(--wo-priority-low-bg); color:var(--wo-priority-low-fg); }
+
+/* Body */
+.wo-body{
+    background:var(--wo-bg);
+    padding:18px 20px 6px;
+}
+.wo-section{
+    background:var(--wo-surface);
+    border:1px solid var(--wo-border);
+    border-radius:5px;
+    padding:14px 16px 16px;
+    margin-bottom:12px;
+}
+.wo-section-title{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--wo-accent);
+    padding-bottom:9px;
+    margin-bottom:12px;
+    border-bottom:1px solid var(--wo-border);
+}
+
+.wo-grid{ display:grid; gap:16px; }
+.wo-grid--2{ grid-template-columns:repeat(2,1fr); }
+.wo-grid--3{ grid-template-columns:repeat(3,1fr); }
+
+.wo-field{ display:flex; flex-direction:column; gap:3px; }
+.wo-label{
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--wo-text-faint);
+    margin:0;
+}
+.wo-value{ font-size:13.5px; font-weight:600; color:var(--wo-text); }
+.wo-value--mono{ font-family:var(--wo-font-mono); letter-spacing:.02em; }
+.wo-subtext{ font-size:12px; color:var(--wo-text-muted); }
+
+.wo-directive{
+    font-size:13.5px;
+    line-height:1.7;
+    color:var(--wo-text);
+}
+
+/* Corrected classes */
+.persian-text bdi{
+    font-family:var(--wo-font-fa);
+    font-size:14.5px;
+}
+
+/* Table */
+.wo-table-wrap{ overflow-x:auto; }
+.wo-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+}
+.wo-table thead th{
+    text-align:left;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--wo-text-faint);
+    background:var(--wo-bg);
+    padding:8px 10px;
+    border-bottom:1px solid var(--wo-border);
+    border-top:1px solid var(--wo-border);
+    white-space:nowrap;
+}
+.wo-table thead th:first-child{ border-left:1px solid var(--wo-border); }
+.wo-table thead th:last-child{ border-right:1px solid var(--wo-border); }
+.wo-table tbody td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--wo-border);
+    color:var(--wo-text);
+    vertical-align:top;
+}
+.wo-table tbody td:first-child{ border-left:1px solid var(--wo-border); }
+.wo-table tbody td:last-child{ border-right:1px solid var(--wo-border); }
+.wo-table tbody tr:hover td{ background:var(--wo-accent-soft); }
+.wo-col-num{ width:70px; }
+
+/* Footer */
+.wo-footer{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    padding:12px 20px;
+    background:var(--wo-surface);
+    border-top:1px solid var(--wo-border);
+}
+.wo-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    font-weight:600;
+    padding:7px 14px;
+    border-radius:4px;
+    border:1px solid var(--wo-border-strong);
+    background:var(--wo-surface);
+    color:var(--wo-text);
+    text-decoration:none;
+    cursor:pointer;
+    transition:background .12s ease, border-color .12s ease;
+}
+.wo-btn:hover{ background:var(--wo-bg); color:var(--wo-text); }
+.wo-btn--primary{
+    background:var(--wo-accent);
+    border-color:var(--wo-accent);
+    color:#fff;
+}
+.wo-btn--primary:hover{ background:#173F6E; border-color:#173F6E; color:#fff; }
+.wo-btn--ghost{ color:var(--wo-accent); border-color:var(--wo-border); }
+
+.task-directive-cell {
+    text-align: start; /* Aligns left for LTR, right for RTL */
+}
+
+.task-directive-cell bdi {
+    display: block;    /* Allows the bdi wrapper to fill width and align */
+    text-align: start; /* Standardized start-alignment */
+    unicode-bidi: plaintext; /* Fallback support for auto-direction layout */
+}
+
+@media (max-width:576px){
+    .wo-grid--2, .wo-grid--3{ grid-template-columns:1fr; }
+    .wo-header{ flex-wrap:wrap; }
+    .wo-header-badges{ margin-left:0; order:3; width:100%; }
+}
+</style>

@@ -1,6 +1,5 @@
 {% load wo_sort_tags %}
 
-
 <table class="table table-hover align-middle">
     <thead>
         <tr>
@@ -36,22 +35,22 @@
             <!-- Task Count -->
             <td>{{ wo.task_count }}</td>
 
-            <!-- Status Badge (matching fault report style) -->
+            <!-- Status Badge (Fixed: matches the status classes defined in CSS below) -->
             <td>
                 {% if wo.status == "CREATED" %}
-                    <span class="status-badge status-waiting" title="Created">Created</span>
+                    <span class="status-badge status-created" title="Created">Created</span>
                 {% elif wo.status == "PLANNED" %}
                     <span class="status-badge status-planned" title="Planned">Planned</span>
                 {% elif wo.status == "IN_EXECUTION" %}
-                    <span class="status-badge status-ongoing" title="In Execution">In Execution</span>
+                    <span class="status-badge status-execution" title="In Execution">In Execution</span>
                 {% elif wo.status == "WORK_DONE" %}
-                    <span class="status-badge status-completed" title="Work Done">Work Done</span>
+                    <span class="status-badge status-done" title="Work Done">Work Done</span>
                 {% elif wo.status == "CLOSED" %}
-                    <span class="status-badge bg-success text-white" title="Closed">Closed</span>
+                    <span class="status-badge status-closed" title="Closed">Closed</span>
                 {% elif wo.status == "CANCELLED" %}
-                    <span class="status-badge bg-danger text-white" title="Cancelled">Cancelled</span>
+                    <span class="status-badge status-cancelled" title="Cancelled">Cancelled</span>
                 {% else %}
-                    {{ wo.get_status_display }}
+                    <span class="status-badge status-default">{{ wo.get_status_display }}</span>
                 {% endif %}
             </td>
 
@@ -61,17 +60,17 @@
             <!-- Location Tag -->
             <td>{{ wo.location_tag.loc_tag|default:"-" }}</td>
 
-            <!-- Directive -->
-            <td class="persian-text">
-                <bdi>{{ wo.directive|default:"-"|truncatechars:80 }}</bdi>
+            <!-- Directive (Auto Language Align) -->
+            <td class="persian-text align-start-cell">
+                <bdi dir="auto">{{ wo.directive|default:"-"|truncatechars:80 }}</bdi>
             </td>
 
             <!-- Priority -->
             <td>{{ wo.priority|default:"-" }}</td>
 
-            <!-- Fault Desc -->
-            <td class="persian-text">
-                <bdi>{{ wo.fault_desc|default:"-"|truncatechars:80 }}</bdi>
+            <!-- Fault Desc (Auto Language Align) -->
+            <td class="persian-text align-start-cell">
+                <bdi dir="auto">{{ wo.fault_desc|default:"-"|truncatechars:80 }}</bdi>
             </td>
 
             <!-- Work Type -->
@@ -80,9 +79,9 @@
             <!-- Symptom -->
             <td>{{ wo.symptom|default:"-" }}</td>
 
-            <!-- Cause -->
-            <td class="persian-text">
-                <bdi>{{ wo.cause|default:"-"|truncatechars:80 }}</bdi>
+            <!-- Cause (Auto Language Align) -->
+            <td class="persian-text align-start-cell">
+                <bdi dir="auto">{{ wo.cause|default:"-"|truncatechars:80 }}</bdi>
             </td>
 
             <!-- Project Code -->
@@ -101,7 +100,7 @@
             <td>{{ wo.reported_at|date:"Y-m-d H:i" }}</td>
 
             <!-- Task Summary -->
-            <td style="font-size: 0.85rem; color: #666;">
+            <td style="font-size: 0.85rem; color: #666; text-align: left;">
                 {{ wo.task_status_summary }}
             </td>
 
