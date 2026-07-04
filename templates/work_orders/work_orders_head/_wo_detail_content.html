@@ -63,8 +63,8 @@
                             <th class="wo-col-num">Task #</th>
                             <th class="persian-text">Directive</th>
                             <th>Status</th>
-                            <th>Executing dept</th>
-                            <th>Reporting dept</th>
+                            <th class="wo-th-requesting">Reporting dept</th>
+                            <th class="wo-th-executing">Executing dept</th>
                             <th>Awaiting code</th>
                             <th>Planned start</th>
                             <th>Planned finish</th>
@@ -87,12 +87,13 @@
                                     <span class="wo-dot"></span>{{ task.get_status_display }}
                                 </span>
                             </td>
+                            
+                            <!-- Reporting Department -->
+                            <td>{{ task.task_requester_department|default:"—" }}</td>
 
                             <!-- Executing Department -->
                             <td>{{ task.task_executing_department|default:"—" }}</td>
 
-                            <!-- Reporting Department -->
-                            <td>{{ task.task_requester_department|default:"—" }}</td>
 
                             <!-- Awaiting Code -->
                             <td>{{ task.awaiting_reason|default:"—" }}</td>
@@ -117,9 +118,17 @@
     </div>
 
     <div class="modal-footer wo-footer">
+        <!-- New "Edit Tasks" button -->
+        <a href="{% url 'work_orders:wo_tasks_editor' wo.id %}" class="wo-btn wo-btn--ghost">
+            <i class="bi bi-list-check"></i> Edit Tasks
+        </a>
+
+        <!-- Existing "Open in admin" button -->
         <a href="/admin/work_orders/workorder/{{ wo.id }}/change/" class="wo-btn wo-btn--ghost" target="_blank">
             <i class="bi bi-pencil-square"></i> Open in admin
         </a>
+
+        <!-- Close button -->
         <button type="button" class="wo-btn wo-btn--primary" data-bs-dismiss="modal">Close</button>
     </div>
 </div>
@@ -365,5 +374,12 @@
     .wo-grid--2, .wo-grid--3{ grid-template-columns:1fr; }
     .wo-header{ flex-wrap:wrap; }
     .wo-header-badges{ margin-left:0; order:3; width:100%; }
+}
+.wo-th-executing{
+    color:#dc3545 !important;
+}
+
+.wo-th-requesting{
+    color:#198754 !important;
 }
 </style>

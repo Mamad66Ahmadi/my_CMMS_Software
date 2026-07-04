@@ -1,0 +1,310 @@
+<!-- templates/work_orders/work_orders_head/wo_tasks_editor.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container"
+     id="woTasksEditorApp"
+     data-task-url-template="{% url 'work_orders:task_editor_action' 0 %}">
+
+    <a href="#" onclick="window.history.back(); return false;" class="back-button">
+        &larr; Back to Work Order
+    </a>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1>
+                Work Order Tasks Editor
+                <small>Managing task execution, scheduling, and delay tracking</small>
+            </h1>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="status-badge status-planned">
+                {{ work_order.wo_number }}
+            </span>
+
+            <span class="status-badge
+                {% if work_order.status == 'CREATED' %}status-created
+                {% elif work_order.status == 'PLANNED' %}status-planned
+                {% elif work_order.status == 'IN_EXECUTION' %}status-execution
+                {% elif work_order.status == 'WORK_DONE' %}status-done
+                {% elif work_order.status == 'CLOSED' %}status-closed
+                {% else %}status-cancelled{% endif %}">
+                {{ work_order.get_status_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="form-card mb-4" style="padding: var(--space-4);">
+        <div class="row align-items-end g-3">
+            <div class="col-md-5">
+                <label class="form-label" for="taskDropdown" style="font-weight: 700;">
+                    Select Task to Modify
+                </label>
+                <select id="taskDropdown" class="form-select">
+                    <option value="" selected>-- Select a task to load form --</option>
+                    {% for task in tasks %}
+                        <option value="{{ task.id }}" data-task-num="{{ task.task_number }}">
+                            Task #{{ task.task_number }} - {{ task.directive|default:"No directive"|truncatechars:40 }} ({{ task.get_status_display }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-7">
+                <label class="form-label">Quick Selection Tabs</label>
+                <div class="d-flex flex-wrap gap-2" id="taskQuickTabs">
+                    {% for task in tasks %}
+                        <button
+                            type="button"
+                            class="btn-secondary-custom task-tab-btn"
+                            data-task-id="{{ task.id }}"
+                            style="padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                            T#{{ task.task_number }}
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editorWorkspace" class="d-none">
+        <form id="taskEditorForm" method="POST" novalidate>
+            {% csrf_token %}
+            <div class="form-card">
+                <div id="alertPlaceholder" class="mb-3"></div>
+
+                <div id="formFieldsPlaceholder">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-secondary" role="status"></div>
+                        <p class="mt-2 text-muted mb-0">Retrieving database record...</p>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top" style="border-color: var(--c-border) !important;">
+                    <button type="button" id="btnReset" class="btn-enterprise-cancel px-3 py-2">
+                        Reset Changes
+                    </button>
+                    <button type="submit" class="btn-enterprise-primary px-4 py-2" style="border-radius: var(--radius-sm); font-weight: 600;">
+                        Save Task Details
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="form-card text-center py-5" id="noTaskSelectedCard" style="border-style: dashed; background-color: var(--c-bg-subtle);">
+        <div class="py-4">
+            <span class="status-badge status-created mb-3" style="transform: scale(1.2); pointer-events: none;">!</span>
+            <h5 class="mt-2 text-secondary">No Task Selected</h5>
+            <p class="text-muted mb-0">Choose a task from the list or quick selection tabs above to begin editing.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const app = document.getElementById("woTasksEditorApp");
+    const taskDropdown = document.getElementById("taskDropdown");
+    const taskTabButtons = document.querySelectorAll(".task-tab-btn");
+    const editorWorkspace = document.getElementById("editorWorkspace");
+    const noTaskSelectedCard = document.getElementById("noTaskSelectedCard");
+    const formFieldsPlaceholder = document.getElementById("formFieldsPlaceholder");
+    const taskEditorForm = document.getElementById("taskEditorForm");
+    const alertPlaceholder = document.getElementById("alertPlaceholder");
+    const btnReset = document.getElementById("btnReset");
+
+    let activeTaskId = null;
+
+    function getTaskActionUrl(taskId) {
+        return app.dataset.taskUrlTemplate.replace("/0/", "/" + taskId + "/");
+    }
+
+    function getCsrfToken() {
+        const tokenInput = document.querySelector("#taskEditorForm input[name='csrfmiddlewaretoken']");
+        return tokenInput ? tokenInput.value : "";
+    }
+
+    function showFeedback(type, message) {
+        const alertClass = type === "danger" ? "danger" : "success";
+        alertPlaceholder.innerHTML = `
+            <div class="alert alert-${alertClass} d-flex align-items-center justify-content-between p-3" role="alert" style="border-radius: var(--radius-sm);">
+                <div>${message}</div>
+                <button type="button" class="btn-close" aria-label="Close" style="background:none; border:none; font-size:18px; line-height:1; cursor:pointer;">&times;</button>
+            </div>
+        `;
+
+        const closeBtn = alertPlaceholder.querySelector(".btn-close");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", function () {
+                alertPlaceholder.innerHTML = "";
+            });
+        }
+    }
+
+    function setActiveTab(taskId) {
+        taskTabButtons.forEach(btn => {
+            if (btn.dataset.taskId === String(taskId)) {
+                btn.style.backgroundColor = "var(--c-primary)";
+                btn.style.color = "var(--c-text-inverse)";
+                btn.style.borderColor = "var(--c-primary)";
+            } else {
+                btn.style.backgroundColor = "var(--c-bg-surface)";
+                btn.style.color = "var(--c-text-primary)";
+                btn.style.borderColor = "var(--c-border-strong)";
+            }
+        });
+    }
+
+    function loadTaskForm(taskId) {
+        if (!taskId) {
+            return;
+        }
+
+        activeTaskId = taskId;
+        noTaskSelectedCard.classList.add("d-none");
+        editorWorkspace.classList.remove("d-none");
+        taskDropdown.value = taskId;
+        setActiveTab(taskId);
+        alertPlaceholder.innerHTML = "";
+
+        formFieldsPlaceholder.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-secondary" role="status"></div>
+                <p class="mt-2 text-muted mb-0">Loading task definition and fields...</p>
+            </div>
+        `;
+
+        fetch(getTaskActionUrl(taskId), {
+            method: "GET",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(async response => {
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = {};
+            }
+
+            if (!response.ok) {
+                throw new Error(data.message || `Request failed with status ${response.status}.`);
+            }
+
+            return data;
+        })
+        .then(data => {
+            formFieldsPlaceholder.innerHTML = data.html || "<p class='text-danger mb-0'>No form content returned.</p>";
+        })
+        .catch(error => {
+            console.error("Task form load error:", error);
+            formFieldsPlaceholder.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-danger mb-2">Could not load the requested task record.</p>
+                    <p class="text-muted mb-0 small">${error.message}</p>
+                </div>
+            `;
+            showFeedback("danger", "Could not fetch the requested task record.");
+        });
+    }
+
+    taskDropdown.addEventListener("change", function () {
+        if (this.value) {
+            loadTaskForm(this.value);
+        }
+    });
+
+    taskTabButtons.forEach(btn => {
+        btn.addEventListener("click", function () {
+            loadTaskForm(this.dataset.taskId);
+        });
+    });
+
+    taskEditorForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        if (!activeTaskId) {
+            showFeedback("danger", "No task selected.");
+            return;
+        }
+
+        const formData = new FormData(taskEditorForm);
+        alertPlaceholder.innerHTML = "";
+
+        fetch(getTaskActionUrl(activeTaskId), {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": getCsrfToken()
+            }
+        })
+        .then(async response => {
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = {};
+            }
+
+            if (response.ok && data.success) {
+                return data;
+            }
+
+            if (data.html) {
+                formFieldsPlaceholder.innerHTML = data.html;
+            }
+
+            throw new Error(data.message || "Validation error. Check the form fields below.");
+        })
+        .then(data => {
+            showFeedback("success", data.message || "Task updated successfully.");
+
+            const option = taskDropdown.querySelector(`option[value="${activeTaskId}"]`);
+            if (option) {
+                const taskNum = option.getAttribute("data-task-num");
+                const formDirective = document.querySelector('[name="directive"]')?.value || "";
+                const truncatedDirective = formDirective.length > 40
+                    ? formDirective.substring(0, 37) + "..."
+                    : formDirective;
+
+                const statusSelect = document.querySelector('[name="status"]');
+                const selectedStatusText = statusSelect
+                    ? statusSelect.options[statusSelect.selectedIndex].text
+                    : "";
+
+                option.textContent = `Task #${taskNum} - ${truncatedDirective || "No directive"} (${selectedStatusText})`;
+            }
+        })
+        .catch(error => {
+            console.error("Task save error:", error);
+            showFeedback("danger", error.message || "An error occurred while saving.");
+        });
+    });
+
+    btnReset.addEventListener("click", function () {
+        if (activeTaskId) {
+            loadTaskForm(activeTaskId);
+        }
+    });
+});
+</script>
+
+<style>
+    #formFieldsPlaceholder select[name="task_executing_department"] {
+        border-color: var(--c-status-danger-dot) !important;
+        background-color: #fffafb;
+        color: var(--c-status-danger-text);
+        font-weight: 600;
+    }
+
+    #formFieldsPlaceholder select[name="task_requester_department"] {
+        border-color: var(--c-status-success-dot) !important;
+        background-color: #f6fcf8;
+        color: var(--c-status-success-text);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

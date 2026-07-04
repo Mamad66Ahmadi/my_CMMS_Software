@@ -1,0 +1,154 @@
+
+<div class="row g-3">
+    {% if form.non_field_errors %}
+        <div class="col-12">
+            <div class="alert alert-danger mb-2">
+                {{ form.non_field_errors }}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="col-md-12">
+        <label class="form-label fw-bold" for="{{ form.directive.id_for_label }}">Task Directive</label>
+        {{ form.directive }}
+        {% if form.directive.errors %}
+            <div class="text-danger small">{{ form.directive.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-12">
+        <label class="form-label fw-bold" for="{{ form.description.id_for_label }}">Description</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+            <div class="text-danger small">{{ form.description.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold" for="{{ form.status.id_for_label }}">Status</label>
+        {{ form.status }}
+        {% if form.status.errors %}
+            <div class="text-danger small">{{ form.status.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold" for="{{ form.task_requester_department.id_for_label }}">Requester Department</label>
+        {{ form.task_requester_department }}
+        {% if form.task_requester_department.errors %}
+            <div class="text-danger small">{{ form.task_requester_department.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold" for="{{ form.task_executing_department.id_for_label }}">Executing Department</label>
+        {{ form.task_executing_department }}
+        {% if form.task_executing_department.errors %}
+            <div class="text-danger small">{{ form.task_executing_department.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold" for="{{ form.performed_action.id_for_label }}">Performed Action</label>
+        {{ form.performed_action }}
+        {% if form.performed_action.errors %}
+            <div class="text-danger small">{{ form.performed_action.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold" for="{{ form.awaiting_reason.id_for_label }}">Awaiting Reason</label>
+        {{ form.awaiting_reason }}
+        {% if form.awaiting_reason.errors %}
+            <div class="text-danger small">{{ form.awaiting_reason.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold" for="{{ form.permit.id_for_label }}">Permit</label>
+        {{ form.permit }}
+        {% if form.permit.errors %}
+            <div class="text-danger small">{{ form.permit.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold" for="{{ form.planner.id_for_label }}">Planner</label>
+        {{ form.planner }}
+        {% if form.planner.errors %}
+            <div class="text-danger small">{{ form.planner.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold" for="{{ form.waiting_history.id_for_label }}">Waiting History</label>
+        {{ form.waiting_history }}
+        {% if form.waiting_history.errors %}
+            <div class="text-danger small">{{ form.waiting_history.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold" for="{{ form.planned_start.id_for_label }}">Planned Start</label>
+        {{ form.planned_start }}
+        {% if form.planned_start.errors %}
+            <div class="text-danger small">{{ form.planned_start.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold" for="{{ form.planned_finish.id_for_label }}">Planned Finish</label>
+        {{ form.planned_finish }}
+        {% if form.planned_finish.errors %}
+            <div class="text-danger small">{{ form.planned_finish.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold" for="{{ form.actual_start.id_for_label }}">Actual Start</label>
+        {{ form.actual_start }}
+        {% if form.actual_start.errors %}
+            <div class="text-danger small">{{ form.actual_start.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold" for="{{ form.actual_finish.id_for_label }}">Actual Finish</label>
+        {{ form.actual_finish }}
+        {% if form.actual_finish.errors %}
+            <div class="text-danger small">{{ form.actual_finish.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold" for="{{ form.work_master.id_for_label }}">Work Master</label>
+        {{ form.work_master }}
+        {% if form.work_master.errors %}
+            <div class="text-danger small">{{ form.work_master.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold" for="{{ form.work_leader.id_for_label }}">Work Leader</label>
+        {{ form.work_leader }}
+        {% if form.work_leader.errors %}
+            <div class="text-danger small">{{ form.work_leader.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-12">
+        <label class="form-label fw-bold" for="{{ form.work_done_description.id_for_label }}">Work Done Description</label>
+        {{ form.work_done_description }}
+        {% if form.work_done_description.errors %}
+            <div class="text-danger small">{{ form.work_done_description.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-12">
+        <label class="form-label fw-bold" for="{{ form.remarks.id_for_label }}">Remarks</label>
+        {{ form.remarks }}
+        {% if form.remarks.errors %}
+            <div class="text-danger small">{{ form.remarks.errors }}</div>
+        {% endif %}
+    </div>
+</div>

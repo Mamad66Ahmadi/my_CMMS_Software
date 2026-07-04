@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
+from work_orders.models.wo_models import WorkOrderTask
 from work_orders.models.fault_report_models import FaultReport
 
 
@@ -84,3 +85,41 @@ class FaultReportCreateForm(forms.ModelForm):
                 self.add_error(None, e)
 
         return cleaned
+
+
+
+
+class WorkOrderTaskForm(forms.ModelForm):
+    class Meta:
+        model = WorkOrderTask
+        # Exclude internal/system-managed fields; include editables
+        exclude = [
+            'work_order', 
+            'task_number', 
+            'is_main_task', 
+            'created_at', 
+            'created_by', 
+            'modified_at', 
+            'modified_by', 
+            'modified_itam'
+        ]
+        widgets = {
+            'planned_start': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'planned_finish': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'actual_start': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'actual_finish': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'directive': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'work_done_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'waiting_history': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'readonly': 'readonly'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'task_requester_department': forms.Select(attrs={'class': 'form-select'}),
+            'task_executing_department': forms.Select(attrs={'class': 'form-select'}),
+            'performed_action': forms.Select(attrs={'class': 'form-select'}),
+            'awaiting_reason': forms.Select(attrs={'class': 'form-select'}),
+            'planner': forms.Select(attrs={'class': 'form-select'}),
+            'work_master': forms.Select(attrs={'class': 'form-select'}),
+            'work_leader': forms.Select(attrs={'class': 'form-select'}),
+            'permit': forms.TextInput(attrs={'class': 'form-control'}),
+        }
