@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from permits.models import permit_base_models, PermitStatus
-from equipment.models.equipment_models import LocationTag, Unit
+from equipment.models.equipment_models import LocationTag
 from work_orders.models.wo_models import WorkOrder
 
 
