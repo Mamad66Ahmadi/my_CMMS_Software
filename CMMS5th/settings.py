@@ -50,7 +50,7 @@ INSTALLED_APPS = [
  #   'maintenance',
    'work_orders',
    'daily_reports',
- #   'permits',
+   'permits',
 ]
 
 MIDDLEWARE = [
