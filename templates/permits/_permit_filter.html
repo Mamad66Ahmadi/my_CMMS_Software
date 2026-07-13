@@ -1,68 +1,118 @@
 {% load static %}
 
-<div class="page-subtitle text-uppercase fw-bold mb-2" style="letter-spacing: 0.05em;">Filter Pane</div>
-
 <form method="get" action="">
-    <div class="filter-bar">
-        <!-- Row 1 -->
-        <div class="filter-group">
-            <label class="filter-label">Permit Number</label>
-            <input type="text" name="permit_number" class="filter-input" placeholder="P-100..." value="{{ filters.permit_number }}">
-        </div>
-        <div class="filter-group">
-            <label class="filter-label">Valid From</label>
-            <input type="date" name="valid_from_date" class="filter-input" value="{{ filters.valid_from_date }}">
-        </div>
-        <div class="filter-group">
-            <label class="filter-label">Valid To</label>
-            <input type="date" name="valid_to_date" class="filter-input" value="{{ filters.valid_to_date }}">
-        </div>
-        <div class="filter-group">
-            <label class="filter-label">Status</label>
-            <select name="status" class="filter-input">
-                <option value="">All Statuses</option>
-                {% for code, label in status_choices %}
-                    <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-group">
-            <label class="filter-label">Department</label>
-            <select name="department" class="filter-input">
-                <option value="">All</option>
-                {% for dept in departments %}
-                    <option value="{{ dept.name }}" {% if filters.department == dept.name %}selected{% endif %}>{{ dept.name }}</option>
-                {% endfor %}
-            </select>
+    {% if sort_by %}<input type="hidden" name="sort" value="{{ sort_by }}">{% endif %}
+    {% if per_page %}<input type="hidden" name="per_page" value="{{ per_page }}">{% endif %}
+
+    <div class="filter-panel mb-3">
+
+        <!-- Quick Search Bar -->
+        <div class="filter-panel__header">
+            <div class="filter-search-group">
+                <i class="bi bi-search filter-search-icon"></i>
+                <input type="text" name="q"
+                       class="filter-search-input"
+                       placeholder="Search by Permit No., Work Order No., or Location Tag..."
+                       value="{{ filters.q|default:'' }}">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter-primary">
+                    <i class="bi bi-search"></i> Search
+                </button>
+                <button type="button"
+                        class="btn-filter-secondary {% if has_advanced_filters %}active{% endif %}"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#advancedSearchCollapse"
+                        aria-expanded="{% if has_advanced_filters %}true{% else %}false{% endif %}">
+                    <i class="bi bi-sliders2"></i> Filters
+                    {% if has_advanced_filters %}<span class="filter-badge">●</span>{% endif %}
+                </button>
+                {% if query_params or filters.q %}
+                    <a href="{% url 'permits:permit_list' %}" class="btn-filter-clear">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Row 2 -->
-        <div class="filter-group">
-            <label class="filter-label">Hazard Code</label>
-            <select name="hazard_code" class="filter-input">
-                <option value="">All</option>
-                {% for hz in hazard_codes %}
-                    <option value="{{ hz.code }}" {% if filters.hazard_code == hz.code %}selected{% endif %}>
-                        {{ hz.code }} - {{ hz.description|slice:":30" }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-group">
-            <label class="filter-label">Location Tag</label>
-            <input type="text" name="location_tag" class="filter-input" placeholder="103-KM-101..." value="{{ filters.location_tag }}">
-        </div>
-        <div class="filter-group">
-            <label class="filter-label">Work Order No.</label>
-            <input type="text" name="work_order" class="filter-input" placeholder="WO-123..." value="{{ filters.work_order }}">
+        <!-- Advanced Filters -->
+        <div class="collapse {% if has_advanced_filters %}show{% endif %}" id="advancedSearchCollapse">
+            <div class="filter-panel__body">
+                <div class="filter-grid">
+
+                    <div class="filter-field">
+                        <label class="filter-label">Permit Number</label>
+                        <input type="text" name="permit_number" class="filter-input"
+                               placeholder="P-100..." value="{{ filters.permit_number }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Valid From</label>
+                        <input type="date" name="valid_from_date" class="filter-input"
+                               value="{{ filters.valid_from_date }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Valid To</label>
+                        <input type="date" name="valid_to_date" class="filter-input"
+                               value="{{ filters.valid_to_date }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Status</label>
+                        <select name="status" class="filter-select">
+                            <option value="">All Statuses</option>
+                            {% for code, label in status_choices %}
+                                <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Department</label>
+                        <select name="department" class="filter-select">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.name }}" {% if filters.department == dept.name %}selected{% endif %}>{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Hazard Code</label>
+                        <select name="hazard_code" class="filter-select">
+                            <option value="">All Hazards</option>
+                            {% for hz in hazard_codes %}
+                                <option value="{{ hz.code }}" {% if filters.hazard_code == hz.code %}selected{% endif %}>
+                                    {{ hz.code }} — {{ hz.description|slice:":30" }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Location Tag</label>
+                        <input type="text" name="location_tag" class="filter-input"
+                               placeholder="103-KM-101..." value="{{ filters.location_tag }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Work Order No.</label>
+                        <input type="text" name="work_order" class="filter-input"
+                               placeholder="WO-123..." value="{{ filters.work_order }}">
+                    </div>
+
+                </div>
+
+                <div class="filter-panel__footer">
+                    <button type="submit" class="btn-filter-primary">
+                        <i class="bi bi-funnel-fill"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Actions -->
-        <div class="filter-actions">
-            <button type="submit" class="btn-primary-custom">Apply</button>
-            {% if query_params %}
-                <a href="{% url 'permits:permit_list' %}" class="btn-secondary-custom" style="padding: 7px 15px; font-size: 13px; display: inline-flex; align-items: center;">Clear</a>
-            {% endif %}
-        </div>
     </div>
 </form>
+
+

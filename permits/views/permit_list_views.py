@@ -20,9 +20,19 @@ from accounts.models import Department
 
 # ---------------------------------------------- Filter ------------------------------------------
 def get_filtered_permits(request):
+    # Detect if the status query parameter is explicitly provided in the request
+    status_param = request.GET.get("status")
+    
+    # If no status parameter is provided, default to ACTIVE
+    if status_param is None:
+        default_status = PermitStatus.ACTIVE
+    else:
+        default_status = status_param.strip()
+
     filters = {
+        "q": request.GET.get("q", "").strip(),  # Unified Quick Search
         "permit_number": request.GET.get("permit_number", "").strip(),
-        "status": request.GET.get("status", "").strip(),
+        "status": default_status,
         "location_tag": request.GET.get("location_tag", "").strip(),
         "parent_tag": request.GET.get("parent_tag", "").strip(),
         "unit": request.GET.get("unit", "").strip(),
@@ -62,6 +72,16 @@ def get_filtered_permits(request):
         "hazard_codes",
     ).all()
 
+    # Apply Quick Search: searches only permit numbers or work order numbers
+    # If q is present, we ignore the status constraint.
+    has_quick_search = bool(filters["q"])
+    if has_quick_search:
+        q_val = filters["q"]
+        queryset = queryset.filter(
+            Q(permit_number__icontains=q_val) |
+            Q(work_order__wo_number__icontains=q_val)
+        )
+
     def apply_multi_value_filter(qs, filter_str, field_lookup):
         if not filter_str:
             return qs
@@ -76,22 +96,17 @@ def get_filtered_permits(request):
         return qs.filter(query)
 
     def apply_boolean_filter(qs, value, field_name):
-        """
-        Accepts: 1 / true / yes / on => True
-                 0 / false / no / off => False
-                 empty => no filter
-        """
-        if not value:
+        if not value or str(value).strip() == "":
             return qs
 
-        normalized = value.lower()
+        normalized = str(value).strip().lower()
         if normalized in ["1", "true", "yes", "on"]:
             return qs.filter(**{field_name: True})
         if normalized in ["0", "false", "no", "off"]:
             return qs.filter(**{field_name: False})
         return qs
 
-    # Standard text filters
+    # Standard text filters (Advanced)
     queryset = apply_multi_value_filter(queryset, filters["permit_number"], "permit_number")
     queryset = apply_multi_value_filter(queryset, filters["location_tag"], "location_tag__loc_tag")
     queryset = apply_multi_value_filter(queryset, filters["work_order"], "work_order__wo_number")
@@ -114,11 +129,13 @@ def get_filtered_permits(request):
             )
         queryset = queryset.filter(p_query)
 
-    # Status
-    if filters["status"] == "ALL":
-        pass
-    elif filters["status"]:
-        queryset = queryset.filter(status=filters["status"])
+    # Status: Skip status filtering if we are doing a Quick Search (q), 
+    # otherwise apply selected or default status.
+    if not has_quick_search:
+        if filters["status"] == "ALL":
+            pass
+        elif filters["status"]:
+            queryset = queryset.filter(status=filters["status"])
 
     # Hazard code filter
     if filters["hazard_code"]:
@@ -151,10 +168,10 @@ def get_filtered_permits(request):
     queryset = apply_boolean_filter(queryset, filters["is_radiography"], "is_radiography")
     queryset = apply_boolean_filter(queryset, filters["is_diving"], "is_diving")
 
-    # Currently valid filter
-    if filters["is_currently_valid"]:
+    # Currently valid filter (only apply if not overridden by Quick Search status bypass)
+    if filters["is_currently_valid"] and not has_quick_search:
         now = timezone.now()
-        normalized = filters["is_currently_valid"].lower()
+        normalized = str(filters["is_currently_valid"]).strip().lower()
 
         if normalized in ["1", "true", "yes", "on"]:
             queryset = queryset.filter(
@@ -210,6 +227,12 @@ class PermitList(LoginRequiredMixin, TemplateView):
             "valid_from": "valid_from",
             "valid_to": "valid_to",
             "special_conditions": "special_conditions_sort",
+            "is_excavation": "is_excavation",
+            "is_spading": "is_spading",
+            "is_confined_space": "is_confined_space",
+            "is_equipment_test": "is_equipment_test",
+            "is_radiography": "is_radiography",
+            "is_diving": "is_diving",
             "authorized_issuer": "authorized_issuer__username",
             "permit_holder": "permit_holder__username",
             "created_at": "created_at",
@@ -237,6 +260,12 @@ class PermitList(LoginRequiredMixin, TemplateView):
         paginator = Paginator(queryset.distinct(), per_page)
         page_obj = paginator.get_page(self.request.GET.get("page"))
 
+        # Determine if any advanced filters are active to keep panel expanded
+        # Excluding both 'q' and 'status' so status defaulting to ACTIVE doesn't force expand the panel.
+        has_advanced_filters = any(
+            filters[k] for k in filters if k not in ["q", "status"]
+        )
+
         query_dict = self.request.GET.copy()
         query_dict.pop("sort", None)
         query_dict.pop("page", None)
@@ -250,27 +279,23 @@ class PermitList(LoginRequiredMixin, TemplateView):
             "status_choices": PermitStatus.choices,
             "hazard_codes": HazardCode.objects.filter(is_active=True).order_by("code"),
             "departments": Department.objects.filter(is_active=True).order_by("name"),
+            "has_advanced_filters": has_advanced_filters,
         })
 
         return context
 
 
-
-# ------------------------ CSV Export ------------------------------------------
 # ------------------------ CSV Export ------------------------------------------
 class PermitExportCSV(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         queryset, filters = get_filtered_permits(request)
         queryset = queryset.order_by("-created_at", "-id")
 
-        # 1. Build a dynamic, safe filename from applied filters
         filter_parts = []
         for key, value in request.GET.items():
-            # Exclude non-filter query parameters
             if key in ["page", "sort", "csrfmiddlewaretoken"]:
                 continue
             if value:
-                # Clean up the key/value for safe filenames
                 clean_key = re.sub(r'[^a-zA-Z0-9_-]', '', key)
                 clean_value = slugify(value)
                 if clean_key and clean_value:
@@ -278,69 +303,41 @@ class PermitExportCSV(LoginRequiredMixin, View):
 
         if filter_parts:
             filename_suffix = "_".join(filter_parts)
-            # Limit length to keep the filename manageable
             if len(filename_suffix) > 100:
                 filename_suffix = filename_suffix[:100] + "-truncated"
             filename = f"permits_{filename_suffix}.csv"
         else:
-            filename = "permits_all.csv"
+            # Mirror the default filename logic if status is defaulted to ACTIVE
+            if filters.get("status") == PermitStatus.ACTIVE and not request.GET.get("q"):
+                filename = "permits_status-active.csv"
+            else:
+                filename = "permits_all.csv"
 
-        # 2. Build response headers
         response = HttpResponse(content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
-        # Important for Excel Persian/Arabic support
         response.write("\ufeff")
-
         writer = csv.writer(response)
 
-        # Write Headers
         writer.writerow([
-            "ID",
-            "Permit Number",
-            "Continuation Of ID",
-            "Continuation Of Permit Number",
-            "Hazard Codes",
-            "Location Tag ID",
-            "Location Tag",
-            "Description",
-            "Work Order ID",
-            "Work Order Number",
-            "Department ID",
-            "Department",
-            "Authorized Issuer ID",
-            "Authorized Issuer Username",
-            "Permit Holder ID",
-            "Permit Holder Username",
-            "Valid From",
-            "Valid To",
-            "Is Excavation",
-            "Is Spading",
-            "Is Confined Space",
-            "Is Equipment Test",
-            "Is Radiography",
-            "Is Diving",
-            "Status",
-            "Status Display",
-            "Comment",
-            "Created At",
-            "Created By ID",
-            "Created By Username",
-            "Modified At",
-            "Modified By ID",
-            "Modified By Username",
-            "Is Currently Valid",
-            "Special Conditions Summary",
+            "ID", "Permit Number", "Continuation Of ID", "Continuation Of Permit Number",
+            "Hazard Codes", "Location Tag ID", "Location Tag", "Description",
+            "Work Order ID", "Work Order Number", "Department ID", "Department",
+            "Authorized Issuer ID", "Authorized Issuer Username", "Permit Holder ID",
+            "Permit Holder Username", "Valid From", "Valid To", "Is Excavation",
+            "Is Spading", "Is Confined Space", "Is Equipment Test", "Is Radiography",
+            "Is Diving", "Status", "Status Display", "Comment", "Created At",
+            "Created By ID", "Created By Username", "Modified At", "Modified By ID",
+            "Modified By Username", "Is Currently Valid", "Special Conditions Summary"
         ])
 
-        # Write Data
         for permit in queryset:
             hazard_codes = ", ".join(
                 permit.hazard_codes.all().values_list("code", flat=True)
             )
 
             writer.writerow([
-                permit.pk,  # Using pk instead of id to be consistent
+                permit.pk,
                 permit.permit_number or "",
                 permit.continuation_of.pk if permit.continuation_of else "",
                 permit.continuation_of.permit_number if permit.continuation_of else "",

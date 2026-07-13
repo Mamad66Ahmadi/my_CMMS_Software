@@ -15,6 +15,15 @@
             {% include "permits/_permit_table_header.html" with column="valid_from" label="Valid From" sort_by=sort_by query_params=query_params %}
             {% include "permits/_permit_table_header.html" with column="valid_to" label="Valid To" sort_by=sort_by query_params=query_params %}
             {% include "permits/_permit_table_header.html" with column="special_conditions" label="Special Conditions" sort_by=sort_by query_params=query_params %}
+            
+            <!-- Sortable Boolean Fields -->
+            {% include "permits/_permit_table_header.html" with column="is_excavation" label="Excavation" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="is_spading" label="Spading" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="is_confined_space" label="Confined Space" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="is_equipment_test" label="Equipment Test" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="is_radiography" label="Radiography" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="is_diving" label="Diving" sort_by=sort_by query_params=query_params %}
+            
             {% include "permits/_permit_table_header.html" with column="authorized_issuer" label="Authorized Issuer" sort_by=sort_by query_params=query_params %}
             {% include "permits/_permit_table_header.html" with column="permit_holder" label="Permit Holder" sort_by=sort_by query_params=query_params %}
             {% include "permits/_permit_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=query_params %}
@@ -26,7 +35,7 @@
 
     <tbody>
         {% for permit in permits %}
-        <tr class="permit-row" data-pk="{{ permit.id }}" data-detail-url="#">
+        <tr class="permit-row" data-pk="{{ permit.pk }}" data-detail-url="#">
             <!-- Primary Number: Bold and Dark -->
             <td class="fw-bold">{{ permit.permit_number }}</td>
 
@@ -42,13 +51,21 @@
             <td>{{ permit.location_tag.loc_tag|default:"-" }}</td>
 
             <td>
-                {% if permit.status == "DRAFT" %}
+                {% if permit.status == "draft" %}
                     <span class="status-badge status-draft">Draft</span>
-                {% elif permit.status == "ACTIVE" %}
+                {% elif permit.status == "pending_approval" %}
+                    <span class="status-badge status-pending-approval">Pending Approval</span>
+                {% elif permit.status == "issued" %}
+                    <span class="status-badge status-issued">Issued</span>
+                {% elif permit.status == "active" %}
                     <span class="status-badge status-active">Active</span>
-                {% elif permit.status == "CLOSED" %}
+                {% elif permit.status == "suspended" %}
+                    <span class="status-badge status-suspended">Suspended</span>
+                {% elif permit.status == "expired" %}
+                    <span class="status-badge status-expired">Expired</span>
+                {% elif permit.status == "closed" %}
                     <span class="status-badge status-closed">Closed</span>
-                {% elif permit.status == "CANCELLED" %}
+                {% elif permit.status == "cancelled" %}
                     <span class="status-badge status-cancelled">Cancelled</span>
                 {% else %}
                     <span class="status-badge status-default">{{ permit.get_status_display }}</span>
@@ -88,12 +105,36 @@
                 </bdi>
             </td>
 
+            <!-- Boolean Fields: True (dark red), False (muted) -->
+            <td class="text-center {% if permit.is_excavation %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_excavation %}color: #8b0000 !important;{% endif %}">
+                {% if permit.is_excavation %}True{% else %}False{% endif %}
+            </td>
+            <td class="text-center {% if permit.is_spading %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_spading %}color: #8b0000 !important;{% endif %}">
+                {% if permit.is_spading %}True{% else %}False{% endif %}
+            </td>
+            <td class="text-center {% if permit.is_confined_space %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_confined_space %}color: #8b0000 !important;{% endif %}">
+                {% if permit.is_confined_space %}True{% else %}False{% endif %}
+            </td>
+            <td class="text-center {% if permit.is_equipment_test %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_equipment_test %}color: #8b0000 !important;{% endif %}">
+                {% if permit.is_equipment_test %}True{% else %}False{% endif %}
+            </td>
+            <td class="text-center {% if permit.is_radiography %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_radiography %}color: #8b0000 !important;{% endif %}">
+                {% if permit.is_radiography %}True{% else %}False{% endif %}
+            </td>
+            <td class="text-center {% if permit.is_diving %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_diving %}color: #8b0000 !important;{% endif %}">
+                {% if permit.is_diving %}True{% else %}False{% endif %}
+            </td>
+
             <td>{{ permit.authorized_issuer.username }}</td>
             <td>{{ permit.permit_holder.username|default:"-" }}</td>
             <td>{{ permit.created_at|date:"Y-m-d H:i" }}</td>
             <td>{{ permit.created_by.username }}</td>
             <td>{{ permit.modified_at|date:"Y-m-d H:i" }}</td>
             <td>{{ permit.modified_by.username|default:"-" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="24" class="text-center text-muted py-4">No permits found match your search criteria.</td>
         </tr>
         {% endfor %}
     </tbody>

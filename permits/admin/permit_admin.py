@@ -47,7 +47,7 @@ class PermitAdmin(AuditAdminMixin):
         "description",
         "comment",
         "department__name",
-        "location_tag__tag_code",
+        "location_tag__loc_tag",  # <--- Use the correct field name here
         "work_order__wo_number",
         "authorized_issuer__username",
         "authorized_issuer__first_name",
