@@ -1,87 +1,227 @@
-
 <style>
+.vazir-topbar {
+    background: #ffffff;
+    border-bottom: 1px solid #dfe6ee !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin-top: 0 !important;
+    height: 52px;
+}
+
+/* Date section */
+.topbar-dates {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #5a6b7a;
+}
+.topbar-dates .divider { color: #d0d7de; }
+.topbar-dates .weekday {
+    font-weight: 600;
+    color: #1a2733;
+    padding: 3px 10px;
+    background: #eef3f8;
+    border-radius: 4px;
+    font-size: 12.5px;
+}
+.topbar-dates #jalali-date {
+    font-weight: 700;
+    color: #0f1923;
+    font-size: 13.5px;
+}
+.topbar-dates #gregorian-date {
+    color: #8a99a8;
+}
+
+/* Profile section */
+.profile-container {
+    position: relative;
+}
+
+.profile-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 10px 4px 4px;
+    border-radius: 20px;
+    transition: background 0.15s;
+    user-select: none;
+}
+.profile-summary:hover {
+    background: #f0f4f8;
+}
+
+.profile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #1a8cff;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+.profile-info .p-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1a2733;
+}
+.profile-info .p-dept {
+    font-size: 11.5px;
+    color: #8a99a8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.profile-caret {
+    font-size: 11px;
+    color: #9aa8b6;
+    transition: transform 0.15s;
+    margin-left: 2px;
+}
+.profile-container.open .profile-caret {
+    transform: rotate(180deg);
+}
+
+/* Dropdown menu */
 .profile-menu {
     position: absolute;
     right: 0;
-    top: 30px;
+    top: calc(100% + 8px);
     background: #ffffff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    width: 150px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    width: 210px;
     display: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    z-index: 100;
+    box-shadow: 0 8px 24px rgba(15, 25, 35, 0.12);
+    z-index: 1050;
+    overflow: hidden;
+}
+
+.profile-menu-header {
+    padding: 12px 14px;
+    background: #f7fafc;
+    border-bottom: 1px solid #edf1f5;
+}
+.profile-menu-header .full-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f1923;
+}
+.profile-menu-header .username {
+    font-size: 11.5px;
+    color: #8a99a8;
 }
 
 .profile-menu-item {
-    display: block;
-    padding: 10px;
-    font-size: 14px;
-    color: black;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: #3a4a5a;
     text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
 }
-
+.profile-menu-item i {
+    font-size: 14px;
+    width: 16px;
+    color: #8a99a8;
+}
 .profile-menu-item:hover {
-    background: #f0f0f0;
+    background: #f5f8fb;
+    color: #0f1923;
+}
+.profile-menu-item.logout:hover {
+    background: #fdf0ef;
+    color: #c0392b;
+}
+.profile-menu-item.logout:hover i {
+    color: #c0392b;
 }
 </style>
 
 
-<div class="vazir-topbar d-flex justify-content-between align-items-center py-2 px-3"
-    style="border-bottom:1px solid #ccc; margin-top: 30px;">
+<div class="vazir-topbar d-flex justify-content-between align-items-center px-3">
 
     <!-- LEFT SIDE: Dates -->
-    <div style="font-size:14px; color:#000;">
-        <span id="weekday"
-              class="weekday-{{ weekday_name }}"
-              style="font-weight:bold;">
-            {{ weekday_name }}
-        </span> :
+    <div class="topbar-dates">
+        <i class="bi bi-calendar3" style="color:#9aa8b6;"></i>
+        <span id="weekday" class="weekday">{{ weekday_name }}</span>
+        <span class="divider">|</span>
         <span id="gregorian-date">{{ gregorian_date }}</span>
-        |
-        <span id="jalali-date" style="color:#001514; font-weight:bold;">
-            {{ jalali_date_persian }}
-        </span>
+        <span class="divider">|</span>
+        <span id="jalali-date">{{ jalali_date_persian }}</span>
     </div>
 
     <!-- RIGHT SIDE: User info -->
-<div class="profile-container" style="position: relative; font-size:15px; cursor:pointer;">
+    <div class="profile-container" id="profileContainer">
 
-    <div class="profile-summary" onclick="toggleProfileMenu()">
-        🖥️ {{ username }} ▼
+        <div class="profile-summary" onclick="toggleProfileMenu(event)">
+            <div class="profile-avatar">{{ first_name|slice:":1" }}{{ last_name|slice:":1" }}</div>
+            <div class="profile-info">
+                <span class="p-name">{{ first_name }} {{ last_name }}</span>
+                <span class="p-dept"><i class="bi bi-building"></i> {{ department_name }}</span>
+            </div>
+            <i class="bi bi-chevron-down profile-caret"></i>
+        </div>
+
         <div id="profile-menu" class="profile-menu">
+            <div class="profile-menu-header">
+                <div class="full-name">{{ first_name }} {{ last_name }}</div>
+                <div class="username"><i class="bi bi-person-badge"></i> {{ username }}</div>
+            </div>
+
+            <a href="#" class="profile-menu-item">
+                <i class="bi bi-person-circle"></i> My Profile
+            </a>
+            <a href="#" class="profile-menu-item">
+                <i class="bi bi-gear"></i> Settings
+            </a>
 
             <form method="post" action="{% url 'accounts:logout' %}">
                 {% csrf_token %}
-                <button type="submit" class="profile-menu-item" style="border:none; background:none; width:100%; text-align:left;">
-                    Logout
+                <button type="submit" class="profile-menu-item logout">
+                    <i class="bi bi-box-arrow-right"></i> Logout
                 </button>
             </form>
-
         </div>
-        |
-        👤 {{ first_name }} {{ last_name }}
-        |
-        🏢 {{ department_name }}
+
     </div>
-
-
-</div>
 </div>
 
 <script>
-function toggleProfileMenu() {
+function toggleProfileMenu(event) {
+    event.stopPropagation();
     const menu = document.getElementById("profile-menu");
-    menu.style.display = (menu.style.display === "block") ? "none" : "block";
+    const container = document.getElementById("profileContainer");
+    const isOpen = menu.style.display === "block";
+    menu.style.display = isOpen ? "none" : "block";
+    container.classList.toggle("open", !isOpen);
 }
 
-// Close dropdown when clicking outside
 document.addEventListener("click", function(event) {
     const menu = document.getElementById("profile-menu");
-    const container = document.querySelector(".profile-container");
-
+    const container = document.getElementById("profileContainer");
     if (!container.contains(event.target)) {
         menu.style.display = "none";
+        container.classList.remove("open");
     }
 });
 </script>

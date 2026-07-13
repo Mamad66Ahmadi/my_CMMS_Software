@@ -1,11 +1,16 @@
 # permits/views/permit_list_views.py
 
+import csv
+import re
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Q,  Min, Case, When, Value, IntegerField
+from django.db.models import Q, Min, Case, When, Value, IntegerField
+from django.http import HttpResponse
+from django.views import View
 from django.views.generic import TemplateView
 from django.utils import timezone
-
+from django.utils.text import slugify
 
 from permits.models.permit_models import Permit
 from permits.models import PermitStatus
@@ -248,3 +253,128 @@ class PermitList(LoginRequiredMixin, TemplateView):
         })
 
         return context
+
+
+
+# ------------------------ CSV Export ------------------------------------------
+# ------------------------ CSV Export ------------------------------------------
+class PermitExportCSV(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        queryset, filters = get_filtered_permits(request)
+        queryset = queryset.order_by("-created_at", "-id")
+
+        # 1. Build a dynamic, safe filename from applied filters
+        filter_parts = []
+        for key, value in request.GET.items():
+            # Exclude non-filter query parameters
+            if key in ["page", "sort", "csrfmiddlewaretoken"]:
+                continue
+            if value:
+                # Clean up the key/value for safe filenames
+                clean_key = re.sub(r'[^a-zA-Z0-9_-]', '', key)
+                clean_value = slugify(value)
+                if clean_key and clean_value:
+                    filter_parts.append(f"{clean_key}-{clean_value}")
+
+        if filter_parts:
+            filename_suffix = "_".join(filter_parts)
+            # Limit length to keep the filename manageable
+            if len(filename_suffix) > 100:
+                filename_suffix = filename_suffix[:100] + "-truncated"
+            filename = f"permits_{filename_suffix}.csv"
+        else:
+            filename = "permits_all.csv"
+
+        # 2. Build response headers
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+        # Important for Excel Persian/Arabic support
+        response.write("\ufeff")
+
+        writer = csv.writer(response)
+
+        # Write Headers
+        writer.writerow([
+            "ID",
+            "Permit Number",
+            "Continuation Of ID",
+            "Continuation Of Permit Number",
+            "Hazard Codes",
+            "Location Tag ID",
+            "Location Tag",
+            "Description",
+            "Work Order ID",
+            "Work Order Number",
+            "Department ID",
+            "Department",
+            "Authorized Issuer ID",
+            "Authorized Issuer Username",
+            "Permit Holder ID",
+            "Permit Holder Username",
+            "Valid From",
+            "Valid To",
+            "Is Excavation",
+            "Is Spading",
+            "Is Confined Space",
+            "Is Equipment Test",
+            "Is Radiography",
+            "Is Diving",
+            "Status",
+            "Status Display",
+            "Comment",
+            "Created At",
+            "Created By ID",
+            "Created By Username",
+            "Modified At",
+            "Modified By ID",
+            "Modified By Username",
+            "Is Currently Valid",
+            "Special Conditions Summary",
+        ])
+
+        # Write Data
+        for permit in queryset:
+            hazard_codes = ", ".join(
+                permit.hazard_codes.all().values_list("code", flat=True)
+            )
+
+            writer.writerow([
+                permit.pk,  # Using pk instead of id to be consistent
+                permit.permit_number or "",
+                permit.continuation_of.pk if permit.continuation_of else "",
+                permit.continuation_of.permit_number if permit.continuation_of else "",
+                hazard_codes,
+                permit.location_tag.pk if permit.location_tag else "",
+                permit.location_tag.loc_tag if permit.location_tag else "",
+                permit.description or "",
+                permit.work_order.pk if permit.work_order else "",
+                permit.work_order.wo_number if permit.work_order else "",
+                permit.department.pk if permit.department else "",
+                permit.department.name if permit.department else "",
+                permit.authorized_issuer.pk if permit.authorized_issuer else "",
+                permit.authorized_issuer.username if permit.authorized_issuer else "",
+                permit.permit_holder.pk if permit.permit_holder else "",
+                permit.permit_holder.username if permit.permit_holder else "",
+                permit.valid_from.strftime("%Y-%m-%d %H:%M:%S") if permit.valid_from else "",
+                permit.valid_to.strftime("%Y-%m-%d %H:%M:%S") if permit.valid_to else "",
+                permit.is_excavation,
+                permit.is_spading,
+                permit.is_confined_space,
+                permit.is_equipment_test,
+                permit.is_radiography,
+                permit.is_diving,
+                permit.status or "",
+                permit.get_status_display() if permit.status else "",
+                permit.comment or "",
+                permit.created_at.strftime("%Y-%m-%d %H:%M:%S") if permit.created_at else "",
+                permit.created_by.pk if permit.created_by else "",
+                permit.created_by.username if permit.created_by else "",
+                permit.modified_at.strftime("%Y-%m-%d %H:%M:%S") if permit.modified_at else "",
+                permit.modified_by.pk if permit.modified_by else "",
+                permit.modified_by.username if permit.modified_by else "",
+                permit.is_currently_valid,
+                permit.special_conditions_summary,
+            ])
+
+        return response
