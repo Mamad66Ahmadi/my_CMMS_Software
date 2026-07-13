@@ -66,8 +66,8 @@ class Permit(models.Model):
         if not self.permit_number:
             raise ValidationError({"permit_number": "Permit number is required."})
 
-        if not self.location_tag and not self.unit:
-            raise ValidationError("Either location_tag or unit must be provided.")
+        if not self.location_tag and not self.work_order:
+            raise ValidationError("Either location tag or work order must be provided.")
 
         if self.valid_from and self.valid_to and self.valid_to <= self.valid_from:
             raise ValidationError({"valid_to": "Valid-to must be after valid-from."})

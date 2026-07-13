@@ -1,231 +1,328 @@
 {# sidebar.html #}
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h6>Menu</h6>
-
-        <!-- Collapse / Expand icon (looks like normal text now) -->
-        <span id="sidebarToggle" class="sidebar-toggle-icon" title="Collapse / Expand sidebar">
-            «
-        </span>
+        <div class="brand">
+            <i class="bi bi-gear-wide-connected brand-icon"></i>
+            <span class="brand-text">CMMS</span>
+        </div>
+        <span id="sidebarToggle" class="sidebar-toggle-icon" title="Collapse / Expand">&#8249;</span>
     </div>
 
-    <hr>
+    <div class="sidebar-section-label">OPERATIONS</div>
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
+
         <!-- Dashboard -->
-            <h6 class="accordion-header" id="dashboardHeading">
-                <button class="nav-link dropdown-toggle collapsed d-flex justify-content-between align-items-center"
-                        type="button" data-bs-toggle="collapse"
-                        data-bs-target="#dashboardCollapse">
-                    Dashboard
-                    {% if pending_requests_count > 0 and request.user.is_staff %}
-                        <span class="badge bg-danger ms-2">{{ pending_requests_count }}</span>
-                    {% endif %}
-                </button>
-            </h6>
-            <div id="dashboardCollapse"
-                 class="accordion-collapse collapse"
-                 data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <a href="{% url 'accounts:dashboard' %}" class="dropdown-item">Overview</a>
-                </div>
+        <div class="sidebar-item">
+            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#dashboardCollapse">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+                {% if pending_requests_count > 0 and request.user.is_staff %}
+                    <span class="badge-pill">{{ pending_requests_count }}</span>
+                {% endif %}
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <div id="dashboardCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <a href="{% url 'accounts:dashboard' %}" class="sidebar-sub-link">
+                    <i class="bi bi-circle-fill dot"></i> Overview
+                </a>
             </div>
+        </div>
 
         <!-- Work Orders -->
-            <h6 class="accordion-header">
-                <button class="nav-link dropdown-toggle collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#workordersCollapse">
-                    Work Orders
-                </button>
-            </h6>
-            <div id="workordersCollapse"
-                 class="accordion-collapse collapse"
-                 data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <a href="{% url 'work_orders:fault_report_add' %}" class="dropdown-item">New Fault Report</a>
-                    <a href="{% url 'work_orders:wo_search' %}" class="dropdown-item">Work Orders</a>
-                    <a href="{% url 'work_orders:fault_report_list' %}" class="dropdown-item">Fault Reports</a>
-
-                </div>
+        <div class="sidebar-item">
+            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#workordersCollapse">
+                <i class="bi bi-wrench-adjustable"></i>
+                <span>Work Orders</span>
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <div id="workordersCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <a href="{% url 'work_orders:fault_report_add' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> New Fault Report</a>
+                <a href="{% url 'work_orders:wo_search' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Work Orders</a>
+                <a href="{% url 'work_orders:fault_report_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Fault Reports</a>
             </div>
+        </div>
 
         <!-- Daily Reports -->
-            <h6 class="accordion-header">
-                <button class="nav-link dropdown-toggle collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#reportsCollapse">
-                    Daily Reports
-                </button>
-            </h6>
-            <div id="reportsCollapse"
-                class="accordion-collapse collapse"
-                data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <a href="{% url 'daily_reports:report_list' %}" class="dropdown-item">
-                        <i class="bi bi-list-ul me-2"></i>View Logs
-                    </a>
-                    <!-- New Link Added Here -->
-                    <a href="{% url 'daily_reports:create_report' %}" class="dropdown-item">
-                        <i class="bi bi-plus-circle me-2"></i>Add Daily Report
-                    </a>
-                </div>
+        <div class="sidebar-item">
+            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#reportsCollapse">
+                <i class="bi bi-journal-text"></i>
+                <span>Daily Reports</span>
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <div id="reportsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <a href="{% url 'daily_reports:report_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> View Logs</a>
+                <a href="{% url 'daily_reports:create_report' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Add Daily Report</a>
             </div>
+        </div>
 
+        <!-- Permits -->
+        <div class="sidebar-item">
+            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#permitsCollapse">
+                <i class="bi bi-shield-check"></i>
+                <span>Permits</span>
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <div id="permitsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <a href="{% url 'permits:permit_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> View Permits</a>
+                <a href="#" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Add Permit</a>
+            </div>
+        </div>
 
         <!-- ASSETS SECTION -->
-        <hr class="section-divider">
-        <h6 class="section-title">Assets</h6>
+        <div class="sidebar-section-label mt-2">ASSET MANAGEMENT</div>
 
-        <!-- ASSETS: Location Tag -->
-            <h6 class="accordion-header">
-                <button class="nav-link dropdown-toggle collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#locationTagCollapse">
-                    Location Tag
-                </button>
-            </h6>
-            <div id="locationTagCollapse"
-                 class="accordion-collapse collapse"
-                 data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <a href="{% url 'equipment:location_tag_list' %}" class="dropdown-item">Search for</a>
-                    <a href="{% url 'equipment:location_tag_create_request' %}" class="dropdown-item">Add New</a>
-                </div>
+        <!-- Location Tag -->
+        <div class="sidebar-item">
+            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#locationTagCollapse">
+                <i class="bi bi-geo-alt"></i>
+                <span>Location Tag</span>
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <div id="locationTagCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <a href="{% url 'equipment:location_tag_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Search</a>
+                <a href="{% url 'equipment:location_tag_create_request' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Add New</a>
             </div>
+        </div>
 
-        <!-- ASSETS: Equipment -->
-            <h6 class="accordion-header">
-                <button class="nav-link dropdown-toggle collapsed"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#equipmentCollapse">
-                    Equipment
-                </button>
-            </h6>
-            <div id="equipmentCollapse"
-                 class="accordion-collapse collapse"
-                 data-bs-parent="#sidebarAccordion">
-                <div class="accordion-body p-0">
-                    <a href="{% url 'equipment:equipment_list' %}" class="dropdown-item">Search for</a>
-                    <a href="{% url 'equipment:equipment_request_create' %}" class="dropdown-item">Add New</a>
-                </div>
+        <!-- Equipment -->
+        <div class="sidebar-item">
+            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#equipmentCollapse">
+                <i class="bi bi-cpu"></i>
+                <span>Equipment</span>
+                <i class="bi bi-chevron-right chevron"></i>
+            </button>
+            <div id="equipmentCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <a href="{% url 'equipment:equipment_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Search</a>
+                <a href="{% url 'equipment:equipment_request_create' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Add New</a>
             </div>
+        </div>
 
+        <!-- Documents -->
+        <div class="sidebar-item">
+            <button class="sidebar-nav-btn collapsed" onclick="window.location.href='#'">
+                <i class="bi bi-folder2-open"></i>
+                <span>Documents</span>
+            </button>
+        </div>
 
-
-        <!-- ASSETS: Documents -->
-            <h6 class="accordion-header">
-                <button class="nav-link"
-                        onclick="window.location.href='#'">
-                    Documents
-                </button>
-            </h6>
     </div>
 </nav>
 
 <style>
-/* --- BASIC SIDEBAR --- */
+:root {
+    --sidebar-bg: #0f1923;
+    --sidebar-header-bg: #0a1219;
+    --sidebar-accent: #1a8cff;
+    --sidebar-text: #a8b8c8;
+    --sidebar-text-hover: #ffffff;
+    --sidebar-hover-bg: #1a2a3a;
+    --sidebar-active-bg: #0d2137;
+    --sidebar-border: #1e2e3e;
+    --sidebar-sub-bg: #0c1620;
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 58px;
+}
+
 .sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 220px;
+    top: 0; left: 0;
+    width: var(--sidebar-width);
     height: 100vh;
-
-    background: #2c3136;
-    color: #e0e0e0;
-    padding: 15px;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
     transition: width 0.25s ease;
-    overflow-y: auto;   /* sidebar itself scrolls if content is long */
-    font-size: 0.9rem;
-    border-right: 1px solid #1f2327;
+    overflow: hidden;
+    font-size: 0.82rem;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    border-right: 1px solid var(--sidebar-border);
+    z-index: 1000;
 }
 
-/* Collapsed version */
-.sidebar.collapsed {
-    width: 60px;
+/* Scrollable accordion area */
+.sidebar #sidebarAccordion {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    padding-bottom: 16px;
 }
+.sidebar #sidebarAccordion::-webkit-scrollbar { width: 4px; }
+.sidebar #sidebarAccordion::-webkit-scrollbar-track { background: transparent; }
+.sidebar #sidebarAccordion::-webkit-scrollbar-thumb { background: #2a3a4a; border-radius: 2px; }
 
-/* Hide text when collapsed */
-.sidebar.collapsed .nav-link span,
-.sidebar.collapsed h6,
-.sidebar.collapsed .section-title,
-.sidebar.collapsed .dropdown-item {
-    display: none;
-}
-
-/* Sidebar Header */
+/* Header */
 .sidebar-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    height: 56px;
+    background: var(--sidebar-header-bg);
+    border-bottom: 1px solid var(--sidebar-border);
+    flex-shrink: 0;
 }
 
-/* Compact the header in collapsed mode */
-.sidebar.collapsed .sidebar-header {
-    justify-content: center;
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
 }
 
-/* --- Small, regular icon font instead of ugly button --- */
+.brand-icon {
+    font-size: 1.3rem;
+    color: var(--sidebar-accent);
+    flex-shrink: 0;
+}
+
+.brand-text {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #e8f0f8;
+    white-space: nowrap;
+}
+
 .sidebar-toggle-icon {
-    font-size: 0.8rem;
-    color: #bbb;
+    font-size: 1.2rem;
+    color: #4a6a8a;
     cursor: pointer;
     user-select: none;
-    transition: color 0.2s, transform 0.2s;
+    transition: color 0.2s;
+    flex-shrink: 0;
+    line-height: 1;
 }
-.sidebar-toggle-icon:hover {
-    color: #fff;
-    transform: scale(1.15);
-}
-.sidebar.collapsed .sidebar-toggle-icon {
-    display: inline;
+.sidebar-toggle-icon:hover { color: var(--sidebar-accent); }
+
+/* Section labels */
+.sidebar-section-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: #3a5a7a;
+    padding: 14px 16px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
-/* Divider for assets section */
-.section-divider {
-    border-color: #666;
-    margin-top: 20px;
-    margin-bottom: 8px;
-}
+/* Nav buttons */
+.sidebar-item { border-bottom: 1px solid #111d27; }
 
-.section-title {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    color: #aaa;
-    margin-left: 3px;
-}
-
-/* Accordion buttons */
-.sidebar .nav-link {
-    color: #ddd;
-    padding: 8px;
-    border-radius: 4px;
-    display: block;
+.sidebar-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
     background: none;
     border: none;
-    width: 100%;
+    color: var(--sidebar-text);
     text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-.sidebar .nav-link:hover {
-    background-color: #41464b;
+.sidebar-nav-btn > i:first-child {
+    font-size: 1rem;
+    flex-shrink: 0;
+    color: #4a7a9a;
+    transition: color 0.15s;
+    width: 18px;
+    text-align: center;
+}
+
+.sidebar-nav-btn span {
+    flex: 1;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-nav-btn:hover,
+.sidebar-nav-btn:not(.collapsed) {
+    background: var(--sidebar-hover-bg);
+    color: var(--sidebar-text-hover);
+}
+.sidebar-nav-btn:hover > i:first-child,
+.sidebar-nav-btn:not(.collapsed) > i:first-child {
+    color: var(--sidebar-accent);
+}
+
+/* Chevron rotation */
+.chevron {
+    font-size: 0.65rem;
+    color: #3a5a7a;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+.sidebar-nav-btn:not(.collapsed) .chevron {
+    transform: rotate(90deg);
+    color: var(--sidebar-accent);
+}
+
+/* Badge */
+.badge-pill {
+    background: #c0392b;
     color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    flex-shrink: 0;
 }
 
 /* Sub-links */
-.sidebar .dropdown-item {
-    padding: 6px 14px;
-    color: #ccc;
+.sidebar-sub-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px 7px 42px;
+    color: #7a9ab8;
+    text-decoration: none;
+    background: var(--sidebar-sub-bg);
+    border-bottom: 1px solid #0e1a24;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 0.8rem;
+}
+.sidebar-sub-link:hover {
+    background: #132030;
+    color: #c8dff0;
+}
+.dot {
+    font-size: 0.3rem;
+    color: #2a5a7a;
+    flex-shrink: 0;
 }
 
-.sidebar .dropdown-item:hover {
-    background-color: #50565c;
-    color: #fff;
+/* ── COLLAPSED STATE ── */
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+.sidebar.collapsed .brand-text,
+.sidebar.collapsed .sidebar-nav-btn span,
+.sidebar.collapsed .sidebar-nav-btn .chevron,
+.sidebar.collapsed .sidebar-nav-btn .badge-pill,
+.sidebar.collapsed .sidebar-section-label,
+.sidebar.collapsed .accordion-collapse {
+    display: none !important;
+}
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 0;
+}
+.sidebar.collapsed .sidebar-nav-btn {
+    justify-content: center;
+    padding: 12px 0;
+}
+.sidebar.collapsed .sidebar-nav-btn > i:first-child {
+    width: auto;
 }
 </style>
 
@@ -233,26 +330,17 @@
 const sidebar = document.getElementById("sidebar");
 const toggleBtn = document.getElementById("sidebarToggle");
 
-// Load saved state
-if (localStorage.getItem("sidebarCollapsed") === "true") {
-    sidebar.classList.add("collapsed");
-    document.body.classList.add("sidebar-collapsed");
-    toggleBtn.textContent = "»";
+function applyState(collapsed) {
+    sidebar.classList.toggle("collapsed", collapsed);
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+    toggleBtn.innerHTML = collapsed ? "&#8250;" : "&#8249;";
 }
 
+applyState(localStorage.getItem("sidebarCollapsed") === "true");
+
 toggleBtn.addEventListener("click", () => {
-    sidebar.classList.toggle("collapsed");
-
-    const collapsed = sidebar.classList.contains("collapsed");
-
-    // Set body class
-    document.body.classList.toggle("sidebar-collapsed", collapsed);
-
-    // Change toggle icon
-    toggleBtn.textContent = collapsed ? "»" : "«";
-
-    // Save state
+    const collapsed = !sidebar.classList.contains("collapsed");
+    applyState(collapsed);
     localStorage.setItem("sidebarCollapsed", collapsed);
-
 });
 </script>

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Permits{% endblock %}
+
+{% block content %}
+<!-- Use the new Permit-specific stylesheet -->
+<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
+
+<div class="container-fluid">
+
+    {% include "permits/_permit_filter.html" %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="mb-0">
+                Permits
+                <small>({{ permits.paginator.count }} Records)</small>
+            </h1>
+
+            <a href="#" class="btn btn-enterprise-primary">
+                <i class="bi bi-plus-lg me-1"></i>Issue New Permit
+            </a>
+        </div>
+
+        <div>
+            <a href="#" class="btn btn-enterprise-outline">
+                <i class="bi bi-download me-1"></i>Export CSV
+            </a>
+        </div>
+    </div>
+
+    {% if permits %}
+        <div class="table-scroll-container">
+            {% include "permits/_permit_table.html" %}
+        </div>
+        {% include "equipment/common/_pagination.html" with page_obj=permits %}
+    {% else %}
+        <div class="alert alert-info">No permits found matching the criteria.</div>
+    {% endif %}
+</div>
+
+{% include "permits/_permit_modal.html" %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".permit-row").forEach(row => {
+        row.addEventListener("click", function () {
+            const baseUrl = this.dataset.detailUrl;
+            if (!baseUrl || baseUrl === "#") return;
+
+            const query = window.location.search;
+            const detailUrl = baseUrl + query;
+
+            fetch(detailUrl)
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.text();
+                })
+                .then(html => {
+                    document.getElementById("permitModalContent").innerHTML = html;
+                    new bootstrap.Modal(document.getElementById("permitModal")).show();
+                })
+                .catch(err => {
+                    console.error("Error loading permit detail:", err);
+                    alert("Failed to load permit details.");
+                });
+        });
+    });
+});
+
+function cleanupPermitModal() {
+    const modalEl = document.getElementById("permitModal");
+    const existingModal = bootstrap.Modal.getInstance(modalEl);
+    if (existingModal) existingModal.dispose();
+    document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+}
+
+function closePermitModal() {
+    const modalEl = document.getElementById("permitModal");
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+    setTimeout(cleanupPermitModal, 300);
+}
+window.closePermitModal = closePermitModal;
+</script>
+{% endblock %}

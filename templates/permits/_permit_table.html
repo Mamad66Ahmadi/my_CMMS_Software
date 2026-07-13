@@ -1,0 +1,100 @@
+{% load static %}
+
+<table>
+    <thead>
+        <tr>
+            {% include "permits/_permit_table_header.html" with column="permit_number" label="Permit Number" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="continuation_of" label="Continuation Of" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="hazard_code" label="Hazard Code" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="description" label="Description" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="valid_from" label="Valid From" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="valid_to" label="Valid To" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="special_conditions" label="Special Conditions" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="authorized_issuer" label="Authorized Issuer" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="permit_holder" label="Permit Holder" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=query_params %}
+            {% include "permits/_permit_table_header.html" with column="modified_by" label="Modified By" sort_by=sort_by query_params=query_params %}
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for permit in permits %}
+        <tr class="permit-row" data-pk="{{ permit.id }}" data-detail-url="#">
+            <!-- Primary Number: Bold and Dark -->
+            <td class="fw-bold">{{ permit.permit_number }}</td>
+
+            <!-- Continuation Number: Muted and distinct -->
+            <td class="text-secondary-ref">
+                {% if permit.continuation_of %}
+                    {{ permit.continuation_of.permit_number }}
+                {% else %}
+                    <span style="color: #ccc;">-</span>
+                {% endif %}
+            </td>
+
+            <td>{{ permit.location_tag.loc_tag|default:"-" }}</td>
+
+            <td>
+                {% if permit.status == "DRAFT" %}
+                    <span class="status-badge status-draft">Draft</span>
+                {% elif permit.status == "ACTIVE" %}
+                    <span class="status-badge status-active">Active</span>
+                {% elif permit.status == "CLOSED" %}
+                    <span class="status-badge status-closed">Closed</span>
+                {% elif permit.status == "CANCELLED" %}
+                    <span class="status-badge status-cancelled">Cancelled</span>
+                {% else %}
+                    <span class="status-badge status-default">{{ permit.get_status_display }}</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if permit.hazard_codes.all %}
+                    {% for hc in permit.hazard_codes.all %}
+                        <span>{{ hc.code }}{% if not forloop.last %}, {% endif %}</span>
+                    {% endfor %}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+
+            <td>{{ permit.work_order.wo_number|default:"-" }}</td>
+
+            <!-- Persian compatible Description -->
+            <td class="persian-text align-start-cell">
+                <bdi title="{{ permit.description }}">
+                    {{ permit.description|truncatechars:60 }}
+                </bdi>
+            </td>
+
+            <td>{{ permit.department.name }}</td>
+
+            <td>{{ permit.location_tag.unit.unit_code|default:"-" }}</td>
+
+            <td>{{ permit.valid_from|date:"Y-m-d H:i" }}</td>
+            <td>{{ permit.valid_to|date:"Y-m-d H:i" }}</td>
+
+            <!-- Persian compatible Special Conditions -->
+            <td class="persian-text">
+                <bdi title="{{ permit.special_conditions_summary }}">
+                    {{ permit.special_conditions_summary|truncatechars:40 }}
+                </bdi>
+            </td>
+
+            <td>{{ permit.authorized_issuer.username }}</td>
+            <td>{{ permit.permit_holder.username|default:"-" }}</td>
+            <td>{{ permit.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ permit.created_by.username }}</td>
+            <td>{{ permit.modified_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ permit.modified_by.username|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

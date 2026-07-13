@@ -1,0 +1,834 @@
+/* ==================================================================
+   CMMS DESIGN SYSTEM — PERMITS MODULE
+   Enterprise teal/forest theme — safety & compliance oriented
+   (structure mirrors work_orders_styles.css; palette only differs)
+   ================================================================== */
+
+:root {
+    /* --- Brand / primary (deep teal-forest) --- */
+    --c-primary:        #134e4a;
+    --c-primary-hover:  #0c3733;
+    --c-primary-light:  #115e59;
+
+    /* --- Accent (interactive / focus / links) --- */
+    --c-accent:         #0d9488;
+    --c-accent-light:   rgba(13, 148, 136, 0.12);
+
+    /* --- Neutrals --- */
+    --c-bg-page:        #f5f7f6;
+    --c-bg-surface:     #ffffff;
+    --c-bg-subtle:      #f7faf9;
+    --c-bg-subtle-2:    #eef4f2;
+
+    --c-border:         #dde6e3;
+    --c-border-strong:  #c7d6d2;
+
+    --c-text-primary:   #123a37;
+    --c-text-secondary: #45615c;
+    --c-text-muted:     #94a8a4;
+    --c-text-inverse:   #ffffff;
+
+    /* --- Status --- */
+    --c-status-success-bg:   #dcfce7;
+    --c-status-success-text: #166534;
+    --c-status-success-dot:  #22c55e;
+
+    --c-status-warning-bg:   #fef3c7;
+    --c-status-warning-text: #92400e;
+    --c-status-warning-dot:  #f59e0b;
+
+    --c-status-danger-bg:    #fee2e2;
+    --c-status-danger-text:  #b91c1c;
+    --c-status-danger-dot:   #ef4444;
+
+    --c-status-neutral-bg:   #e3ece9;
+    --c-status-neutral-text: #45615c;
+    --c-status-neutral-dot:  #94a8a4;
+
+    /* --- Elevation --- */
+    --shadow-xs: 0 1px 2px rgba(18, 58, 55, 0.05);
+    --shadow-sm: 0 1px 3px rgba(18, 58, 55, 0.09);
+    --shadow-md: 0 4px 12px rgba(18, 58, 55, 0.09);
+    --shadow-lg: 0 8px 24px rgba(18, 58, 55, 0.13);
+
+    /* --- Radius --- */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-pill: 999px;
+
+    /* --- Spacing scale --- */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+
+    /* --- Type --- */
+    --font-body: 'Inter', Tahoma, Geneva, Verdana, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+
+    /* --- Motion --- */
+    --transition-fast: 120ms ease;
+    --transition-base: 180ms ease;
+}
+
+
+/* ------------------------------------------------------------------
+   GLOBAL / BASE
+------------------------------------------------------------------ */
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--c-bg-page);
+    color: var(--c-text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+.container {
+    font-family: var(--font-body);
+    padding: var(--space-5) 0;
+}
+
+h1 {
+    color: var(--c-text-primary);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: var(--space-5);
+}
+
+h1 small,
+.page-subtitle {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--c-text-muted);
+    margin-top: var(--space-1);
+}
+
+a {
+    color: var(--c-accent);
+}
+
+/* Visible keyboard focus everywhere, not just inputs */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+}
+
+
+/* ------------------------------------------------------------------
+   BUTTONS
+------------------------------------------------------------------ */
+
+.btn-primary-custom,
+.btn-search,
+.back-button {
+    background-color: var(--c-primary);
+    color: var(--c-text-inverse);
+    border: 1px solid var(--c-primary);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn-primary-custom {
+    padding: 9px 18px;
+    font-size: 14px;
+}
+
+.btn-primary-custom:hover,
+.btn-search:hover,
+.back-button:hover {
+    background-color: var(--c-primary-hover);
+    border-color: var(--c-primary-hover);
+}
+
+.btn-primary-custom:active,
+.btn-search:active,
+.back-button:active {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.btn-secondary-custom,
+.btn-clear {
+    background-color: var(--c-bg-surface);
+    color: var(--c-text-primary);
+    border: 1px solid var(--c-border-strong);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-secondary-custom {
+    padding: 9px 18px;
+    font-size: 14px;
+}
+
+.btn-secondary-custom:hover,
+.btn-clear:hover {
+    background-color: var(--c-bg-subtle);
+    border-color: var(--c-text-muted);
+}
+
+.btn-search {
+    padding: 0 var(--space-2);
+    font-size: 13px;
+    height: 35px;
+    width: 200px;
+}
+
+.btn-clear {
+    padding: 0 var(--space-2);
+    font-size: 13px;
+    height: 35px;
+    width: 150px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 7px 14px;
+    font-size: 13px;
+    margin-bottom: var(--space-3);
+}
+
+/* Enterprise Buttons - Teal / Forest Theme */
+.btn-enterprise-primary {
+    background-color: var(--c-primary) !important;
+    border-color: var(--c-primary) !important;
+    color: var(--c-text-inverse) !important;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-enterprise-primary:hover {
+    background-color: var(--c-primary-hover) !important;
+    border-color: var(--c-primary-hover) !important;
+}
+
+.btn-enterprise-outline {
+    color: var(--c-primary) !important;
+    border-color: var(--c-border-strong) !important;
+    background-color: var(--c-bg-surface) !important;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-enterprise-outline:hover {
+    background-color: var(--c-bg-subtle) !important;
+    border-color: var(--c-text-muted) !important;
+    color: var(--c-primary-hover) !important;
+}
+
+.btn-enterprise-cancel {
+    color: var(--c-text-secondary) !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-enterprise-cancel:hover {
+    color: var(--c-text-primary) !important;
+    background-color: var(--c-bg-subtle) !important;
+}
+
+
+/* ------------------------------------------------------------------
+   FILTER BAR
+------------------------------------------------------------------ */
+
+.filter-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-4);
+    background-color: var(--c-bg-subtle);
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-5);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-size: 11px;
+    color: var(--c-text-secondary);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: var(--space-2);
+}
+
+.filter-input {
+    padding: 8px 10px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    background-color: var(--c-bg-surface);
+    color: var(--c-text-primary);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.filter-input:focus {
+    border-color: var(--c-accent);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--c-accent-light);
+}
+
+.filter-input::placeholder {
+    color: var(--c-text-muted);
+}
+
+.filter-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-3);
+}
+
+
+/* ------------------------------------------------------------------
+   FILTER PANE — MULTI-ROW LAYOUT (Permit Filter)
+   Stacked rows of flex groups, used by permits/_permit_filter.html
+------------------------------------------------------------------ */
+
+.permit-filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: flex-end;
+    width: 100%;
+}
+
+.filter-group {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.filter-group-sm {
+    flex: 0.6 1 0;
+}
+
+.filter-group-xs {
+    flex: 0.45 1 0;
+}
+
+.filter-group-wide {
+    flex: 2 1 0;
+}
+
+.filter-input {
+    width: 100%;
+}
+
+.filter-actions {
+    flex: 0.9 1 0;
+    justify-content: flex-end;
+    min-width: max-content;
+}
+
+
+/* ------------------------------------------------------------------
+   TABLES
+------------------------------------------------------------------ */
+
+.table-scroll-container {
+    width: 100%;
+    max-height: 700px;
+    overflow-y: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--c-border);
+    box-shadow: var(--shadow-sm);
+}
+
+table {
+    width: max-content;
+    min-width: 100%;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    margin-top: 0;
+}
+
+/* Sticky, single-source-of-truth header (teal-forest) */
+.table-scroll-container table thead th,
+th {
+    background-color: var(--c-primary);
+    color: var(--c-text-inverse);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    text-align: center;
+    white-space: nowrap;
+    padding: 12px 28px 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    cursor: pointer;
+    border-bottom: 1px solid var(--c-primary);
+    transition: background-color var(--transition-fast);
+}
+
+.table-scroll-container table thead th:hover,
+th:hover {
+    background-color: var(--c-primary-hover);
+}
+
+/* selected sort column highlight */
+.table-scroll-container table thead th.sorted,
+th.sorted {
+    background-color: var(--c-primary-hover);
+}
+
+td {
+    padding: 10px 16px;
+    text-align: center;
+    vertical-align: middle;
+    color: var(--c-text-primary);
+    background-color: var(--c-bg-surface);
+    border-bottom: 1px solid var(--c-bg-subtle-2);
+}
+
+th,
+td {
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+td {
+    border-right: 1px solid var(--c-bg-subtle-2);
+}
+
+th:last-child,
+td:last-child {
+    border-right: none;
+}
+
+tbody tr:nth-child(even) td {
+    background-color: var(--c-bg-subtle);
+}
+
+tbody tr:hover td {
+    background-color: var(--c-accent-light) !important;
+}
+
+/* sorting arrows */
+.sort-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    width: 16px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.sort-arrow.asc::before {
+    content: '\25B2';
+}
+
+.sort-arrow.desc::before {
+    content: '\25BC';
+}
+
+th:not(.sorted) .sort-arrow {
+    display: none;
+}
+
+.sort-arrow:empty::after {
+    content: '';
+}
+
+
+/* ------------------------------------------------------------------
+   LINKS
+------------------------------------------------------------------ */
+
+.report-link,
+.location-link {
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    color: var(--c-accent);
+    transition: color var(--transition-fast);
+}
+
+.report-link:hover,
+.location-link:hover {
+    text-decoration: underline;
+    color: var(--c-primary-hover);
+}
+
+
+/* ------------------------------------------------------------------
+   STATUS BADGES (Enterprise CSS Fixes)
+------------------------------------------------------------------ */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 95px;
+    padding: 5px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-align: center;
+    justify-content: center;
+}
+
+.status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* 1. CREATED (Waiting / Slate Gray) */
+.status-created {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+.status-created::before {
+    background-color: #64748b;
+}
+
+/* 2. PLANNED (Blue) */
+.status-planned {
+    background-color: #eff6ff;
+    color: #1e40af;
+}
+.status-planned::before {
+    background-color: #3b82f6;
+}
+
+/* 3. IN EXECUTION (Amber / Yellow) */
+.status-execution {
+    background-color: var(--c-status-warning-bg);
+    color: var(--c-status-warning-text);
+}
+.status-execution::before {
+    background-color: var(--c-status-warning-dot);
+}
+
+/* 4. WORK DONE (Light Green) */
+.status-done {
+    background-color: #f0fdf4;
+    color: #166534;
+}
+.status-done::before {
+    background-color: #22c55e;
+}
+
+/* 5. CLOSED (Dark Green) */
+.status-closed {
+    background-color: var(--c-status-success-bg);
+    color: var(--c-status-success-text);
+}
+.status-closed::before {
+    background-color: var(--c-status-success-dot);
+}
+
+/* 6. CANCELLED (Red) */
+.status-cancelled {
+    background-color: var(--c-status-danger-bg);
+    color: var(--c-status-danger-text);
+}
+.status-cancelled::before {
+    background-color: var(--c-status-danger-dot);
+}
+
+/* Fallback badge style */
+.status-default {
+    background-color: var(--c-status-neutral-bg);
+    color: var(--c-status-neutral-text);
+}
+.status-default::before {
+    background-color: var(--c-status-neutral-dot);
+}
+
+
+/* ------------------------------------------------------------------
+   AUTO DIRECTION ALIGNMENT (English LTR / Persian RTL)
+------------------------------------------------------------------ */
+
+.align-start-cell {
+    text-align: start !important; /* Forces left-align for LTR, right-align for RTL */
+}
+
+.align-start-cell bdi {
+    display: block;
+    text-align: start;
+    unicode-bidi: plaintext;
+}
+
+/* ------------------------------------------------------------------
+   COLLAPSIBLE SECTIONS
+------------------------------------------------------------------ */
+
+.section-header {
+    background-color: var(--c-primary);
+    color: var(--c-text-inverse);
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    margin-top: var(--space-6);
+    margin-bottom: var(--space-5);
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    user-select: none;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.section-header:hover {
+    background-color: var(--c-primary-hover);
+}
+
+.section-content {
+    display: none;
+    margin-top: var(--space-3);
+}
+
+.chevron {
+    font-size: 13px;
+    transition: transform var(--transition-base);
+}
+
+.chevron.open {
+    transform: rotate(90deg);
+}
+
+
+/* ------------------------------------------------------------------
+   FORMS
+------------------------------------------------------------------ */
+
+.form-card {
+    background: var(--c-bg-surface);
+    padding: 24px 28px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-top: var(--space-6);
+}
+
+.form-card label {
+    font-weight: 600;
+    font-size: 13px;
+    display: block;
+    margin-bottom: 6px;
+    color: var(--c-text-primary);
+}
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--c-border-strong);
+    font-size: 14px;
+    color: var(--c-text-primary);
+    background-color: var(--c-bg-surface);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
+    outline: none;
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px var(--c-accent-light);
+}
+
+.tag-highlight {
+    font-weight: 600;
+    color: var(--c-primary);
+}
+
+/* Generic Bootstrap-like form styling */
+.form-label {
+    font-weight: 700;
+    color: var(--c-text-secondary);
+    font-size: 0.72rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+}
+
+.form-control,
+.form-select,
+#location-search {
+    font-size: 0.825rem !important;
+    padding: 0.4rem 0.75rem !important;
+    border-radius: var(--radius-sm) !important;
+    border-color: var(--c-border-strong) !important;
+    color: var(--c-text-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--c-accent) !important;
+    box-shadow: 0 0 0 3px var(--c-accent-light) !important;
+}
+
+/* Mandatory asterisk */
+.mandatory-star {
+    color: var(--c-status-danger-dot);
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+/* Slightly smaller, rounded cards for form pages */
+.card {
+    border-radius: var(--radius-md) !important;
+    border-color: var(--c-border) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+
+/* ------------------------------------------------------------------
+   AUTOCOMPLETE
+------------------------------------------------------------------ */
+
+.autocomplete-results {
+    border: 1px solid var(--c-border-strong) !important;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    background: var(--c-bg-surface);
+    width: 100% !important;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    position: absolute;
+    z-index: 20;
+}
+
+.autocomplete-results li,
+.autocomplete-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.autocomplete-results li:hover,
+.autocomplete-item:hover {
+    background-color: var(--c-bg-subtle);
+}
+
+
+/* ------------------------------------------------------------------
+   MODAL — PERMIT DETAIL SECTIONS
+   Used by permits/_permit_modal.html
+------------------------------------------------------------------ */
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1rem;
+}
+
+.section-title .title-text {
+    white-space: nowrap;
+}
+
+.section-title .title-line {
+    flex: 1;
+    height: 1px;
+    background-color: var(--c-border-strong);
+}
+
+.badge-special-active {
+    background-color: var(--c-status-success-bg);
+    color: var(--c-status-success-text);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    font-weight: 600;
+}
+
+.badge-special-inactive {
+    background-color: var(--c-bg-subtle-2);
+    color: var(--c-text-muted);
+    border: 1px solid var(--c-border);
+}
+
+
+/* ------------------------------------------------------------------
+   INPUT GROUPS
+------------------------------------------------------------------ */
+
+.cmms-filter__input-group {
+    display: flex;
+    align-items: stretch;
+}
+
+.cmms-filter__prefix {
+    display: flex;
+    align-items: center;
+    background: var(--c-bg-subtle);
+    border: 1px solid var(--c-border-strong);
+    border-right: none;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    padding: 0 10px;
+    font-size: 0.85rem;
+    color: var(--c-text-secondary);
+}
+
+.sort-priority {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 18px;
+    height: 18px;
+
+    margin-left: 6px;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,0.25);
+    color: white;
+
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.persian-text {
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+    direction: rtl;
+    unicode-bidi: plaintext;
+}
+.text-secondary-ref {
+    color: #326d75; /* A muted version of your teal/cyan */
+    font-weight: 500;
+}
