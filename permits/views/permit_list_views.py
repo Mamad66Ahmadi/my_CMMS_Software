@@ -76,11 +76,13 @@ def get_filtered_permits(request):
     # If q is present, we ignore the status constraint.
     has_quick_search = bool(filters["q"])
     if has_quick_search:
-        q_val = filters["q"]
-        queryset = queryset.filter(
-            Q(permit_number__icontains=q_val) |
-            Q(work_order__wo_number__icontains=q_val)
-        )
+        q_values = [x.strip() for x in filters["q"].split(",") if x.strip()]
+        if q_values:
+            quick_query = Q()
+            for value in q_values:
+                quick_query |= Q(permit_number__icontains=value)
+                quick_query |= Q(work_order__wo_number__icontains=value)
+            queryset = queryset.filter(quick_query)
 
     def apply_multi_value_filter(qs, filter_str, field_lookup):
         if not filter_str:
