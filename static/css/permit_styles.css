@@ -1155,3 +1155,527 @@ th:not(.sorted) .sort-arrow {
     color: #c0392b;
     background: #fdf0ef;
 }
+
+
+/* ==================================================================
+   PERMIT DETAIL PAGE — HEADER, VALIDITY STRIP, LAYOUT, PANELS
+   ================================================================== */
+
+/* ------------------------------------------------------------------
+   HEADER
+------------------------------------------------------------------ */
+
+.permit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    background: var(--c-bg-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-5) var(--space-6);
+    margin-bottom: var(--space-5);
+}
+
+.permit-header__left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.permit-icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    background: var(--c-primary);
+    color: var(--c-text-inverse);
+    font-size: 22px;
+}
+
+.permit-title-group {
+    min-width: 0;
+}
+
+.permit-title-group h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--c-text-primary);
+    letter-spacing: -0.01em;
+}
+
+.permit-subtitle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--c-text-secondary);
+}
+
+.permit-subtitle i {
+    color: var(--c-text-muted);
+    font-size: 12px;
+}
+
+.permit-subtitle a {
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--c-accent);
+}
+
+.permit-subtitle a:hover {
+    text-decoration: underline;
+}
+
+.permit-header__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.btn-permit-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--c-text-primary);
+    background: var(--c-bg-surface);
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-permit-action:hover {
+    background: var(--c-bg-subtle);
+    border-color: var(--c-text-muted);
+    color: var(--c-text-primary);
+    text-decoration: none;
+}
+
+/* Reuse .continuation-item as an inline "Edit" link in the header */
+.permit-header__right .continuation-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--c-text-inverse);
+    background: var(--c-accent);
+    border: 1px solid var(--c-accent);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: background-color var(--transition-fast);
+}
+
+.permit-header__right .continuation-item:hover {
+    background: var(--c-primary-hover);
+    border-color: var(--c-primary-hover);
+    text-decoration: none;
+}
+
+/* ------------------------------------------------------------------
+   VALIDITY STRIP
+------------------------------------------------------------------ */
+
+.validity-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    background: var(--c-bg-subtle);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-5);
+    margin-bottom: var(--space-5);
+}
+
+.validity-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--c-text-primary);
+}
+
+.validity-item i {
+    color: var(--c-accent);
+    font-size: 14px;
+}
+
+.validity-item .label {
+    font-weight: 600;
+    color: var(--c-text-secondary);
+}
+
+.validity-item .value {
+    font-weight: 600;
+    color: var(--c-text-primary);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+}
+
+.validity-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.validity-pill--valid {
+    background: var(--c-status-success-bg);
+    color: var(--c-status-success-text);
+}
+
+.validity-pill--invalid {
+    background: var(--c-status-danger-bg);
+    color: var(--c-status-danger-text);
+}
+
+/* ------------------------------------------------------------------
+   MAIN LAYOUT (two-column)
+------------------------------------------------------------------ */
+
+.permit-layout {
+    display: grid;
+    grid-template-columns: 2.2fr 1fr;
+    gap: var(--space-5);
+    align-items: start;
+}
+
+.permit-layout__main,
+.permit-layout__side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+@media (max-width: 992px) {
+    .permit-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ------------------------------------------------------------------
+   DETAIL PANEL (generic card used across sections)
+------------------------------------------------------------------ */
+
+.detail-panel {
+    background: var(--c-bg-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.detail-panel__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--c-bg-subtle-2);
+    color: var(--c-text-primary);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.detail-panel__header i {
+    color: var(--c-accent);
+    font-size: 14px;
+}
+
+.detail-panel__body {
+    padding: var(--space-5);
+}
+
+.detail-panel__body.p-0 {
+    padding: 0;
+}
+
+/* ------------------------------------------------------------------
+   FIELD GRID (General Information)
+------------------------------------------------------------------ */
+
+.field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4) var(--space-5);
+}
+
+.field-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.field-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--c-text-muted);
+}
+
+.field-value {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--c-text-primary);
+}
+
+.field-value.text-block {
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--c-text-secondary);
+    white-space: pre-line;
+}
+
+.field-divider {
+    grid-column: 1 / -1;
+    border: none;
+    border-top: 1px solid var(--c-border);
+    margin: var(--space-1) 0;
+}
+
+@media (max-width: 576px) {
+    .field-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ------------------------------------------------------------------
+   WORK TYPE CLASSIFICATION (precaution list)
+------------------------------------------------------------------ */
+
+.precaution-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-2) var(--space-4);
+}
+
+.precaution-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--c-status-success-bg);
+    color: var(--c-status-success-text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.precaution-row i {
+    font-size: 14px;
+}
+
+.precaution-row.is-inactive {
+    background: var(--c-bg-subtle);
+    color: var(--c-text-muted);
+    font-weight: 500;
+}
+
+.precaution-row.is-inactive i {
+    color: var(--c-text-muted);
+}
+
+/* ------------------------------------------------------------------
+   HAZARD CHIPS
+------------------------------------------------------------------ */
+
+.hazard-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.hazard-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--c-status-warning-bg);
+    color: var(--c-status-warning-text);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-pill);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.hazard-chip i {
+    font-size: 12px;
+}
+
+.empty-hint {
+    padding: var(--space-4);
+    text-align: center;
+    color: var(--c-text-muted);
+    font-size: 13px;
+    font-style: italic;
+}
+
+/* ------------------------------------------------------------------
+   HISTORY TABLE (nested inside detail-panel, no outer scroll box)
+------------------------------------------------------------------ */
+
+.history-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12.5px;
+}
+
+.history-table thead th {
+    position: static;
+    background: var(--c-bg-subtle-2);
+    color: var(--c-text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--c-border);
+    text-align: center;
+    cursor: default;
+}
+
+.history-table thead th:hover {
+    background: var(--c-bg-subtle-2);
+}
+
+.history-table td {
+    padding: 9px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--c-bg-subtle-2);
+    background: var(--c-bg-surface);
+}
+
+.history-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.history-table tbody tr:hover td {
+    background: var(--c-accent-light);
+}
+
+.history-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.history-type-badge--created {
+    background: var(--c-status-success-bg);
+    color: var(--c-status-success-text);
+}
+
+.history-type-badge--changed {
+    background: var(--c-status-warning-bg);
+    color: var(--c-status-warning-text);
+}
+
+.history-type-badge--deleted {
+    background: var(--c-status-danger-bg);
+    color: var(--c-status-danger-text);
+}
+
+/* ------------------------------------------------------------------
+   RECORD INFO (mini rows, sidebar)
+------------------------------------------------------------------ */
+
+.info-mini-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 9px 0;
+    border-bottom: 1px solid var(--c-bg-subtle-2);
+    font-size: 12.5px;
+}
+
+.info-mini-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.info-mini-row .label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--c-text-secondary);
+    font-weight: 600;
+}
+
+.info-mini-row .label i {
+    color: var(--c-accent);
+    font-size: 12px;
+}
+
+.info-mini-row .value {
+    color: var(--c-text-primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+/* ------------------------------------------------------------------
+   CONTINUATION LIST (sidebar)
+------------------------------------------------------------------ */
+
+.continuation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.continuation-list .continuation-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    background: var(--c-bg-subtle);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--c-text-primary);
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.continuation-list .continuation-item:hover {
+    background: var(--c-accent-light);
+    border-color: var(--c-accent);
+    text-decoration: none;
+}
+
+.continuation-list .permit-no {
+    font-family: var(--font-mono);
+    color: var(--c-primary);
+}
+
+.continuation-list .continuation-item i {
+    color: var(--c-text-muted);
+    font-size: 12px;
+}
