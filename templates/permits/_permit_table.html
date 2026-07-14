@@ -35,14 +35,23 @@
 
     <tbody>
         {% for permit in permits %}
-        <tr class="permit-row" data-pk="{{ permit.pk }}" data-detail-url="#">
+        <tr class="permit-row"
             <!-- Primary Number: Bold and Dark -->
-            <td class="fw-bold">{{ permit.permit_number }}</td>
+            <td class="fw-bold">
+                <a href="{% url 'permits:permit_detail' permit.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                class="permit-number-link">
+                    {{ permit.permit_number }}
+                </a>
+            </td>
+
 
             <!-- Continuation Number: Muted and distinct -->
             <td class="text-secondary-ref">
                 {% if permit.continuation_of %}
+                <a href="{% url 'permits:permit_detail' permit.continuation_of.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                class="neutral-link">
                     {{ permit.continuation_of.permit_number }}
+                </a>
                 {% else %}
                     <span style="color: #ccc;">-</span>
                 {% endif %}

@@ -31,7 +31,9 @@
                     {% if permit.continuation_of %}
                         &nbsp;·&nbsp;<i class="bi bi-arrow-return-right"></i>
                         Continuation of
-                        <a href="#">{{ permit.continuation_of.permit_number }}</a>
+                        <a href="{% url 'permits:permit_detail' permit.continuation_of.permit_number %}">
+                            {{ permit.continuation_of.permit_number }}
+                        </a>
                     {% endif %}
                 </div>
             </div>
@@ -43,7 +45,7 @@
             <a href="#" class="continuation-item">
                 <i class="bi bi-pencil"></i> Edit
             </a>
-            <a href="#" class="btn-permit-action">
+            <a href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn-permit-action">
                 <i class="bi bi-arrow-left"></i> Back to List
             </a>
         </div>
@@ -61,11 +63,7 @@
             <span class="label">Valid To:</span>
             <span class="value">{{ permit.valid_to|date:"Y-m-d H:i" }}</span>
         </div>
-        <div class="validity-item">
-            <i class="bi bi-clock-history"></i>
-            <span class="label">Created:</span>
-            <span class="value">{{ permit.created_at|date:"Y-m-d H:i" }}</span>
-        </div>
+
         <span class="validity-pill {% if is_currently_valid %}validity-pill--valid{% else %}validity-pill--invalid{% endif %}">
             <i class="bi {% if is_currently_valid %}bi-check-circle-fill{% else %}bi-exclamation-circle-fill{% endif %}"></i>
             {% if is_currently_valid %}Currently Valid{% else %}Not Valid{% endif %}
@@ -104,15 +102,19 @@
 
                         <hr class="field-divider">
 
-                        <div class="field-item" style="grid-column: 1 / -1;">
+                        <div class="field-item highlight-block" style="grid-column: 1 / -1;">
                             <span class="field-label">Description</span>
-                            <span class="field-value text-block">{{ permit.description|default:"—" }}</span>
+                            <span class="field-value text-block align-start-cell persian-text">
+                                <bdi>{{ permit.description|default:"—" }}</bdi>
+                            </span>
                         </div>
 
                         {% if permit.comment %}
                         <div class="field-item" style="grid-column: 1 / -1;">
                             <span class="field-label">Comment</span>
-                            <span class="field-value text-block">{{ permit.comment }}</span>
+                            <span class="field-value text-block align-start-cell persian-text">
+                                <bdi>{{ permit.comment }}</bdi>
+                            </span>
                         </div>
                         {% endif %}
                     </div>
@@ -187,52 +189,7 @@
             </div>
             {% endif %}
 
-            <!-- Audit History -->
-            <div class="detail-panel">
-                <div class="detail-panel__header">
-                    <i class="bi bi-clock-history"></i> Audit History
-                </div>
-                <div class="detail-panel__body p-0">
-                    {% if history %}
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Date / Time</th>
-                                <th>Action</th>
-                                <th>Status</th>
-                                <th>User</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for record in history %}
-                            <tr>
-                                <td>{{ record.history_date|date:"Y-m-d H:i" }}</td>
-                                <td>
-                                    {% if record.history_type == '+' %}
-                                        <span class="history-type-badge history-type-badge--created">
-                                            <i class="bi bi-plus-circle"></i> Created
-                                        </span>
-                                    {% elif record.history_type == '~' %}
-                                        <span class="history-type-badge history-type-badge--changed">
-                                            <i class="bi bi-pencil"></i> Modified
-                                        </span>
-                                    {% elif record.history_type == '-' %}
-                                        <span class="history-type-badge history-type-badge--deleted">
-                                            <i class="bi bi-trash"></i> Deleted
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ record.get_status_display }}</td>
-                                <td>{{ record.history_user|default:"System" }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% else %}
-                        <div class="empty-hint">No history recorded.</div>
-                    {% endif %}
-                </div>
-            </div>
+
 
         </div>
 
@@ -265,7 +222,6 @@
             </div>
 
             {% if permit.continuations.all %}
-            <!-- Continuations -->
             <div class="detail-panel">
                 <div class="detail-panel__header">
                     <i class="bi bi-arrow-repeat"></i> Continuation Permits
@@ -273,7 +229,8 @@
                 <div class="detail-panel__body">
                     <div class="continuation-list">
                         {% for cont in permit.continuations.all %}
-                        <a href="#" class="continuation-item">
+                        <a href="{% url 'permits:permit_detail' cont.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                        class="continuation-item">
                             <span class="permit-no">{{ cont.permit_number }}</span>
                             <i class="bi bi-chevron-left"></i>
                         </a>
