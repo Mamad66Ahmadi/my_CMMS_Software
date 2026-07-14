@@ -29,6 +29,35 @@
         </div>
     </div>
 
+    {% if active_filter_badges %}
+    <div class="active-filters-bar mb-3">
+        <span class="active-filters-label">
+            <i class="bi bi-funnel-fill"></i> Active Filters
+        </span>
+
+        <div class="active-filters-list">
+            {% for badge in active_filter_badges %}
+                <span class="filter-chip">
+                    <span class="filter-chip__label">{{ badge.label }}</span>
+                    <span class="filter-chip__value">{{ badge.value }}</span>
+                    <a href="{{ badge.remove_url }}" class="filter-chip__remove" title="Remove {{ badge.label }}">
+                        <i class="bi bi-x"></i>
+                    </a>
+                </span>
+            {% endfor %}
+        </div>
+
+        {% if active_filter_badges|length > 1 %}
+            <a href="{% url 'permits:permit_list' %}" class="active-filters-clear">
+                <i class="bi bi-x-circle"></i> Clear All
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+
+
+
     {% if permits %}
         <div class="table-scroll-container">
             {% include "permits/_permit_table.html" %}

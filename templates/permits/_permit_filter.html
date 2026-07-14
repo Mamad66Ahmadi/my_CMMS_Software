@@ -6,13 +6,13 @@
 
     <div class="filter-panel mb-3">
 
-        <!-- Quick Search Bar -->
         <div class="filter-panel__header">
             <div class="filter-search-group">
                 <i class="bi bi-search filter-search-icon"></i>
-                <input type="text" name="q"
+                <input type="text"
+                       name="q"
                        class="filter-search-input"
-                       placeholder="Search by Permit No. or Work Order No. (comma-separated)"
+                       placeholder="Search Permit No. or Work Order No. (comma-separated)"
                        value="{{ filters.q|default:'' }}">
             </div>
             <div class="filter-actions">
@@ -35,37 +35,81 @@
             </div>
         </div>
 
-        <!-- Advanced Filters -->
         <div class="collapse {% if has_advanced_filters %}show{% endif %}" id="advancedSearchCollapse">
             <div class="filter-panel__body">
                 <div class="filter-grid">
 
                     <div class="filter-field">
                         <label class="filter-label">Permit Number</label>
-                        <input type="text" name="permit_number" class="filter-input"
-                               placeholder="P-100..." value="{{ filters.permit_number }}">
+                        <input type="text"
+                               name="permit_number"
+                               class="filter-input"
+                               placeholder="P-100, P-101"
+                               value="{{ filters.permit_number }}">
                     </div>
 
                     <div class="filter-field">
-                        <label class="filter-label">Valid From</label>
-                        <input type="date" name="valid_from_date" class="filter-input"
-                               value="{{ filters.valid_from_date }}">
-                    </div>
-
-                    <div class="filter-field">
-                        <label class="filter-label">Valid To</label>
-                        <input type="date" name="valid_to_date" class="filter-input"
-                               value="{{ filters.valid_to_date }}">
+                        <label class="filter-label">Continuation Of</label>
+                        <input type="text"
+                               name="continuation_of"
+                               class="filter-input"
+                               placeholder="Parent permit no."
+                               value="{{ filters.continuation_of }}">
                     </div>
 
                     <div class="filter-field">
                         <label class="filter-label">Status</label>
                         <select name="status" class="filter-select">
-                            <option value="">All Statuses</option>
+                            <option value="ALL" {% if filters.status == "ALL" %}selected{% endif %}>All Statuses</option>
                             {% for code, label in status_choices %}
                                 <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Location Tag</label>
+                        <input type="text"
+                               name="location_tag"
+                               class="filter-input"
+                               placeholder="103-KM-101, 103-KM-102"
+                               value="{{ filters.location_tag }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Parent Tag</label>
+                        <input type="text"
+                               name="parent_tag"
+                               class="filter-input"
+                               placeholder="Parent tag"
+                               value="{{ filters.parent_tag }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Unit</label>
+                        <input type="text"
+                               name="unit"
+                               class="filter-input"
+                               placeholder="Unit code"
+                               value="{{ filters.unit }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Train</label>
+                        <input type="text"
+                               name="train"
+                               class="filter-input"
+                               placeholder="Train"
+                               value="{{ filters.train }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Work Order No.</label>
+                        <input type="text"
+                               name="work_order"
+                               class="filter-input"
+                               placeholder="WO-123, WO-124"
+                               value="{{ filters.work_order }}">
                     </div>
 
                     <div class="filter-field">
@@ -84,22 +128,175 @@
                             <option value="">All Hazards</option>
                             {% for hz in hazard_codes %}
                                 <option value="{{ hz.code }}" {% if filters.hazard_code == hz.code %}selected{% endif %}>
-                                    {{ hz.code }} — {{ hz.description|slice:":30" }}
+                                    {{ hz.code }} - {{ hz.description|slice:":30" }}
                                 </option>
                             {% endfor %}
                         </select>
                     </div>
 
                     <div class="filter-field">
-                        <label class="filter-label">Location Tag</label>
-                        <input type="text" name="location_tag" class="filter-input"
-                               placeholder="103-KM-101..." value="{{ filters.location_tag }}">
+                        <label class="filter-label">Authorized Issuer</label>
+                        <input type="text"
+                               name="authorized_issuer"
+                               class="filter-input"
+                               placeholder="Username"
+                               value="{{ filters.authorized_issuer }}">
                     </div>
 
                     <div class="filter-field">
-                        <label class="filter-label">Work Order No.</label>
-                        <input type="text" name="work_order" class="filter-input"
-                               placeholder="WO-123..." value="{{ filters.work_order }}">
+                        <label class="filter-label">Permit Holder</label>
+                        <input type="text"
+                               name="permit_holder"
+                               class="filter-input"
+                               placeholder="Username"
+                               value="{{ filters.permit_holder }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Created By</label>
+                        <input type="text"
+                               name="created_by"
+                               class="filter-input"
+                               placeholder="Username"
+                               value="{{ filters.created_by }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Modified By</label>
+                        <input type="text"
+                               name="modified_by"
+                               class="filter-input"
+                               placeholder="Username"
+                               value="{{ filters.modified_by }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Description</label>
+                        <input type="text"
+                               name="description"
+                               class="filter-input"
+                               placeholder="Description text"
+                               value="{{ filters.description }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Comment</label>
+                        <input type="text"
+                               name="comment"
+                               class="filter-input"
+                               placeholder="Comment text"
+                               value="{{ filters.comment }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Valid From</label>
+                        <input type="date"
+                               name="valid_from_date"
+                               class="filter-input"
+                               value="{{ filters.valid_from_date }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Valid To</label>
+                        <input type="date"
+                               name="valid_to_date"
+                               class="filter-input"
+                               value="{{ filters.valid_to_date }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Created From</label>
+                        <input type="date"
+                               name="created_from"
+                               class="filter-input"
+                               value="{{ filters.created_from }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Created To</label>
+                        <input type="date"
+                               name="created_to"
+                               class="filter-input"
+                               value="{{ filters.created_to }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Modified From</label>
+                        <input type="date"
+                               name="modified_from"
+                               class="filter-input"
+                               value="{{ filters.modified_from }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Modified To</label>
+                        <input type="date"
+                               name="modified_to"
+                               class="filter-input"
+                               value="{{ filters.modified_to }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Excavation</label>
+                        <select name="is_excavation" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true" {% if filters.is_excavation == "true" %}selected{% endif %}>True</option>
+                            <option value="false" {% if filters.is_excavation == "false" %}selected{% endif %}>False</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Spading</label>
+                        <select name="is_spading" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true" {% if filters.is_spading == "true" %}selected{% endif %}>True</option>
+                            <option value="false" {% if filters.is_spading == "false" %}selected{% endif %}>False</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Confined Space</label>
+                        <select name="is_confined_space" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true" {% if filters.is_confined_space == "true" %}selected{% endif %}>True</option>
+                            <option value="false" {% if filters.is_confined_space == "false" %}selected{% endif %}>False</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Equipment Test</label>
+                        <select name="is_equipment_test" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true" {% if filters.is_equipment_test == "true" %}selected{% endif %}>True</option>
+                            <option value="false" {% if filters.is_equipment_test == "false" %}selected{% endif %}>False</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Radiography</label>
+                        <select name="is_radiography" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true" {% if filters.is_radiography == "true" %}selected{% endif %}>True</option>
+                            <option value="false" {% if filters.is_radiography == "false" %}selected{% endif %}>False</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Diving</label>
+                        <select name="is_diving" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true" {% if filters.is_diving == "true" %}selected{% endif %}>True</option>
+                            <option value="false" {% if filters.is_diving == "false" %}selected{% endif %}>False</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Currently Valid</label>
+                        <select name="is_currently_valid" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true" {% if filters.is_currently_valid == "true" %}selected{% endif %}>True</option>
+                            <option value="false" {% if filters.is_currently_valid == "false" %}selected{% endif %}>False</option>
+                        </select>
                     </div>
 
                 </div>
@@ -114,5 +311,3 @@
 
     </div>
 </form>
-
-

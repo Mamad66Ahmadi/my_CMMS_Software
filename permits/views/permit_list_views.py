@@ -20,18 +20,18 @@ from accounts.models import Department
 
 # ---------------------------------------------- Filter ------------------------------------------
 def get_filtered_permits(request):
-    # Detect if the status query parameter is explicitly provided in the request
     status_param = request.GET.get("status")
-    
-    # If no status parameter is provided, default to ACTIVE
+
+    # Default to ACTIVE only when status is not provided at all.
     if status_param is None:
         default_status = PermitStatus.ACTIVE
     else:
         default_status = status_param.strip()
 
     filters = {
-        "q": request.GET.get("q", "").strip(),  # Unified Quick Search
+        "q": request.GET.get("q", "").strip(),
         "permit_number": request.GET.get("permit_number", "").strip(),
+        "continuation_of": request.GET.get("continuation_of", "").strip(),
         "status": default_status,
         "location_tag": request.GET.get("location_tag", "").strip(),
         "parent_tag": request.GET.get("parent_tag", "").strip(),
@@ -48,6 +48,10 @@ def get_filtered_permits(request):
         "valid_to_date": request.GET.get("valid_to_date", "").strip(),
         "created_from": request.GET.get("created_from", "").strip(),
         "created_to": request.GET.get("created_to", "").strip(),
+        "modified_from": request.GET.get("modified_from", "").strip(),
+        "modified_to": request.GET.get("modified_to", "").strip(),
+        "created_by": request.GET.get("created_by", "").strip(),
+        "modified_by": request.GET.get("modified_by", "").strip(),
         "is_excavation": request.GET.get("is_excavation", "").strip(),
         "is_spading": request.GET.get("is_spading", "").strip(),
         "is_confined_space": request.GET.get("is_confined_space", "").strip(),
@@ -57,38 +61,31 @@ def get_filtered_permits(request):
         "is_currently_valid": request.GET.get("is_currently_valid", "").strip(),
     }
 
-    queryset = Permit.objects.select_related(
-        "continuation_of",
-        "location_tag",
-        "location_tag__parent",
-        "location_tag__unit",
-        "work_order",
-        "department",
-        "authorized_issuer",
-        "permit_holder",
-        "created_by",
-        "modified_by",
-    ).prefetch_related(
-        "hazard_codes",
-    ).all()
+    queryset = (
+        Permit.objects.select_related(
+            "continuation_of",
+            "location_tag",
+            "location_tag__parent",
+            "location_tag__unit",
+            "work_order",
+            "department",
+            "authorized_issuer",
+            "permit_holder",
+            "created_by",
+            "modified_by",
+        )
+        .prefetch_related("hazard_codes")
+        .all()
+    )
 
-    # Apply Quick Search: searches only permit numbers or work order numbers
-    # If q is present, we ignore the status constraint.
-    has_quick_search = bool(filters["q"])
-    if has_quick_search:
-        q_values = [x.strip() for x in filters["q"].split(",") if x.strip()]
-        if q_values:
-            quick_query = Q()
-            for value in q_values:
-                quick_query |= Q(permit_number__icontains=value)
-                quick_query |= Q(work_order__wo_number__icontains=value)
-            queryset = queryset.filter(quick_query)
+    def split_csv(value):
+        return [item.strip() for item in value.split(",") if item.strip()]
 
     def apply_multi_value_filter(qs, filter_str, field_lookup):
         if not filter_str:
             return qs
 
-        values = [x.strip() for x in filter_str.split(",") if x.strip()]
+        values = split_csv(filter_str)
         if not values:
             return qs
 
@@ -108,61 +105,80 @@ def get_filtered_permits(request):
             return qs.filter(**{field_name: False})
         return qs
 
-    # Standard text filters (Advanced)
+    # Quick Search: comma-separated values, searching both permit and work order numbers.
+    # Quick search bypasses the status filter only.
+    has_quick_search = bool(filters["q"])
+    if has_quick_search:
+        q_values = split_csv(filters["q"])
+        if q_values:
+            quick_query = Q()
+            for value in q_values:
+                quick_query |= Q(permit_number__icontains=value)
+                quick_query |= Q(work_order__wo_number__icontains=value)
+            queryset = queryset.filter(quick_query)
+
+    # Text / related-object filters
     queryset = apply_multi_value_filter(queryset, filters["permit_number"], "permit_number")
+    queryset = apply_multi_value_filter(queryset, filters["continuation_of"], "continuation_of__permit_number")
     queryset = apply_multi_value_filter(queryset, filters["location_tag"], "location_tag__loc_tag")
     queryset = apply_multi_value_filter(queryset, filters["work_order"], "work_order__wo_number")
+    queryset = apply_multi_value_filter(queryset, filters["department"], "department__name")
     queryset = apply_multi_value_filter(queryset, filters["authorized_issuer"], "authorized_issuer__username")
     queryset = apply_multi_value_filter(queryset, filters["permit_holder"], "permit_holder__username")
+    queryset = apply_multi_value_filter(queryset, filters["created_by"], "created_by__username")
+    queryset = apply_multi_value_filter(queryset, filters["modified_by"], "modified_by__username")
     queryset = apply_multi_value_filter(queryset, filters["description"], "description")
     queryset = apply_multi_value_filter(queryset, filters["comment"], "comment")
     queryset = apply_multi_value_filter(queryset, filters["unit"], "location_tag__unit__unit_code")
     queryset = apply_multi_value_filter(queryset, filters["train"], "location_tag__train")
-    queryset = apply_multi_value_filter(queryset, filters["department"], "department__name")
 
-    # Parent tag logic
+    # Parent tag filter: match either the direct location tag or its parent.
     if filters["parent_tag"]:
-        p_values = [x.strip() for x in filters["parent_tag"].split(",") if x.strip()]
-        p_query = Q()
-        for val in p_values:
-            p_query |= (
+        parent_values = split_csv(filters["parent_tag"])
+        parent_query = Q()
+        for val in parent_values:
+            parent_query |= (
                 Q(location_tag__loc_tag__icontains=val) |
                 Q(location_tag__parent__loc_tag__icontains=val)
             )
-        queryset = queryset.filter(p_query)
+        queryset = queryset.filter(parent_query)
 
-    # Status: Skip status filtering if we are doing a Quick Search (q), 
-    # otherwise apply selected or default status.
+    # Status: skip when quick search is used.
     if not has_quick_search:
-        if filters["status"] == "ALL":
-            pass
-        elif filters["status"]:
+        if filters["status"] and filters["status"] != "ALL":
             queryset = queryset.filter(status=filters["status"])
 
-    # Hazard code filter
+    # Hazard codes
     if filters["hazard_code"]:
-        values = [x.strip() for x in filters["hazard_code"].split(",") if x.strip()]
-        q = Q()
-        for val in values:
-            q |= Q(hazard_codes__code__icontains=val)
-            q |= Q(hazard_codes__name__icontains=val)
-            q |= Q(hazard_codes__description__icontains=val)
-        queryset = queryset.filter(q)
+        hazard_values = split_csv(filters["hazard_code"])
+        hazard_query = Q()
+        for val in hazard_values:
+            hazard_query |= Q(hazard_codes__code__icontains=val)
+            hazard_query |= Q(hazard_codes__name__icontains=val)
+            hazard_query |= Q(hazard_codes__description__icontains=val)
+        queryset = queryset.filter(hazard_query)
 
-    # Date filters
+    # Validity date filters
     if filters["valid_from_date"]:
         queryset = queryset.filter(valid_from__date__gte=filters["valid_from_date"])
 
     if filters["valid_to_date"]:
         queryset = queryset.filter(valid_to__date__lte=filters["valid_to_date"])
 
+    # Audit date filters
     if filters["created_from"]:
         queryset = queryset.filter(created_at__date__gte=filters["created_from"])
 
     if filters["created_to"]:
         queryset = queryset.filter(created_at__date__lte=filters["created_to"])
 
-    # Boolean special conditions
+    if filters["modified_from"]:
+        queryset = queryset.filter(modified_at__date__gte=filters["modified_from"])
+
+    if filters["modified_to"]:
+        queryset = queryset.filter(modified_at__date__lte=filters["modified_to"])
+
+    # Boolean model fields
     queryset = apply_boolean_filter(queryset, filters["is_excavation"], "is_excavation")
     queryset = apply_boolean_filter(queryset, filters["is_spading"], "is_spading")
     queryset = apply_boolean_filter(queryset, filters["is_confined_space"], "is_confined_space")
@@ -170,7 +186,7 @@ def get_filtered_permits(request):
     queryset = apply_boolean_filter(queryset, filters["is_radiography"], "is_radiography")
     queryset = apply_boolean_filter(queryset, filters["is_diving"], "is_diving")
 
-    # Currently valid filter (only apply if not overridden by Quick Search status bypass)
+    # Computed validity filter
     if filters["is_currently_valid"] and not has_quick_search:
         now = timezone.now()
         normalized = str(filters["is_currently_valid"]).strip().lower()
@@ -262,15 +278,96 @@ class PermitList(LoginRequiredMixin, TemplateView):
         paginator = Paginator(queryset.distinct(), per_page)
         page_obj = paginator.get_page(self.request.GET.get("page"))
 
-        # Determine if any advanced filters are active to keep panel expanded
-        # Excluding both 'q' and 'status' so status defaulting to ACTIVE doesn't force expand the panel.
-        has_advanced_filters = any(
-            filters[k] for k in filters if k not in ["q", "status"]
-        )
+        # Determine if any advanced filters are active to keep panel expanded.
+        # Determine if any advanced filters are active to keep panel expanded.
+        has_advanced_filters = any(filters[k] for k in filters if k not in ["q", "status"])
 
         query_dict = self.request.GET.copy()
         query_dict.pop("sort", None)
         query_dict.pop("page", None)
+
+        def build_remove_url(key_to_remove):
+            params = self.request.GET.copy()
+            params.pop(key_to_remove, None)
+            params.pop("page", None)
+            return f"?{params.urlencode()}" if params.urlencode() else "?"
+
+        status_labels = dict(PermitStatus.choices)
+        active_filter_badges = []
+
+        # 1. Text / choice filters
+        badge_labels = {
+            "permit_number": "Permit No.",
+            "continuation_of": "Continuation Of",
+            "location_tag": "Location Tag",
+            "parent_tag": "Parent Tag",
+            "unit": "Unit",
+            "train": "Train",
+            "work_order": "Work Order",
+            "department": "Department",
+            "authorized_issuer": "Authorized Issuer",
+            "permit_holder": "Permit Holder",
+            "description": "Description",
+            "comment": "Comment",
+            "hazard_code": "Hazard Code",
+            "valid_from_date": "Valid From",
+            "valid_to_date": "Valid To",
+            "created_from": "Created From",
+            "created_to": "Created To",
+            "modified_from": "Modified From",
+            "modified_to": "Modified To",
+            "created_by": "Created By",
+            "modified_by": "Modified By",
+        }
+
+        for key, label in badge_labels.items():
+            value = filters.get(key)
+            if value:
+                active_filter_badges.append({
+                    "key": key,
+                    "label": label,
+                    "value": value,
+                    "remove_url": build_remove_url(key),
+                })
+
+        # 2. Status Badge
+        if "status" in self.request.GET and filters.get("status") and filters["status"] != "ALL":
+            status_value = filters["status"]
+            active_filter_badges.append({
+                "key": "status",
+                "label": "Status",
+                "value": status_labels.get(status_value, status_value),
+                "remove_url": build_remove_url("status"),
+            })
+
+        # 3. Boolean filters
+        bool_labels = {
+            "is_excavation": "Excavation",
+            "is_spading": "Spading",
+            "is_confined_space": "Confined Space",
+            "is_equipment_test": "Equipment Test",
+            "is_radiography": "Radiography",
+            "is_diving": "Diving",
+            "is_currently_valid": "Currently Valid",
+        }
+
+        for key, label in bool_labels.items():
+            value = filters.get(key)
+            if value:
+                normalized = str(value).strip().lower()
+                display_value = "True" if normalized in ["1", "true", "yes", "on"] else "False"
+                active_filter_badges.append({
+                    "key": key,
+                    "label": label,
+                    "value": display_value,
+                    "remove_url": build_remove_url(key),
+                })
+
+        # --- QUICK SEARCH CHECK ---
+        # If the user used the 'q' (Quick Search) parameter, we suppress the filter badges.
+        # This keeps the UI clean when searching for specific permit numbers.
+        if filters.get("q"):
+            active_filter_badges = []
 
         context.update({
             "permits": page_obj,
@@ -282,6 +379,7 @@ class PermitList(LoginRequiredMixin, TemplateView):
             "hazard_codes": HazardCode.objects.filter(is_active=True).order_by("code"),
             "departments": Department.objects.filter(is_active=True).order_by("name"),
             "has_advanced_filters": has_advanced_filters,
+            "active_filter_badges": active_filter_badges,
         })
 
         return context
