@@ -1,63 +1,63 @@
 /* ==================================================================
    CMMS DESIGN SYSTEM — PERMITS MODULE
    Enterprise teal/forest theme — safety & compliance oriented
-   (structure mirrors work_orders_styles.css; palette only differs)
+   Shared by: permit list, permit filter panel, permit detail (view),
+   permit create/edit form, and permit modal.
    ================================================================== */
-
 
 :root {
     /* --- Brand / primary (deep teal-forest) --- */
     --c-primary:        #134e4a;
     --c-primary-hover:  #0c3733;
     --c-primary-light:  #115e59;
- 
+
     /* --- Accent (interactive / focus / links) --- */
     --c-accent:         #0d9488;
     --c-accent-light:   rgba(13, 148, 136, 0.12);
- 
+
     /* --- Neutrals --- */
     --c-bg-page:        #f5f7f6;
     --c-bg-surface:     #ffffff;
     --c-bg-subtle:      #f7faf9;
     --c-bg-subtle-2:    #eef4f2;
- 
+
     --c-border:         #dde6e3;
     --c-border-strong:  #c7d6d2;
- 
+
     --c-text-primary:   #123a37;
     --c-text-secondary: #45615c;
     --c-text-muted:     #94a8a4;
     --c-text-inverse:   #ffffff;
- 
+
     /* --- Status --- */
     --c-status-success-bg:   #dcfce7;
     --c-status-success-text: #166534;
     --c-status-success-dot:  #22c55e;
- 
+
     --c-status-warning-bg:   #fef3c7;
     --c-status-warning-text: #92400e;
     --c-status-warning-dot:  #f59e0b;
- 
+
     --c-status-danger-bg:    #fee2e2;
     --c-status-danger-text:  #b91c1c;
     --c-status-danger-dot:   #ef4444;
- 
+
     --c-status-neutral-bg:   #e3ece9;
     --c-status-neutral-text: #45615c;
     --c-status-neutral-dot:  #94a8a4;
- 
+
     /* --- Elevation --- */
     --shadow-xs: 0 1px 2px rgba(18, 58, 55, 0.05);
     --shadow-sm: 0 1px 3px rgba(18, 58, 55, 0.09);
     --shadow-md: 0 4px 12px rgba(18, 58, 55, 0.09);
     --shadow-lg: 0 8px 24px rgba(18, 58, 55, 0.13);
- 
+
     /* --- Radius --- */
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 8px;
     --radius-pill: 999px;
- 
+
     /* --- Spacing scale --- */
     --space-1: 4px;
     --space-2: 8px;
@@ -65,15 +65,16 @@
     --space-4: 16px;
     --space-5: 20px;
     --space-6: 24px;
- 
+
     /* --- Type --- */
     --font-body: 'Inter', Tahoma, Geneva, Verdana, sans-serif;
     --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
- 
+
     /* --- Motion --- */
     --transition-fast: 120ms ease;
     --transition-base: 180ms ease;
 }
+
 
 /* ------------------------------------------------------------------
    GLOBAL / BASE
@@ -85,12 +86,12 @@ body {
     color: var(--c-text-primary);
     -webkit-font-smoothing: antialiased;
 }
- 
+
 .container {
     font-family: var(--font-body);
     padding: var(--space-5) 0;
 }
- 
+
 h1 {
     color: var(--c-text-primary);
     font-size: 22px;
@@ -98,7 +99,7 @@ h1 {
     letter-spacing: -0.01em;
     margin-bottom: var(--space-5);
 }
- 
+
 h1 small,
 .page-subtitle {
     display: block;
@@ -107,12 +108,11 @@ h1 small,
     color: var(--c-text-muted);
     margin-top: var(--space-1);
 }
- 
+
 a {
     color: var(--c-accent);
 }
- 
-/* Visible keyboard focus everywhere, not just inputs */
+
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -122,12 +122,12 @@ textarea:focus-visible,
     outline: 2px solid var(--c-accent);
     outline-offset: 2px;
 }
- 
- 
+
+
 /* ------------------------------------------------------------------
    BUTTONS
 ------------------------------------------------------------------ */
- 
+
 .btn-primary-custom,
 .btn-search,
 .back-button {
@@ -140,25 +140,25 @@ textarea:focus-visible,
     text-decoration: none;
     transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
- 
+
 .btn-primary-custom {
     padding: 9px 18px;
     font-size: 14px;
 }
- 
+
 .btn-primary-custom:hover,
 .btn-search:hover,
 .back-button:hover {
     background-color: var(--c-primary-hover);
     border-color: var(--c-primary-hover);
 }
- 
+
 .btn-primary-custom:active,
 .btn-search:active,
 .back-button:active {
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
 }
- 
+
 .btn-secondary-custom,
 .btn-clear {
     background-color: var(--c-bg-surface);
@@ -170,25 +170,25 @@ textarea:focus-visible,
     cursor: pointer;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
- 
+
 .btn-secondary-custom {
     padding: 9px 18px;
     font-size: 14px;
 }
- 
+
 .btn-secondary-custom:hover,
 .btn-clear:hover {
     background-color: var(--c-bg-subtle);
     border-color: var(--c-text-muted);
 }
- 
+
 .btn-search {
     padding: 0 var(--space-2);
     font-size: 13px;
     height: 35px;
     width: 200px;
 }
- 
+
 .btn-clear {
     padding: 0 var(--space-2);
     font-size: 13px;
@@ -198,7 +198,7 @@ textarea:focus-visible,
     align-items: center;
     justify-content: center;
 }
- 
+
 .back-button {
     display: inline-flex;
     align-items: center;
@@ -207,7 +207,7 @@ textarea:focus-visible,
     font-size: 13px;
     margin-bottom: var(--space-3);
 }
- 
+
 /* Enterprise Buttons - Teal / Forest Theme */
 .btn-enterprise-primary {
     background-color: var(--c-primary) !important;
@@ -215,32 +215,32 @@ textarea:focus-visible,
     color: var(--c-text-inverse) !important;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
- 
+
 .btn-enterprise-primary:hover {
     background-color: var(--c-primary-hover) !important;
     border-color: var(--c-primary-hover) !important;
 }
- 
+
 .btn-enterprise-outline {
     color: var(--c-primary) !important;
     border-color: var(--c-border-strong) !important;
     background-color: var(--c-bg-surface) !important;
     transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
- 
+
 .btn-enterprise-outline:hover {
     background-color: var(--c-bg-subtle) !important;
     border-color: var(--c-text-muted) !important;
     color: var(--c-primary-hover) !important;
 }
- 
+
 .btn-enterprise-cancel {
     color: var(--c-text-secondary) !important;
     border-color: transparent !important;
     background: transparent !important;
     transition: background-color var(--transition-fast), color var(--transition-fast);
 }
- 
+
 .btn-enterprise-cancel:hover {
     color: var(--c-text-primary) !important;
     background-color: var(--c-bg-subtle) !important;
@@ -248,7 +248,8 @@ textarea:focus-visible,
 
 
 /* ------------------------------------------------------------------
-   FILTER BAR
+   FILTER BAR (base) + MULTI-ROW LAYOUT (permit filter)
+   Used by permits/_permit_filter.html
 ------------------------------------------------------------------ */
 
 .filter-bar {
@@ -261,12 +262,40 @@ textarea:focus-visible,
     border-radius: var(--radius-lg);
     margin-bottom: var(--space-5);
 }
- 
+
+.permit-filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: flex-end;
+    width: 100%;
+}
+
 .filter-group {
     display: flex;
     flex-direction: column;
+    flex: 1 1 0;
+    min-width: 0;
 }
- 
+
+.filter-group-sm {
+    flex: 0.6 1 0;
+}
+
+.filter-group-xs {
+    flex: 0.45 1 0;
+}
+
+.filter-group-wide {
+    flex: 2 1 0;
+}
+
 .filter-label {
     font-size: 11px;
     color: var(--c-text-secondary);
@@ -275,8 +304,9 @@ textarea:focus-visible,
     letter-spacing: 0.04em;
     margin-bottom: var(--space-2);
 }
- 
+
 .filter-input {
+    width: 100%;
     padding: 8px 10px;
     border: 1px solid var(--c-border-strong);
     border-radius: var(--radius-sm);
@@ -285,70 +315,353 @@ textarea:focus-visible,
     color: var(--c-text-primary);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
- 
+
 .filter-input:focus {
     border-color: var(--c-accent);
     outline: none;
     box-shadow: 0 0 0 3px var(--c-accent-light);
 }
- 
+
 .filter-input::placeholder {
     color: var(--c-text-muted);
 }
- 
+
 .filter-actions {
     display: flex;
     align-items: flex-end;
     gap: var(--space-3);
-}
- 
-
-/* ------------------------------------------------------------------
-   FILTER PANE — MULTI-ROW LAYOUT (Permit Filter)
-   Stacked rows of flex groups, used by permits/_permit_filter.html
------------------------------------------------------------------- */
-
-.permit-filter-bar {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
- 
-.filter-row {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 10px;
-    align-items: flex-end;
-    width: 100%;
-}
- 
-.filter-group {
-    flex: 1 1 0;
-    min-width: 0;
-}
- 
-.filter-group-sm {
-    flex: 0.6 1 0;
-}
- 
-.filter-group-xs {
-    flex: 0.45 1 0;
-}
- 
-.filter-group-wide {
-    flex: 2 1 0;
-}
- 
-.filter-input {
-    width: 100%;
-}
- 
-.filter-actions {
     flex: 0.9 1 0;
     justify-content: flex-end;
     min-width: max-content;
 }
- 
+
+
+/* ------------------------------------------------------------------
+   SEARCH & ADVANCED FILTER PANEL (Permit List)
+   Used by permits/_permit_filter.html
+------------------------------------------------------------------ */
+
+.filter-panel {
+    background: var(--c-bg-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.filter-panel__header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--c-bg-subtle);
+    border-bottom: 1px solid var(--c-border);
+}
+
+.filter-panel__header .filter-actions {
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-search-group {
+    position: relative;
+    flex: 1 1 260px;
+    min-width: 220px;
+}
+
+.filter-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--c-text-muted);
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.filter-search-input {
+    width: 100%;
+    padding: 9px 14px 9px 34px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    background: var(--c-bg-surface);
+    color: var(--c-text-primary);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.filter-search-input:focus {
+    outline: none;
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px var(--c-accent-light);
+}
+
+.filter-search-input::placeholder {
+    color: var(--c-text-muted);
+}
+
+.btn-filter-primary,
+.btn-filter-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-filter-primary {
+    background: var(--c-primary);
+    color: var(--c-text-inverse);
+    border: 1px solid var(--c-primary);
+}
+
+.btn-filter-primary:hover {
+    background: var(--c-primary-hover);
+    border-color: var(--c-primary-hover);
+}
+
+.btn-filter-secondary {
+    position: relative;
+    background: var(--c-bg-surface);
+    color: var(--c-text-primary);
+    border: 1px solid var(--c-border-strong);
+}
+
+.btn-filter-secondary:hover {
+    background: var(--c-bg-subtle-2);
+    border-color: var(--c-text-muted);
+}
+
+.btn-filter-secondary.active {
+    background: var(--c-accent-light);
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+}
+
+.filter-badge {
+    color: var(--c-accent);
+    font-size: 8px;
+    line-height: 1;
+    margin-left: 2px;
+}
+
+.btn-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--c-text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-filter-clear:hover {
+    background: var(--c-bg-subtle-2);
+    color: var(--c-text-primary);
+    text-decoration: none;
+}
+
+.filter-panel__body {
+    padding: 16px;
+}
+
+.filter-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px 20px;
+}
+
+.filter-section {
+    background: var(--c-bg-subtle);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px 14px;
+}
+
+.filter-section--full {
+    grid-column: 1 / -1;
+}
+
+.filter-section__title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--c-text-secondary);
+    margin-bottom: 10px;
+}
+
+.filter-section__title i {
+    color: var(--c-accent);
+    font-size: 12px;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px 14px;
+}
+
+.filter-section--conditions .filter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px 12px;
+}
+
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filter-field .filter-label {
+    margin-bottom: 0;
+}
+
+.filter-field .filter-input,
+.filter-field .filter-select {
+    padding: 7px 9px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    background: var(--c-bg-surface);
+    color: var(--c-text-primary);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.filter-field .filter-input:focus,
+.filter-field .filter-select:focus {
+    outline: none;
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px var(--c-accent-light);
+}
+
+.filter-panel__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 14px;
+    margin-top: 16px;
+    border-top: 1px solid var(--c-border);
+}
+
+
+/* ------------------------------------------------------------------
+   ACTIVE FILTERS BAR (chips summarizing applied filters)
+------------------------------------------------------------------ */
+
+.active-filters-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 8px 12px;
+    background: var(--c-bg-subtle);
+    border: 1px solid var(--c-border);
+    border-left: 3px solid var(--c-accent);
+    border-radius: var(--radius-sm);
+}
+
+.active-filters-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--c-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.active-filters-label i {
+    color: var(--c-accent);
+    font-size: 11px;
+}
+
+.active-filters-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 6px 4px 10px;
+    background: var(--c-bg-surface);
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--c-text-primary);
+}
+
+.filter-chip__label {
+    font-weight: 600;
+    color: var(--c-text-secondary);
+}
+
+.filter-chip__label::after {
+    content: ":";
+    margin-right: 3px;
+}
+
+.filter-chip__value {
+    color: var(--c-text-primary);
+    font-weight: 500;
+}
+
+.filter-chip__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 2px;
+    border-radius: 50%;
+    color: var(--c-text-muted);
+    font-size: 13px;
+    text-decoration: none;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.filter-chip__remove:hover {
+    background: var(--c-status-danger-bg);
+    color: var(--c-status-danger-text);
+}
+
+.active-filters-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--c-text-muted);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.active-filters-clear:hover {
+    color: var(--c-status-danger-text);
+    background: var(--c-status-danger-bg);
+}
+
 
 /* ------------------------------------------------------------------
    TABLES
@@ -362,7 +675,7 @@ textarea:focus-visible,
     border: 1px solid var(--c-border);
     box-shadow: var(--shadow-sm);
 }
- 
+
 table {
     width: max-content;
     min-width: 100%;
@@ -372,8 +685,7 @@ table {
     font-size: 13px;
     margin-top: 0;
 }
- 
-/* Sticky, single-source-of-truth header (teal-forest) */
+
 .table-scroll-container table thead th,
 th {
     background-color: var(--c-primary);
@@ -391,18 +703,17 @@ th {
     border-bottom: 1px solid var(--c-primary);
     transition: background-color var(--transition-fast);
 }
- 
+
 .table-scroll-container table thead th:hover,
 th:hover {
     background-color: var(--c-primary-hover);
 }
- 
-/* selected sort column highlight */
+
 .table-scroll-container table thead th.sorted,
 th.sorted {
     background-color: var(--c-primary-hover);
 }
- 
+
 td {
     padding: 10px 16px;
     text-align: center;
@@ -411,30 +722,29 @@ td {
     background-color: var(--c-bg-surface);
     border-bottom: 1px solid var(--c-bg-subtle-2);
 }
- 
+
 th,
 td {
     border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
- 
+
 td {
     border-right: 1px solid var(--c-bg-subtle-2);
 }
- 
+
 th:last-child,
 td:last-child {
     border-right: none;
 }
- 
+
 tbody tr:nth-child(even) td {
     background-color: var(--c-bg-subtle);
 }
- 
+
 tbody tr:hover td {
     background-color: var(--c-accent-light) !important;
 }
- 
-/* sorting arrows */
+
 .sort-arrow {
     position: absolute;
     right: 10px;
@@ -446,28 +756,27 @@ tbody tr:hover td {
     text-align: center;
     pointer-events: none;
 }
- 
+
 .sort-arrow.asc::before {
     content: '\25B2';
 }
- 
+
 .sort-arrow.desc::before {
     content: '\25BC';
 }
- 
+
 th:not(.sorted) .sort-arrow {
     display: none;
 }
- 
+
 .sort-arrow:empty::after {
     content: '';
 }
- 
+
 
 /* ------------------------------------------------------------------
    LINKS
 ------------------------------------------------------------------ */
-
 
 .report-link,
 .location-link {
@@ -477,14 +786,34 @@ th:not(.sorted) .sort-arrow {
     color: var(--c-accent);
     transition: color var(--transition-fast);
 }
- 
+
 .report-link:hover,
 .location-link:hover {
     text-decoration: underline;
     color: var(--c-primary-hover);
 }
+
+.neutral-link {
+    color: var(--c-text-secondary);
+    text-decoration: none;
+}
+
+.neutral-link:hover {
+    color: var(--c-text-primary);
+    text-decoration: underline;
+}
+
+.permit-number-link {
+    text-decoration: none;
+}
+
+.permit-number-link:hover {
+    text-decoration: underline;
+}
+
+
 /* ------------------------------------------------------------------
-   STATUS BADGES (Enterprise CSS Fixes)
+   STATUS BADGES — Permit lifecycle
 ------------------------------------------------------------------ */
 
 .status-badge {
@@ -510,11 +839,11 @@ th:not(.sorted) .sort-arrow {
 }
 
 .status-draft {
-    background-color: #f1f5f9;
-    color: #475569;
+    background-color: var(--c-status-neutral-bg);
+    color: var(--c-status-neutral-text);
 }
 .status-draft::before {
-    background-color: #64748b;
+    background-color: var(--c-status-neutral-dot);
 }
 
 .status-pending-approval {
@@ -580,20 +909,28 @@ th:not(.sorted) .sort-arrow {
 .status-default::before {
     background-color: var(--c-status-neutral-dot);
 }
+
+
 /* ------------------------------------------------------------------
    AUTO DIRECTION ALIGNMENT (English LTR / Persian RTL)
 ------------------------------------------------------------------ */
 
 .align-start-cell {
-    text-align: start !important; /* Forces left-align for LTR, right-align for RTL */
+    text-align: start !important;
 }
- 
+
 .align-start-cell bdi {
     display: block;
     text-align: start;
     unicode-bidi: plaintext;
 }
- 
+
+.persian-text {
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+    direction: rtl;
+    unicode-bidi: plaintext;
+}
+
 
 /* ------------------------------------------------------------------
    COLLAPSIBLE SECTIONS
@@ -615,30 +952,30 @@ th:not(.sorted) .sort-arrow {
     cursor: pointer;
     transition: background-color var(--transition-fast);
 }
- 
+
 .section-header:hover {
     background-color: var(--c-primary-hover);
 }
- 
+
 .section-content {
     display: none;
     margin-top: var(--space-3);
 }
- 
+
 .chevron {
     font-size: 13px;
     transition: transform var(--transition-base);
 }
- 
+
 .chevron.open {
     transform: rotate(90deg);
 }
- 
- 
+
+
 /* ------------------------------------------------------------------
-   FORMS
+   FORMS (generic)
 ------------------------------------------------------------------ */
- 
+
 .form-card {
     background: var(--c-bg-surface);
     padding: 24px 28px;
@@ -647,7 +984,7 @@ th:not(.sorted) .sort-arrow {
     box-shadow: var(--shadow-md);
     margin-top: var(--space-6);
 }
- 
+
 .form-card label {
     font-weight: 600;
     font-size: 13px;
@@ -655,7 +992,7 @@ th:not(.sorted) .sort-arrow {
     margin-bottom: 6px;
     color: var(--c-text-primary);
 }
- 
+
 .form-card input,
 .form-card select,
 .form-card textarea {
@@ -668,7 +1005,7 @@ th:not(.sorted) .sort-arrow {
     background-color: var(--c-bg-surface);
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
- 
+
 .form-card input:focus,
 .form-card select:focus,
 .form-card textarea:focus {
@@ -676,13 +1013,12 @@ th:not(.sorted) .sort-arrow {
     border-color: var(--c-accent);
     box-shadow: 0 0 0 3px var(--c-accent-light);
 }
- 
+
 .tag-highlight {
     font-weight: 600;
     color: var(--c-primary);
 }
- 
-/* Generic Bootstrap-like form styling */
+
 .form-label {
     font-weight: 700;
     color: var(--c-text-secondary);
@@ -691,42 +1027,46 @@ th:not(.sorted) .sort-arrow {
     letter-spacing: 0.05em;
     margin-bottom: 0.35rem;
 }
- 
+
+/* Django-rendered widgets (form-control / form-select), incl. #location-search */
 .form-control,
 .form-select,
+textarea.form-control,
 #location-search {
-    font-size: 0.825rem !important;
-    padding: 0.4rem 0.75rem !important;
-    border-radius: var(--radius-sm) !important;
-    border-color: var(--c-border-strong) !important;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 13.5px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--c-bg-surface);
     color: var(--c-text-primary);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
- 
+
 .form-control:focus,
 .form-select:focus {
-    border-color: var(--c-accent) !important;
-    box-shadow: 0 0 0 3px var(--c-accent-light) !important;
+    outline: none;
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px var(--c-accent-light);
 }
- 
-/* Mandatory asterisk */
+
 .mandatory-star {
     color: var(--c-status-danger-dot);
     font-weight: bold;
     margin-left: 2px;
 }
- 
-/* Slightly smaller, rounded cards for form pages */
+
 .card {
     border-radius: var(--radius-md) !important;
     border-color: var(--c-border) !important;
     box-shadow: var(--shadow-sm);
 }
- 
- 
+
+
 /* ------------------------------------------------------------------
-   AUTOCOMPLETE
+   AUTOCOMPLETE (generic)
 ------------------------------------------------------------------ */
- 
+
 .autocomplete-results {
     border: 1px solid var(--c-border-strong) !important;
     border-radius: 0 0 var(--radius-sm) var(--radius-sm);
@@ -739,7 +1079,7 @@ th:not(.sorted) .sort-arrow {
     position: absolute;
     z-index: 20;
 }
- 
+
 .autocomplete-results li,
 .autocomplete-item {
     padding: 8px 12px;
@@ -747,282 +1087,77 @@ th:not(.sorted) .sort-arrow {
     cursor: pointer;
     transition: background-color var(--transition-fast);
 }
- 
+
 .autocomplete-results li:hover,
 .autocomplete-item:hover {
     background-color: var(--c-bg-subtle);
 }
- 
- 
-/* ------------------------------------------------------------------
-   SEARCH & ADVANCED FILTER PANEL (Permit List)
-   Used by permits/_permit_filter.html
------------------------------------------------------------------- */
- 
-.filter-panel {
+
+/* Location-tag autocomplete used specifically in the permit form */
+.location-results {
+    z-index: 1050;
+    border: 1px solid var(--c-border-strong);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    max-height: 220px;
+    overflow-y: auto;
     background: var(--c-bg-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
 }
- 
-/* --- Header: search box + action buttons --- */
-.filter-panel__header {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 12px 16px;
+
+.location-results .list-group-item {
+    font-size: 13px;
+    border-color: var(--c-border);
+}
+
+.location-results .list-group-item-action:hover {
     background: var(--c-bg-subtle);
-    border-bottom: 1px solid var(--c-border);
 }
- 
-.filter-panel__header .filter-actions {
-    align-items: center;
-    flex-wrap: wrap;
-}
- 
-.filter-search-group {
-    position: relative;
-    flex: 1 1 260px;
-    min-width: 220px;
-}
- 
-.filter-search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--c-text-muted);
-    font-size: 13px;
-    pointer-events: none;
-}
- 
-.filter-search-input {
-    width: 100%;
-    padding: 9px 14px 9px 34px;
-    border: 1px solid var(--c-border-strong);
-    border-radius: var(--radius-sm);
-    font-size: 13.5px;
-    background: var(--c-bg-surface);
-    color: var(--c-text-primary);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
- 
-.filter-search-input:focus {
-    outline: none;
-    border-color: var(--c-accent);
-    box-shadow: 0 0 0 3px var(--c-accent-light);
-}
- 
-.filter-search-input::placeholder {
-    color: var(--c-text-muted);
-}
- 
-/* --- Header buttons --- */
-.btn-filter-primary,
-.btn-filter-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-}
- 
-.btn-filter-primary {
-    background: var(--c-primary);
-    color: var(--c-text-inverse);
-    border: 1px solid var(--c-primary);
-}
- 
-.btn-filter-primary:hover {
-    background: var(--c-primary-hover);
-    border-color: var(--c-primary-hover);
-}
- 
-.btn-filter-secondary {
-    position: relative;
-    background: var(--c-bg-surface);
-    color: var(--c-text-primary);
-    border: 1px solid var(--c-border-strong);
-}
- 
-.btn-filter-secondary:hover {
-    background: var(--c-bg-subtle-2);
-    border-color: var(--c-text-muted);
-}
- 
-.btn-filter-secondary.active {
-    background: var(--c-accent-light);
-    border-color: var(--c-accent);
-    color: var(--c-accent);
-}
- 
-.filter-badge {
-    color: var(--c-accent);
-    font-size: 8px;
-    line-height: 1;
-    margin-left: 2px;
-}
- 
-.btn-filter-clear {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--c-text-secondary);
-    text-decoration: none;
-    border-radius: var(--radius-sm);
-    transition: background-color var(--transition-fast), color var(--transition-fast);
-}
- 
-.btn-filter-clear:hover {
-    background: var(--c-bg-subtle-2);
-    color: var(--c-text-primary);
-    text-decoration: none;
-}
- 
-/* --- Body: grouped sections --- */
-.filter-panel__body {
-    padding: 16px;
-}
- 
-.filter-sections {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px 20px;
-}
- 
-.filter-section {
-    background: var(--c-bg-subtle);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-md);
-    padding: 12px 14px 14px;
-}
- 
-.filter-section--full {
-    grid-column: 1 / -1;
-}
- 
-.filter-section__title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--c-text-secondary);
-    margin-bottom: 10px;
-}
- 
-.filter-section__title i {
-    color: var(--c-accent);
-    font-size: 12px;
-}
- 
-.filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 10px 14px;
-}
- 
-.filter-section--conditions .filter-grid {
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 8px 12px;
-}
- 
-.filter-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
- 
-.filter-field .filter-label {
-    margin-bottom: 0;
-}
- 
-.filter-field .filter-input,
-.filter-field .filter-select {
-    padding: 7px 9px;
-    border: 1px solid var(--c-border-strong);
-    border-radius: var(--radius-sm);
-    font-size: 12.5px;
-    background: var(--c-bg-surface);
-    color: var(--c-text-primary);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
- 
-.filter-field .filter-input:focus,
-.filter-field .filter-select:focus {
-    outline: none;
-    border-color: var(--c-accent);
-    box-shadow: 0 0 0 3px var(--c-accent-light);
-}
- 
-/* --- Footer --- */
-.filter-panel__footer {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 14px;
-    margin-top: 16px;
-    border-top: 1px solid var(--c-border);
-}
- 
- 
+
+
 /* ------------------------------------------------------------------
-   MODAL — PERMIT DETAIL SECTIONS
-   Used by permits/_permit_modal.html
+   MODAL — PERMIT DETAIL SECTIONS (quick-view modal)
 ------------------------------------------------------------------ */
- 
+
 .section-title {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 1rem;
 }
- 
+
 .section-title .title-text {
     white-space: nowrap;
 }
- 
+
 .section-title .title-line {
     flex: 1;
     height: 1px;
     background-color: var(--c-border-strong);
 }
- 
+
 .badge-special-active {
     background-color: var(--c-status-success-bg);
     color: var(--c-status-success-text);
     border: 1px solid rgba(34, 197, 94, 0.35);
     font-weight: 600;
 }
- 
+
 .badge-special-inactive {
     background-color: var(--c-bg-subtle-2);
     color: var(--c-text-muted);
     border: 1px solid var(--c-border);
 }
- 
- 
+
+
 /* ------------------------------------------------------------------
    INPUT GROUPS
 ------------------------------------------------------------------ */
- 
+
 .cmms-filter__input-group {
     display: flex;
     align-items: stretch;
 }
- 
+
 .cmms-filter__prefix {
     display: flex;
     align-items: center;
@@ -1034,136 +1169,26 @@ th:not(.sorted) .sort-arrow {
     font-size: 0.85rem;
     color: var(--c-text-secondary);
 }
- 
+
 .sort-priority {
     display: inline-flex;
     align-items: center;
     justify-content: center;
- 
     width: 18px;
     height: 18px;
- 
     margin-left: 6px;
- 
     border-radius: 50%;
- 
-    background: rgba(255,255,255,0.25);
+    background: rgba(255, 255, 255, 0.25);
     color: white;
- 
     font-size: 0.7rem;
     font-weight: 700;
 }
 
-.persian-text {
-    font-family: "Vazirmatn", Tahoma, sans-serif;
-    direction: rtl;
-    unicode-bidi: plaintext;
-}
-
-.active-filters-bar {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 10px;
-    padding: 8px 12px;
-    background: #f7f9fb;
-    border: 1px solid #dde3ea;
-    border-left: 3px solid #1a8cff;
-    border-radius: 4px;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-}
-
-.active-filters-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #5c6b7a;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    flex-shrink: 0;
-}
-.active-filters-label i { color: #1a8cff; font-size: 11px; }
-
-.active-filters-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    flex: 1;
-}
-
-.filter-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 6px 4px 10px;
-    background: #ffffff;
-    border: 1px solid #d0d7de;
-    border-radius: 3px;
-    font-size: 12.5px;
-    line-height: 1.4;
-    color: #1a2733;
-}
-
-.filter-chip__label {
-    font-weight: 600;
-    color: #5c6b7a;
-}
-.filter-chip__label::after {
-    content: ":";
-    margin-right: 3px;
-}
-
-.filter-chip__value {
-    color: #1a2733;
-    font-weight: 500;
-}
-
-.filter-chip__remove {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    margin-left: 2px;
-    border-radius: 50%;
-    color: #8a99a8;
-    font-size: 13px;
-    text-decoration: none;
-    transition: background 0.15s, color 0.15s;
-}
-.filter-chip__remove:hover {
-    background: #fdf0ef;
-    color: #c0392b;
-}
-
-.active-filters-clear {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: auto;
-    padding: 4px 8px;
-    font-size: 12px;
-    font-weight: 500;
-    color: #8a99a8;
-    text-decoration: none;
-    border-radius: 3px;
-    transition: color 0.15s, background 0.15s;
-}
-.active-filters-clear:hover {
-    color: #c0392b;
-    background: #fdf0ef;
-}
-
 
 /* ==================================================================
-   PERMIT DETAIL PAGE — HEADER, VALIDITY STRIP, LAYOUT, PANELS
+   PERMIT HEADER, VALIDITY STRIP & PAGE LAYOUT
+   Shared by the permit detail (view) page and the create/edit form
    ================================================================== */
-
-/* ------------------------------------------------------------------
-   HEADER
------------------------------------------------------------------- */
 
 .permit-header {
     display: flex;
@@ -1191,12 +1216,13 @@ th:not(.sorted) .sort-arrow {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--radius-md);
-    background: var(--c-primary);
-    color: var(--c-text-inverse);
-    font-size: 22px;
+    background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary-hover) 100%);
+    color: #fff;
+    font-size: 20px;
+    box-shadow: var(--shadow-sm);
 }
 
 .permit-title-group {
@@ -1287,10 +1313,7 @@ th:not(.sorted) .sort-arrow {
     text-decoration: none;
 }
 
-/* ------------------------------------------------------------------
-   VALIDITY STRIP
------------------------------------------------------------------- */
-
+/* --- Validity strip --- */
 .validity-strip {
     display: flex;
     align-items: center;
@@ -1344,15 +1367,23 @@ th:not(.sorted) .sort-arrow {
     color: var(--c-status-success-text);
 }
 
+/* "Invalid" = not currently active (draft / expired) — treated as caution, not error */
 .validity-pill--invalid {
-    background: var(--c-status-danger-bg);
-    color: var(--c-status-danger-text);
+    background: var(--c-status-warning-bg);
+    color: var(--c-status-warning-text);
 }
 
-/* ------------------------------------------------------------------
-   MAIN LAYOUT (two-column)
------------------------------------------------------------------- */
+.form-error-box {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    border-radius: var(--radius-md);
+    background: var(--c-status-danger-bg);
+    color: var(--c-status-danger-text);
+    font-size: 13px;
+}
 
+/* --- Two-column page layout: main content + side panel --- */
 .permit-layout {
     display: grid;
     grid-template-columns: 2.2fr 1fr;
@@ -1373,10 +1404,7 @@ th:not(.sorted) .sort-arrow {
     }
 }
 
-/* ------------------------------------------------------------------
-   DETAIL PANEL (generic card used across sections)
------------------------------------------------------------------- */
-
+/* --- Detail panel (card with header), used for every section --- */
 .detail-panel {
     background: var(--c-bg-surface);
     border: 1px solid var(--c-border);
@@ -1411,9 +1439,45 @@ th:not(.sorted) .sort-arrow {
     padding: 0;
 }
 
-/* ------------------------------------------------------------------
-   FIELD GRID (General Information)
------------------------------------------------------------------- */
+/* --- Sidebar mini info rows (Draft Record Info, etc.) --- */
+.info-mini-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 9px 0;
+    border-bottom: 1px solid var(--c-bg-subtle-2);
+    font-size: 12.5px;
+}
+
+.info-mini-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.info-mini-row .label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--c-text-secondary);
+    font-weight: 600;
+}
+
+.info-mini-row .label i {
+    color: var(--c-accent);
+    font-size: 12px;
+}
+
+.info-mini-row .value {
+    color: var(--c-text-primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+
+/* ==================================================================
+   PERMIT DETAIL (READ-ONLY VIEW) — field display, chips, history
+   ================================================================== */
 
 .field-grid {
     display: grid;
@@ -1448,11 +1512,16 @@ th:not(.sorted) .sort-arrow {
     white-space: pre-line;
 }
 
+/* Shared full-width divider/spanner, usable in .field-grid or .form-grid */
 .field-divider {
     grid-column: 1 / -1;
     border: none;
     border-top: 1px solid var(--c-border);
-    margin: var(--space-1) 0;
+    margin: var(--space-2) 0;
+}
+
+.field-full {
+    grid-column: 1 / -1;
 }
 
 @media (max-width: 576px) {
@@ -1460,10 +1529,6 @@ th:not(.sorted) .sort-arrow {
         grid-template-columns: 1fr;
     }
 }
-
-/* ------------------------------------------------------------------
-   WORK TYPE CLASSIFICATION (precaution list)
------------------------------------------------------------------- */
 
 .precaution-list {
     display: grid;
@@ -1497,10 +1562,6 @@ th:not(.sorted) .sort-arrow {
     color: var(--c-text-muted);
 }
 
-/* ------------------------------------------------------------------
-   HAZARD CHIPS
------------------------------------------------------------------- */
-
 .hazard-chip-list {
     display: flex;
     flex-wrap: wrap;
@@ -1524,6 +1585,7 @@ th:not(.sorted) .sort-arrow {
     font-size: 12px;
 }
 
+/* Centered empty-state message (e.g. "no hazard codes mapped") */
 .empty-hint {
     padding: var(--space-4);
     text-align: center;
@@ -1532,9 +1594,13 @@ th:not(.sorted) .sort-arrow {
     font-style: italic;
 }
 
-/* ------------------------------------------------------------------
-   HISTORY TABLE (nested inside detail-panel, no outer scroll box)
------------------------------------------------------------------- */
+.highlight-block {
+    background: linear-gradient(135deg, #fff8e176, #ffecb37d);
+    border: 1px solid #ffd54f;
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
 
 .history-table {
     width: 100%;
@@ -1601,48 +1667,6 @@ th:not(.sorted) .sort-arrow {
     color: var(--c-status-danger-text);
 }
 
-/* ------------------------------------------------------------------
-   RECORD INFO (mini rows, sidebar)
------------------------------------------------------------------- */
-
-.info-mini-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding: 9px 0;
-    border-bottom: 1px solid var(--c-bg-subtle-2);
-    font-size: 12.5px;
-}
-
-.info-mini-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.info-mini-row .label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--c-text-secondary);
-    font-weight: 600;
-}
-
-.info-mini-row .label i {
-    color: var(--c-accent);
-    font-size: 12px;
-}
-
-.info-mini-row .value {
-    color: var(--c-text-primary);
-    font-weight: 600;
-    text-align: right;
-}
-
-/* ------------------------------------------------------------------
-   CONTINUATION LIST (sidebar)
------------------------------------------------------------------- */
-
 .continuation-list {
     display: flex;
     flex-direction: column;
@@ -1680,27 +1704,161 @@ th:not(.sorted) .sort-arrow {
     font-size: 12px;
 }
 
-.neutral-link {
-    color: #6c757d;
-    text-decoration: none;
+
+/* ==================================================================
+   PERMIT FORM (CREATE / EDIT) — editable fields
+   NOTE: renamed from the old conflicting ".field-grid" to ".form-grid"
+   since the read-only view above already owns that name with a
+   different (fixed 2-column) layout. Update templates accordingly.
+   ================================================================== */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px 20px;
 }
 
-.neutral-link:hover {
-    color: #5c636a;
-    text-decoration: underline;
-}
-.permit-number-link {
-    text-decoration: none;
+.form-field-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.permit-number-link:hover {
-    text-decoration: underline;
+.form-field-block label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--c-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-.highlight-block {
-    background: linear-gradient(135deg, #fff8e176, #ffecb37d);
-    border: 1px solid #ffd54f;
-    border-radius: 10px;
-    padding: 14px 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+.form-help {
+    font-size: 12px;
+    color: var(--c-text-muted);
+}
+
+.field-errors {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--c-status-danger-text);
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.checkbox-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    background: var(--c-bg-subtle);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.checkbox-card:hover {
+    border-color: var(--c-accent);
+    background: var(--c-accent-light);
+}
+
+.checkbox-card input {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--c-accent);
+}
+
+.checkbox-card span {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--c-text-primary);
+}
+
+.hazard-box {
+    padding: 14px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+    background: var(--c-bg-subtle);
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.hazard-box ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.hazard-box li {
+    margin-bottom: 8px;
+}
+
+.hazard-box label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--c-text-primary);
+}
+
+.hazard-box input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: var(--c-accent);
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.btn-save-permit {
+    border: 1px solid var(--c-primary);
+    border-radius: var(--radius-sm);
+    padding: 9px 20px;
+    background: var(--c-primary);
+    color: var(--c-text-inverse);
+    font-weight: 600;
+    font-size: 13.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-save-permit:hover {
+    background: var(--c-primary-hover);
+    border-color: var(--c-primary-hover);
+}
+
+/* Left-aligned sidebar help text (e.g. "Notes" panel) — distinct from
+   the centered .empty-hint empty-state above */
+.sidebar-hint {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--c-text-secondary);
+}
+
+.full-width-field,
+.full-width-field .form-field-block,
+.full-width-field .textarea-wrapper {
+    width: 100%;
+}
+
+.full-width-field textarea,
+.detail-panel textarea {
+    width: 100%;
+    box-sizing: border-box;
+    display: block;
+    height: 80px;
+    resize: vertical;
 }

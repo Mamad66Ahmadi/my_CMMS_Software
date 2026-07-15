@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Permit{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="permit-header">
+            <div class="permit-header__left">
+                <div class="permit-icon-box">
+                    <i class="bi bi-file-earmark-plus"></i>
+                </div>
+                <div class="permit-title-group">
+                    <h1>Create Permit</h1>
+                    <div class="permit-subtitle">
+                        <i class="bi bi-pencil-square"></i>
+                        Fill in the permit details. New permits are created as draft by default.
+                    </div>
+                </div>
+            </div>
+            <div class="permit-header__right">
+                <span class="status-badge status-draft">Draft</span>
+                <a href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn-permit-action">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+
+        <div class="validity-strip">
+            <div class="validity-item">
+                <i class="bi bi-info-circle"></i>
+                <span class="label">Status:</span>
+                <span class="value">Draft on creation</span>
+            </div>
+            <div class="validity-item">
+                <i class="bi bi-person"></i>
+                <span class="label">Created By:</span>
+                <span class="value">{{ request.user }}</span>
+            </div>
+            <span class="validity-pill validity-pill--invalid">
+                <i class="bi bi-pencil-fill"></i>
+                Not active yet
+            </span>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="form-error-box">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="permit-layout">
+            <div class="permit-layout__main">
+                <div class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-info-circle"></i> General Information
+                    </div>
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
+                            <div class="form-field-block">
+                                <label for="{{ form.permit_number.id_for_label }}">Permit Number</label>
+                                {{ form.permit_number }}
+                                {% if form.permit_number.errors %}<div class="field-errors">{{ form.permit_number.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.continuation_of.id_for_label }}">Continuation Of</label>
+                                {{ form.continuation_of }}
+                                {% if form.continuation_of.errors %}<div class="field-errors">{{ form.continuation_of.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="location-search-input">Location / Tag</label>
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="location-search-input"
+                                        class="form-control"
+                                        placeholder="Search for tag (e.g. 103-K-101)..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}"
+                                        value="{{ location.loc_tag|default:'' }}"
+                                    >
+
+                                    <div
+                                        id="location-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results">
+                                    </div>
+
+                                    {{ form.location_tag }}
+                                </div>
+
+                                {% if form.location_tag.errors %}
+                                    <div class="field-errors">{{ form.location_tag.errors|striptags }}</div>
+                                {% endif %}
+
+                                <div class="form-help text-muted">
+                                    Required if Work Order is empty.
+                                </div>
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.work_order.id_for_label }}">Work Order</label>
+                                {{ form.work_order }}
+                                {% if form.work_order.errors %}<div class="field-errors">{{ form.work_order.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.department.id_for_label }}">Department</label>
+                                {{ form.department }}
+                                {% if form.department.errors %}<div class="field-errors">{{ form.department.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.authorized_issuer.id_for_label }}">Authorized Issuer</label>
+                                {{ form.authorized_issuer }}
+                                {% if form.authorized_issuer.errors %}<div class="field-errors">{{ form.authorized_issuer.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.permit_holder.id_for_label }}">Permit Holder</label>
+                                {{ form.permit_holder }}
+                                {% if form.permit_holder.errors %}<div class="field-errors">{{ form.permit_holder.errors }}</div>{% endif %}
+                            </div>
+
+                            <hr class="field-divider">
+
+                            <div class="field-item field-full highlight-block full-width-field">
+                                <div class="form-field-block">
+                                    <label for="{{ form.description.id_for_label }}">Description</label>
+                                    <div class="align-start-cell persian-text textarea-wrapper">
+                                        {{ form.description }}
+                                    </div>
+                                    {% if form.description.errors %}<div class="field-errors">{{ form.description.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-calendar-range"></i> Validity
+                    </div>
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
+                            <div class="form-field-block">
+                                <label for="{{ form.valid_from.id_for_label }}">Valid From</label>
+                                {{ form.valid_from }}
+                                {% if form.valid_from.errors %}<div class="field-errors">{{ form.valid_from.errors }}</div>{% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.valid_to.id_for_label }}">Valid To</label>
+                                {{ form.valid_to }}
+                                {% if form.valid_to.errors %}<div class="field-errors">{{ form.valid_to.errors }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-tools"></i> Work Type Classification
+                    </div>
+                    <div class="detail-panel__body">
+                        <div class="checkbox-grid">
+                            <label class="checkbox-card" for="{{ form.is_excavation.id_for_label }}">
+                                {{ form.is_excavation }}
+                                <span>Excavation Work</span>
+                            </label>
+                            <label class="checkbox-card" for="{{ form.is_spading.id_for_label }}">
+                                {{ form.is_spading }}
+                                <span>Spading / Line Breaking</span>
+                            </label>
+                            <label class="checkbox-card" for="{{ form.is_confined_space.id_for_label }}">
+                                {{ form.is_confined_space }}
+                                <span>Confined Space Entry</span>
+                            </label>
+                            <label class="checkbox-card" for="{{ form.is_equipment_test.id_for_label }}">
+                                {{ form.is_equipment_test }}
+                                <span>Equipment Test / Commissioning</span>
+                            </label>
+                            <label class="checkbox-card" for="{{ form.is_radiography.id_for_label }}">
+                                {{ form.is_radiography }}
+                                <span>Radiography</span>
+                            </label>
+                            <label class="checkbox-card" for="{{ form.is_diving.id_for_label }}">
+                                {{ form.is_diving }}
+                                <span>Diving Operation</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-exclamation-triangle"></i> Identified Hazards
+                    </div>
+                    <div class="detail-panel__body">
+                        <div class="hazard-box">
+                            {{ form.hazard_codes }}
+                        </div>
+                        {% if form.hazard_codes.errors %}<div class="field-errors mt-2">{{ form.hazard_codes.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="permit-layout__side">
+                <div class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-card-list"></i> Draft Record Info
+                    </div>
+                    <div class="detail-panel__body">
+                        <div class="info-mini-row">
+                            <span class="label"><i class="bi bi-flag"></i> Initial Status</span>
+                            <span class="value">Draft</span>
+                        </div>
+                        <div class="info-mini-row">
+                            <span class="label"><i class="bi bi-person-plus"></i> Created By</span>
+                            <span class="value">{{ request.user }}</span>
+                        </div>
+                        <div class="info-mini-row">
+                            <span class="label"><i class="bi bi-shield-check"></i> Validation</span>
+                            <span class="value">Model rules apply on save</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-check2-square"></i> Actions
+                    </div>
+                    <div class="detail-panel__body">
+                        <div class="form-actions">
+                            <a href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn-permit-action">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn-save-permit">
+                                <i class="bi bi-save"></i> Create Permit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-chat-left-text"></i> Comment
+                    </div>
+                    <div class="detail-panel__body">
+                        <div class="form-field-block full-width-field">
+                            <label for="{{ form.comment.id_for_label }}">Comment</label>
+                            <div class="align-start-cell persian-text textarea-wrapper">
+                                {{ form.comment }}
+                            </div>
+                            {% if form.comment.errors %}<div class="field-errors">{{ form.comment.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("location-search-input");
+    const hiddenInput = document.getElementById("id_location_tag");
+    const resultsContainer = document.getElementById("location-results-container");
+
+    if (!input || !hiddenInput || !resultsContainer) {
+        return;
+    }
+
+    let debounceTimer = null;
+
+    input.addEventListener("input", function () {
+        const query = input.value.trim();
+        hiddenInput.value = "";
+        clearTimeout(debounceTimer);
+
+        if (query.length < 2) {
+            resultsContainer.innerHTML = "";
+            return;
+        }
+
+        debounceTimer = setTimeout(function () {
+            const url = input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(query);
+
+            fetch(url, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    resultsContainer.innerHTML = "";
+
+                    if (!data.results || data.results.length === 0) {
+                        resultsContainer.innerHTML =
+                            '<div class="list-group-item text-muted small">No matches found</div>';
+                        return;
+                    }
+
+                    data.results.forEach(function (item) {
+                        const option = document.createElement("button");
+                        option.type = "button";
+                        option.className = "list-group-item list-group-item-action";
+                        option.textContent = item.text;
+
+                        option.addEventListener("click", function () {
+                            input.value = item.text;
+                            hiddenInput.value = item.id;
+                            resultsContainer.innerHTML = "";
+                        });
+
+                        resultsContainer.appendChild(option);
+                    });
+                })
+                .catch(function () {
+                    resultsContainer.innerHTML =
+                        '<div class="list-group-item text-danger small">Search failed</div>';
+                });
+        }, 250);
+    });
+
+    document.addEventListener("click", function (event) {
+        if (!resultsContainer.contains(event.target) && event.target !== input) {
+            resultsContainer.innerHTML = "";
+        }
+    });
+});
+</script>
+{% endblock %}
