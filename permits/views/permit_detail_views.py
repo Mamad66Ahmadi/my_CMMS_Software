@@ -68,8 +68,8 @@ def permit_autocomplete(request):
     ]
 
     return JsonResponse({"results": results})
-# ----------------- Create --------------------------------
 
+# ----------------- Create --------------------------------
 class PermitCreateView(LoginRequiredMixin, CreateView):
     model = Permit
     form_class = PermitCreateForm
@@ -106,3 +106,30 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         return reverse("permits:permit_detail", kwargs={"permit_number": self.object.permit_number})
+    
+
+# ------------------------ Filling the form based on permit numebr ---------------
+
+def get_permit_data(request):
+    permit_id = request.GET.get("continuation_of")
+
+    if not permit_id:
+        return JsonResponse({"error": "No permit selected"}, status=400)
+
+    try:
+        permit = Permit.objects.select_related("location_tag", "department").get(pk=permit_id)
+    except Permit.DoesNotExist:
+        return JsonResponse({"error": "Permit not found"}, status=404)
+
+    return JsonResponse({
+        "description": permit.description or "",
+        "department": permit.department_id or "",
+        "location_tag": permit.location_tag_id or "",
+        "location_tag_text": str(permit.location_tag) if permit.location_tag else "",
+        "is_excavation": permit.is_excavation,
+        "is_spading": permit.is_spading,
+        "is_confined_space": permit.is_confined_space,
+        "is_equipment_test": permit.is_equipment_test,
+        "is_radiography": permit.is_radiography,
+        "is_diving": permit.is_diving,
+    })

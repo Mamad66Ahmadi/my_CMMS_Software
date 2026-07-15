@@ -367,6 +367,11 @@ document.addEventListener("DOMContentLoaded", function () {
         function selectOption(option) {
             input.value = option.dataset.text;
             hiddenInput.value = option.dataset.id;
+
+            if (config.onSelect) {
+                config.onSelect(hiddenInput, option);
+            }
+
             hideResults();
         }
 
@@ -480,7 +485,10 @@ document.addEventListener("DOMContentLoaded", function () {
     setupAutocomplete({
         inputId: "continuation-search-input",
         hiddenInputId: "id_continuation_of",
-        resultsContainerId: "continuation-results-container"
+        resultsContainerId: "continuation-results-container",
+        onSelect: function (hiddenInput) {
+            hiddenInput.dispatchEvent(new Event("change", { bubbles: true }));
+        }
     });
 
     setupAutocomplete({
@@ -489,6 +497,85 @@ document.addEventListener("DOMContentLoaded", function () {
         resultsContainerId: "work-order-results-container"
     });
 });
+
+document.body.addEventListener("htmx:afterOnLoad", function (event) {
+    if (event.detail.elt.id !== "id_continuation_of" || event.detail.xhr.status !== 200) {
+        return;
+    }
+
+    const data = JSON.parse(event.detail.xhr.responseText);
+
+    const descriptionField = document.querySelector('[name="description"]');
+    if (descriptionField) {
+        descriptionField.value = data.description || "";
+    }
+
+    const departmentField = document.querySelector('[name="department"]');
+    if (departmentField) {
+        departmentField.value = data.department || "";
+        departmentField.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    const locationHidden = document.getElementById("id_location_tag");
+    const locationInput = document.getElementById("location-search-input");
+
+    if (locationHidden) {
+        locationHidden.value = data.location_tag || "";
+    }
+
+    if (locationInput) {
+        locationInput.value = data.location_tag_text || "";
+    }
+});
+
+document.body.addEventListener("htmx:afterOnLoad", function (event) {
+    if (event.detail.elt.id !== "id_continuation_of" || event.detail.xhr.status !== 200) {
+        return;
+    }
+
+    const data = JSON.parse(event.detail.xhr.responseText);
+
+    const descriptionField = document.querySelector('[name="description"]');
+    if (descriptionField) {
+        descriptionField.value = data.description || "";
+    }
+
+    const departmentField = document.querySelector('[name="department"]');
+    if (departmentField) {
+        departmentField.value = data.department || "";
+        departmentField.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    const locationHidden = document.getElementById("id_location_tag");
+    const locationInput = document.getElementById("location-search-input");
+
+    if (locationHidden) {
+        locationHidden.value = data.location_tag || "";
+    }
+
+    if (locationInput) {
+        locationInput.value = data.location_tag_text || "";
+    }
+
+    const checkboxFields = [
+        "is_excavation",
+        "is_spading",
+        "is_confined_space",
+        "is_equipment_test",
+        "is_radiography",
+        "is_diving"
+    ];
+
+    checkboxFields.forEach(function (fieldName) {
+        const field = document.getElementById("id_" + fieldName);
+        if (field) {
+            field.checked = Boolean(data[fieldName]);
+            field.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+    });
+});
+
+
 </script>
 
 

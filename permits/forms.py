@@ -1,6 +1,7 @@
-# permits/froms.py
+# permits/forms.py
 
 from django import forms
+from django.urls import reverse_lazy
 
 from equipment.models import LocationTag
 from permits.models import Permit
@@ -17,7 +18,14 @@ class PermitCreateForm(forms.ModelForm):
     continuation_of = forms.ModelChoiceField(
         queryset=Permit.objects.none(),
         required=False,
-        widget=forms.HiddenInput(),
+        widget=forms.HiddenInput(
+            attrs={
+                "hx-get": reverse_lazy("permits:get_permit_data"),
+                "hx-trigger": "change",
+                "hx-target": "this",
+                "hx-swap": "none",
+            }
+        ),
     )
 
     work_order = forms.ModelChoiceField(
