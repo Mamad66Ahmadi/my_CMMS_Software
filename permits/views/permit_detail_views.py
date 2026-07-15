@@ -4,7 +4,10 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, CreateView
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+
 
 from permits.forms import PermitCreateForm
 from permits.models import Permit, PermitStatus
@@ -45,8 +48,26 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
 
         return context
 
+# ----------------------- Auto complete ------------------
+@login_required
+def permit_autocomplete(request):
+    q = request.GET.get("q", "").strip()
 
+    permits = (
+        Permit.objects
+        .filter(permit_number__icontains=q)
+        .order_by("-created_at")[:10]
+    )
 
+    results = [
+        {
+            "id": permit.id,
+            "text": permit.permit_number,
+        }
+        for permit in permits
+    ]
+
+    return JsonResponse({"results": results})
 # ----------------- Create --------------------------------
 
 class PermitCreateView(LoginRequiredMixin, CreateView):

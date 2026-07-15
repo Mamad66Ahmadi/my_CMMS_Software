@@ -71,10 +71,31 @@
                             </div>
 
                             <div class="form-field-block">
-                                <label for="{{ form.continuation_of.id_for_label }}">Continuation Of</label>
-                                {{ form.continuation_of }}
-                                {% if form.continuation_of.errors %}<div class="field-errors">{{ form.continuation_of.errors }}</div>{% endif %}
+                                <label for="continuation-search-input">Continuation Of</label>
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="continuation-search-input"
+                                        class="form-control"
+                                        placeholder="Search permit number..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'permits:permit_autocomplete' %}"
+                                        value="{% if form.instance.continuation_of %}{{ form.instance.continuation_of.permit_number }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="continuation-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results">
+                                    </div>
+
+                                    {{ form.continuation_of }}
+                                </div>
+
+                                {% if form.continuation_of.errors %}
+                                    <div class="field-errors">{{ form.continuation_of.errors|striptags }}</div>
+                                {% endif %}
                             </div>
+
 
                             <div class="form-field-block">
                                 <label for="location-search-input">Location / Tag</label>
@@ -107,9 +128,29 @@
                             </div>
 
                             <div class="form-field-block">
-                                <label for="{{ form.work_order.id_for_label }}">Work Order</label>
-                                {{ form.work_order }}
-                                {% if form.work_order.errors %}<div class="field-errors">{{ form.work_order.errors }}</div>{% endif %}
+                                <label for="work-order-search-input">Work Order</label>
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="work-order-search-input"
+                                        class="form-control"
+                                        placeholder="Search work order..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'work_orders:work_order_autocomplete' %}"
+                                        value="{% if form.instance.work_order %}{{ form.instance.work_order.wo_number }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="work-order-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results">
+                                    </div>
+
+                                    {{ form.work_order }}
+                                </div>
+
+                                {% if form.work_order.errors %}
+                                    <div class="field-errors">{{ form.work_order.errors|striptags }}</div>
+                                {% endif %}
                             </div>
 
                             <div class="form-field-block">
@@ -276,73 +317,183 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const input = document.getElementById("location-search-input");
-    const hiddenInput = document.getElementById("id_location_tag");
-    const resultsContainer = document.getElementById("location-results-container");
+    function setupAutocomplete(config) {
+        const input = document.getElementById(config.inputId);
+        const hiddenInput = document.getElementById(config.hiddenInputId);
+        const resultsContainer = document.getElementById(config.resultsContainerId);
 
-    if (!input || !hiddenInput || !resultsContainer) {
-        return;
-    }
-
-    let debounceTimer = null;
-
-    input.addEventListener("input", function () {
-        const query = input.value.trim();
-        hiddenInput.value = "";
-        clearTimeout(debounceTimer);
-
-        if (query.length < 2) {
-            resultsContainer.innerHTML = "";
+        if (!input || !hiddenInput || !resultsContainer) {
             return;
         }
 
-        debounceTimer = setTimeout(function () {
-            const url = input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(query);
+        let debounceTimer = null;
+        let activeIndex = -1;
 
-            fetch(url, {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest"
-                }
-            })
-                .then(function (response) {
-                    return response.json();
-                })
-                .then(function (data) {
-                    resultsContainer.innerHTML = "";
+        function getOptions() {
+            return Array.from(
+                resultsContainer.querySelectorAll(".autocomplete-option")
+            );
+        }
 
-                    if (!data.results || data.results.length === 0) {
-                        resultsContainer.innerHTML =
-                            '<div class="list-group-item text-muted small">No matches found</div>';
-                        return;
-                    }
+        function hideResults() {
+            resultsContainer.innerHTML = "";
+            resultsContainer.classList.remove("is-visible");
+            activeIndex = -1;
+        }
 
-                    data.results.forEach(function (item) {
-                        const option = document.createElement("button");
-                        option.type = "button";
-                        option.className = "list-group-item list-group-item-action";
-                        option.textContent = item.text;
+        function showMessage(message, className) {
+            resultsContainer.innerHTML =
+                '<div class="list-group-item ' + className + '">' + message + "</div>";
+            resultsContainer.classList.add("is-visible");
+            activeIndex = -1;
+        }
 
-                        option.addEventListener("click", function () {
-                            input.value = item.text;
-                            hiddenInput.value = item.id;
-                            resultsContainer.innerHTML = "";
-                        });
+        function setActiveOption(index) {
+            const options = getOptions();
 
-                        resultsContainer.appendChild(option);
-                    });
-                })
-                .catch(function () {
-                    resultsContainer.innerHTML =
-                        '<div class="list-group-item text-danger small">Search failed</div>';
+            options.forEach(function (option, optionIndex) {
+                option.classList.toggle("active", optionIndex === index);
+            });
+
+            activeIndex = index;
+
+            if (activeIndex >= 0 && options[activeIndex]) {
+                options[activeIndex].scrollIntoView({
+                    block: "nearest"
                 });
-        }, 250);
+            }
+        }
+
+        function selectOption(option) {
+            input.value = option.dataset.text;
+            hiddenInput.value = option.dataset.id;
+            hideResults();
+        }
+
+        function renderResults(results) {
+            resultsContainer.innerHTML = "";
+            activeIndex = -1;
+
+            if (!results || results.length === 0) {
+                showMessage("No matches found", "text-muted small");
+                return;
+            }
+
+            results.forEach(function (item, index) {
+                const option = document.createElement("button");
+                option.type = "button";
+                option.className = "list-group-item list-group-item-action autocomplete-option";
+                option.textContent = item.text;
+                option.dataset.id = item.id;
+                option.dataset.text = item.text;
+
+                option.addEventListener("click", function () {
+                    selectOption(option);
+                });
+
+                option.addEventListener("mouseenter", function () {
+                    setActiveOption(index);
+                });
+
+                resultsContainer.appendChild(option);
+            });
+
+            resultsContainer.classList.add("is-visible");
+            setActiveOption(0);
+        }
+
+        input.addEventListener("input", function () {
+            const query = input.value.trim();
+            hiddenInput.value = "";
+            clearTimeout(debounceTimer);
+            activeIndex = -1;
+
+            if (query.length < 2) {
+                hideResults();
+                return;
+            }
+
+            debounceTimer = setTimeout(function () {
+                const url = input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(query);
+
+                fetch(url, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        renderResults(data.results);
+                    })
+                    .catch(function () {
+                        showMessage("Search failed", "text-danger small");
+                    });
+            }, 250);
+        });
+
+        input.addEventListener("keydown", function (event) {
+            const options = getOptions();
+
+            if (!resultsContainer.classList.contains("is-visible") || options.length === 0) {
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                const nextIndex = activeIndex < options.length - 1 ? activeIndex + 1 : 0;
+                setActiveOption(nextIndex);
+            } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                const prevIndex = activeIndex > 0 ? activeIndex - 1 : options.length - 1;
+                setActiveOption(prevIndex);
+            } else if (event.key === "Enter") {
+                if (activeIndex >= 0 && options[activeIndex]) {
+                    event.preventDefault();
+                    selectOption(options[activeIndex]);
+                }
+            } else if (event.key === "Escape") {
+                hideResults();
+            }
+        });
+
+        input.addEventListener("focus", function () {
+            if (getOptions().length > 0) {
+                resultsContainer.classList.add("is-visible");
+            }
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!resultsContainer.contains(event.target) && event.target !== input) {
+                hideResults();
+            }
+        });
+    }
+
+    setupAutocomplete({
+        inputId: "location-search-input",
+        hiddenInputId: "id_location_tag",
+        resultsContainerId: "location-results-container"
     });
 
-    document.addEventListener("click", function (event) {
-        if (!resultsContainer.contains(event.target) && event.target !== input) {
-            resultsContainer.innerHTML = "";
-        }
+    setupAutocomplete({
+        inputId: "continuation-search-input",
+        hiddenInputId: "id_continuation_of",
+        resultsContainerId: "continuation-results-container"
+    });
+
+    setupAutocomplete({
+        inputId: "work-order-search-input",
+        hiddenInputId: "id_work_order",
+        resultsContainerId: "work-order-results-container"
     });
 });
 </script>
+
+
+
+
+
+
 {% endblock %}

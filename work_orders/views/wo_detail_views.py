@@ -108,3 +108,24 @@ class TaskFormPartialUpdateView(LoginRequiredMixin, UpdateView):
     def form_invalid(self, form):
         """Processes validation failures and returns error state with updated form rules."""
         return self.render_to_json_response(form, success=False, errors=form.errors, status_code=400)
+
+
+
+# -------------------- Auto complete ------------------------
+# -------------------- Auto complete ------------------------
+@login_required
+def work_order_autocomplete(request):
+    q = request.GET.get("q", "").strip()
+
+    if len(q) < 2:
+        return JsonResponse({"results": []})
+
+    work_orders = (
+        WorkOrder.objects
+        .filter(wo_number__icontains=q)
+        .order_by("-reported_at")[:10]
+    )
+
+    results = [{"id": wo.id, "text": wo.wo_number} for wo in work_orders]
+    return JsonResponse({"results": results})
+

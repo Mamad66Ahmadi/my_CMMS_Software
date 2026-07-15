@@ -1050,6 +1050,19 @@ textarea.form-control,
     box-shadow: 0 0 0 3px var(--c-accent-light);
 }
 
+.location-results {
+    display: none;
+    z-index: 1000;
+    background: var(--c-bg-surface);
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.location-results.is-visible {
+    display: block;
+}
+
 .mandatory-star {
     color: var(--c-status-danger-dot);
     font-weight: bold;
@@ -1861,4 +1874,13 @@ textarea.form-control,
     display: block;
     height: 80px;
     resize: vertical;
+}
+
+.location-results .autocomplete-option.active,
+.location-results .autocomplete-option:hover,
+.location-results .autocomplete-option:focus,
+.location-results .autocomplete-option:focus-visible {
+    background: var(--c-primary, #0d6efd) !important;
+    color: #fff !important;
+    border-color: var(--c-primary, #0d6efd) !important;
 }
