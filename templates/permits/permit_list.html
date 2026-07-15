@@ -17,7 +17,7 @@
                 <small>({{ permits.paginator.count }} Records)</small>
             </h1>
 
-            <a href="#" class="btn btn-enterprise-primary">
+            <a href="{% url 'permits:permit_create' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-enterprise-primary">
                 <i class="bi bi-plus-lg me-1"></i>Issue New Permit
             </a>
         </div>
