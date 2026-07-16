@@ -90,7 +90,7 @@ class AddPISQualificationForm(forms.ModelForm):
         model = UserQualification
         fields = ["user", "granted_date", "expiry_date", "note"]
         widgets = {
-            "user": forms.Select(attrs={"class": "form-select"}),
+            "user": forms.HiddenInput(),
             "granted_date": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
@@ -98,12 +98,6 @@ class AddPISQualificationForm(forms.ModelForm):
                 attrs={"class": "form-control", "type": "date"}
             ),
             "note": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
-        labels = {
-            "user": "User",
-            "granted_date": "Granted Date",
-            "expiry_date": "Expiry Date",
-            "note": "Note",
         }
 
     def __init__(self, *args, **kwargs):

@@ -1,11 +1,17 @@
 # accounts/views.py
+from django.http import JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 
 from equipment.models.request_equipment_models import (
     LocationTagChangeRequest,
     EquipmentChangeRequest,
 )
+
+
+User = get_user_model()
 
 
 class UserDashboardView(LoginRequiredMixin, TemplateView):
@@ -42,4 +48,22 @@ class UserDashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+# --------------- Autocomplete user ------------
+@login_required
+def user_autocomplete(request):
+    q = request.GET.get("q", "").strip()
 
+    users = User.objects.filter(
+        is_active=True,
+        personnel_number__istartswith=q
+    ).order_by("personnel_number")[:10]
+
+    results = [
+        {
+            "id": user.pk,
+            "text": f"{user.personnel_number} - {user.get_full_name() or user.username}",
+        }
+        for user in users
+    ]
+
+    return JsonResponse({"results": results})

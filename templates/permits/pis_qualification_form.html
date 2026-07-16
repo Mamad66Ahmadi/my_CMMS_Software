@@ -60,12 +60,31 @@
                     <div class="detail-panel__body">
                         <div class="field-grid">
                             <div class="form-field-block">
-                                <label for="{{ form.user.id_for_label }}">{{ form.user.label }}</label>
-                                {{ form.user }}
+                                <label for="user-search-input">{{ form.user.label }}</label>
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="user-search-input"
+                                        class="form-control"
+                                        placeholder="Search by personnel number..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'accounts:user_autocomplete' %}"
+                                        value="{% if form.instance.user %}{{ form.instance.user.personnel_no }} - {{ form.instance.user.get_full_name|default:form.instance.user.username }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="user-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results">
+                                    </div>
+
+                                    {{ form.user }}
+                                </div>
+
                                 {% if form.user.errors %}
-                                    <div class="field-errors">{{ form.user.errors }}</div>
+                                    <div class="field-errors">{{ form.user.errors|striptags }}</div>
                                 {% endif %}
                             </div>
+
 
                             <div class="form-field-block">
                                 <label for="{{ form.granted_date.id_for_label }}">{{ form.granted_date.label }}</label>
@@ -159,4 +178,167 @@
         </div>
     </form>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function setupAutocomplete(config) {
+        const input = document.getElementById(config.inputId);
+        const hiddenInput = document.getElementById(config.hiddenInputId);
+        const resultsContainer = document.getElementById(config.resultsContainerId);
+
+        if (!input || !hiddenInput || !resultsContainer) {
+            return;
+        }
+
+        let debounceTimer = null;
+        let activeIndex = -1;
+
+        function getOptions() {
+            return Array.from(
+                resultsContainer.querySelectorAll(".autocomplete-option")
+            );
+        }
+
+        function hideResults() {
+            resultsContainer.innerHTML = "";
+            resultsContainer.classList.remove("is-visible");
+            activeIndex = -1;
+        }
+
+        function showMessage(message, className) {
+            resultsContainer.innerHTML =
+                '<div class="list-group-item ' + className + '">' + message + "</div>";
+            resultsContainer.classList.add("is-visible");
+            activeIndex = -1;
+        }
+
+        function setActiveOption(index) {
+            const options = getOptions();
+
+            options.forEach(function (option, optionIndex) {
+                option.classList.toggle("active", optionIndex === index);
+            });
+
+            activeIndex = index;
+
+            if (activeIndex >= 0 && options[activeIndex]) {
+                options[activeIndex].scrollIntoView({ block: "nearest" });
+            }
+        }
+
+        function selectOption(option) {
+            input.value = option.dataset.text;
+            hiddenInput.value = option.dataset.id;
+            hideResults();
+        }
+
+        function renderResults(results) {
+            resultsContainer.innerHTML = "";
+            activeIndex = -1;
+
+            if (!results || results.length === 0) {
+                showMessage("No matches found", "text-muted small");
+                return;
+            }
+
+            results.forEach(function (item, index) {
+                const option = document.createElement("button");
+                option.type = "button";
+                option.className = "list-group-item list-group-item-action autocomplete-option";
+                option.textContent = item.text;
+                option.dataset.id = item.id;
+                option.dataset.text = item.text;
+
+                option.addEventListener("click", function () {
+                    selectOption(option);
+                });
+
+                option.addEventListener("mouseenter", function () {
+                    setActiveOption(index);
+                });
+
+                resultsContainer.appendChild(option);
+            });
+
+            resultsContainer.classList.add("is-visible");
+            setActiveOption(0);
+        }
+
+        input.addEventListener("input", function () {
+            const query = input.value.trim();
+            hiddenInput.value = "";
+            clearTimeout(debounceTimer);
+            activeIndex = -1;
+
+            if (query.length < 1) {
+                hideResults();
+                return;
+            }
+
+            debounceTimer = setTimeout(function () {
+                const url = input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(query);
+
+                fetch(url, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                    .then(function (response) {
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        renderResults(data.results);
+                    })
+                    .catch(function () {
+                        showMessage("Search failed", "text-danger small");
+                    });
+            }, 250);
+        });
+
+        input.addEventListener("keydown", function (event) {
+            const options = getOptions();
+
+            if (!resultsContainer.classList.contains("is-visible") || options.length === 0) {
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                const nextIndex = activeIndex < options.length - 1 ? activeIndex + 1 : 0;
+                setActiveOption(nextIndex);
+            } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                const prevIndex = activeIndex > 0 ? activeIndex - 1 : options.length - 1;
+                setActiveOption(prevIndex);
+            } else if (event.key === "Enter") {
+                if (activeIndex >= 0 && options[activeIndex]) {
+                    event.preventDefault();
+                    selectOption(options[activeIndex]);
+                }
+            } else if (event.key === "Escape") {
+                hideResults();
+            }
+        });
+
+        input.addEventListener("focus", function () {
+            if (getOptions().length > 0) {
+                resultsContainer.classList.add("is-visible");
+            }
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!resultsContainer.contains(event.target) && event.target !== input) {
+                hideResults();
+            }
+        });
+    }
+
+    setupAutocomplete({
+        inputId: "user-search-input",
+        hiddenInputId: "id_user",
+        resultsContainerId: "user-results-container"
+    });
+});
+</script>
 {% endblock %}

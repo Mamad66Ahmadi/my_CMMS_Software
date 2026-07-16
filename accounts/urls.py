@@ -3,7 +3,7 @@
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 
-from .views import UserDashboardView
+from .views import UserDashboardView, user_autocomplete
 
 
 app_name = "accounts"
@@ -27,6 +27,7 @@ urlpatterns = [
     ),
 
     path("dashboard/", UserDashboardView.as_view(), name="dashboard"),
+    path("users/autocomplete/", user_autocomplete, name="user_autocomplete"),
 
 
 ]
