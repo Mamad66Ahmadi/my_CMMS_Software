@@ -1,17 +1,17 @@
 # permits/views/qualification_views.py
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.views.generic import ListView,CreateView
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.contrib import messages
+from django.views.generic import CreateView, ListView
 
-
-from accounts.models import Qualification,UserQualification
+from accounts.models import Qualification, UserQualification
 from permits.forms import AddPISQualificationForm
 
-
+# ------------------ Filters -------------------------------
 def get_filtered_pis_qualifications(request):
     filters = {
         "q": request.GET.get("q", "").strip(),
@@ -21,7 +21,7 @@ def get_filtered_pis_qualifications(request):
         "expiry_date_from": request.GET.get("expiry_date_from", "").strip(),
         "expiry_date_to": request.GET.get("expiry_date_to", "").strip(),
         "granted_by": request.GET.get("granted_by", "").strip(),
-        "is_active": request.GET.get("is_active", "").strip(),
+        "is_active": request.GET.get("is_active", "true").strip(),
     }
 
     sort_by = request.GET.get("sort", "").strip() or "user__personnel_number"
@@ -30,6 +30,7 @@ def get_filtered_pis_qualifications(request):
         "user__personnel_number": "user__personnel_number",
         "user__first_name": "user__first_name",
         "user__department__name": "user__department__name",
+        "user__is_active": "user__is_active",
         "qualification__code": "qualification__code",
         "granted_date": "granted_date",
         "expiry_date": "expiry_date",
@@ -38,7 +39,6 @@ def get_filtered_pis_qualifications(request):
     }
 
     queryset = UserQualification.objects.filter(
-        user__is_active=True,
         qualification__is_active=True,
         qualification__code__iexact="PIS",
     ).select_related(
@@ -75,6 +75,7 @@ def get_filtered_pis_qualifications(request):
             return qs.filter(**{field_name: False})
         return qs
 
+    # Quick search should return all matching users, regardless of active/inactive status.
     if filters["q"]:
         q_values = split_csv(filters["q"])
         if q_values:
@@ -82,10 +83,11 @@ def get_filtered_pis_qualifications(request):
             for value in q_values:
                 quick_query |= Q(user__personnel_number__icontains=value)
             queryset = queryset.filter(quick_query)
+    else:
+        queryset = apply_boolean_filter(queryset, filters["is_active"], "user__is_active")
 
     queryset = apply_multi_value_filter(queryset, filters["department"], "user__department__name")
     queryset = apply_multi_value_filter(queryset, filters["granted_by"], "granted_by__personnel_number")
-    queryset = apply_boolean_filter(queryset, filters["is_active"], "is_active")
 
     if filters["granted_date_from"]:
         queryset = queryset.filter(granted_date__gte=filters["granted_date_from"])
@@ -109,6 +111,8 @@ def get_filtered_pis_qualifications(request):
     return queryset.distinct(), filters, sort_by
 
 
+
+# ------------------------------ PIS List -------------------------------
 class PISQualificationListView(LoginRequiredMixin, ListView):
     model = UserQualification
     template_name = "permits/pis_qualification_list.html"
@@ -121,7 +125,8 @@ class PISQualificationListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["filters"] = getattr(self, "filters", {})
+        filters = getattr(self, "filters", {})
+        context["filters"] = filters
         context["sort_by"] = getattr(self, "sort_by", "user__personnel_number")
 
         advanced_keys = [
@@ -131,41 +136,98 @@ class PISQualificationListView(LoginRequiredMixin, ListView):
             "expiry_date_from",
             "expiry_date_to",
             "granted_by",
-            "is_active",
         ]
-        context["has_advanced_filters"] = any(context["filters"].get(k) for k in advanced_keys)
+
+        has_text_or_date_filters = any(filters.get(k) for k in advanced_keys if filters.get(k))
+        has_non_default_status = filters.get("is_active") not in ["true", None]
+        context["has_advanced_filters"] = has_text_or_date_filters or has_non_default_status
 
         querydict = self.request.GET.copy()
         querydict.pop("page", None)
         querydict.pop("sort", None)
         context["query_params"] = querydict.urlencode()
 
+        user = self.request.user
+
+        is_permit_office = (
+            user.department
+            and user.department.name
+            and user.department.name.strip().lower() == "permit office"
+        )
+
+        is_supervisor = (
+            getattr(user, "role", "")
+            and str(user.role).strip().lower() == "supervisor"
+        )
+
+        context["can_add_pis"] = (
+            user.is_active
+            and (
+                user.is_staff
+                or (is_permit_office and is_supervisor)
+            )
+        )
+
         return context
 
-# ----------------- Add PIS qualification view ---------------
+# ------------------- Add PIS Qualification ---------------------------
 class AddPISQualificationView(LoginRequiredMixin, CreateView):
     model = UserQualification
     form_class = AddPISQualificationForm
     template_name = "permits/pis_qualification_form.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        user = request.user
+
+        is_permit_office = (
+            getattr(user, "department", None)
+            and user.department.name
+            and user.department.name.strip().lower() == "permit office"
+        )
+
+        is_supervisor = str(getattr(user, "role", "")).strip().lower() == "supervisor"
+
+        can_grant_pis = (
+            user.is_active
+            and (
+                user.is_staff
+                or (is_permit_office and is_supervisor)
+            )
+        )
+
+        if not can_grant_pis:
+            messages.error(request, "You do not have permission to grant PIS qualifications.")
+            raise PermissionDenied(
+                "Only active staff or active Permit Office supervisors can grant PIS qualifications."
+            )
+
+        return super().dispatch(request, *args, **kwargs)
+
+
     def form_valid(self, form):
         form.instance.qualification = get_object_or_404(
-            Qualification, code__iexact="PIS", is_active=True
+            Qualification,
+            code__iexact="PIS",
+            is_active=True,
         )
+        # Sets the granting authority to the logged-in user who passed the dispatch check
         form.instance.granted_by = self.request.user
-        
+
         response = super().form_valid(form)
-        
+
         user_name = form.instance.user.get_full_name() or form.instance.user.username
-        
-        # Check which button was pressed
+
         if self.request.POST.get("save_and_add_another"):
-            # Message for THIS page
-            messages.success(self.request, f"PIS qualification successfully added for {user_name}. You can add another.")
+            messages.success(
+                self.request,
+                f"PIS qualification successfully added for {user_name}. You can add another.",
+            )
         else:
-            # Message for the LIST page
-            messages.success(self.request, f"PIS qualification successfully added for {user_name}.")
-            
+            messages.success(
+                self.request,
+                f"PIS qualification successfully added for {user_name}.",
+            )
+
         return response
 
     def get_success_url(self):

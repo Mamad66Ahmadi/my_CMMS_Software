@@ -17,16 +17,19 @@
                     <i class="bi bi-search"></i> Search
                 </button>
 
+                <!-- Toggle Class active and aria-expanded based on has_advanced_filters -->
                 <button type="button"
                         class="btn-filter-secondary {% if has_advanced_filters %}active{% endif %}"
                         data-bs-toggle="collapse"
                         data-bs-target="#advancedSearchCollapse"
                         aria-expanded="{% if has_advanced_filters %}true{% else %}false{% endif %}">
                     <i class="bi bi-sliders2"></i> Filters
-                    {% if has_advanced_filters %}<span class="filter-badge">●</span>{% endif %}
+                    {% if has_advanced_filters %}
+                        <span class="filter-badge">●</span>
+                    {% endif %}
                 </button>
 
-                {% if query_params or filters.q or sort_by %}
+                {% if query_params or filters.q %}
                     <a href="{% url 'permits:pis_holders' %}" class="btn-filter-clear">
                         <i class="bi bi-x-circle"></i> Clear
                     </a>
@@ -34,6 +37,7 @@
             </div>
         </div>
 
+        <!-- Toggle class show based on has_advanced_filters -->
         <div class="collapse {% if has_advanced_filters %}show{% endif %}" id="advancedSearchCollapse">
             <div class="filter-panel__body">
                 <div class="filter-grid">
@@ -43,7 +47,7 @@
                                name="department"
                                class="filter-input"
                                placeholder="Department name"
-                               value="{{ filters.department }}">
+                               value="{{ filters.department|default:'' }}">
                     </div>
 
                     <div class="filter-field">
@@ -52,15 +56,15 @@
                                name="granted_by"
                                class="filter-input"
                                placeholder="Personnel number"
-                               value="{{ filters.granted_by }}">
+                               value="{{ filters.granted_by|default:'' }}">
                     </div>
 
                     <div class="filter-field">
-                        <label class="filter-label">Active Qualification</label>
+                        <label class="filter-label">User Status</label>
                         <select name="is_active" class="filter-select">
-                            <option value="">All</option>
-                            <option value="true" {% if filters.is_active == "true" %}selected{% endif %}>Active</option>
-                            <option value="false" {% if filters.is_active == "false" %}selected{% endif %}>Inactive</option>
+                            <option value="" {% if filters.is_active == "" %}selected{% endif %}>All Users</option>
+                            <option value="true" {% if filters.is_active == "true" or filters.is_active is None %}selected{% endif %}>Active Users</option>
+                            <option value="false" {% if filters.is_active == "false" %}selected{% endif %}>Inactive Users</option>
                         </select>
                     </div>
 
@@ -69,7 +73,7 @@
                         <input type="date"
                                name="granted_date_from"
                                class="filter-input"
-                               value="{{ filters.granted_date_from }}">
+                               value="{{ filters.granted_date_from|default:'' }}">
                     </div>
 
                     <div class="filter-field">
@@ -77,7 +81,7 @@
                         <input type="date"
                                name="granted_date_to"
                                class="filter-input"
-                               value="{{ filters.granted_date_to }}">
+                               value="{{ filters.granted_date_to|default:'' }}">
                     </div>
 
                     <div class="filter-field">
@@ -85,7 +89,7 @@
                         <input type="date"
                                name="expiry_date_from"
                                class="filter-input"
-                               value="{{ filters.expiry_date_from }}">
+                               value="{{ filters.expiry_date_from|default:'' }}">
                     </div>
 
                     <div class="filter-field">
@@ -93,7 +97,7 @@
                         <input type="date"
                                name="expiry_date_to"
                                class="filter-input"
-                               value="{{ filters.expiry_date_to }}">
+                               value="{{ filters.expiry_date_to|default:'' }}">
                     </div>
                 </div>
 

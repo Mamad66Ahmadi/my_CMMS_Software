@@ -838,6 +838,7 @@ th:not(.sorted) .sort-arrow {
     flex-shrink: 0;
 }
 
+
 .status-draft {
     background-color: var(--c-status-neutral-bg);
     color: var(--c-status-neutral-text);
@@ -910,6 +911,23 @@ th:not(.sorted) .sort-arrow {
     background-color: var(--c-status-neutral-dot);
 }
 
+.status-user-active {
+    background-color: #e8f7ee;
+    color: #166534;
+}
+
+.status-user-active::before {
+    background-color: #22c55e;
+}
+
+.status-user-inactive {
+    background-color: #fbeaea;
+    color: #991b1b;
+}
+
+.status-user-inactive::before {
+    background-color: #ef4444;
+}
 
 /* ------------------------------------------------------------------
    AUTO DIRECTION ALIGNMENT (English LTR / Persian RTL)

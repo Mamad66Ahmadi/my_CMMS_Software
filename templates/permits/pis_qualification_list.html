@@ -16,11 +16,14 @@
                 PIS Qualified Users
                 <small>({{ page_obj.paginator.count }} Records)</small>
             </h1>
-            <a href="{% url 'permits:add_pis' %}{% if request.GET.urlencode %}?next={{ request.get_full_path|urlencode }}{% endif %}"
-            class="btn btn-enterprise-primary">
-                <i class="bi bi-plus-lg me-1"></i>Add PIS Qualification
-            </a>
             
+            {% comment %} Logic: Active user AND (Staff OR (Permit Office AND Supervisor role)) {% endcomment %}
+            {% if can_add_pis %}
+                <a href="{% url 'permits:add_pis' %}{% if request.GET.urlencode %}?next={{ request.get_full_path|urlencode }}{% endif %}"
+                class="btn btn-enterprise-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Add PIS Qualification
+                </a>
+            {% endif %}
         </div>
 
 
@@ -34,6 +37,7 @@
                         {% include "permits/_pis_table_header.html" with column="user__personnel_number" label="Personnel Num." sort_by=sort_by query_params=query_params %}
                         {% include "permits/_pis_table_header.html" with column="user__first_name" label="Full Name" sort_by=sort_by query_params=query_params %}
                         {% include "permits/_pis_table_header.html" with column="user__department__name" label="Department" sort_by=sort_by query_params=query_params %}
+                        {% include "permits/_pis_table_header.html" with column="user__is_active" label="Status" sort_by=sort_by query_params=query_params %}
                         {% include "permits/_pis_table_header.html" with column="qualification__code" label="Qualification" sort_by=sort_by query_params=query_params %}
                         {% include "permits/_pis_table_header.html" with column="granted_date" label="Granted Date" sort_by=sort_by query_params=query_params %}
                         {% include "permits/_pis_table_header.html" with column="expiry_date" label="Expiry Date" sort_by=sort_by query_params=query_params %}
@@ -55,6 +59,13 @@
 
                             <td>
                                 {{ uq.user.department.name|default:"-" }}
+                            </td>
+                            <td>
+                                {% if uq.user.is_active %}
+                                    <span class="status-badge status-user-active">Active</span>
+                                {% else %}
+                                    <span class="status-badge status-user-inactive">Inactive</span>
+                                {% endif %}
                             </td>
 
                             <td>
