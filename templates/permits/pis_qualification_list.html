@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}PIS Qualified Users{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
+
+<div class="container-fluid">
+
+    {% include "permits/_pis_filter.html" %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="mb-0">
+                PIS Qualified Users
+                <small>({{ page_obj.paginator.count }} Records)</small>
+            </h1>
+            <a href="{% url 'permits:add_pis' %}{% if request.GET.urlencode %}?next={{ request.get_full_path|urlencode }}{% endif %}"
+            class="btn btn-enterprise-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add PIS Qualification
+            </a>
+            
+        </div>
+
+
+    </div>
+
+    {% if pis_qualifications %}
+        <div class="table-scroll-container">
+            <table class="table align-middle table-hover mb-0">
+                <thead>
+                    <tr>
+                        {% include "permits/_pis_table_header.html" with column="user__personnel_number" label="Personnel Num." sort_by=sort_by query_params=query_params %}
+                        {% include "permits/_pis_table_header.html" with column="user__first_name" label="Full Name" sort_by=sort_by query_params=query_params %}
+                        {% include "permits/_pis_table_header.html" with column="user__department__name" label="Department" sort_by=sort_by query_params=query_params %}
+                        {% include "permits/_pis_table_header.html" with column="qualification__code" label="Qualification" sort_by=sort_by query_params=query_params %}
+                        {% include "permits/_pis_table_header.html" with column="granted_date" label="Granted Date" sort_by=sort_by query_params=query_params %}
+                        {% include "permits/_pis_table_header.html" with column="expiry_date" label="Expiry Date" sort_by=sort_by query_params=query_params %}
+                        {% include "permits/_pis_table_header.html" with column="granted_by__personnel_number" label="Granted By" sort_by=sort_by query_params=query_params %}
+                        {% include "permits/_pis_table_header.html" with column="note" label="Note" sort_by=sort_by query_params=query_params %}
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for uq in pis_qualifications %}
+                        <tr class="permit-row">
+                            <td class="fw-bold">
+                                {{ uq.user.personnel_number }}
+                            </td>
+
+                            <td>
+                                <bdi>{{ uq.user.get_full_name|default:"-" }}</bdi>
+                            </td>
+
+                            <td>
+                                {{ uq.user.department.name|default:"-" }}
+                            </td>
+
+                            <td>
+                                <span class="status-badge status-issued">
+                                    {{ uq.qualification.code }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {{ uq.granted_date|date:"Y-m-d"|default:"-" }}
+                            </td>
+
+                            <td>
+                                {% if uq.expiry_date %}
+                                    {{ uq.expiry_date|date:"Y-m-d" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ uq.granted_by.personnel_number|default:"-" }}
+                            </td>
+
+                            <td class="persian-text">
+                                <bdi title="{{ uq.note }}">
+                                    {{ uq.note|default:"-"|truncatechars:60 }}
+                                </bdi>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "equipment/common/_pagination.html" with page_obj=page_obj %}
+    {% else %}
+        <div class="alert alert-info">
+            No users found with PIS qualification.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

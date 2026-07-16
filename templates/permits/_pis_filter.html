@@ -1,0 +1,108 @@
+<form method="get" action="">
+    {% if sort_by %}<input type="hidden" name="sort" value="{{ sort_by }}">{% endif %}
+
+    <div class="filter-panel mb-3">
+        <div class="filter-panel__header">
+            <div class="filter-search-group">
+                <i class="bi bi-search filter-search-icon"></i>
+                <input type="text"
+                       name="q"
+                       class="filter-search-input"
+                       placeholder="Search by Personnel Number (comma-separated)"
+                       value="{{ filters.q|default:'' }}">
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter-primary">
+                    <i class="bi bi-search"></i> Search
+                </button>
+
+                <button type="button"
+                        class="btn-filter-secondary {% if has_advanced_filters %}active{% endif %}"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#advancedSearchCollapse"
+                        aria-expanded="{% if has_advanced_filters %}true{% else %}false{% endif %}">
+                    <i class="bi bi-sliders2"></i> Filters
+                    {% if has_advanced_filters %}<span class="filter-badge">●</span>{% endif %}
+                </button>
+
+                {% if query_params or filters.q or sort_by %}
+                    <a href="{% url 'permits:pis_holders' %}" class="btn-filter-clear">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="collapse {% if has_advanced_filters %}show{% endif %}" id="advancedSearchCollapse">
+            <div class="filter-panel__body">
+                <div class="filter-grid">
+                    <div class="filter-field">
+                        <label class="filter-label">Department</label>
+                        <input type="text"
+                               name="department"
+                               class="filter-input"
+                               placeholder="Department name"
+                               value="{{ filters.department }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Granted By</label>
+                        <input type="text"
+                               name="granted_by"
+                               class="filter-input"
+                               placeholder="Personnel number"
+                               value="{{ filters.granted_by }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Active Qualification</label>
+                        <select name="is_active" class="filter-select">
+                            <option value="">All</option>
+                            <option value="true" {% if filters.is_active == "true" %}selected{% endif %}>Active</option>
+                            <option value="false" {% if filters.is_active == "false" %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Granted From</label>
+                        <input type="date"
+                               name="granted_date_from"
+                               class="filter-input"
+                               value="{{ filters.granted_date_from }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Granted To</label>
+                        <input type="date"
+                               name="granted_date_to"
+                               class="filter-input"
+                               value="{{ filters.granted_date_to }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Expiry From</label>
+                        <input type="date"
+                               name="expiry_date_from"
+                               class="filter-input"
+                               value="{{ filters.expiry_date_from }}">
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Expiry To</label>
+                        <input type="date"
+                               name="expiry_date_to"
+                               class="filter-input"
+                               value="{{ filters.expiry_date_to }}">
+                    </div>
+                </div>
+
+                <div class="filter-panel__footer">
+                    <button type="submit" class="btn-filter-primary">
+                        <i class="bi bi-funnel-fill"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
