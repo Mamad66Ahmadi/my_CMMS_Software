@@ -128,13 +128,13 @@
                 </div>
                 <div class="detail-panel__body">
                     <div class="precaution-list">
+                        <div class="precaution-row {% if not permit.requires_loto %}is-inactive{% endif %}">
+                            <i class="bi {% if permit.requires_loto %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
+                            Requires LOTO (Isolation)
+                        </div>
                         <div class="precaution-row {% if not permit.is_excavation %}is-inactive{% endif %}">
                             <i class="bi {% if permit.is_excavation %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
                             Excavation Work
-                        </div>
-                        <div class="precaution-row {% if not permit.is_spading %}is-inactive{% endif %}">
-                            <i class="bi {% if permit.is_spading %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
-                            Spading / Line Breaking
                         </div>
                         <div class="precaution-row {% if not permit.is_confined_space %}is-inactive{% endif %}">
                             <i class="bi {% if permit.is_confined_space %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>

@@ -34,7 +34,7 @@ class Permit(models.Model):
     valid_to = models.DateTimeField()
 
     is_excavation = models.BooleanField(default=False)
-    is_spading = models.BooleanField(default=False)
+    requires_loto = models.BooleanField(default=False)
     is_confined_space = models.BooleanField(default=False)
     is_equipment_test = models.BooleanField(default=False)
     is_radiography = models.BooleanField(default=False)
@@ -91,7 +91,7 @@ class Permit(models.Model):
     def special_conditions_summary(self):
         flags = {
             "Excavation": self.is_excavation,
-            "Spading": self.is_spading,
+            "Requires LOTO": self.requires_loto,
             "Confined Space": self.is_confined_space,
             "Equipment Test": self.is_equipment_test,
             "Radiography": self.is_radiography,

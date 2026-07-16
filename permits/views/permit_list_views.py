@@ -53,7 +53,7 @@ def get_filtered_permits(request):
         "created_by": request.GET.get("created_by", "").strip(),
         "modified_by": request.GET.get("modified_by", "").strip(),
         "is_excavation": request.GET.get("is_excavation", "").strip(),
-        "is_spading": request.GET.get("is_spading", "").strip(),
+        "requires_loto": request.GET.get("requires_loto", "").strip(),
         "is_confined_space": request.GET.get("is_confined_space", "").strip(),
         "is_equipment_test": request.GET.get("is_equipment_test", "").strip(),
         "is_radiography": request.GET.get("is_radiography", "").strip(),
@@ -180,7 +180,7 @@ def get_filtered_permits(request):
 
     # Boolean model fields
     queryset = apply_boolean_filter(queryset, filters["is_excavation"], "is_excavation")
-    queryset = apply_boolean_filter(queryset, filters["is_spading"], "is_spading")
+    queryset = apply_boolean_filter(queryset, filters["requires_loto"], "requires_loto")
     queryset = apply_boolean_filter(queryset, filters["is_confined_space"], "is_confined_space")
     queryset = apply_boolean_filter(queryset, filters["is_equipment_test"], "is_equipment_test")
     queryset = apply_boolean_filter(queryset, filters["is_radiography"], "is_radiography")
@@ -220,7 +220,7 @@ class PermitList(LoginRequiredMixin, TemplateView):
             first_hazard_code=Min("hazard_codes__code"),
             special_conditions_sort=Case(
                 When(is_excavation=True, then=Value(1)),
-                When(is_spading=True, then=Value(2)),
+                When(requires_loto=True, then=Value(2)),
                 When(is_confined_space=True, then=Value(3)),
                 When(is_equipment_test=True, then=Value(4)),
                 When(is_radiography=True, then=Value(5)),
@@ -246,7 +246,7 @@ class PermitList(LoginRequiredMixin, TemplateView):
             "valid_to": "valid_to",
             "special_conditions": "special_conditions_sort",
             "is_excavation": "is_excavation",
-            "is_spading": "is_spading",
+            "requires_loto": "requires_loto",
             "is_confined_space": "is_confined_space",
             "is_equipment_test": "is_equipment_test",
             "is_radiography": "is_radiography",
@@ -343,7 +343,7 @@ class PermitList(LoginRequiredMixin, TemplateView):
         # 3. Boolean filters
         bool_labels = {
             "is_excavation": "Excavation",
-            "is_spading": "Spading",
+            "requires_loto": "Requires LOTO",
             "is_confined_space": "Confined Space",
             "is_equipment_test": "Equipment Test",
             "is_radiography": "Radiography",
@@ -456,7 +456,7 @@ class PermitExportCSV(LoginRequiredMixin, View):
                 permit.valid_from.strftime("%Y-%m-%d %H:%M:%S") if permit.valid_from else "",
                 permit.valid_to.strftime("%Y-%m-%d %H:%M:%S") if permit.valid_to else "",
                 permit.is_excavation,
-                permit.is_spading,
+                permit.requires_loto,
                 permit.is_confined_space,
                 permit.is_equipment_test,
                 permit.is_radiography,

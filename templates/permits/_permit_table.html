@@ -17,8 +17,8 @@
             {% include "permits/_permit_table_header.html" with column="special_conditions" label="Special Conditions" sort_by=sort_by query_params=query_params %}
             
             <!-- Sortable Boolean Fields -->
+            {% include "permits/_permit_table_header.html" with column="requires_loto" label="Requires LOTO" sort_by=sort_by query_params=query_params %}
             {% include "permits/_permit_table_header.html" with column="is_excavation" label="Excavation" sort_by=sort_by query_params=query_params %}
-            {% include "permits/_permit_table_header.html" with column="is_spading" label="Spading" sort_by=sort_by query_params=query_params %}
             {% include "permits/_permit_table_header.html" with column="is_confined_space" label="Confined Space" sort_by=sort_by query_params=query_params %}
             {% include "permits/_permit_table_header.html" with column="is_equipment_test" label="Equipment Test" sort_by=sort_by query_params=query_params %}
             {% include "permits/_permit_table_header.html" with column="is_radiography" label="Radiography" sort_by=sort_by query_params=query_params %}
@@ -115,12 +115,14 @@
             </td>
 
             <!-- Boolean Fields: True (dark red), False (muted) -->
+            <td class="text-center {% if permit.requires_loto %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.requires_loto %}color: #8b0000 !important;{% endif %}">
+                {% if permit.requires_loto %}True{% else %}False{% endif %}
+            </td>
+
             <td class="text-center {% if permit.is_excavation %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_excavation %}color: #8b0000 !important;{% endif %}">
                 {% if permit.is_excavation %}True{% else %}False{% endif %}
             </td>
-            <td class="text-center {% if permit.is_spading %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_spading %}color: #8b0000 !important;{% endif %}">
-                {% if permit.is_spading %}True{% else %}False{% endif %}
-            </td>
+
             <td class="text-center {% if permit.is_confined_space %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_confined_space %}color: #8b0000 !important;{% endif %}">
                 {% if permit.is_confined_space %}True{% else %}False{% endif %}
             </td>

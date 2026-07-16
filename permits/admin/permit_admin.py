@@ -66,7 +66,7 @@ class PermitAdmin(AuditAdminMixin):
         "valid_from",
         "valid_to",
         "is_excavation",
-        "is_spading",
+        "requires_loto",
         "is_confined_space",
         "is_equipment_test",
         "is_radiography",
@@ -97,7 +97,7 @@ class PermitAdmin(AuditAdminMixin):
             {
                 "fields": (
                     "is_excavation",
-                    "is_spading",
+                    "requires_loto",
                     "is_confined_space",
                     "is_equipment_test",
                     "is_radiography",
