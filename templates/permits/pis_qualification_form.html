@@ -21,7 +21,6 @@
                     <h1>Add PIS Qualification</h1>
                     <div class="permit-subtitle">
                         <i class="bi bi-pencil-square"></i>
-                        Assign the PIS qualification to a user.
                     </div>
                 </div>
             </div>
@@ -37,14 +36,9 @@
         <div class="validity-strip">
             <div class="validity-item">
                 <i class="bi bi-award"></i>
-                <span class="label">Qualification:</span>
-                <span class="value">PIS</span>
+                <span class="label">Assign the PIS qualification to a user.</span>
             </div>
-            <div class="validity-item">
-                <i class="bi bi-person"></i>
-                <span class="label">Granted By:</span>
-                <span class="value">{{ request.user }}</span>
-            </div>
+
             <span class="validity-pill validity-pill--valid">
                 <i class="bi bi-check-circle"></i>
                 Ready to assign
@@ -119,10 +113,7 @@
                             <span class="label"><i class="bi bi-person-plus"></i> Granted By</span>
                             <span class="value">{{ request.user }}</span>
                         </div>
-                        <div class="info-mini-row">
-                            <span class="label"><i class="bi bi-shield-check"></i> Validation</span>
-                            <span class="value">Form and model rules apply</span>
-                        </div>
+
                     </div>
                 </div>
 
@@ -132,20 +123,31 @@
                     </div>
                     <div class="detail-panel__body">
                         <div class="form-actions">
-                            <a href="{{ request.GET.next|default:''|default_if_none:'' }}{% if not request.GET.next %}{% url 'permits:pis_holders' %}{% endif %}"
-                               class="btn-permit-action">
+                            <button type="submit" name="save_and_add_another" value="1" class="btn-permit-action">
+                                <i class="bi bi-plus-circle"></i> Save and Add Another
+                            </button>
+
+                            <button type="submit" class="btn-save-permit">
+                                <i class="bi bi-save"></i> Save
+                            </button>
+
+                            <a href="{{ back_url }}" class="btn-permit-action">
                                 <i class="bi bi-x-circle"></i> Cancel
                             </a>
-                            <button type="submit" class="btn-save-permit">
-                                <i class="bi bi-save"></i> Add PIS Qualification
-                            </button>
+
+                            {% if form.non_field_errors %}
+                            <div class="form-error-box">
+                                {{ form.non_field_errors }}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
+
                 <div class="detail-panel">
                     <div class="detail-panel__header">
-                        <i class="bi bi-lightbulb"></i> Notes
+                        <i class="bi bi-lightbulb"></i> How to add?
                     </div>
                     <div class="detail-panel__body">
                         <p class="text-muted mb-0">

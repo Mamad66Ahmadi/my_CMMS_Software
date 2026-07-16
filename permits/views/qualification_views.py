@@ -5,6 +5,8 @@ from django.db.models import Q
 from django.views.generic import ListView,CreateView
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.contrib import messages
+
 
 from accounts.models import Qualification,UserQualification
 from permits.forms import AddPISQualificationForm
@@ -148,14 +150,32 @@ class AddPISQualificationView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.qualification = get_object_or_404(
-            Qualification,
-            code__iexact="PIS",
-            is_active=True,
+            Qualification, code__iexact="PIS", is_active=True
         )
         form.instance.granted_by = self.request.user
-        return super().form_valid(form)
+        
+        response = super().form_valid(form)
+        
+        user_name = form.instance.user.get_full_name() or form.instance.user.username
+        
+        # Check which button was pressed
+        if self.request.POST.get("save_and_add_another"):
+            # Message for THIS page
+            messages.success(self.request, f"PIS qualification successfully added for {user_name}. You can add another.")
+        else:
+            # Message for the LIST page
+            messages.success(self.request, f"PIS qualification successfully added for {user_name}.")
+            
+        return response
 
     def get_success_url(self):
+        if self.request.POST.get("save_and_add_another"):
+            next_url = self.request.GET.get("next")
+            url = self.request.path
+            if next_url:
+                return f"{url}?next={next_url}"
+            return url
+
         next_url = self.request.GET.get("next")
         if next_url:
             return next_url
