@@ -156,3 +156,64 @@ class UserQualification(AuditHistoryModel):
 
     def __str__(self):
         return f"{self.user} - {self.qualification.code}"
+
+
+# ------------- Favorite Filter -------------------------------------
+class UserFilterFavorite(models.Model):
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="filter_favorites",)
+    app_key = models.CharField(max_length=50)
+    view_key = models.CharField(max_length=100)
+    name = models.CharField(max_length=50)
+
+    filters = models.JSONField(default=dict, blank=True)
+    sort_by = models.CharField(max_length=100, blank=True, default="")
+    per_page = models.PositiveIntegerField(null=True, blank=True)
+
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["user__username", "app_key", "view_key", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "app_key", "view_key", "name"],
+                name="unique_filter_favorite_name_per_view",
+            ),
+            models.UniqueConstraint(
+                fields=["user", "app_key", "view_key"],
+                condition=models.Q(is_default=True),
+                name="unique_default_filter_favorite_per_view",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "app_key", "view_key"]),
+            models.Index(fields=["user", "app_key", "view_key", "is_default"]),
+        ]
+
+    def clean(self):
+        super().clean()
+
+        if not isinstance(self.filters, dict):
+            raise ValidationError({"filters": "Filters must be a JSON object."})
+
+        if not self.filters and not self.sort_by and not self.per_page:
+            raise ValidationError(
+                "At least one of filters, sort_by, or per_page must be provided."
+            )
+
+        existing_qs = UserFilterFavorite.objects.filter(
+            user=self.user,
+            app_key=self.app_key,
+            view_key=self.view_key,
+        )
+
+        if self.pk:
+            existing_qs = existing_qs.exclude(pk=self.pk)
+
+        if existing_qs.count() >= 3:
+            raise ValidationError(
+                "A user can have at most 3 favorite filters per list view."
+            )
+
+    def __str__(self):
+        return f"{self.user} - {self.app_key}.{self.view_key} - {self.name}"
