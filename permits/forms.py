@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 # ------------------------------- Create Permit Form ---------------------
+
 class PermitCreateForm(forms.ModelForm):
     location_tag = forms.ModelChoiceField(
         queryset=LocationTag.objects.none(),
@@ -39,6 +40,18 @@ class PermitCreateForm(forms.ModelForm):
         widget=forms.HiddenInput(),
     )
 
+    authorized_issuer = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=True,
+        widget=forms.HiddenInput(),
+    )
+
+    permit_holder = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
     class Meta:
         model = Permit
         exclude = ["status", "created_by", "modified_by"]
@@ -53,19 +66,27 @@ class PermitCreateForm(forms.ModelForm):
         location_tag_id = None
         continuation_of_id = None
         work_order_id = None
+        authorized_issuer_id = None
+        permit_holder_id = None
 
         if self.is_bound:
             location_tag_id = self.data.get("location_tag")
             continuation_of_id = self.data.get("continuation_of")
             work_order_id = self.data.get("work_order")
+            authorized_issuer_id = self.data.get("authorized_issuer")
+            permit_holder_id = self.data.get("permit_holder")
         elif self.instance.pk:
             location_tag_id = self.instance.location_tag_id
             continuation_of_id = self.instance.continuation_of_id
             work_order_id = self.instance.work_order_id
+            authorized_issuer_id = self.instance.authorized_issuer_id
+            permit_holder_id = self.instance.permit_holder_id
         else:
             location_tag_id = self.initial.get("location_tag")
             continuation_of_id = self.initial.get("continuation_of")
             work_order_id = self.initial.get("work_order")
+            authorized_issuer_id = self.initial.get("authorized_issuer")
+            permit_holder_id = self.initial.get("permit_holder")
 
         self.fields["location_tag"].queryset = (
             LocationTag.objects.filter(pk=location_tag_id)
@@ -82,7 +103,15 @@ class PermitCreateForm(forms.ModelForm):
             if work_order_id else WorkOrder.objects.none()
         )
 
+        self.fields["authorized_issuer"].queryset = (
+            User.objects.filter(pk=authorized_issuer_id)
+            if authorized_issuer_id else User.objects.none()
+        )
 
+        self.fields["permit_holder"].queryset = (
+            User.objects.filter(pk=permit_holder_id)
+            if permit_holder_id else User.objects.none()
+        )
 
 # -------------- PIS -------------------------
 class AddPISQualificationForm(forms.ModelForm):

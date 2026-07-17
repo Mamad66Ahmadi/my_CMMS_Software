@@ -160,16 +160,57 @@
                             </div>
 
                             <div class="form-field-block">
-                                <label for="{{ form.authorized_issuer.id_for_label }}">Authorized Issuer</label>
-                                {{ form.authorized_issuer }}
-                                {% if form.authorized_issuer.errors %}<div class="field-errors">{{ form.authorized_issuer.errors }}</div>{% endif %}
+                                <label for="authorized-issuer-search-input">Authorized Issuer</label>
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="authorized-issuer-search-input"
+                                        class="form-control"
+                                        placeholder="Search by personnel number or name..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'accounts:user_autocomplete' %}"
+                                        value="{% if form.instance.authorized_issuer %}{{ form.instance.authorized_issuer.personnel_no }} - {{ form.instance.authorized_issuer.get_full_name|default:form.instance.authorized_issuer.username }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="authorized-issuer-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results">
+                                    </div>
+
+                                    {{ form.authorized_issuer }}
+                                </div>
+
+                                {% if form.authorized_issuer.errors %}
+                                    <div class="field-errors">{{ form.authorized_issuer.errors|striptags }}</div>
+                                {% endif %}
                             </div>
 
                             <div class="form-field-block">
-                                <label for="{{ form.permit_holder.id_for_label }}">Permit Holder</label>
-                                {{ form.permit_holder }}
-                                {% if form.permit_holder.errors %}<div class="field-errors">{{ form.permit_holder.errors }}</div>{% endif %}
+                                <label for="permit-holder-search-input">Permit Holder</label>
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="permit-holder-search-input"
+                                        class="form-control"
+                                        placeholder="Search by personnel number or name..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'accounts:user_autocomplete' %}"
+                                        value="{% if form.instance.permit_holder %}{{ form.instance.permit_holder.personnel_no }} - {{ form.instance.permit_holder.get_full_name|default:form.instance.permit_holder.username }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="permit-holder-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results">
+                                    </div>
+
+                                    {{ form.permit_holder }}
+                                </div>
+
+                                {% if form.permit_holder.errors %}
+                                    <div class="field-errors">{{ form.permit_holder.errors|striptags }}</div>
+                                {% endif %}
                             </div>
+
 
                             <hr class="field-divider">
 
@@ -494,6 +535,18 @@ document.addEventListener("DOMContentLoaded", function () {
         hiddenInputId: "id_work_order",
         resultsContainerId: "work-order-results-container"
     });
+
+    setupAutocomplete({
+        inputId: "authorized-issuer-search-input",
+        hiddenInputId: "id_authorized_issuer",
+        resultsContainerId: "authorized-issuer-results-container"
+    });
+
+    setupAutocomplete({
+        inputId: "permit-holder-search-input",
+        hiddenInputId: "id_permit_holder",
+        resultsContainerId: "permit-holder-results-container"
+    });
 });
 
 document.body.addEventListener("htmx:afterOnLoad", function (event) {
@@ -549,6 +602,8 @@ document.body.addEventListener("htmx:afterOnLoad", function (event) {
         }
     });
 });
+
+
 </script>
 
 
