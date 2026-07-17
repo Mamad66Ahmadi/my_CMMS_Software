@@ -60,25 +60,9 @@
             <td>{{ permit.location_tag.loc_tag|default:"-" }}</td>
 
             <td>
-                {% if permit.status == "draft" %}
-                    <span class="status-badge status-draft">Draft</span>
-                {% elif permit.status == "pending_approval" %}
-                    <span class="status-badge status-pending-approval">Pending Approval</span>
-                {% elif permit.status == "issued" %}
-                    <span class="status-badge status-issued">Issued</span>
-                {% elif permit.status == "active" %}
-                    <span class="status-badge status-active">Active</span>
-                {% elif permit.status == "suspended" %}
-                    <span class="status-badge status-suspended">Suspended</span>
-                {% elif permit.status == "expired" %}
-                    <span class="status-badge status-expired">Expired</span>
-                {% elif permit.status == "closed" %}
-                    <span class="status-badge status-closed">Closed</span>
-                {% elif permit.status == "cancelled" %}
-                    <span class="status-badge status-cancelled">Cancelled</span>
-                {% else %}
-                    <span class="status-badge status-default">{{ permit.get_status_display }}</span>
-                {% endif %}
+                <span class="status-badge status-{{ permit.status|lower|default:'default' }}">
+                    {{ permit.get_status_display }}
+                </span>
             </td>
 
             <td>

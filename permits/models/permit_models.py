@@ -40,7 +40,7 @@ class Permit(models.Model):
     is_radiography = models.BooleanField(default=False)
     is_diving = models.BooleanField(default=False)
 
-    status = models.CharField(max_length=20,choices=PermitStatus.choices, default=PermitStatus.DRAFT, db_index=True,)
+    status = models.CharField(max_length=50,choices=PermitStatus.choices, default=PermitStatus.DRAFT, db_index=True,)
     comment = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

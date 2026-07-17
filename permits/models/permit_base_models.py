@@ -39,8 +39,13 @@ class HazardCode(TimeStampedModel):
 
 class PermitStatus(models.TextChoices):
     DRAFT = "draft", "Draft"
-    PENDING_APPROVAL = "pending_approval", "Pending Approval"
-    ISSUED = "issued", "Issued"
+    PENDING_DEPT_APPROVAL = "pending_dept_approval", "Dept. Approval"
+    PENDING_SAFETY_REVIEW = "pending_safety_review", "Safety Review"
+    PENDING_PERMIT_OFFICE = "pending_permit_office", "Permit Office Review"
+    ISOLATION_REQUIRED = "isolation_required", "Isolation Planning"
+    ISOLATIONS_IN_PROGRESS = "isolations_in_progress", "Isolations In Progress"
+    READY_FOR_ISSUE = "ready_for_issue", "Ready For Issue"
+    VALIDATED = "validated", "Validated"
     ACTIVE = "active", "Active"
     SUSPENDED = "suspended", "Suspended"
     EXPIRED = "expired", "Expired"
