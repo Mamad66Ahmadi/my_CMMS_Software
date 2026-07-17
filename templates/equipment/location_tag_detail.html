@@ -1,96 +1,393 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %} {{ location_tag.loc_tag }} {% endblock %}
+{% block title %}{{ location_tag.loc_tag }} | {% trans "Location Tag" %}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+{% endblock %}
 
 {% block content %}
-
-<link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
-
+<!-- Status Banner -->
 {% if not location_tag.is_active %}
-<div style="
-    background:#ffeaea;
-    padding:15px;
-    border-left:5px solid #c0392b;
-    margin-bottom:20px;
-    font-weight:600;
-">
-    ⚠️ This Location Tag is INACTIVE.
+<div class="ifs-status-banner ifs-status-banner--inactive">
+    <i class="bi bi-exclamation-triangle-fill ifs-status-banner__icon"></i>
+    <span class="ifs-status-banner__text">{% trans "This Location Tag is INACTIVE" %}</span>
 </div>
 {% endif %}
 
-<div class="container">
+<!-- Breadcrumb & Actions Bar -->
+<nav class="ifs-breadcrumb-bar" aria-label="{% trans 'Breadcrumb' %}">
+    <ol class="ifs-breadcrumb">
+        <li class="ifs-breadcrumb__item">
+            <a href="{% url 'equipment:location_tag_list' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">
+                <i class="bi bi-arrow-left"></i>
+                <span>{% trans "Location Tags" %}</span>
+            </a>
+        </li>
+        <li class="ifs-breadcrumb__item ifs-breadcrumb__item--current" aria-current="page">
+            <span dir="auto">{{ location_tag.loc_tag }}</span>
+        </li>
+    </ol>
 
+    <div class="ifs-page-actions">
+        {% if not location_tag.is_active %}
+            <button class="ifs-btn ifs-btn--secondary" disabled>
+                <i class="bi bi-slash-circle"></i>
+                {% trans "Tag Inactive" %}
+            </button>
+        {% elif has_pending_request %}
+            <button class="ifs-btn ifs-btn--secondary" disabled>
+                <i class="bi bi-hourglass-split"></i>
+                {% trans "Pending Request Exists" %}
+            </button>
+        {% else %}
+            <a href="{% url 'equipment:location_tag_update_request' location_tag.loc_tag %}" class="ifs-btn ifs-btn--primary">
+                <i class="bi bi-pencil-square"></i>
+                {% trans "Request Modification" %}
+            </a>
+        {% endif %}
+    </div>
+</nav>
 
-    {% if request.GET %}
-        <a href="{% url 'equipment:location_tag_list' %}?{{ request.GET.urlencode }}" class="back-button">
-            ← Back to Location Tag List
-        </a>
-    {% else %}
-        <a href="{% url 'equipment:location_tag_list' %}" class="back-button">
-            ← Location Tag List
-        </a>
-    {% endif %}
+<!-- Main Content -->
+<div class="ifs-page-container">
 
+    <!-- Header Card -->
+    <header class="ifs-entity-header">
+        <div class="ifs-entity-header__identity">
+            <div class="ifs-entity-header__type">
+                <i class="bi bi-geo-alt-fill"></i> {% trans "Location Tag" %}
+            </div>
+            <h1 class="ifs-entity-header__title" dir="auto">{{ location_tag.loc_tag }}</h1>
+            <div class="ifs-entity-header__subtitle" dir="auto">{{ location_tag.description|default:"—" }}</div>
+        </div>
+        <div class="ifs-entity-header__badges">
+            <span class="ifs-badge ifs-badge--{% if location_tag.is_active %}success{% else %}danger{% endif %}">
+                <i class="bi bi-{% if location_tag.is_active %}check-circle{% else %}x-circle{% endif %}"></i>
+                {% if location_tag.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+            </span>
+            <span class="ifs-badge ifs-badge--info">MIH-{{ location_tag.mih_level }}</span>
+        </div>
+    </header>
 
-
-
-    {% include "equipment/location_tag_detail/_basic_info.html" %}
-
-    {% include "equipment/location_tag_detail/_child_tags.html" %}
-
-    {% include "equipment/location_tag_detail/_installed_equipment.html" %}
-
-    {% include "equipment/common/_documents_detail_page.html" %}
-
-    {% include "equipment/location_tag_detail/_history.html" %}
-
-    {% include "equipment/common/_change_request_history.html" %}
-
-
-
-    <div style="margin-top: 40px; margin-bottom: 40px; text-align:right;">
-
-    {% if not location_tag.is_active %}
-        <button class="btn btn-secondary" disabled
-                style="padding:10px 20px; font-weight:600;">
-            ⚠️ This Tag is Inactive
+    <!-- Tab Navigation -->
+    <nav class="ifs-tabs" role="tablist">
+        <button class="ifs-tab ifs-tab--active" data-tab="general" role="tab" aria-selected="true">
+            <i class="bi bi-info-circle"></i>
+            {% trans "General" %}
         </button>
-
-    {% elif has_pending_request %}
-        <button class="btn btn-secondary" disabled
-                style="padding:10px 20px; font-weight:600;">
-            ✏️ Modify This Tag (Pending Request Exists)
+        <button class="ifs-tab" data-tab="hierarchy" role="tab" aria-selected="false">
+            <i class="bi bi-diagram-3"></i>
+            {% trans "Hierarchy" %}
+            {% if children.count %}<span class="ifs-tab__badge">{{ children.count }}</span>{% endif %}
         </button>
-    {% else %}
-        <a href="{% url 'equipment:location_tag_update_request' location_tag.loc_tag %}"
-        class="btn btn-primary"
-        style="padding:10px 20px; font-weight:600; background:#43334C; border:none;">
-            ✏️ Modify This Tag
-        </a>
-    {% endif %}
+        <button class="ifs-tab" data-tab="equipment" role="tab" aria-selected="false">
+            <i class="bi bi-gear"></i>
+            {% trans "Equipment" %}
+            {% if equipments.count %}<span class="ifs-tab__badge">{{ equipments.count }}</span>{% endif %}
+        </button>
+        <button class="ifs-tab" data-tab="documents" role="tab" aria-selected="false">
+            <i class="bi bi-file-earmark-text"></i>
+            {% trans "Documents" %}
+        </button>
+        <button class="ifs-tab" data-tab="history" role="tab" aria-selected="false">
+            <i class="bi bi-clock-history"></i>
+            {% trans "History" %}
+        </button>
+    </nav>
+
+    <!-- Tab Panels -->
+    <div class="ifs-tab-panels">
+
+        <!-- General Tab -->
+        <div class="ifs-panel ifs-panel--active" id="panel-general" role="tabpanel">
+            <div class="ifs-card-grid">
+
+                <!-- Primary Information -->
+                <section class="ifs-card ifs-card--primary">
+                    <header class="ifs-card__header">
+                        <h2 class="ifs-card__title"><i class="bi bi-card-text"></i> {% trans "Primary Information" %}</h2>
+                    </header>
+                    <div class="ifs-card__body">
+                        <dl class="ifs-datalist ifs-datalist--2col">
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Long Tag" %}</dt>
+                                <dd dir="auto">{{ location_tag.long_tag|default:"—" }}</dd>
+                            </div>
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Object Category" %}</dt>
+                                <dd>{{ location_tag.obj_category|default:"—" }}</dd>
+                            </div>
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Object Type" %}</dt>
+                                <dd>{{ location_tag.obj_type|default:"—" }}</dd>
+                            </div>
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Criticality" %}</dt>
+                                <dd>
+                                    <span class="ifs-criticality ifs-criticality--{{ location_tag.obj_criticality|default:'none'|lower }}">
+                                        {{ location_tag.obj_criticality|default:"—" }}
+                                    </span>
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </section>
+
+                <!-- Organizational -->
+                <section class="ifs-card ifs-card--secondary">
+                    <header class="ifs-card__header">
+                        <h2 class="ifs-card__title"><i class="bi bi-diagram-2"></i> {% trans "Organizational" %}</h2>
+                    </header>
+                    <div class="ifs-card__body">
+                        <dl class="ifs-datalist">
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Unit" %}</dt>
+                                <dd>{{ location_tag.unit|default:"—" }}</dd>
+                            </div>
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Train" %}</dt>
+                                <dd>{{ location_tag.train|default:"—" }}</dd>
+                            </div>
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Parent Location" %}</dt>
+                                <dd>
+                                    {% if location_tag.parent %}
+                                        <a href="{% url 'equipment:location_tag_detail' location_tag.parent.loc_tag %}" class="ifs-link">
+                                            {{ location_tag.parent.loc_tag }}
+                                        </a>
+                                    {% else %}
+                                        <span class="ifs-text--muted">—</span>
+                                    {% endif %}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </section>
+
+                <!-- Audit Information -->
+                <section class="ifs-card ifs-card--audit">
+                    <header class="ifs-card__header">
+                        <h2 class="ifs-card__title"><i class="bi bi-shield-check"></i> {% trans "Audit Trail" %}</h2>
+                    </header>
+                    <div class="ifs-card__body">
+                        <dl class="ifs-datalist ifs-datalist--compact">
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Created" %}</dt>
+                                <dd>
+                                    <time datetime="{{ location_tag.created_at|date:'c' }}">
+                                        {{ location_tag.created_at|date:"Y-m-d H:i" }}
+                                    </time>
+                                    <span class="ifs-text--muted">{% trans "by" %} {{ location_tag.created_by }}</span>
+                                </dd>
+                            </div>
+                            <div class="ifs-datalist__item">
+                                <dt>{% trans "Modified" %}</dt>
+                                <dd>
+                                    {% if location_tag.modified_at %}
+                                        <time datetime="{{ location_tag.modified_at|date:'c' }}">
+                                            {{ location_tag.modified_at|date:"Y-m-d H:i" }}
+                                        </time>
+                                        <span class="ifs-text--muted">{% trans "by" %} {{ location_tag.modified_by }}</span>
+                                    {% else %}
+                                        <span class="ifs-text--muted">—</span>
+                                    {% endif %}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </section>
+
+                <!-- Notes -->
+                {% if location_tag.note %}
+                <section class="ifs-card ifs-card--full">
+                    <header class="ifs-card__header">
+                        <h2 class="ifs-card__title"><i class="bi bi-sticky"></i> {% trans "Notes" %}</h2>
+                    </header>
+                    <div class="ifs-card__body">
+                        <p class="ifs-text--prewrap" dir="auto">{{ location_tag.note }}</p>
+                    </div>
+                </section>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Hierarchy Tab -->
+        <div class="ifs-panel" id="panel-hierarchy" role="tabpanel" hidden>
+            <div class="ifs-card">
+                <header class="ifs-card__header">
+                    <h2 class="ifs-card__title"><i class="bi bi-diagram-3"></i> {% trans "Child Location Tags" %}</h2>
+                    <span class="ifs-card__count">{{ children.count }} {% trans "records" %}</span>
+                </header>
+                <div class="ifs-card__body">
+                    {% if children %}
+                    <div class="ifs-table-container">
+                        <table class="ifs-table ifs-table--hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">{% trans "Location Tag" %}</th>
+                                    <th scope="col">{% trans "Description" %}</th>
+                                    <th scope="col">{% trans "Unit" %}</th>
+                                    <th scope="col">{% trans "Train" %}</th>
+                                    <th scope="col">{% trans "Status" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for child in children %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'equipment:location_tag_detail' child.loc_tag %}" class="ifs-link ifs-link--strong">
+                                            {{ child.loc_tag }}
+                                        </a>
+                                    </td>
+                                    <td dir="auto">{{ child.description|default:"—" }}</td>
+                                    <td>{{ child.unit|default:"—" }}</td>
+                                    <td>{{ child.train|default:"—" }}</td>
+                                    <td>
+                                        <span class="ifs-status-dot ifs-status-dot--{% if child.is_active %}active{% else %}inactive{% endif %}"></span>
+                                        {% if child.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="ifs-empty-state">
+                        <i class="bi bi-diagram-3 ifs-empty-state__icon"></i>
+                        <p class="ifs-empty-state__title">{% trans "No child locations" %}</p>
+                        <p class="ifs-empty-state__description">{% trans "This location tag has no child locations defined." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipment Tab -->
+        <div class="ifs-panel" id="panel-equipment" role="tabpanel" hidden>
+            <div class="ifs-card">
+                <header class="ifs-card__header">
+                    <h2 class="ifs-card__title"><i class="bi bi-gear"></i> {% trans "Installed Equipment" %}</h2>
+                    <span class="ifs-card__count">{{ equipments.count }} {% trans "records" %}</span>
+                </header>
+                <div class="ifs-card__body">
+                    {% if equipments %}
+                    <div class="ifs-table-container">
+                        <table class="ifs-table ifs-table--hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">{% trans "ID" %}</th>
+                                    <th scope="col">{% trans "Serial Number" %}</th>
+                                    <th scope="col">{% trans "Created" %}</th>
+                                    <th scope="col">{% trans "Modified" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for eq in equipments %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'equipment:equipment_detail' eq.id %}" class="ifs-link">
+                                            {{ eq.id }}
+                                        </a>
+                                    </td>
+                                    <td>{{ eq.serial_number|default:"—" }}</td>
+                                    <td>
+                                        <time datetime="{{ eq.created_at|date:'c' }}">{{ eq.created_at|date:"Y-m-d" }}</time>
+                                    </td>
+                                    <td>
+                                        {% if eq.modified_at %}
+                                            <time datetime="{{ eq.modified_at|date:'c' }}">{{ eq.modified_at|date:"Y-m-d" }}</time>
+                                        {% else %}—{% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="ifs-empty-state">
+                        <i class="bi bi-gear ifs-empty-state__icon"></i>
+                        <p class="ifs-empty-state__title">{% trans "No equipment" %}</p>
+                        <p class="ifs-empty-state__description">{% trans "No equipment is installed at this location." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div class="ifs-panel" id="panel-documents" role="tabpanel" hidden>
+            {% include "equipment/common/_documents_detail_page.html" %}
+        </div>
+
+        <!-- History Tab -->
+        <div class="ifs-panel" id="panel-history" role="tabpanel" hidden>
+            <div class="ifs-card">
+                <header class="ifs-card__header">
+                    <h2 class="ifs-card__title"><i class="bi bi-clock-history"></i> {% trans "Change History" %}</h2>
+                </header>
+                <div class="ifs-card__body">
+                    {% if history %}
+                    <div class="ifs-timeline">
+                        {% for h in history %}
+                        <div class="ifs-timeline__item">
+                            <div class="ifs-timeline__marker ifs-timeline__marker--{{ h.get_history_type_display|lower }}"></div>
+                            <div class="ifs-timeline__content">
+                                <div class="ifs-timeline__header">
+                                    <span class="ifs-timeline__action">{{ h.get_history_type_display }}</span>
+                                    <time class="ifs-timeline__date" datetime="{{ h.history_date|date:'c' }}">
+                                        {{ h.history_date|date:"Y-m-d H:i" }}
+                                    </time>
+                                </div>
+                                <div class="ifs-timeline__user">{{ h.history_user|default:"System" }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="ifs-empty-state">
+                        <i class="bi bi-clock-history ifs-empty-state__icon"></i>
+                        <p class="ifs-empty-state__title">{% trans "No history" %}</p>
+                        <p class="ifs-empty-state__description">{% trans "No changes have been recorded for this record." %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
     </div>
-
-
 </div>
+{% endblock %}
 
-
-
-
-
-
+{% block extra_js %}
 <script>
-    function toggleSection(id) {
-        const content = document.getElementById(id);
-        const chevron = document.getElementById("chevron_" + id);
+(function () {
+    'use strict';
 
-        const isOpen = content.style.display === "block";
+    const tabs = document.querySelectorAll('.ifs-tab');
+    const panels = document.querySelectorAll('.ifs-panel');
 
-        content.style.display = isOpen ? "none" : "block";
-        chevron.classList.toggle("open", !isOpen);
-    }
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetId = 'panel-' + tab.dataset.tab;
+
+            tabs.forEach(t => {
+                t.classList.remove('ifs-tab--active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            tab.classList.add('ifs-tab--active');
+            tab.setAttribute('aria-selected', 'true');
+
+            panels.forEach(p => {
+                p.classList.remove('ifs-panel--active');
+                p.hidden = true;
+            });
+            const target = document.getElementById(targetId);
+            target.classList.add('ifs-panel--active');
+            target.hidden = false;
+        });
+    });
+})();
 </script>
-
 {% endblock %}
