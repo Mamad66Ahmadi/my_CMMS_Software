@@ -443,6 +443,7 @@ class PermitList(LoginRequiredMixin, TemplateView):
 
         queryset, filters = get_filtered_permits(filters)
 
+        # Annotations for specialized sorting
         queryset = queryset.annotate(
             first_hazard_code=Min("hazard_codes__code"),
             special_conditions_sort=Case(
@@ -457,7 +458,34 @@ class PermitList(LoginRequiredMixin, TemplateView):
             ),
         )
 
-        allowed_sort = get_allowed_sort()
+        # 1. Map template column names to actual ORM fields
+        allowed_sort = {
+            "permit_number": "permit_number",
+            "continuation_of": "continuation_of__permit_number",
+            "location_tag": "location_tag__loc_tag",
+            "status": "status",
+            "hazard_code": "first_hazard_code",
+            "work_order": "work_order__wo_number",
+            "description": "description",
+            "department": "department__name",
+            "unit": "location_tag__unit__unit_code",
+            "valid_from": "valid_from",
+            "valid_to": "valid_to",
+            "special_conditions": "special_conditions_sort",
+            "requires_loto": "requires_loto",
+            "is_excavation": "is_excavation",
+            "is_confined_space": "is_confined_space",
+            "is_equipment_test": "is_equipment_test",
+            "is_radiography": "is_radiography",
+            "is_diving": "is_diving",
+            "authorized_issuer": "authorized_issuer__username",
+            "permit_holder": "permit_holder__username",
+            "created_at": "created_at",
+            "created_by": "created_by__username",
+            "modified_at": "modified_at",
+            "modified_by": "modified_by__username",
+        }
+
         sort_key = sort_by.lstrip("-")
         sort_field = allowed_sort.get(sort_key, "created_at")
 
@@ -559,12 +587,19 @@ class PermitList(LoginRequiredMixin, TemplateView):
             favorite_id=selected_favorite.pk if selected_favorite else None,
         )
 
+        header_query_params = build_query_string(
+            filters,
+            per_page=per_page,
+            favorite_id=selected_favorite.pk if selected_favorite else None,
+        )
+
         context.update({
             "permits": page_obj,
             "filters": filters,
             "sort_by": sort_by,
             "per_page": per_page,
             "query_params": query_params,
+            "header_query_params": header_query_params,
             "status_choices": PermitStatus.choices,
             "hazard_codes": HazardCode.objects.filter(is_active=True).order_by("code"),
             "departments": Department.objects.filter(is_active=True).order_by("name"),
