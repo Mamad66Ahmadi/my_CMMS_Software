@@ -1956,4 +1956,6 @@ textarea.form-control,
     border-color: var(--c-primary, #0d6efd) !important;
 }
 
-
+.filter-offcanvas {
+    width: min(460px, 92vw);
+}

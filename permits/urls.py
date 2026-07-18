@@ -2,12 +2,14 @@
 from django.urls import path
 from permits.views import (PermitList,PermitExportCSV, PermitDetailView, PermitCreateView,
                            permit_autocomplete, get_permit_data, PISQualificationListView,
-                           AddPISQualificationView)
+                           AddPISQualificationView, PermitFilterFavoriteDeleteView, PermitFilterFavoriteSaveView)
 
 app_name = "permits"
 
 urlpatterns = [
     path("list/", PermitList.as_view(), name="permit_list"),
+    path("permits/favorites/save/", PermitFilterFavoriteSaveView.as_view(), name="permit_filter_favorite_save"),
+    path("permits/favorites/<int:pk>/delete/", PermitFilterFavoriteDeleteView.as_view(), name="permit_filter_favorite_delete"),
     path("export/csv/", PermitExportCSV.as_view(), name="permit_export_csv"),
     path("create/", PermitCreateView.as_view(), name="permit_create"),
     path("autocomplete/permits/", permit_autocomplete, name="permit_autocomplete"),

@@ -210,9 +210,9 @@ class UserFilterFavorite(models.Model):
         if self.pk:
             existing_qs = existing_qs.exclude(pk=self.pk)
 
-        if existing_qs.count() >= 3:
+        if existing_qs.count() >= 5:
             raise ValidationError(
-                "A user can have at most 3 favorite filters per list view."
+                "Favorite filter was not saved. You can have up to 5 favorites for this list. Delete an existing favorite before saving a new one."
             )
 
     def __str__(self):

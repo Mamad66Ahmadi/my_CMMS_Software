@@ -3,7 +3,6 @@
 {% block title %}Permits{% endblock %}
 
 {% block content %}
-<!-- Use the new Permit-specific stylesheet -->
 <link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
 
 <div class="container-fluid">
@@ -23,7 +22,7 @@
         </div>
 
         <div>
-            <a href="{% url 'permits:permit_export_csv' %}?{{ request.GET.urlencode }}" class="btn btn-outline-secondary">
+            <a href="{% url 'permits:permit_export_csv' %}?{{ query_params }}" class="btn btn-outline-secondary">
                 Export CSV
             </a>
         </div>
@@ -55,9 +54,6 @@
     </div>
     {% endif %}
 
-
-
-
     {% if permits %}
         <div class="table-scroll-container">
             {% include "permits/_permit_table.html" %}
@@ -67,7 +63,6 @@
         <div class="alert alert-info">No permits found matching the criteria.</div>
     {% endif %}
 </div>
-
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

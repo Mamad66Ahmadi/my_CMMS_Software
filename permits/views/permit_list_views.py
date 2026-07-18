@@ -1,34 +1,44 @@
 # permits/views/permit_list_views.py
-
 import csv
 import re
 
+from django.utils.text import slugify
+from urllib.parse import urlencode
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q, Min, Case, When, Value, IntegerField
-from django.http import HttpResponse
+from django.http import HttpResponseBadRequest,HttpResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
-from django.utils import timezone
-from django.utils.text import slugify
 
-from permits.models.permit_models import Permit
+from accounts.models import Department, UserFilterFavorite
 from permits.models import PermitStatus
 from permits.models.permit_base_models import HazardCode
-from accounts.models import Department
+from permits.models.permit_models import Permit
+from permits.services.user_filter_favorite import (
+    FAVORITE_APP_KEY,
+    FAVORITE_VIEW_KEY,
+    FILTER_KEYS,
+    PER_PAGE_CHOICES,
+    DEFAULT_SORT,
+    DEFAULT_PER_PAGE,
+)
 
 
-# ---------------------------------------------- Filter ------------------------------------------
-def get_filtered_permits(request):
+def get_request_filters(request):
     status_param = request.GET.get("status")
 
-    # Default to ACTIVE only when status is not provided at all.
     if status_param is None:
         default_status = PermitStatus.ACTIVE
     else:
         default_status = status_param.strip()
 
-    filters = {
+    return {
         "q": request.GET.get("q", "").strip(),
         "permit_number": request.GET.get("permit_number", "").strip(),
         "continuation_of": request.GET.get("continuation_of", "").strip(),
@@ -61,6 +71,228 @@ def get_filtered_permits(request):
         "is_currently_valid": request.GET.get("is_currently_valid", "").strip(),
     }
 
+
+def get_post_filters(request):
+    status_param = request.POST.get("status")
+
+    if status_param is None:
+        default_status = PermitStatus.ACTIVE
+    else:
+        default_status = status_param.strip()
+
+    return {
+        "q": request.POST.get("q", "").strip(),
+        "permit_number": request.POST.get("permit_number", "").strip(),
+        "continuation_of": request.POST.get("continuation_of", "").strip(),
+        "status": default_status,
+        "location_tag": request.POST.get("location_tag", "").strip(),
+        "parent_tag": request.POST.get("parent_tag", "").strip(),
+        "unit": request.POST.get("unit", "").strip(),
+        "train": request.POST.get("train", "").strip(),
+        "work_order": request.POST.get("work_order", "").strip(),
+        "department": request.POST.get("department", "").strip(),
+        "authorized_issuer": request.POST.get("authorized_issuer", "").strip(),
+        "permit_holder": request.POST.get("permit_holder", "").strip(),
+        "description": request.POST.get("description", "").strip(),
+        "comment": request.POST.get("comment", "").strip(),
+        "hazard_code": request.POST.get("hazard_code", "").strip(),
+        "valid_from_date": request.POST.get("valid_from_date", "").strip(),
+        "valid_to_date": request.POST.get("valid_to_date", "").strip(),
+        "created_from": request.POST.get("created_from", "").strip(),
+        "created_to": request.POST.get("created_to", "").strip(),
+        "modified_from": request.POST.get("modified_from", "").strip(),
+        "modified_to": request.POST.get("modified_to", "").strip(),
+        "created_by": request.POST.get("created_by", "").strip(),
+        "modified_by": request.POST.get("modified_by", "").strip(),
+        "is_excavation": request.POST.get("is_excavation", "").strip(),
+        "requires_loto": request.POST.get("requires_loto", "").strip(),
+        "is_confined_space": request.POST.get("is_confined_space", "").strip(),
+        "is_equipment_test": request.POST.get("is_equipment_test", "").strip(),
+        "is_radiography": request.POST.get("is_radiography", "").strip(),
+        "is_diving": request.POST.get("is_diving", "").strip(),
+        "is_currently_valid": request.POST.get("is_currently_valid", "").strip(),
+    }
+
+
+def compact_filters(filters):
+    return {
+        key: value
+        for key, value in filters.items()
+        if value not in ["", None]
+    }
+
+
+def normalize_per_page(value):
+    try:
+        per_page = int(value)
+    except (TypeError, ValueError):
+        return DEFAULT_PER_PAGE
+
+    if per_page not in PER_PAGE_CHOICES:
+        return DEFAULT_PER_PAGE
+
+    return per_page
+
+
+def get_allowed_sort():
+    return {
+        "permit_number": "permit_number",
+        "continuation_of": "continuation_of__permit_number",
+        "location_tag": "location_tag__loc_tag",
+        "status": "status",
+        "hazard_code": "first_hazard_code",
+        "work_order": "work_order__wo_number",
+        "description": "description",
+        "department": "department__name",
+        "unit": "location_tag__unit__unit_code",
+        "valid_from": "valid_from",
+        "valid_to": "valid_to",
+        "special_conditions": "special_conditions_sort",
+        "is_excavation": "is_excavation",
+        "requires_loto": "requires_loto",
+        "is_confined_space": "is_confined_space",
+        "is_equipment_test": "is_equipment_test",
+        "is_radiography": "is_radiography",
+        "is_diving": "is_diving",
+        "authorized_issuer": "authorized_issuer__username",
+        "permit_holder": "permit_holder__username",
+        "created_at": "created_at",
+        "created_by": "created_by__username",
+        "modified_at": "modified_at",
+        "modified_by": "modified_by__username",
+    }
+
+
+def normalize_sort(sort_by):
+    sort_by = (sort_by or DEFAULT_SORT).strip()
+    sort_key = sort_by.lstrip("-")
+
+    if sort_key not in get_allowed_sort():
+        return DEFAULT_SORT
+
+    return f"-{sort_key}" if sort_by.startswith("-") else sort_key
+
+
+def get_user_favorites(user):
+    return UserFilterFavorite.objects.filter(
+        user=user,
+        app_key=FAVORITE_APP_KEY,
+        view_key=FAVORITE_VIEW_KEY,
+    ).order_by("name")
+
+
+def get_favorite_by_id(user, favorite_id):
+    if not favorite_id:
+        return None
+
+    return UserFilterFavorite.objects.filter(
+        pk=favorite_id,
+        user=user,
+        app_key=FAVORITE_APP_KEY,
+        view_key=FAVORITE_VIEW_KEY,
+    ).first()
+
+
+def get_default_favorite(user):
+    return UserFilterFavorite.objects.filter(
+        user=user,
+        app_key=FAVORITE_APP_KEY,
+        view_key=FAVORITE_VIEW_KEY,
+        is_default=True,
+    ).first()
+
+
+def has_manual_filters(request):
+    for key in FILTER_KEYS:
+        if key == "status":
+            if "status" in request.GET:
+                return True
+            continue
+
+        if request.GET.get(key, "").strip():
+            return True
+
+    if request.GET.get("sort", "").strip():
+        return True
+
+    if request.GET.get("per_page", "").strip():
+        return True
+
+    return False
+
+
+def build_query_string(filters, sort_by=None, per_page=None, favorite_id=None):
+    params = {}
+
+    for key in FILTER_KEYS:
+        value = filters.get(key, "")
+        if value not in ["", None]:
+            params[key] = value
+
+    if sort_by:
+        params["sort"] = sort_by
+
+    if per_page:
+        params["per_page"] = per_page
+
+    if favorite_id:
+        params["favorite"] = favorite_id
+
+    return urlencode(params)
+
+
+def get_effective_state(request):
+    manual_filters = get_request_filters(request)
+    manual_sort = normalize_sort(request.GET.get("sort", DEFAULT_SORT))
+    manual_per_page = normalize_per_page(request.GET.get("per_page", DEFAULT_PER_PAGE))
+    favorite_id = request.GET.get("favorite")
+
+    selected_favorite = get_favorite_by_id(request.user, favorite_id)
+
+    if has_manual_filters(request):
+        return {
+            "filters": manual_filters,
+            "sort_by": manual_sort,
+            "per_page": manual_per_page,
+            "selected_favorite": selected_favorite,
+            "using_favorite": False,
+        }
+
+    if selected_favorite:
+        favorite_filters = dict(selected_favorite.filters or {})
+        favorite_filters.setdefault("status", PermitStatus.ACTIVE)
+
+        return {
+            "filters": favorite_filters,
+            "sort_by": normalize_sort(selected_favorite.sort_by or DEFAULT_SORT),
+            "per_page": normalize_per_page(selected_favorite.per_page or DEFAULT_PER_PAGE),
+            "selected_favorite": selected_favorite,
+            "using_favorite": True,
+        }
+
+    default_favorite = get_default_favorite(request.user)
+    if default_favorite:
+        favorite_filters = dict(default_favorite.filters or {})
+        favorite_filters.setdefault("status", PermitStatus.ACTIVE)
+
+        return {
+            "filters": favorite_filters,
+            "sort_by": normalize_sort(default_favorite.sort_by or DEFAULT_SORT),
+            "per_page": normalize_per_page(default_favorite.per_page or DEFAULT_PER_PAGE),
+            "selected_favorite": default_favorite,
+            "using_favorite": True,
+        }
+
+    return {
+        "filters": manual_filters,
+        "sort_by": manual_sort,
+        "per_page": manual_per_page,
+        "selected_favorite": None,
+        "using_favorite": False,
+    }
+
+
+def get_filtered_permits(filters):
     queryset = (
         Permit.objects.select_related(
             "continuation_of",
@@ -105,9 +337,7 @@ def get_filtered_permits(request):
             return qs.filter(**{field_name: False})
         return qs
 
-    # Quick Search: comma-separated values, searching both permit and work order numbers.
-    # Quick search bypasses the status filter only.
-    has_quick_search = bool(filters["q"])
+    has_quick_search = bool(filters.get("q"))
     if has_quick_search:
         q_values = split_csv(filters["q"])
         if q_values:
@@ -117,23 +347,21 @@ def get_filtered_permits(request):
                 quick_query |= Q(work_order__wo_number__icontains=value)
             queryset = queryset.filter(quick_query)
 
-    # Text / related-object filters
-    queryset = apply_multi_value_filter(queryset, filters["permit_number"], "permit_number")
-    queryset = apply_multi_value_filter(queryset, filters["continuation_of"], "continuation_of__permit_number")
-    queryset = apply_multi_value_filter(queryset, filters["location_tag"], "location_tag__loc_tag")
-    queryset = apply_multi_value_filter(queryset, filters["work_order"], "work_order__wo_number")
-    queryset = apply_multi_value_filter(queryset, filters["department"], "department__name")
-    queryset = apply_multi_value_filter(queryset, filters["authorized_issuer"], "authorized_issuer__username")
-    queryset = apply_multi_value_filter(queryset, filters["permit_holder"], "permit_holder__username")
-    queryset = apply_multi_value_filter(queryset, filters["created_by"], "created_by__username")
-    queryset = apply_multi_value_filter(queryset, filters["modified_by"], "modified_by__username")
-    queryset = apply_multi_value_filter(queryset, filters["description"], "description")
-    queryset = apply_multi_value_filter(queryset, filters["comment"], "comment")
-    queryset = apply_multi_value_filter(queryset, filters["unit"], "location_tag__unit__unit_code")
-    queryset = apply_multi_value_filter(queryset, filters["train"], "location_tag__train")
+    queryset = apply_multi_value_filter(queryset, filters.get("permit_number", ""), "permit_number")
+    queryset = apply_multi_value_filter(queryset, filters.get("continuation_of", ""), "continuation_of__permit_number")
+    queryset = apply_multi_value_filter(queryset, filters.get("location_tag", ""), "location_tag__loc_tag")
+    queryset = apply_multi_value_filter(queryset, filters.get("work_order", ""), "work_order__wo_number")
+    queryset = apply_multi_value_filter(queryset, filters.get("department", ""), "department__name")
+    queryset = apply_multi_value_filter(queryset, filters.get("authorized_issuer", ""), "authorized_issuer__username")
+    queryset = apply_multi_value_filter(queryset, filters.get("permit_holder", ""), "permit_holder__username")
+    queryset = apply_multi_value_filter(queryset, filters.get("created_by", ""), "created_by__username")
+    queryset = apply_multi_value_filter(queryset, filters.get("modified_by", ""), "modified_by__username")
+    queryset = apply_multi_value_filter(queryset, filters.get("description", ""), "description")
+    queryset = apply_multi_value_filter(queryset, filters.get("comment", ""), "comment")
+    queryset = apply_multi_value_filter(queryset, filters.get("unit", ""), "location_tag__unit__unit_code")
+    queryset = apply_multi_value_filter(queryset, filters.get("train", ""), "location_tag__train")
 
-    # Parent tag filter: match either the direct location tag or its parent.
-    if filters["parent_tag"]:
+    if filters.get("parent_tag"):
         parent_values = split_csv(filters["parent_tag"])
         parent_query = Q()
         for val in parent_values:
@@ -143,13 +371,11 @@ def get_filtered_permits(request):
             )
         queryset = queryset.filter(parent_query)
 
-    # Status: skip when quick search is used.
     if not has_quick_search:
-        if filters["status"] and filters["status"] != "ALL":
+        if filters.get("status") and filters["status"] != "ALL":
             queryset = queryset.filter(status=filters["status"])
 
-    # Hazard codes
-    if filters["hazard_code"]:
+    if filters.get("hazard_code"):
         hazard_values = split_csv(filters["hazard_code"])
         hazard_query = Q()
         for val in hazard_values:
@@ -158,36 +384,32 @@ def get_filtered_permits(request):
             hazard_query |= Q(hazard_codes__description__icontains=val)
         queryset = queryset.filter(hazard_query)
 
-    # Validity date filters
-    if filters["valid_from_date"]:
+    if filters.get("valid_from_date"):
         queryset = queryset.filter(valid_from__date__gte=filters["valid_from_date"])
 
-    if filters["valid_to_date"]:
+    if filters.get("valid_to_date"):
         queryset = queryset.filter(valid_to__date__lte=filters["valid_to_date"])
 
-    # Audit date filters
-    if filters["created_from"]:
+    if filters.get("created_from"):
         queryset = queryset.filter(created_at__date__gte=filters["created_from"])
 
-    if filters["created_to"]:
+    if filters.get("created_to"):
         queryset = queryset.filter(created_at__date__lte=filters["created_to"])
 
-    if filters["modified_from"]:
+    if filters.get("modified_from"):
         queryset = queryset.filter(modified_at__date__gte=filters["modified_from"])
 
-    if filters["modified_to"]:
+    if filters.get("modified_to"):
         queryset = queryset.filter(modified_at__date__lte=filters["modified_to"])
 
-    # Boolean model fields
-    queryset = apply_boolean_filter(queryset, filters["is_excavation"], "is_excavation")
-    queryset = apply_boolean_filter(queryset, filters["requires_loto"], "requires_loto")
-    queryset = apply_boolean_filter(queryset, filters["is_confined_space"], "is_confined_space")
-    queryset = apply_boolean_filter(queryset, filters["is_equipment_test"], "is_equipment_test")
-    queryset = apply_boolean_filter(queryset, filters["is_radiography"], "is_radiography")
-    queryset = apply_boolean_filter(queryset, filters["is_diving"], "is_diving")
+    queryset = apply_boolean_filter(queryset, filters.get("is_excavation", ""), "is_excavation")
+    queryset = apply_boolean_filter(queryset, filters.get("requires_loto", ""), "requires_loto")
+    queryset = apply_boolean_filter(queryset, filters.get("is_confined_space", ""), "is_confined_space")
+    queryset = apply_boolean_filter(queryset, filters.get("is_equipment_test", ""), "is_equipment_test")
+    queryset = apply_boolean_filter(queryset, filters.get("is_radiography", ""), "is_radiography")
+    queryset = apply_boolean_filter(queryset, filters.get("is_diving", ""), "is_diving")
 
-    # Computed validity filter
-    if filters["is_currently_valid"] and not has_quick_search:
+    if filters.get("is_currently_valid") and not has_quick_search:
         now = timezone.now()
         normalized = str(filters["is_currently_valid"]).strip().lower()
 
@@ -207,14 +429,19 @@ def get_filtered_permits(request):
     return queryset.distinct(), filters
 
 
-# ---------------------------------------------------------- List View -----------------------------------------
 class PermitList(LoginRequiredMixin, TemplateView):
     template_name = "permits/permit_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        queryset, filters = get_filtered_permits(self.request)
+        state = get_effective_state(self.request)
+        filters = state["filters"]
+        sort_by = state["sort_by"]
+        per_page = state["per_page"]
+        selected_favorite = state["selected_favorite"]
+
+        queryset, filters = get_filtered_permits(filters)
 
         queryset = queryset.annotate(
             first_hazard_code=Min("hazard_codes__code"),
@@ -230,35 +457,7 @@ class PermitList(LoginRequiredMixin, TemplateView):
             ),
         )
 
-        sort_by = self.request.GET.get("sort", "-created_at")
-
-        allowed_sort = {
-            "permit_number": "permit_number",
-            "continuation_of": "continuation_of__permit_number",
-            "location_tag": "location_tag__loc_tag",
-            "status": "status",
-            "hazard_code": "first_hazard_code",
-            "work_order": "work_order__wo_number",
-            "description": "description",
-            "department": "department__name",
-            "unit": "location_tag__unit__unit_code",
-            "valid_from": "valid_from",
-            "valid_to": "valid_to",
-            "special_conditions": "special_conditions_sort",
-            "is_excavation": "is_excavation",
-            "requires_loto": "requires_loto",
-            "is_confined_space": "is_confined_space",
-            "is_equipment_test": "is_equipment_test",
-            "is_radiography": "is_radiography",
-            "is_diving": "is_diving",
-            "authorized_issuer": "authorized_issuer__username",
-            "permit_holder": "permit_holder__username",
-            "created_at": "created_at",
-            "created_by": "created_by__username",
-            "modified_at": "modified_at",
-            "modified_by": "modified_by__username",
-        }
-
+        allowed_sort = get_allowed_sort()
         sort_key = sort_by.lstrip("-")
         sort_field = allowed_sort.get(sort_key, "created_at")
 
@@ -267,35 +466,25 @@ class PermitList(LoginRequiredMixin, TemplateView):
         else:
             queryset = queryset.order_by(sort_field, "-id")
 
-        try:
-            per_page = int(self.request.GET.get("per_page", 25))
-        except ValueError:
-            per_page = 25
-
-        if per_page not in [10, 25, 50, 100]:
-            per_page = 25
-
         paginator = Paginator(queryset.distinct(), per_page)
         page_obj = paginator.get_page(self.request.GET.get("page"))
 
-        # Determine if any advanced filters are active to keep panel expanded.
-        # Determine if any advanced filters are active to keep panel expanded.
-        has_advanced_filters = any(filters[k] for k in filters if k not in ["q", "status"])
-
-        query_dict = self.request.GET.copy()
-        query_dict.pop("sort", None)
-        query_dict.pop("page", None)
+        has_advanced_filters = any(filters.get(k) for k in filters if k not in ["q", "status"])
 
         def build_remove_url(key_to_remove):
-            params = self.request.GET.copy()
-            params.pop(key_to_remove, None)
-            params.pop("page", None)
-            return f"?{params.urlencode()}" if params.urlencode() else "?"
+            remaining_filters = dict(filters)
+            remaining_filters[key_to_remove] = ""
+            query_string = build_query_string(
+                remaining_filters,
+                sort_by=sort_by,
+                per_page=per_page,
+                favorite_id=selected_favorite.pk if selected_favorite else None,
+            )
+            return f"?{query_string}" if query_string else "?"
 
         status_labels = dict(PermitStatus.choices)
         active_filter_badges = []
 
-        # 1. Text / choice filters
         badge_labels = {
             "permit_number": "Permit No.",
             "continuation_of": "Continuation Of",
@@ -330,17 +519,14 @@ class PermitList(LoginRequiredMixin, TemplateView):
                     "remove_url": build_remove_url(key),
                 })
 
-        # 2. Status Badge
-        if "status" in self.request.GET and filters.get("status") and filters["status"] != "ALL":
-            status_value = filters["status"]
+        if filters.get("status") and filters["status"] != "ALL":
             active_filter_badges.append({
                 "key": "status",
                 "label": "Status",
-                "value": status_labels.get(status_value, status_value),
+                "value": status_labels.get(filters["status"], filters["status"]),
                 "remove_url": build_remove_url("status"),
             })
 
-        # 3. Boolean filters
         bool_labels = {
             "is_excavation": "Excavation",
             "requires_loto": "Requires LOTO",
@@ -363,32 +549,119 @@ class PermitList(LoginRequiredMixin, TemplateView):
                     "remove_url": build_remove_url(key),
                 })
 
-        # --- QUICK SEARCH CHECK ---
-        # If the user used the 'q' (Quick Search) parameter, we suppress the filter badges.
-        # This keeps the UI clean when searching for specific permit numbers.
         if filters.get("q"):
             active_filter_badges = []
+
+        query_params = build_query_string(
+            filters,
+            sort_by=sort_by,
+            per_page=per_page,
+            favorite_id=selected_favorite.pk if selected_favorite else None,
+        )
 
         context.update({
             "permits": page_obj,
             "filters": filters,
             "sort_by": sort_by,
             "per_page": per_page,
-            "query_params": query_dict.urlencode(),
+            "query_params": query_params,
             "status_choices": PermitStatus.choices,
             "hazard_codes": HazardCode.objects.filter(is_active=True).order_by("code"),
             "departments": Department.objects.filter(is_active=True).order_by("name"),
             "has_advanced_filters": has_advanced_filters,
             "active_filter_badges": active_filter_badges,
+            "filter_favorites": get_user_favorites(self.request.user),
+            "selected_favorite": selected_favorite,
+            "using_favorite": state["using_favorite"],
         })
 
         return context
 
 
+class PermitFilterFavoriteSaveView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        name = request.POST.get("name", "").strip()
+        favorite_id = request.POST.get("favorite_id", "").strip()
+        is_default = request.POST.get("is_default") in ["1", "true", "on", "yes"]
+
+        if not name:
+            return HttpResponseBadRequest("Favorite name is required.")
+
+        filters = compact_filters(get_post_filters(request))
+        sort_by = normalize_sort(request.POST.get("sort", DEFAULT_SORT))
+        per_page = normalize_per_page(request.POST.get("per_page", DEFAULT_PER_PAGE))
+
+        with transaction.atomic():
+            if is_default:
+                UserFilterFavorite.objects.filter(
+                    user=request.user,
+                    app_key=FAVORITE_APP_KEY,
+                    view_key=FAVORITE_VIEW_KEY,
+                    is_default=True,
+                ).update(is_default=False)
+
+            if favorite_id:
+                favorite = get_object_or_404(
+                    UserFilterFavorite,
+                    pk=favorite_id,
+                    user=request.user,
+                    app_key=FAVORITE_APP_KEY,
+                    view_key=FAVORITE_VIEW_KEY,
+                )
+                favorite.name = name
+                favorite.filters = filters
+                favorite.sort_by = sort_by
+                favorite.per_page = per_page
+                favorite.is_default = is_default
+            else:
+                favorite = UserFilterFavorite(
+                    user=request.user,
+                    app_key=FAVORITE_APP_KEY,
+                    view_key=FAVORITE_VIEW_KEY,
+                    name=name,
+                    filters=filters,
+                    sort_by=sort_by,
+                    per_page=per_page,
+                    is_default=is_default,
+                )
+
+            try:
+                favorite.full_clean()
+                favorite.save()
+            except ValidationError as exc:
+                messages.error(request, "; ".join(exc.messages))
+
+                redirect_url = redirect("permits:permit_list").url
+                if favorite_id:
+                    redirect_url = f"{redirect_url}?favorite={favorite_id}"
+
+                return redirect(redirect_url)
+
+        messages.success(request, "Favorite filter saved.")
+        return redirect(f"{redirect('permits:permit_list').url}?favorite={favorite.pk}")
+
+
+class PermitFilterFavoriteDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk, *args, **kwargs):
+        favorite = get_object_or_404(
+            UserFilterFavorite,
+            pk=pk,
+            user=request.user,
+            app_key=FAVORITE_APP_KEY,
+            view_key=FAVORITE_VIEW_KEY,
+        )
+        favorite.delete()
+        messages.success(request, "Favorite filter deleted.")
+        return redirect("permits:permit_list")
+
+
 # ------------------------ CSV Export ------------------------------------------
 class PermitExportCSV(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        queryset, filters = get_filtered_permits(request)
+        state = get_effective_state(request)
+        filters = state["filters"]
+
+        queryset, filters = get_filtered_permits(filters)
         queryset = queryset.order_by("-created_at", "-id")
 
         filter_parts = []
