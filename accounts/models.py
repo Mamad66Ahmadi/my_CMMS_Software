@@ -75,6 +75,8 @@ class Department(AuditHistoryModel):
 # ----------------------    Custom User Model    ----------------------------------
 
 class User(AuditHistoryModel, AbstractBaseUser, PermissionsMixin):
+
+
     username = models.CharField(max_length=50, unique=True, primary_key=True)
     personnel_number = models.IntegerField(unique=True)
     first_name = models.CharField(max_length=20)
@@ -168,7 +170,7 @@ class UserFilterFavorite(models.Model):
 
     filters = models.JSONField(default=dict, blank=True)
     sort_by = models.CharField(max_length=100, blank=True, default="")
-    per_page = models.PositiveIntegerField(null=True, blank=True)
+    per_page = models.PositiveIntegerField(default = 25)
 
     is_default = models.BooleanField(default=False)
 
