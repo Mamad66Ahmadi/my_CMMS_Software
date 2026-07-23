@@ -210,8 +210,10 @@ class AddPISQualificationView(LoginRequiredMixin, CreateView):
             code__iexact="PIS",
             is_active=True,
         )
-        # Sets the granting authority to the logged-in user who passed the dispatch check
         form.instance.granted_by = self.request.user
+        form.instance.created_by = self.request.user
+        form.instance.modified_by = self.request.user
+        # Sets the granting authority to the logged-in user who passed the dispatch check
 
         response = super().form_valid(form)
 

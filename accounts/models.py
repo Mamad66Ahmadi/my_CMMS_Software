@@ -49,6 +49,7 @@ class AuditHistoryModel(models.Model):
     )
     is_active = models.BooleanField(default=True)
 
+    # Inheritable tracking manager
     history = HistoricalRecords(inherit=True)
 
     class Meta:
@@ -59,11 +60,10 @@ class AuditHistoryModel(models.Model):
 class Department(AuditHistoryModel):
     """
     Represents a department or unit within the organization.
+    Holds historical records automatically via AuditHistoryModel.
     """
-    department_code = models.CharField(max_length=10,unique=True, primary_key=True, verbose_name="Department Code",)
-
-    name = models.CharField(max_length=100,unique=True,verbose_name="Department Name",)
-
+    department_code = models.CharField(max_length=10, unique=True, primary_key=True, verbose_name="Department Code")
+    name = models.CharField(max_length=100, unique=True, verbose_name="Department Name")
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -73,15 +73,19 @@ class Department(AuditHistoryModel):
         ordering = ["department_code"]
 
 # ----------------------    Custom User Model    ----------------------------------
-
 class User(AuditHistoryModel, AbstractBaseUser, PermissionsMixin):
-
-
-    username = models.CharField(max_length=50, unique=True, primary_key=True)
+    id = models.BigAutoField(primary_key=True)
+    username = models.CharField(max_length=50, unique=True)
     personnel_number = models.IntegerField(unique=True)
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    department = models.ForeignKey("Department", on_delete=models.SET_NULL, null=True, blank=True, related_name="users",)
+    department = models.ForeignKey(
+        "Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="users",
+    )
     is_staff = models.BooleanField(default=False)
 
     class Role(models.TextChoices):
@@ -89,7 +93,14 @@ class User(AuditHistoryModel, AbstractBaseUser, PermissionsMixin):
         ENGINEER = "engineer", "Engineer"
         SUPERVISOR = "supervisor", "Supervisor"
 
-    role = models.CharField(max_length=20,choices=Role.choices,default=Role.TECHNICIAN,)
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.TECHNICIAN,
+    )
+
+    # Disable history tracking for User only to prevent self-referencing FK circles.
+    history = None
 
     objects = UserManager()
 
@@ -109,7 +120,6 @@ class User(AuditHistoryModel, AbstractBaseUser, PermissionsMixin):
         ordering = ["username"]
 
 
-
 # ----------------- Qualifications ------------------
 class Qualification(AuditHistoryModel):
     code = models.CharField(max_length=30, unique=True)
@@ -123,8 +133,8 @@ class Qualification(AuditHistoryModel):
         ordering = ["code"]
 
 class UserQualification(AuditHistoryModel):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="qualifications",)
-    qualification = models.ForeignKey("Qualification", on_delete=models.CASCADE, related_name="user_qualifications",)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="qualifications")
+    qualification = models.ForeignKey("Qualification", on_delete=models.CASCADE, related_name="user_qualifications")
 
     granted_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
@@ -162,15 +172,14 @@ class UserQualification(AuditHistoryModel):
 
 # ------------- Favorite Filter -------------------------------------
 class UserFilterFavorite(models.Model):
-    
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="filter_favorites",)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="filter_favorites")
     app_key = models.CharField(max_length=50)
     view_key = models.CharField(max_length=100)
     name = models.CharField(max_length=50)
 
     filters = models.JSONField(default=dict, blank=True)
     sort_by = models.CharField(max_length=100, blank=True, default="")
-    per_page = models.PositiveIntegerField(default = 25)
+    per_page = models.PositiveIntegerField(default=25)
 
     is_default = models.BooleanField(default=False)
 
