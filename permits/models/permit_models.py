@@ -98,21 +98,13 @@ class Permit(models.Model):
 
     vehicle_required = models.BooleanField(default=False)
 
-    vehicle_description = models.CharField(
-        max_length=150,
-        blank=True,
-    )
+    vehicle_description = models.CharField(max_length=150, blank=True,)
 
     # ------------------------------------------------------------------
     # Hazard Assessment
     # ------------------------------------------------------------------
 
-    hazards = models.ManyToManyField(
-        Hazard,
-        through="PermitHazard",
-        blank=True,
-        related_name="permits",
-    )
+    hazards = models.ManyToManyField(Hazard, through="PermitHazard", blank=True, related_name="permits",)
 
     ppe = models.ManyToManyField(
         PPE,
