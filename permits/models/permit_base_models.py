@@ -279,3 +279,8 @@ class PermitStatus(models.TextChoices):
     CANCELLED = "CANCELLED", "Cancelled"
 
     EXPIRED = "EXPIRED", "Expired"
+
+
+class DurationUnit(models.TextChoices):
+    SHIFT = "SHIFT", "Shift(s)"
+    DAY = "DAY", "Day(s)"

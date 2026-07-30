@@ -35,6 +35,7 @@ from permits.models.permit_base_models import (
     Precaution,
     EquipmentStatus,
     PermitStatus,
+    DurationUnit
 )
 
 User = get_user_model()
@@ -53,59 +54,21 @@ class Permit(models.Model):
     # Identification
     # ------------------------------------------------------------------
 
-    permit_number = models.CharField(
-        max_length=30,
-        unique=True,
-        db_index=True,
-        validators=[permit_identifier_validator],
-    )
+    permit_number = models.CharField(max_length=30, unique=True, db_index=True, validators=[permit_identifier_validator],)
 
-    serial_number = models.CharField(
-        max_length=30,
-        blank=True,
-        validators=[permit_identifier_validator],
-    )
+    continuation_of = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="continuations",)
 
-    continuation_of = models.ForeignKey(
-        "self",
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="continuations",
-    )
-
-    status = models.CharField(
-        max_length=20,
-        choices=PermitStatus.choices,
-        default=PermitStatus.DRAFT,
-        db_index=True,
-    )
+    status = models.CharField(max_length=20, choices=PermitStatus.choices, default=PermitStatus.DRAFT, db_index=True,)
 
     # ------------------------------------------------------------------
     # Permit Type
     # ------------------------------------------------------------------
 
-    permit_type = models.ForeignKey(
-        PermitType,
-        on_delete=models.PROTECT,
-        related_name="permits",
-    )
+    permit_type = models.ForeignKey(PermitType, on_delete=models.PROTECT, related_name="permits",)
 
-    work_order = models.ForeignKey(
-        WorkOrder,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="permits",
-    )
+    work_order = models.ForeignKey(WorkOrder, null=True, blank=True, on_delete=models.SET_NULL, related_name="permits",)
 
-    location_tag = models.ForeignKey(
-        LocationTag,
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="permits",
-    )
+    location_tag = models.ForeignKey(LocationTag, null=True, blank=True, on_delete=models.PROTECT, related_name="permits",)
 
     # ------------------------------------------------------------------
     # Work Details
@@ -113,17 +76,11 @@ class Permit(models.Model):
 
     scope_of_work = models.TextField()
 
-    estimated_duration_hours = models.DecimalField(
-        max_digits=6,
-        decimal_places=2,
-        null=True,
-        blank=True,
-    )
+    duration_value = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Enter the number of units.")
+    
+    duration_unit = models.CharField(max_length=10, choices=DurationUnit.choices, default=DurationUnit.SHIFT, help_text="Select the duration unit.")
 
-    estimated_personnel = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-    )
+    estimated_personnel = models.PositiveSmallIntegerField(null=True,blank=True,)
 
     # ------------------------------------------------------------------
     # Equipment / Materials
