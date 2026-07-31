@@ -21,6 +21,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db.models import Q
 from django.utils import timezone
+from simple_history.models import HistoricalRecords
+
 
 from accounts.models import Department
 
@@ -31,7 +33,6 @@ from work_orders.models.wo_models import WorkOrder
 from permits.models.permit_base_models import (
     PermitType,
     Hazard,
-    PPE,
     Precaution,
     EquipmentStatus,
     PermitStatus,
@@ -106,21 +107,9 @@ class Permit(models.Model):
 
     hazards = models.ManyToManyField(Hazard, through="PermitHazard", blank=True, related_name="permits",)
 
-    ppe = models.ManyToManyField(
-        PPE,
-        through="PermitPPE",
-        blank=True,
-        related_name="permits",
-    )
-
-    precautions = models.ManyToManyField(
-        Precaution,
-        through="PermitPrecaution",
-        blank=True,
-        related_name="permits",
-    )
-
     previous_incidents = models.TextField(blank=True)
+
+    precautions = models.ManyToManyField(Precaution, through="PermitPrecaution", blank=True, related_name="permits",)
 
     area_authority_comments = models.TextField(blank=True)
 
@@ -458,150 +447,84 @@ class Permit(models.Model):
         return None
 
 
-class PermitHazard(TimeStampedModel):
-    class RiskLevel(models.TextChoices):
-        LOW = "LOW", "Low"
-        MEDIUM = "MEDIUM", "Medium"
-        HIGH = "HIGH", "High"
-        CRITICAL = "CRITICAL", "Critical"
+# =============================================================================
+# PermitHazard
+# =============================================================================
 
-    permit = models.ForeignKey(
-        Permit,
-        on_delete=models.CASCADE,
-        related_name="hazard_assessments",
-    )
-    hazard = models.ForeignKey(
-        Hazard,
-        on_delete=models.PROTECT,
-        related_name="permit_assessments",
-    )
-    risk_level = models.CharField(
-        max_length=10,
-        choices=RiskLevel.choices,
-        default=RiskLevel.MEDIUM,
-        db_index=True,
-    )
-    control_measure = models.TextField(blank=True)
-    residual_risk_level = models.CharField(
-        max_length=10,
-        choices=RiskLevel.choices,
-        blank=True,
-    )
+
+class PermitHazard(models.Model):
+    permit = models.ForeignKey(Permit, on_delete=models.CASCADE, related_name="hazard_assessments")
+    hazard = models.ForeignKey(Hazard, on_delete=models.PROTECT, related_name="permit_assessments")
+    remarks = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="%(app_label)s_%(class)s_created")
+
+    modified_at = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="%(app_label)s_%(class)s_modified")
+
+    is_active = models.BooleanField(default=True, db_index=True)
+    removed_at = models.DateTimeField(null=True, blank=True)
+    removed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="%(app_label)s_%(class)s_removed")
+
 
     class Meta:
         ordering = ["hazard__display_order", "hazard__code"]
         constraints = [
             models.UniqueConstraint(
                 fields=["permit", "hazard"],
-                name="permit_hazard_unique",
+                condition=Q(is_active=True),
+                name="permit_hazard_unique_active",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(is_active=True, removed_by__isnull=True, removed_at__isnull=True)
+                    |
+                    Q(is_active=False, removed_by__isnull=False, removed_at__isnull=False)
+                ),
+                name="permit_hazard_removed_fields_ck",
             ),
         ]
 
-    def __str__(self):
-        return f"{self.permit} - {self.hazard}"
-
     def clean(self):
         super().clean()
-        if (
-            self.risk_level in {self.RiskLevel.HIGH, self.RiskLevel.CRITICAL}
-            and not self.control_measure.strip()
-        ):
-            raise ValidationError(
-                {"control_measure": "High and critical risks require controls."}
-            )
-        risk_order = {
-            self.RiskLevel.LOW: 1,
-            self.RiskLevel.MEDIUM: 2,
-            self.RiskLevel.HIGH: 3,
-            self.RiskLevel.CRITICAL: 4,
-        }
-        if (
-            self.residual_risk_level
-            and risk_order[self.residual_risk_level] > risk_order[self.risk_level]
-        ):
-            raise ValidationError(
-                {
-                    "residual_risk_level":
-                        "Residual risk cannot exceed the initial risk."
-                }
-            )
+        if self.is_active:
+            if self.removed_by or self.removed_at:
+                raise ValidationError(
+                    "Active hazard records cannot have removal metadata."
+                )
+        else:
+            if not self.removed_by or not self.removed_at:
+                raise ValidationError(
+                    "Inactive hazard records must include removed_by and removed_at."
+                )
 
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
 
 
-class PermitPPE(TimeStampedModel):
-    permit = models.ForeignKey(
-        Permit,
-        on_delete=models.CASCADE,
-        related_name="ppe_requirements",
-    )
-    ppe = models.ForeignKey(
-        PPE,
-        on_delete=models.PROTECT,
-        related_name="permit_requirements",
-    )
-    is_mandatory = models.BooleanField(default=True)
-    verified_by = models.ForeignKey(
-        User,
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="verified_permit_ppe",
-    )
+
+# =============================================================================
+# PermitPrecaution
+# =============================================================================
+
+class PermitPrecaution(models.Model):
+    permit = models.ForeignKey(Permit, on_delete=models.CASCADE, related_name="precaution_requirements",)
+
+    precaution = models.ForeignKey(Precaution, on_delete=models.PROTECT, related_name="permit_requirements",)
+    
+    status = models.CharField(max_length=10, choices=EquipmentStatus.choices, default=EquipmentStatus.REQUIRED, db_index=True,)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="%(app_label)s_%(class)s_created")
+
+    modified_at = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="%(app_label)s_%(class)s_modified")
+
+    verified_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT, related_name="verified_permit_precautions",)
     verified_at = models.DateTimeField(null=True, blank=True)
-    remarks = models.TextField(blank=True)
 
-    class Meta:
-        ordering = ["ppe__display_order", "ppe__code"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["permit", "ppe"],
-                name="permit_ppe_unique",
-            ),
-        ]
-
-    def clean(self):
-        super().clean()
-        if bool(self.verified_by_id) != bool(self.verified_at):
-            raise ValidationError(
-                "Verified by and verified at must be recorded together."
-            )
-
-    def __str__(self):
-        return f"{self.permit} - {self.ppe}"
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
-
-
-class PermitPrecaution(TimeStampedModel):
-    permit = models.ForeignKey(
-        Permit,
-        on_delete=models.CASCADE,
-        related_name="precaution_requirements",
-    )
-    precaution = models.ForeignKey(
-        Precaution,
-        on_delete=models.PROTECT,
-        related_name="permit_requirements",
-    )
-    status = models.CharField(
-        max_length=10,
-        choices=EquipmentStatus.choices,
-        default=EquipmentStatus.REQUIRED,
-        db_index=True,
-    )
-    verified_by = models.ForeignKey(
-        User,
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="verified_permit_precautions",
-    )
-    verified_at = models.DateTimeField(null=True, blank=True)
     remarks = models.TextField(blank=True)
 
     class Meta:
@@ -616,11 +539,11 @@ class PermitPrecaution(TimeStampedModel):
     def clean(self):
         super().clean()
         if self.status == EquipmentStatus.COMPLETED:
-            if not self.verified_by_id or not self.verified_at:
+            if not self.verified_by or not self.verified_at:
                 raise ValidationError(
                     "Completed precautions require verifier and verification time."
                 )
-        elif self.verified_by_id or self.verified_at:
+        elif self.verified_by or self.verified_at:
             raise ValidationError(
                 "Verification details are only valid for completed precautions."
             )

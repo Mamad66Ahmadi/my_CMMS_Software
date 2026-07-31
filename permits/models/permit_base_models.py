@@ -128,26 +128,8 @@ class Hazard(BaseLookupModel):
         verbose_name_plural = "Hazards"
 
 
-# Backward-compatible import used by the current permit admin and list views.
-HazardCode = Hazard
 
 
-# =============================================================================
-# PPE
-# =============================================================================
-
-class PPE(BaseLookupModel):
-    """
-    Personal Protective Equipment
-    """
-
-    mandatory_by_default = models.BooleanField(
-        default=False,
-    )
-
-    class Meta(BaseLookupModel.Meta):
-        verbose_name = "PPE"
-        verbose_name_plural = "PPE"
 
 
 # =============================================================================
