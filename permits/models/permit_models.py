@@ -21,15 +21,14 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db.models import Q
 from django.utils import timezone
-from simple_history.models import HistoricalRecords
 
 
 from accounts.models import Department
 
-from equipment.models.equipment_models import LocationTag, TimeStampedModel
+from equipment.models.equipment_models import LocationTag
 
 from work_orders.models.wo_models import WorkOrder
-
+from permits.models.workflow_models import PermitWorkflowStep
 from permits.models.permit_base_models import (
     PermitType,
     Hazard,
@@ -59,7 +58,7 @@ class Permit(models.Model):
 
     continuation_of = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="continuations",)
 
-    status = models.CharField(max_length=20, choices=PermitStatus.choices, default=PermitStatus.DRAFT, db_index=True,)
+    current_step = models.ForeignKey(PermitWorkflowStep, null=True, blank=True, on_delete=models.PROTECT, related_name="permits_at_step",)
 
     # ------------------------------------------------------------------
     # Permit Type
@@ -297,16 +296,7 @@ class Permit(models.Model):
                 condition=Q(valid_to__gt=models.F("valid_from")),
                 name="permit_valid_window_ck",
             ),
-            models.CheckConstraint(
-                condition=Q(estimated_duration_hours__isnull=True)
-                | Q(estimated_duration_hours__gt=0),
-                name="permit_duration_positive_ck",
-            ),
-            models.CheckConstraint(
-                condition=Q(estimated_personnel__isnull=True)
-                | Q(estimated_personnel__gt=0),
-                name="permit_personnel_positive_ck",
-            ),
+
         ]
 
     def __str__(self):
@@ -316,7 +306,6 @@ class Permit(models.Model):
     def clean(self):
         super().clean()
         self.permit_number = (self.permit_number or "").strip().upper()
-        self.serial_number = (self.serial_number or "").strip().upper()
 
         if not self.permit_number:
             raise ValidationError({"permit_number": "Permit number is required."})
@@ -450,26 +439,49 @@ class Permit(models.Model):
 # =============================================================================
 # PermitHazard
 # =============================================================================
-
-
 class PermitHazard(models.Model):
-    permit = models.ForeignKey(Permit, on_delete=models.CASCADE, related_name="hazard_assessments")
-    hazard = models.ForeignKey(Hazard, on_delete=models.PROTECT, related_name="permit_assessments")
+    permit = models.ForeignKey(
+        Permit,
+        on_delete=models.CASCADE,
+        related_name="hazard_assessments",
+    )
+    hazard = models.ForeignKey(
+        Hazard,
+        on_delete=models.PROTECT,
+        related_name="permit_assessments",
+    )
     remarks = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="%(app_label)s_%(class)s_created")
-
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="%(app_label)s_%(class)s_created",
+    )
     modified_at = models.DateTimeField(auto_now=True)
-    modified_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="%(app_label)s_%(class)s_modified")
+    modified_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="%(app_label)s_%(class)s_modified",
+    )
 
     is_active = models.BooleanField(default=True, db_index=True)
     removed_at = models.DateTimeField(null=True, blank=True)
-    removed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="%(app_label)s_%(class)s_removed")
-
+    removed_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="%(app_label)s_%(class)s_removed",
+    )
 
     class Meta:
         ordering = ["hazard__display_order", "hazard__code"]
+        indexes = [
+            models.Index(fields=["permit", "is_active"], name="permit_hazard_permit_active_idx"),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["permit", "hazard"],
@@ -479,78 +491,215 @@ class PermitHazard(models.Model):
             models.CheckConstraint(
                 condition=(
                     Q(is_active=True, removed_by__isnull=True, removed_at__isnull=True)
-                    |
-                    Q(is_active=False, removed_by__isnull=False, removed_at__isnull=False)
+                    | Q(
+                        is_active=False,
+                        removed_by__isnull=False,
+                        removed_at__isnull=False,
+                    )
                 ),
                 name="permit_hazard_removed_fields_ck",
             ),
         ]
+
+    def __str__(self):
+        return f"{self.permit_id}: {self.hazard}"
 
     def clean(self):
         super().clean()
         if self.is_active:
             if self.removed_by or self.removed_at:
                 raise ValidationError(
-                    "Active hazard records cannot have removal metadata."
+                    {
+                        "__all__": (
+                            "Active hazard records cannot have removal metadata."
+                        )
+                    }
                 )
-        else:
-            if not self.removed_by or not self.removed_at:
-                raise ValidationError(
-                    "Inactive hazard records must include removed_by and removed_at."
-                )
+        elif not self.removed_by or not self.removed_at:
+            raise ValidationError(
+                {
+                    "__all__": (
+                        "Inactive hazard records must include "
+                        "removed_by and removed_at."
+                    )
+                }
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
 
+    def deactivate(self, *, user):
+        if not self.is_active:
+            return
+
+        self.is_active = False
+        self.removed_by = user
+        self.removed_at = timezone.now()
+
+        self.save(
+            update_fields=[
+                "is_active",
+                "removed_by",
+                "removed_at",
+                "modified_by",
+                "modified_at",
+            ]
+        )
 
 
+    def reactivate(self, *, user):
+        if self.is_active:
+            return
+
+        self.is_active = True
+        self.removed_by = None
+        self.removed_at = None
+        self.modified_by = user
+
+        self.save(
+            update_fields=[
+                "is_active",
+                "removed_by",
+                "removed_at",
+                "modified_by",
+                "modified_at",
+            ]
+        )
 # =============================================================================
 # PermitPrecaution
 # =============================================================================
-
 class PermitPrecaution(models.Model):
-    permit = models.ForeignKey(Permit, on_delete=models.CASCADE, related_name="precaution_requirements",)
-
-    precaution = models.ForeignKey(Precaution, on_delete=models.PROTECT, related_name="permit_requirements",)
-    
-    status = models.CharField(max_length=10, choices=EquipmentStatus.choices, default=EquipmentStatus.REQUIRED, db_index=True,)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="%(app_label)s_%(class)s_created")
-
-    modified_at = models.DateTimeField(auto_now=True)
-    modified_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="%(app_label)s_%(class)s_modified")
-
-    verified_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.PROTECT, related_name="verified_permit_precautions",)
-    verified_at = models.DateTimeField(null=True, blank=True)
+    permit = models.ForeignKey(
+        Permit,
+        on_delete=models.CASCADE,
+        related_name="precaution_requirements",
+    )
+    precaution = models.ForeignKey(
+        Precaution,
+        on_delete=models.PROTECT,
+        related_name="permit_requirements",
+    )
 
     remarks = models.TextField(blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="%(app_label)s_%(class)s_created",
+    )
+    modified_at = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="%(app_label)s_%(class)s_modified",
+    )
+
+    is_active = models.BooleanField(default=True, db_index=True)
+    removed_at = models.DateTimeField(null=True, blank=True)
+    removed_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="%(app_label)s_%(class)s_removed",
+    )
+
     class Meta:
         ordering = ["precaution__display_order", "precaution__code"]
+        indexes = [
+            models.Index(
+                fields=["permit", "is_active"],
+                name="permit_precaution_permit_active_idx",
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["permit", "precaution"],
-                name="permit_precaution_unique",
+                condition=Q(is_active=True),
+                name="permit_precaution_unique_active",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(is_active=True, removed_by__isnull=True, removed_at__isnull=True)
+                    | Q(
+                        is_active=False,
+                        removed_by__isnull=False,
+                        removed_at__isnull=False,
+                    )
+                ),
+                name="permit_precaution_removed_fields_ck",
             ),
         ]
 
+    def __str__(self):
+        return f"{self.permit_id}: {self.precaution}"
+
     def clean(self):
         super().clean()
-        if self.status == EquipmentStatus.COMPLETED:
-            if not self.verified_by or not self.verified_at:
+        if self.is_active:
+            if self.removed_by is not None or self.removed_at is not None:
                 raise ValidationError(
-                    "Completed precautions require verifier and verification time."
+                    {
+                        "__all__": (
+                            "Active precaution records cannot have "
+                            "removal metadata."
+                        )
+                    }
                 )
-        elif self.verified_by or self.verified_at:
+        elif self.removed_by is None or self.removed_at is None:
             raise ValidationError(
-                "Verification details are only valid for completed precautions."
+                {
+                    "__all__": (
+                        "Inactive precaution records must include "
+                        "removed_by and removed_at."
+                    )
+                }
             )
-
-    def __str__(self):
-        return f"{self.permit} - {self.precaution}"
 
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+
+    def deactivate(self, *, user):
+        if not self.is_active:
+            return
+
+        self.is_active = False
+        self.removed_by = user
+        self.removed_at = timezone.now()
+        self.modified_by = user
+
+        self.save(
+            update_fields=[
+                "is_active",
+                "removed_by",
+                "removed_at",
+                "modified_by",
+                "modified_at",
+            ]
+        )
+
+
+    def reactivate(self, *, user):
+        if self.is_active:
+            return
+
+        self.is_active = True
+        self.removed_by = None
+        self.removed_at = None
+        self.modified_by = user
+
+        self.save(
+            update_fields=[
+                "is_active",
+                "removed_by",
+                "removed_at",
+                "modified_by",
+                "modified_at",
+            ]
+        )

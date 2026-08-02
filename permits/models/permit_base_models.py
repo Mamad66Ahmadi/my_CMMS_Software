@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from equipment.models.equipment_models import TimeStampedModel
+from permits.models.workflow_models import PermitWorkflow
 
 
 # =============================================================================
@@ -74,32 +75,14 @@ class BaseLookupModel(TimeStampedModel):
 # Permit Types
 # =============================================================================
 
-class PermitType(BaseLookupModel):
-    """
-    Cold Work
-    Hot Work
-    Hot Work (Open Flame)
+class PermitType(TimeStampedModel):
+    code = models.CharField(max_length=30, unique=True)  # assuming you have this
+    title = models.CharField(max_length=150)
 
-    Future:
-        Confined Space
-        Excavation
-        Electrical
-        Radiography
-        Diving
-    """
+    active_workflow = models.ForeignKey(PermitWorkflow, null=True, blank=True, on_delete=models.PROTECT, related_name="permit_types",)
 
-    requires_gas_test = models.BooleanField(default=False)
-
-    requires_fire_watch = models.BooleanField(default=False)
-
-    requires_isolation = models.BooleanField(default=False)
-
-    requires_risk_assessment = models.BooleanField(default=True)
-
-    class Meta(BaseLookupModel.Meta):
-        verbose_name = "Permit Type"
-        verbose_name_plural = "Permit Types"
-
+    def __str__(self):
+        return self.title
 
 # =============================================================================
 # Hazard
@@ -144,6 +127,7 @@ class Precaution(BaseLookupModel):
     requires_verification = models.BooleanField(
         default=True,
     )
+    
 
     class Meta(BaseLookupModel.Meta):
         verbose_name = "Precaution"
