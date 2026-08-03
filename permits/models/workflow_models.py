@@ -17,6 +17,7 @@ class PermitWorkflow(TimeStampedModel):
         verbose_name_plural = "Permit Workflows"
         constraints = [
             models.UniqueConstraint(
+
                 fields=["name", "version"],
                 name="uq_workflow_name_version",
             ),
