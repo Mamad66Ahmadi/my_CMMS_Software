@@ -2,44 +2,239 @@
 
 from django.contrib import admin
 
-from permits.models.permit_base_models import HazardCode
+from permits.models.permit_base_models import (
+    ApprovalRole,
+    FireGasSystem,
+    Hazard,
+    IsolationType,
+    PPE,
+    PermitType,
+    Precaution,
+    ShiftType,
+)
 
 
-class TimeStampedAdminMixin(admin.ModelAdmin):
+class BaseLookupAdmin(admin.ModelAdmin):
     """
-    Reusable admin settings for models inheriting from your TimeStampedModel:
-    - created_at / created_by
-    - modified_at / modified_by
-    - is_active
+    Shared admin configuration for PTW master/lookup data.
+
+    All lookup models inherit from BaseLookupModel -> TimeStampedModel.
     """
-    readonly_fields = ("created_at", "created_by", "modified_at", "modified_by")
-    list_filter = ("is_active", "created_at", "modified_at")
-    list_per_page = 50
 
-    def save_model(self, request, obj, form, change):
-        """
-        Populate created_by on creation and modified_by on every save.
-        """
-        if not change:
-            obj.created_by = request.user
-
-        obj.modified_by = request.user
-        super().save_model(request, obj, form, change)
-
-
-@admin.register(HazardCode)
-class HazardCodeAdmin(TimeStampedAdminMixin):
-    list_display = ("code", "name", "description", "is_active", "created_at", "modified_at")
-    list_display_links = ("code",)
-    search_fields = ("code", "name", "description")
-    ordering = ("code",)
-    fields = (
+    list_display = (
         "code",
         "name",
-        "description",
-        "is_active",
+        "display_order",
         "created_at",
-        "created_by",
         "modified_at",
-        "modified_by",
     )
+    list_display_links = ("code", "name")
+    search_fields = ("code", "name", "description")
+    ordering = ("display_order", "code")
+    readonly_fields = ("created_at", "modified_at")
+    list_per_page = 50
+
+    fieldsets = (
+        (
+            "Identification",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "display_order",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(PermitType)
+class PermitTypeAdmin(BaseLookupAdmin):
+    list_display = (
+        "code",
+        "name",
+        "active_workflow",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_select_related = ("active_workflow",)
+
+    fieldsets = (
+        (
+            "Permit Type Details",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "display_order",
+                )
+            },
+        ),
+        (
+            "Workflow Configuration",
+            {
+                "fields": ("active_workflow",),
+                "description": (
+                    "New permits of this type will use the selected active "
+                    "workflow version."
+                ),
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(Hazard)
+class HazardAdmin(BaseLookupAdmin):
+    list_display = (
+        "code",
+        "name",
+        "category",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_filter = ("category",)
+
+    fieldsets = (
+        (
+            "Hazard Details",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "category",
+                    "description",
+                    "display_order",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(PPE)
+class PPEAdmin(BaseLookupAdmin):
+    list_display = (
+        "code",
+        "name",
+        "mandatory_by_default",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_filter = ("mandatory_by_default",)
+
+    fieldsets = (
+        (
+            "PPE Details",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "display_order",
+                    "mandatory_by_default",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(Precaution)
+class PrecautionAdmin(BaseLookupAdmin):
+    list_display = (
+        "code",
+        "name",
+        "requires_verification",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_filter = ("requires_verification",)
+
+    fieldsets = (
+        (
+            "Precaution Details",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "display_order",
+                    "requires_verification",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(FireGasSystem)
+class FireGasSystemAdmin(BaseLookupAdmin):
+    pass
+
+
+@admin.register(IsolationType)
+class IsolationTypeAdmin(BaseLookupAdmin):
+    pass
+
+
+@admin.register(ApprovalRole)
+class ApprovalRoleAdmin(BaseLookupAdmin):
+    pass
+
+
+@admin.register(ShiftType)
+class ShiftTypeAdmin(BaseLookupAdmin):
+    pass
