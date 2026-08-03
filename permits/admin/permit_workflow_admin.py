@@ -87,3 +87,5 @@ class PermitWorkflowAdmin(admin.ModelAdmin):
     inlines = (
         PermitWorkflowStepInline,
     )
+
+
