@@ -1,168 +1,240 @@
-# from django.contrib import admin
+# permits/admin/permit_base_admin.py
 
-# from permits.admin.common import AuditAdminMixin
-# from permits.models import (
-#     ApprovalRole,
-#     FireGasSystem,
-#     GasType,
-#     Hazard,
-#     IsolationType,
-#     PermitType,
-#     PPE,
-#     Precaution,
-#     ShiftType,
-# )
+from django.contrib import admin
 
-
-# class BaseLookupAdmin(AuditAdminMixin, admin.ModelAdmin):
-#     list_display = (
-#         "code",
-#         "name",
-#         "display_order",
-#         "is_active",
-#         "modified_at",
-#     )
-#     list_display_links = ("code", "name")
-#     list_editable = ("display_order", "is_active")
-#     list_filter = ("is_active",)
-#     search_fields = ("code", "name", "description")
-#     ordering = ("display_order", "code")
-#     fieldsets = (
-#         ("Identity", {"fields": ("code", "name", "description")}),
-#         ("Control", {"fields": ("display_order", "is_active")}),
-#         (
-#             "Audit",
-#             {
-#                 "classes": ("collapse",),
-#                 "fields": (
-#                     "created_at",
-#                     "created_by",
-#                     "modified_at",
-#                     "modified_by",
-#                 ),
-#             },
-#         ),
-#     )
+from permits.models.permit_base_models import (
+    ApprovalRole,
+    FireGasSystem,
+    Hazard,
+    IsolationType,
+    PPE,
+    PermitType,
+    Precaution,
+    ShiftType,
+)
 
 
-# @admin.register(PermitType)
-# class PermitTypeAdmin(BaseLookupAdmin):
-#     list_display = (
-#         "code",
-#         "name",
-#         "active_workflow",
-#         "display_order",
-#         "is_active",
-#         "modified_at",
-#     )
-#     list_filter = (
+class BaseLookupAdmin(admin.ModelAdmin):
+    """
+    Shared admin configuration for PTW master/lookup data.
 
-#         "active_workflow",
-#         "is_active",
-#     )
-#     search_fields = BaseLookupAdmin.search_fields + (
-#         "active_workflow__name",
-#     )
-#     autocomplete_fields = ("active_workflow",)
-#     fieldsets = BaseLookupAdmin.fieldsets[:1] + (
-#         (
-#             "Workflow",
-#             {
-#                 "fields": (
-#                     "active_workflow",
-#                 )
-#             },
-#         ),
-#         (
-#             "Permit Requirements",
+    All lookup models inherit from BaseLookupModel -> TimeStampedModel.
+    """
 
-#         ),
-#     ) + BaseLookupAdmin.fieldsets[1:]
+    list_display = (
+        "code",
+        "name",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_display_links = ("code", "name")
+    search_fields = ("code", "name", "description")
+    ordering = ("display_order", "code")
+    readonly_fields = ("created_at", "modified_at")
+    list_per_page = 50
 
-
-# @admin.register(Hazard)
-# class HazardAdmin(BaseLookupAdmin):
-#     list_display = (
-#         "code",
-#         "name",
-#         "category",
-#         "display_order",
-#         "is_active",
-#         "modified_at",
-#     )
-#     list_filter = ("category", "is_active")
-#     fieldsets = (
-#         ("Identity", {"fields": ("code", "name", "description", "category")}),
-#     ) + BaseLookupAdmin.fieldsets[1:]
+    fieldsets = (
+        (
+            "Identification",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "display_order",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
 
-# @admin.register(PPE)
-# class PPEAdmin(BaseLookupAdmin):
-#     list_display = (
-#         "code",
-#         "name",
-#         "mandatory_by_default",
-#         "display_order",
-#         "is_active",
-#         "modified_at",
-#     )
-#     list_filter = ("mandatory_by_default", "is_active")
-#     fieldsets = BaseLookupAdmin.fieldsets[:1] + (
-#         ("Requirement", {"fields": ("mandatory_by_default",)}),
-#     ) + BaseLookupAdmin.fieldsets[1:]
+@admin.register(PermitType)
+class PermitTypeAdmin(BaseLookupAdmin):
+    list_display = (
+        "code",
+        "name",
+        "active_workflow",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_select_related = ("active_workflow",)
+
+    fieldsets = (
+        (
+            "Permit Type Details",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "display_order",
+                )
+            },
+        ),
+        (
+            "Workflow Configuration",
+            {
+                "fields": ("active_workflow",),
+                "description": (
+                    "New permits of this type will use the selected active "
+                    "workflow version."
+                ),
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
 
-# @admin.register(Precaution)
-# class PrecautionAdmin(BaseLookupAdmin):
-#     list_display = (
-#         "code",
-#         "name",
-#         "requires_verification",
-#         "display_order",
-#         "is_active",
-#         "modified_at",
-#     )
-#     list_filter = ("requires_verification", "is_active")
-#     fieldsets = BaseLookupAdmin.fieldsets[:1] + (
-#         ("Verification", {"fields": ("requires_verification",)}),
-#     ) + BaseLookupAdmin.fieldsets[1:]
+@admin.register(Hazard)
+class HazardAdmin(BaseLookupAdmin):
+    list_display = (
+        "code",
+        "name",
+        "category",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_filter = ("category",)
+
+    fieldsets = (
+        (
+            "Hazard Details",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "category",
+                    "description",
+                    "display_order",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
 
-# admin.site.register(FireGasSystem, BaseLookupAdmin)
-# admin.site.register(IsolationType, BaseLookupAdmin)
-# admin.site.register(ApprovalRole, BaseLookupAdmin)
-# admin.site.register(ShiftType, BaseLookupAdmin)
+@admin.register(PPE)
+class PPEAdmin(BaseLookupAdmin):
+    list_display = (
+        "code",
+        "name",
+        "mandatory_by_default",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_filter = ("mandatory_by_default",)
+
+    fieldsets = (
+        (
+            "PPE Details",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "display_order",
+                    "mandatory_by_default",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
 
-# @admin.register(GasType)
-# class GasTypeAdmin(AuditAdminMixin, admin.ModelAdmin):
-#     list_display = (
-#         "code",
-#         "name",
-#         "unit",
-#         "minimum_limit",
-#         "maximum_limit",
-#         "display_order",
-#         "is_active",
-#     )
-#     list_editable = ("display_order", "is_active")
-#     list_filter = ("is_active",)
-#     search_fields = ("code", "name", "unit")
-#     ordering = ("display_order", "code")
-#     fieldsets = (
-#         ("Gas", {"fields": ("code", "name", "unit")}),
-#         ("Safe Range", {"fields": ("minimum_limit", "maximum_limit")}),
-#         ("Control", {"fields": ("display_order", "is_active")}),
-#         (
-#             "Audit",
-#             {
-#                 "classes": ("collapse",),
-#                 "fields": (
-#                     "created_at",
-#                     "created_by",
-#                     "modified_at",
-#                     "modified_by",
-#                 ),
-#             },
-#         ),
-#     )
+@admin.register(Precaution)
+class PrecautionAdmin(BaseLookupAdmin):
+    list_display = (
+        "code",
+        "name",
+        "requires_verification",
+        "display_order",
+        "created_at",
+        "modified_at",
+    )
+    list_filter = ("requires_verification",)
+
+    fieldsets = (
+        (
+            "Precaution Details",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "display_order",
+                    "requires_verification",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+@admin.register(FireGasSystem)
+class FireGasSystemAdmin(BaseLookupAdmin):
+    pass
+
+
+@admin.register(IsolationType)
+class IsolationTypeAdmin(BaseLookupAdmin):
+    pass
+
+
+@admin.register(ApprovalRole)
+class ApprovalRoleAdmin(BaseLookupAdmin):
+    pass
+
+
+@admin.register(ShiftType)
+class ShiftTypeAdmin(BaseLookupAdmin):
+    pass

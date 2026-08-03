@@ -1,92 +1,89 @@
-# from django.contrib import admin
+from django.contrib import admin
 
-# from permits.admin.common import AuditAdminMixin
-# from permits.models import (
-#     PermitApprovalRoleChoices,
-#     PermitWorkflow,
-#     PermitWorkflowCondition,
-#     PermitWorkflowStep,
-#     PermitWorkflowTransition,
-# )
+from permits.models.permit_models import (
+    PermitWorkflow,
+    PermitWorkflowStep,
+)
 
 
-# class WorkflowStepInline(admin.TabularInline):
-#     model = PermitWorkflowStep
-#     extra = 0
-#     fields = ("step_number", "title", "is_start", "is_terminal")
-#     ordering = ("step_number",)
-#     show_change_link = True
+class PermitWorkflowStepInline(admin.TabularInline):
+    """
+    Manage steps on the Permit Workflow edit page.
+
+    This is an inline only; it does NOT register PermitWorkflowStep again.
+    """
+
+    model = PermitWorkflowStep
+    extra = 1
+    fields = (
+        "step_number",
+        "title",
+        "description",
+        "is_start",
+        "is_terminal",
+        "is_active",
+    )
+    ordering = ("step_number",)
+    show_change_link = True
 
 
-# @admin.register(PermitWorkflow)
-# class PermitWorkflowAdmin(AuditAdminMixin, admin.ModelAdmin):
-#     list_display = ("name", "version", "step_count", "modified_at")
-#     list_filter = ("version",)
-#     search_fields = ("name",)
-#     ordering = ("name", "-version")
-#     inlines = (WorkflowStepInline,)
+@admin.register(PermitWorkflow)
+class PermitWorkflowAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "version",
+        "is_active",
+        "created_at",
+        "modified_at",
+    )
 
-#     @admin.display(description="Steps")
-#     def step_count(self, obj):
-#         return obj.steps.count()
+    list_filter = (
+        "is_active",
+        "created_at",
+        "modified_at",
+    )
 
+    search_fields = (
+        "name",
+    )
 
-# @admin.register(PermitApprovalRoleChoices)
-# class PermitApprovalRoleChoicesAdmin(AuditAdminMixin, admin.ModelAdmin):
-#     list_display = ("code", "name", "is_active", "modified_at")
-#     list_display_links = ("code", "name")
-#     list_editable = ("is_active",)
-#     list_filter = ("is_active",)
-#     search_fields = ("code", "name", "description")
-#     ordering = ("code",)
+    ordering = (
+        "name",
+        "-version",
+    )
 
+    readonly_fields = (
+        "created_at",
+        "created_by",
+        "modified_at",
+        "modified_by",
+    )
 
-# @admin.register(PermitWorkflowStep)
-# class PermitWorkflowStepAdmin(AuditAdminMixin, admin.ModelAdmin):
-#     list_display = (
-#         "workflow",
-#         "step_number",
-#         "title",
-#         "is_start",
-#         "is_terminal",
-#     )
-#     list_filter = ("is_start", "is_terminal")
-#     search_fields = ("workflow__name", "title", "description")
-#     autocomplete_fields = ("workflow",)
-#     ordering = ("workflow", "step_number")
+    fieldsets = (
+        (
+            "Workflow Definition",
+            {
+                "fields": (
+                    "name",
+                    "version",
+                    "is_active",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "created_at",
+                    "created_by",
+                    "modified_at",
+                    "modified_by",
+                ),
+            },
+        ),
+    )
 
-
-# class WorkflowConditionInline(admin.TabularInline):
-#     model = PermitWorkflowCondition
-#     extra = 0
-#     fields = ("operand", "field_path", "operator", "expected_value")
-#     show_change_link = True
-
-
-# @admin.register(PermitWorkflowTransition)
-# class PermitWorkflowTransitionAdmin(AuditAdminMixin, admin.ModelAdmin):
-#     list_display = ("workflow", "from_step", "decision", "role", "to_step")
-#     list_filter = ("workflow", "decision", "role")
-#     search_fields = (
-#         "workflow__name",
-#         "from_step__title",
-#         "to_step__title",
-#         "role__code",
-#         "role__name",
-#     )
-#     autocomplete_fields = ("workflow", "from_step", "to_step", "role")
-#     inlines = (WorkflowConditionInline,)
-
-
-# @admin.register(PermitWorkflowCondition)
-# class PermitWorkflowConditionAdmin(AuditAdminMixin, admin.ModelAdmin):
-#     list_display = (
-#         "transition",
-#         "operand",
-#         "field_path",
-#         "operator",
-#         "expected_value",
-#     )
-#     list_filter = ("operand", "operator")
-#     search_fields = ("field_path", "expected_value", "description")
-#     autocomplete_fields = ("transition",)
+    inlines = (
+        PermitWorkflowStepInline,
+    )
