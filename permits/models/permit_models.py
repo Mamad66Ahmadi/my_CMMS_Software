@@ -14,9 +14,10 @@ from permits.models.workflow_models import PermitWorkflow, PermitWorkflowStep
 from permits.models.permit_base_models import (
     PermitType,
     Hazard,
+    PPE,
     Precaution,
     EquipmentStatus,
-    DurationUnit
+    DurationUnit,
 )
 
 User = settings.AUTH_USER_MODEL
@@ -38,7 +39,12 @@ class Permit(models.Model):
 
     permit_type = models.ForeignKey(PermitType, on_delete=models.PROTECT, related_name="permits")
 
-    workflow = models.ForeignKey(PermitWorkflow, on_delete=models.PROTECT, related_name="permits", help_text="The workflow is obtained from permit_type.")
+    workflow = models.ForeignKey(
+        PermitWorkflow,
+        on_delete=models.PROTECT,
+        related_name="permits",
+        help_text="The workflow is obtained from permit_type.",
+    )
 
     current_step = models.ForeignKey(PermitWorkflowStep, null=True, blank=True, on_delete=models.PROTECT, related_name="permits_at_step")
 
@@ -128,9 +134,9 @@ class Permit(models.Model):
     # Step Audit Timestamps
     issued_by_supervisor_at = models.DateTimeField(null=True, blank=True)
     issued_by_area_authority_at = models.DateTimeField(null=True, blank=True)
-    issed_by_area_supervisor_at = models.DateTimeField(null=True, blank=True)
+    issued_by_area_supervisor_at = models.DateTimeField(null=True, blank=True)
     issued_by_permit_office_at = models.DateTimeField(null=True, blank=True)
-    issed_by_check_point_at = models.DateTimeField(null=True, blank=True)
+    issued_by_check_point_at = models.DateTimeField(null=True, blank=True)
     issued_by_area_operator_at = models.DateTimeField(null=True, blank=True)
     
     activated_at = models.DateTimeField(null=True, blank=True)
@@ -167,6 +173,15 @@ class Permit(models.Model):
                 condition=Q(valid_to__gt=models.F("valid_from")),
                 name="permit_valid_window_ck",
             ),
+            models.CheckConstraint(
+                condition=Q(duration_value__isnull=True) | Q(duration_value__gt=0),
+                name="permit_duration_value_positive_ck",
+            ),
+            models.CheckConstraint(
+                condition=Q(estimated_personnel__isnull=True)
+                | Q(estimated_personnel__gt=0),
+                name="permit_estimated_personnel_positive_ck",
+            ),
         ]
 
     def __str__(self):
@@ -179,18 +194,38 @@ class Permit(models.Model):
         if not self.permit_number:
             raise ValidationError({"permit_number": "Permit number is required."})
 
-        # Set default workflow version from the permit type when starting
-        if self.permit_type_id and not hasattr(self, "workflow"):
-            if not self.permit_type.active_workflow:
-                raise ValidationError({"permit_type": "Selected permit type does not have an active workflow version."})
+        if self.permit_type_id and not self.workflow_id:
             self.workflow = self.permit_type.active_workflow
+
+        if self.permit_type_id and not self.workflow_id:
+            raise ValidationError(
+                {
+                    "permit_type": (
+                        "Selected permit type does not have an active workflow "
+                        "version."
+                    )
+                }
+            )
+
+        if (
+            self.permit_type_id
+            and self.workflow_id
+            and self.permit_type.active_workflow_id != self.workflow_id
+        ):
+            raise ValidationError(
+                {
+                    "workflow": (
+                        "Workflow must match the permit type's active workflow."
+                    )
+                }
+            )
 
         # Ensure current step matches the permit's designated workflow version
         if self.current_step_id:
             if self.current_step.workflow_id != self.workflow_id:
                 raise ValidationError({"current_step": "The step does not belong to the workflow assigned to this permit."})
 
-        if not self.location_tag and not self.work_order:
+        if not self.location_tag_id and not self.work_order_id:
             raise ValidationError("Either Work Order or Location Tag is required.")
 
         if self.valid_from and self.valid_to and self.valid_to <= self.valid_from:
@@ -205,26 +240,25 @@ class Permit(models.Model):
         if self.vehicle_required and not self.vehicle_description.strip():
             raise ValidationError({"vehicle_description": "Describe the vehicle when a vehicle is required."})
 
-        if self.fire_watch_present and not self.fire_watch_required:
-            raise ValidationError({"fire_watch_present": "Fire watch cannot be present unless it is required."})
-
     def save(self, *args, **kwargs):
-        # Fallbacks
-        if self.work_order and not self.location_tag:
+        if self.work_order_id and not self.location_tag_id:
             self.location_tag = self.work_order.location_tag
 
-        if not self.department and self.requested_by_id:
-            self.department = getattr(self.requested_by, 'department', None)
-
-        # Set initial start step automatically on creation
         if not self.current_step_id and self.permit_type_id:
-            if not hasattr(self, "workflow") or not self.workflow:
+            if not self.workflow_id:
                 self.workflow = self.permit_type.active_workflow
-            
-            if self.workflow:
+
+            if self.workflow_id:
                 start_step = self.workflow.steps.filter(is_start=True).first()
-                if start_step:
-                    self.current_step = start_step
+                if not start_step:
+                    raise ValidationError(
+                        {
+                            "workflow": (
+                                "The selected workflow does not have a start step."
+                            )
+                        }
+                    )
+                self.current_step = start_step
 
         self.full_clean()
         return super().save(*args, **kwargs)
@@ -240,7 +274,9 @@ class Permit(models.Model):
         
         # Safe logical fallback check: Active only if it has started, has been activated, and is not terminal
         has_activated = self.activated_at is not None and self.closed_at is None
-        is_step_not_terminal = self.current_step and not self.current_step.is_terminal
+        is_step_not_terminal = (
+            self.current_step_id is not None and not self.current_step.is_terminal
+        )
 
         return is_in_date_range and has_activated and is_step_not_terminal
 
@@ -298,7 +334,10 @@ class PermitHazard(models.Model):
     class Meta:
         ordering = ["hazard__display_order", "hazard__code"]
         indexes = [
-            models.Index(fields=["permit", "is_active"], name="permit_hazard_permit_active_idx"),
+            models.Index(
+                fields=["permit", "is_active"],
+                name="permit_hazard_active_idx",
+            ),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -354,6 +393,7 @@ class PermitHazard(models.Model):
         self.is_active = False
         self.removed_by = user
         self.removed_at = timezone.now()
+        self.modified_by = user
 
         self.save(
             update_fields=[
@@ -384,6 +424,79 @@ class PermitHazard(models.Model):
                 "modified_at",
             ]
         )
+
+
+# =============================================================================
+# PermitPPE
+# =============================================================================
+
+class PermitPPE(models.Model):
+    permit = models.ForeignKey(
+        Permit,
+        on_delete=models.CASCADE,
+        related_name="ppe_requirements",
+    )
+    ppe = models.ForeignKey(
+        PPE,
+        on_delete=models.PROTECT,
+        related_name="permit_requirements",
+    )
+    is_mandatory = models.BooleanField(default=True)
+    verified_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="verified_permit_ppe",
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="%(app_label)s_%(class)s_created",
+    )
+    modified_at = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="%(app_label)s_%(class)s_modified",
+    )
+
+    class Meta:
+        ordering = ["ppe__display_order", "ppe__code"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["permit", "ppe"],
+                name="permit_ppe_unique",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    Q(verified_by__isnull=True, verified_at__isnull=True)
+                    | Q(verified_by__isnull=False, verified_at__isnull=False)
+                ),
+                name="permit_ppe_verification_fields_ck",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.permit_id}: {self.ppe}"
+
+    def clean(self):
+        super().clean()
+        if bool(self.verified_by_id) != bool(self.verified_at):
+            raise ValidationError(
+                "Verified by and verified at must be recorded together."
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
 # =============================================================================
 # PermitPrecaution
 # =============================================================================
@@ -431,7 +544,7 @@ class PermitPrecaution(models.Model):
         indexes = [
             models.Index(
                 fields=["permit", "is_active"],
-                name="permit_precaution_permit_active_idx",
+                name="permit_precaution_active_idx",
             ),
         ]
         constraints = [

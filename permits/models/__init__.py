@@ -3,7 +3,6 @@ from .permit_base_models import (
     EquipmentStatus,
     FireGasSystem,
     Hazard,
-    HazardCode,
     IsolationType,
     PermitStatus,
     PermitType,
@@ -13,9 +12,8 @@ from .permit_base_models import (
 )
 from .permit_models import Permit, PermitHazard, PermitPPE, PermitPrecaution
 from .approval_models import (
-    ApprovalDecision,
-    ApprovalRoleChoices,
     PermitApproval,
+    PermitApprovalRoleChoices,
 )
 from .attachment_models import AttachmentVersion, PermitAttachment
 from .fg_esd_models import FireGasAction, PermitFireGas
@@ -28,28 +26,28 @@ from .isolation_models import (
 )
 from .shift_models import PermitExtension, PermitShiftLog
 from .workflow_models import (
+    Decision,
+    PermitWorkflow,
     PermitWorkflowCondition,
     PermitWorkflowStep,
-    PermitWorkflowTemplate,
     PermitWorkflowTransition,
 )
 
 __all__ = [
-    "ApprovalDecision",
     "ApprovalRole",
-    "ApprovalRoleChoices",
     "AttachmentVersion",
+    "Decision",
     "EquipmentStatus",
     "FireGasAction",
     "FireGasSystem",
     "GasType",
     "Hazard",
-    "HazardCode",
     "IsolationPoint",
     "IsolationType",
     "IsolationVerification",
     "Permit",
     "PermitApproval",
+    "PermitApprovalRoleChoices",
     "PermitAttachment",
     "PermitComment",
     "PermitExtension",
@@ -64,9 +62,9 @@ __all__ = [
     "PermitShiftLog",
     "PermitStatus",
     "PermitType",
+    "PermitWorkflow",
     "PermitWorkflowCondition",
     "PermitWorkflowStep",
-    "PermitWorkflowTemplate",
     "PermitWorkflowTransition",
     "PPE",
     "Precaution",

@@ -79,7 +79,16 @@ class PermitApproval(TimeStampedModel):
     def clean(self):
         super().clean()
 
-        # Step Workflow Compatibility Check
+        if self.from_step_id and self.permit_id:
+            if self.from_step.workflow_id != self.permit.workflow_id:
+                raise ValidationError(
+                    {
+                        "from_step": (
+                            "The approval step must belong to the permit workflow."
+                        )
+                    }
+                )
+
         if self.from_step_id and self.to_step_id:
             if self.from_step.workflow_id != self.to_step.workflow_id:
                 raise ValidationError("Approval steps must belong to the exact same workflow version.")

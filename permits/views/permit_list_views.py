@@ -18,7 +18,7 @@ from django.views.generic import TemplateView
 
 from accounts.models import Department, UserFilterFavorite
 from permits.models import PermitStatus
-from permits.models.permit_base_models import HazardCode
+from permits.models.permit_base_models import Hazard as HazardCode
 from permits.models.permit_models import Permit
 from permits.services.user_filter_favorite import (
     FAVORITE_APP_KEY,

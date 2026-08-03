@@ -40,10 +40,6 @@ class BaseLookupModel(TimeStampedModel):
         blank=True,
     )
 
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-    )
 
     display_order = models.PositiveSmallIntegerField(
         default=0,
@@ -75,14 +71,13 @@ class BaseLookupModel(TimeStampedModel):
 # Permit Types
 # =============================================================================
 
-class PermitType(TimeStampedModel):
-    code = models.CharField(max_length=30, unique=True)  # assuming you have this
-    title = models.CharField(max_length=150)
+class PermitType(BaseLookupModel):
 
-    active_workflow = models.ForeignKey(PermitWorkflow, null=True, blank=True, on_delete=models.PROTECT, related_name="permit_types",)
+    active_workflow = models.ForeignKey(PermitWorkflow,null=True, blank=True, on_delete=models.PROTECT, related_name="permit_types",)
 
-    def __str__(self):
-        return self.title
+    class Meta(BaseLookupModel.Meta):
+        verbose_name = "Permit Type"
+        verbose_name_plural = "Permit Types"
 
 # =============================================================================
 # Hazard
@@ -109,6 +104,18 @@ class Hazard(BaseLookupModel):
     class Meta(BaseLookupModel.Meta):
         verbose_name = "Hazard"
         verbose_name_plural = "Hazards"
+
+
+# =============================================================================
+# Personal Protective Equipment
+# =============================================================================
+
+class PPE(BaseLookupModel):
+    mandatory_by_default = models.BooleanField(default=False)
+
+    class Meta(BaseLookupModel.Meta):
+        verbose_name = "PPE"
+        verbose_name_plural = "PPE"
 
 
 

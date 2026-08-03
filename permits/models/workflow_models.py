@@ -30,6 +30,16 @@ class PermitWorkflow(TimeStampedModel):
     def __str__(self):
         return f"{self.name} v{self.version}"
 
+    def clean(self):
+        super().clean()
+        self.name = (self.name or "").strip()
+        if not self.name:
+            raise ValidationError({"name": "Workflow name is required."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
 
 class PermitWorkflowStep(TimeStampedModel):
     workflow = models.ForeignKey(
@@ -56,6 +66,11 @@ class PermitWorkflowStep(TimeStampedModel):
             models.CheckConstraint(
                 condition=Q(step_number__gt=0),
                 name="workflow_step_number_positive_ck",
+            ),
+            models.UniqueConstraint(
+                fields=["workflow"],
+                condition=Q(is_start=True),
+                name="uq_workflow_start_step",
             ),
         ]
 

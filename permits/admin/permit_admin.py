@@ -14,13 +14,8 @@ from permits.models import (
 class PermitHazardInline(admin.TabularInline):
     model = PermitHazard
     extra = 0
-    autocomplete_fields = ("hazard",)
-    fields = (
-        "hazard",
-        "risk_level",
-        "control_measure",
-        "residual_risk_level",
-    )
+    autocomplete_fields = ("hazard", "removed_by")
+    fields = ("hazard", "remarks", "is_active", "removed_by", "removed_at")
     show_change_link = True
 
 
@@ -28,26 +23,20 @@ class PermitPPEInline(admin.TabularInline):
     model = PermitPPE
     extra = 0
     autocomplete_fields = ("ppe", "verified_by")
-    fields = (
-        "ppe",
-        "is_mandatory",
-        "verified_by",
-        "verified_at",
-        "remarks",
-    )
+    fields = ("ppe", "is_mandatory", "verified_by", "verified_at", "remarks")
     show_change_link = True
 
 
 class PermitPrecautionInline(admin.TabularInline):
     model = PermitPrecaution
     extra = 0
-    autocomplete_fields = ("precaution", "verified_by")
+    autocomplete_fields = ("precaution", "removed_by")
     fields = (
         "precaution",
-        "status",
-        "verified_by",
-        "verified_at",
         "remarks",
+        "is_active",
+        "removed_by",
+        "removed_at",
     )
     show_change_link = True
 
@@ -55,17 +44,22 @@ class PermitPrecautionInline(admin.TabularInline):
 class PermitApprovalInline(admin.TabularInline):
     model = PermitApproval
     extra = 0
-    autocomplete_fields = ("approver",)
+    can_delete = False
+    autocomplete_fields = ("actor", "role", "from_step", "to_step", "transition")
     fields = (
-        "sequence",
+        "actor",
         "role",
-        "approver",
+        "from_step",
+        "to_step",
         "decision",
-        "signed_at",
-        "expires_at",
-        "is_current",
+        "comment",
+        "transition",
     )
+    readonly_fields = fields
     show_change_link = True
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Permit)
@@ -74,61 +68,45 @@ class PermitAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
         "permit_number",
         "permit_type",
-        "status",
+        "current_step",
         "location_tag",
         "work_order",
-        "permit_holder",
         "valid_from",
         "valid_to",
         "validity_state",
     )
     list_display_links = ("permit_number",)
     list_filter = (
-        "status",
         "permit_type",
+        "current_step",
         "department",
-        "fire_watch_required",
         "vehicle_required",
         "valid_from",
         "valid_to",
     )
     search_fields = (
         "permit_number",
-        "serial_number",
         "scope_of_work",
         "location_tag__loc_tag",
         "work_order__wo_number",
         "department__department_code",
         "department__name",
-        "requested_by__username",
-        "requested_by__first_name",
-        "requested_by__last_name",
-        "permit_holder__username",
-        "permit_holder__first_name",
-        "permit_holder__last_name",
     )
     ordering = ("-created_at",)
     autocomplete_fields = (
         "continuation_of",
         "permit_type",
+        "workflow",
+        "current_step",
         "work_order",
         "location_tag",
-        "requested_by",
-        "permit_holder",
         "work_supervisor",
-        "area_authority",
-        "contractor_supervisor",
+        "designated_area_authority",
+        "designated_area_supervisor",
         "department",
     )
     filter_horizontal = ("related_permits",)
-    readonly_fields = (
-        "issued_at",
-        "activated_at",
-        "suspended_at",
-        "completed_at",
-        "closed_at",
-        "duration_display",
-    )
+    readonly_fields = ("duration_display",)
     inlines = (
         PermitHazardInline,
         PermitPPEInline,
@@ -137,13 +115,13 @@ class PermitAdmin(AuditAdminMixin, admin.ModelAdmin):
     )
     fieldsets = (
         (
-            "Identification",
+            "Identification and Workflow",
             {
                 "fields": (
                     "permit_number",
-                    "serial_number",
                     "permit_type",
-                    "status",
+                    "workflow",
+                    "current_step",
                     "continuation_of",
                     "related_permits",
                 )
@@ -157,7 +135,7 @@ class PermitAdmin(AuditAdminMixin, admin.ModelAdmin):
                     "location_tag",
                     "department",
                     "scope_of_work",
-                    "estimated_duration_hours",
+                    ("duration_value", "duration_unit"),
                     "estimated_personnel",
                 )
             },
@@ -166,11 +144,9 @@ class PermitAdmin(AuditAdminMixin, admin.ModelAdmin):
             "Personnel",
             {
                 "fields": (
-                    "requested_by",
-                    "permit_holder",
                     "work_supervisor",
-                    "area_authority",
-                    "contractor_supervisor",
+                    "designated_area_authority",
+                    "designated_area_supervisor",
                 )
             },
         ),
@@ -195,7 +171,6 @@ class PermitAdmin(AuditAdminMixin, admin.ModelAdmin):
                 "fields": (
                     "previous_incidents",
                     "area_authority_comments",
-                    "additional_precautions",
                 )
             },
         ),
@@ -208,9 +183,8 @@ class PermitAdmin(AuditAdminMixin, admin.ModelAdmin):
                     "equipment_depressurized",
                     "equipment_drained",
                     "equipment_purged",
-                    "area_authority_present",
-                    "fire_watch_required",
-                    "fire_watch_present",
+                    "area_authority_present_required",
+                    "fire_watch_present_required",
                     "equipment_preparation_notes",
                 )
             },
@@ -221,8 +195,8 @@ class PermitAdmin(AuditAdminMixin, admin.ModelAdmin):
                 "fields": (
                     ("valid_from", "valid_to"),
                     "duration_display",
-                    ("issued_at", "activated_at"),
-                    ("suspended_at", "completed_at", "closed_at"),
+                    ("activated_at", "suspended_at"),
+                    ("completed_at", "closed_at"),
                 )
             },
         ),
@@ -247,10 +221,11 @@ class PermitAdmin(AuditAdminMixin, admin.ModelAdmin):
             .get_queryset(request)
             .select_related(
                 "permit_type",
+                "workflow",
+                "current_step",
                 "location_tag",
                 "work_order",
                 "department",
-                "permit_holder",
             )
         )
 

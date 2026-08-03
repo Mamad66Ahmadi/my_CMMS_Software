@@ -32,18 +32,18 @@ class PermitHazardAdmin(PermitRelatedAdmin):
     list_display = (
         "permit",
         "hazard",
-        "risk_level",
-        "residual_risk_level",
+        "is_active",
+        "removed_at",
         "modified_at",
     )
-    list_filter = ("risk_level", "residual_risk_level", "hazard__category")
+    list_filter = ("is_active", "hazard__category")
     search_fields = (
         "permit__permit_number",
         "hazard__code",
         "hazard__name",
-        "control_measure",
+        "remarks",
     )
-    autocomplete_fields = ("permit", "hazard")
+    autocomplete_fields = ("permit", "hazard", "removed_by")
 
 
 @admin.register(PermitPPE)
@@ -70,42 +70,56 @@ class PermitPrecautionAdmin(PermitRelatedAdmin):
     list_display = (
         "permit",
         "precaution",
-        "status",
-        "verified_by",
-        "verified_at",
+        "is_active",
+        "removed_at",
     )
-    list_filter = ("status", "precaution")
+    list_filter = ("is_active", "precaution")
     search_fields = (
         "permit__permit_number",
         "precaution__code",
         "precaution__name",
-        "verified_by__username",
+        "remarks",
     )
-    autocomplete_fields = ("permit", "precaution", "verified_by")
+    autocomplete_fields = ("permit", "precaution", "removed_by")
 
 
 @admin.register(PermitApproval)
 class PermitApprovalAdmin(AuditAdminMixin, admin.ModelAdmin):
     list_display = (
         "permit",
-        "sequence",
+        "actor",
         "role",
-        "approver",
+        "from_step",
+        "to_step",
         "decision",
-        "signed_at",
-        "expires_at",
-        "is_current",
+        "created_at",
     )
-    list_filter = ("decision", "role", "is_current", "signed_at", "expires_at")
+    list_filter = ("decision", "role", "created_at")
     search_fields = (
         "permit__permit_number",
-        "approver__username",
-        "approver__first_name",
-        "approver__last_name",
-        "comments",
+        "actor__username",
+        "actor__first_name",
+        "actor__last_name",
+        "comment",
     )
-    autocomplete_fields = ("permit", "approver")
-    ordering = ("permit", "sequence", "created_at")
+    autocomplete_fields = (
+        "permit",
+        "actor",
+        "role",
+        "from_step",
+        "to_step",
+        "transition",
+    )
+    ordering = ("-created_at",)
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return tuple(
+                field.name
+                for field in self.model._meta.fields
+                if field.name != "id"
+            )
+        return super().get_readonly_fields(request, obj)
 
 
 class GasReadingInline(admin.TabularInline):
