@@ -221,37 +221,6 @@ class EquipmentStatus(models.TextChoices):
     COMPLETED = "DONE", "Completed"
 
 
-# =============================================================================
-# Permit Status
-# =============================================================================
-
-class PermitStatus(models.TextChoices):
-
-    DRAFT = "DRAFT", "Draft"
-
-    SUBMITTED = "SUBMITTED", "Submitted"
-
-    UNDER_REVIEW = "UNDER_REVIEW", "Under Review"
-
-    APPROVED = "APPROVED", "Approved"
-
-    READY_FOR_ISSUE = "READY", "Ready for Issue"
-
-    ISSUED = "ISSUED", "Issued"
-
-    ACTIVE = "ACTIVE", "Active"
-
-    SUSPENDED = "SUSPENDED", "Suspended"
-
-    EXTENDED = "EXTENDED", "Extended"
-
-    COMPLETED = "COMPLETED", "Completed"
-
-    CLOSED = "CLOSED", "Closed"
-
-    CANCELLED = "CANCELLED", "Cancelled"
-
-    EXPIRED = "EXPIRED", "Expired"
 
 
 class DurationUnit(models.TextChoices):

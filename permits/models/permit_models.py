@@ -14,7 +14,6 @@ from permits.models.workflow_models import PermitWorkflow, PermitWorkflowStep
 from permits.models.permit_base_models import (
     PermitType,
     Hazard,
-    PPE,
     Precaution,
     EquipmentStatus,
     DurationUnit,
@@ -425,76 +424,6 @@ class PermitHazard(models.Model):
             ]
         )
 
-
-# =============================================================================
-# PermitPPE
-# =============================================================================
-
-class PermitPPE(models.Model):
-    permit = models.ForeignKey(
-        Permit,
-        on_delete=models.CASCADE,
-        related_name="ppe_requirements",
-    )
-    ppe = models.ForeignKey(
-        PPE,
-        on_delete=models.PROTECT,
-        related_name="permit_requirements",
-    )
-    is_mandatory = models.BooleanField(default=True)
-    verified_by = models.ForeignKey(
-        User,
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name="verified_permit_ppe",
-    )
-    verified_at = models.DateTimeField(null=True, blank=True)
-    remarks = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.PROTECT,
-        related_name="%(app_label)s_%(class)s_created",
-    )
-    modified_at = models.DateTimeField(auto_now=True)
-    modified_by = models.ForeignKey(
-        User,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="%(app_label)s_%(class)s_modified",
-    )
-
-    class Meta:
-        ordering = ["ppe__display_order", "ppe__code"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["permit", "ppe"],
-                name="permit_ppe_unique",
-            ),
-            models.CheckConstraint(
-                condition=(
-                    Q(verified_by__isnull=True, verified_at__isnull=True)
-                    | Q(verified_by__isnull=False, verified_at__isnull=False)
-                ),
-                name="permit_ppe_verification_fields_ck",
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.permit_id}: {self.ppe}"
-
-    def clean(self):
-        super().clean()
-        if bool(self.verified_by_id) != bool(self.verified_at):
-            raise ValidationError(
-                "Verified by and verified at must be recorded together."
-            )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        return super().save(*args, **kwargs)
 
 
 # =============================================================================
