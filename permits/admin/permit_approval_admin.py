@@ -5,11 +5,58 @@ from permits.models.approval_models import PermitApproval
 
 @admin.register(PermitApproval)
 class PermitApprovalAdmin(admin.ModelAdmin):
-    """
-    Minimal, safe admin registration for PermitApproval.
+    list_display = (
+        "permit",
+        "actor",
+        "role",
+        "decision",
+        "from_step",
+        "to_step",
+        "created_at",
+    )
 
-    Add list_display, filters, autocomplete fields, and fieldsets only after
-    confirming the exact fields declared on the PermitApproval model.
-    """
+    list_filter = (
+        "decision",
+        "role",
+        "created_at",
+    )
 
-    list_per_page = 50
+    search_fields = (
+        "permit__permit_number",
+        "actor__username",
+        "role__code",
+        "role__name",
+        "comment",
+    )
+
+    list_select_related = (
+        "permit",
+        "actor",
+        "role",
+        "from_step",
+        "to_step",
+        "transition",
+    )
+
+    readonly_fields = (
+        "permit",
+        "actor",
+        "role",
+        "from_step",
+        "to_step",
+        "decision",
+        "comment",
+        "transition",
+        "created_at",
+    )
+
+    fields = readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
