@@ -2,8 +2,8 @@
 
 from django.contrib import admin
 
+from permits.admin.base_admin import TimeStampedAdmin
 from permits.models.permit_base_models import (
-    ApprovalRole,
     FireGasSystem,
     Hazard,
     IsolationType,
@@ -14,7 +14,23 @@ from permits.models.permit_base_models import (
 )
 
 
-class BaseLookupAdmin(admin.ModelAdmin):
+AUDIT_FIELDS = (
+    "created_at",
+    "created_by",
+    "modified_at",
+    "modified_by",
+)
+
+AUDIT_FIELDSET = (
+    "Audit Information",
+    {
+        "fields": AUDIT_FIELDS,
+        "classes": ("collapse",),
+    },
+)
+
+
+class BaseLookupAdmin(TimeStampedAdmin):
     """
     Shared admin configuration for PTW master/lookup data.
 
@@ -25,14 +41,14 @@ class BaseLookupAdmin(admin.ModelAdmin):
         "code",
         "name",
         "display_order",
-        "created_at",
-        "modified_at",
+        "is_active",
     )
     list_display_links = ("code", "name")
     search_fields = ("code", "name", "description")
     ordering = ("display_order", "code")
-    readonly_fields = ("created_at", "modified_at")
+    list_filter = ("is_active",)
     list_per_page = 50
+    readonly_fields = AUDIT_FIELDS
 
     fieldsets = (
         (
@@ -43,19 +59,11 @@ class BaseLookupAdmin(admin.ModelAdmin):
                     "name",
                     "description",
                     "display_order",
+                    "is_active",
                 )
             },
         ),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "created_at",
-                    "modified_at",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
+        AUDIT_FIELDSET,
     )
 
 
@@ -66,10 +74,16 @@ class PermitTypeAdmin(BaseLookupAdmin):
         "name",
         "active_workflow",
         "display_order",
-        "created_at",
-        "modified_at",
+        "is_active",
     )
+
+    list_filter = (
+        "active_workflow",
+        "is_active",
+    )
+
     list_select_related = ("active_workflow",)
+    autocomplete_fields = ("active_workflow",)
 
     fieldsets = (
         (
@@ -80,6 +94,7 @@ class PermitTypeAdmin(BaseLookupAdmin):
                     "name",
                     "description",
                     "display_order",
+                    "is_active",
                 )
             },
         ),
@@ -93,16 +108,7 @@ class PermitTypeAdmin(BaseLookupAdmin):
                 ),
             },
         ),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "created_at",
-                    "modified_at",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
+        AUDIT_FIELDSET,
     )
 
 
@@ -113,10 +119,13 @@ class HazardAdmin(BaseLookupAdmin):
         "name",
         "category",
         "display_order",
-        "created_at",
-        "modified_at",
+        "is_active",
     )
-    list_filter = ("category",)
+
+    list_filter = (
+        "category",
+        "is_active",
+    )
 
     fieldsets = (
         (
@@ -128,58 +137,13 @@ class HazardAdmin(BaseLookupAdmin):
                     "category",
                     "description",
                     "display_order",
+                    "is_active",
                 )
             },
         ),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "created_at",
-                    "modified_at",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
+        AUDIT_FIELDSET,
     )
 
-
-@admin.register(PPE)
-class PPEAdmin(BaseLookupAdmin):
-    list_display = (
-        "code",
-        "name",
-        "mandatory_by_default",
-        "display_order",
-        "created_at",
-        "modified_at",
-    )
-    list_filter = ("mandatory_by_default",)
-
-    fieldsets = (
-        (
-            "PPE Details",
-            {
-                "fields": (
-                    "code",
-                    "name",
-                    "description",
-                    "display_order",
-                    "mandatory_by_default",
-                )
-            },
-        ),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "created_at",
-                    "modified_at",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-    )
 
 
 @admin.register(Precaution)
@@ -189,10 +153,13 @@ class PrecautionAdmin(BaseLookupAdmin):
         "name",
         "requires_verification",
         "display_order",
-        "created_at",
-        "modified_at",
+        "is_active",
     )
-    list_filter = ("requires_verification",)
+
+    list_filter = (
+        "requires_verification",
+        "is_active",
+    )
 
     fieldsets = (
         (
@@ -204,19 +171,11 @@ class PrecautionAdmin(BaseLookupAdmin):
                     "description",
                     "display_order",
                     "requires_verification",
+                    "is_active",
                 )
             },
         ),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "created_at",
-                    "modified_at",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
+        AUDIT_FIELDSET,
     )
 
 
@@ -230,11 +189,40 @@ class IsolationTypeAdmin(BaseLookupAdmin):
     pass
 
 
-@admin.register(ApprovalRole)
-class ApprovalRoleAdmin(BaseLookupAdmin):
-    pass
-
-
 @admin.register(ShiftType)
 class ShiftTypeAdmin(BaseLookupAdmin):
     pass
+
+
+
+# @admin.register(PPE)
+# class PPEAdmin(BaseLookupAdmin):
+#     list_display = (
+#         "code",
+#         "name",
+#         "mandatory_by_default",
+#         "display_order",
+#         "is_active",
+#     )
+
+#     list_filter = (
+#         "mandatory_by_default",
+#         "is_active",
+#     )
+
+#     fieldsets = (
+#         (
+#             "PPE Details",
+#             {
+#                 "fields": (
+#                     "code",
+#                     "name",
+#                     "description",
+#                     "display_order",
+#                     "mandatory_by_default",
+#                     "is_active",
+#                 )
+#             },
+#         ),
+#         AUDIT_FIELDSET,
+#     )

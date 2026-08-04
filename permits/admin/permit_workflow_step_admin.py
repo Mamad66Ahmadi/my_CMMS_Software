@@ -1,10 +1,12 @@
+# permits/admin/permit_workflow_step_admin.py
 from django.contrib import admin
 
+from permits.admin.base_admin import AUDIT_FIELDSET, TimeStampedAdmin
 from permits.models.workflow_models import PermitWorkflowStep
 
 
 @admin.register(PermitWorkflowStep)
-class PermitWorkflowStepAdmin(admin.ModelAdmin):
+class PermitWorkflowStepAdmin(TimeStampedAdmin):
     list_display = (
         "workflow",
         "step_number",
@@ -37,13 +39,6 @@ class PermitWorkflowStepAdmin(admin.ModelAdmin):
         "workflow",
     )
 
-    readonly_fields = (
-        "created_at",
-        "created_by",
-        "modified_at",
-        "modified_by",
-    )
-
     fieldsets = (
         (
             "Step Definition",
@@ -66,16 +61,5 @@ class PermitWorkflowStepAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        (
-            "Audit Information",
-            {
-                "classes": ("collapse",),
-                "fields": (
-                    "created_at",
-                    "created_by",
-                    "modified_at",
-                    "modified_by",
-                ),
-            },
-        ),
+        AUDIT_FIELDSET,
     )

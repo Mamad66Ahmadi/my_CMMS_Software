@@ -1,16 +1,37 @@
+# permits/admin/permit_workflow_transition_admin.py
 from django.contrib import admin
 
+from permits.admin.base_admin import AUDIT_FIELDSET, TimeStampedAdmin
+from permits.models.approval_models import PermitApprovalRoleChoices
 from permits.models.workflow_models import PermitWorkflowTransition
 
 
+@admin.register(PermitApprovalRoleChoices)
+class PermitApprovalRoleChoicesAdmin(TimeStampedAdmin):
+    """
+    Lookup Admin for Role Choices. Inherits from BaseLookupAdmin
+    which provides standardized search_fields, list_display, and Audit info.
+    """
+    search_fields = (
+        "code",
+        "name",
+    )
+
+    list_display = (
+        "code",
+        "name",
+        "description",
+    )
+
+
 @admin.register(PermitWorkflowTransition)
-class PermitWorkflowTransitionAdmin(admin.ModelAdmin):
+class PermitWorkflowTransitionAdmin(TimeStampedAdmin):
     list_display = (
         "workflow",
         "from_step",
+        "to_step",
         "decision",
         "role",
-        "to_step",
         "created_at",
     )
 
@@ -31,6 +52,7 @@ class PermitWorkflowTransitionAdmin(admin.ModelAdmin):
         "workflow",
         "from_step",
         "to_step",
+        "role",
     )
 
     list_select_related = (
@@ -40,13 +62,6 @@ class PermitWorkflowTransitionAdmin(admin.ModelAdmin):
         "role",
     )
 
-    readonly_fields = (
-        "created_at",
-        "created_by",
-        "modified_at",
-        "modified_by",
-    )
-
     fieldsets = (
         (
             "Transition Definition",
@@ -54,22 +69,11 @@ class PermitWorkflowTransitionAdmin(admin.ModelAdmin):
                 "fields": (
                     "workflow",
                     "from_step",
+                    "to_step",
                     "decision",
                     "role",
-                    "to_step",
                 )
             },
         ),
-        (
-            "Audit Information",
-            {
-                "classes": ("collapse",),
-                "fields": (
-                    "created_at",
-                    "created_by",
-                    "modified_at",
-                    "modified_by",
-                ),
-            },
-        ),
+        AUDIT_FIELDSET,
     )

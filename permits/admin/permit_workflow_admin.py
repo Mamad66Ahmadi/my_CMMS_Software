@@ -1,5 +1,7 @@
+# permits/admin/permit_workflow_admin.py
 from django.contrib import admin
 
+from permits.admin.base_admin import AUDIT_FIELDSET, TimeStampedAdmin
 from permits.models.permit_models import (
     PermitWorkflow,
     PermitWorkflowStep,
@@ -28,7 +30,7 @@ class PermitWorkflowStepInline(admin.TabularInline):
 
 
 @admin.register(PermitWorkflow)
-class PermitWorkflowAdmin(admin.ModelAdmin):
+class PermitWorkflowAdmin(TimeStampedAdmin):
     list_display = (
         "name",
         "version",
@@ -43,20 +45,11 @@ class PermitWorkflowAdmin(admin.ModelAdmin):
         "modified_at",
     )
 
-    search_fields = (
-        "name",
-    )
+    search_fields = ("name",)
 
     ordering = (
         "name",
         "-version",
-    )
-
-    readonly_fields = (
-        "created_at",
-        "created_by",
-        "modified_at",
-        "modified_by",
     )
 
     fieldsets = (
@@ -70,23 +63,7 @@ class PermitWorkflowAdmin(admin.ModelAdmin):
                 )
             },
         ),
-        (
-            "Audit Information",
-            {
-                "classes": ("collapse",),
-                "fields": (
-                    "created_at",
-                    "created_by",
-                    "modified_at",
-                    "modified_by",
-                ),
-            },
-        ),
+        AUDIT_FIELDSET,
     )
 
-    inlines = (
-        PermitWorkflowStepInline,
-    )
-
-
-
+    inlines = (PermitWorkflowStepInline,)

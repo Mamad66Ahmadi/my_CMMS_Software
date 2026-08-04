@@ -174,18 +174,6 @@ class IsolationType(BaseLookupModel):
         verbose_name_plural = "Isolation Types"
 
 
-# =============================================================================
-# Approval Roles
-# =============================================================================
-
-class ApprovalRole(BaseLookupModel):
-    """
-    Roles participating in the PTW workflow.
-    """
-
-    class Meta(BaseLookupModel.Meta):
-        verbose_name = "Approval Role"
-        verbose_name_plural = "Approval Roles"
 
 
 # =============================================================================
