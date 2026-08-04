@@ -308,30 +308,25 @@ class PermitAdmin(admin.ModelAdmin):
             super().save_model(request, obj, form, change)
 
     def save_formset(self, request, form, formset, change):
-        """
-        Ensure inline models (PermitHazard, PermitPrecaution) get their auditing
-        relations configured correctly during transaction saving.
-        """
         instances = formset.save(commit=False)
-        
-        # Handle deletions (when utilizing Django default deletion)
-        for obj in formset.deleted_objects:
-            obj.delete()
 
-        # Handle new creations or existing edits
+        for obj in formset.deleted_objects:
+            obj.deactivate(user=request.user)
+
         for instance in instances:
             if not instance.pk:
                 instance.created_by = request.user
+
             instance.modified_by = request.user
-            
-            # Explicit sync of soft deletion indicators if toggled
-            if "is_active" in formset.readonly_fields or "is_active" in instance.__dict__:
-                if not instance.is_active and not instance.removed_at:
-                    instance.removed_by = request.user
-                    instance.removed_at = timezone.now()
-                elif instance.is_active:
-                    instance.removed_by = None
-                    instance.removed_at = None
-                    
+
+            if instance.is_active:
+                instance.removed_by = None
+                instance.removed_at = None
+            elif not instance.removed_by_id or not instance.removed_at:
+                instance.removed_by = request.user
+                instance.removed_at = timezone.now()
+
             instance.save()
+
         formset.save_m2m()
+

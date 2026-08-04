@@ -1,40 +1,43 @@
 from django.contrib import admin
 
-from permits.models.workflow_models import PermitWorkflowStep
+from permits.models.workflow_models import PermitWorkflowTransition
 
 
-@admin.register(PermitWorkflowStep)
-class PermitWorkflowStepAdmin(admin.ModelAdmin):
+@admin.register(PermitWorkflowTransition)
+class PermitWorkflowTransitionAdmin(admin.ModelAdmin):
     list_display = (
         "workflow",
-        "step_number",
-        "title",
-        "is_start",
-        "is_terminal",
-        "is_active",
+        "from_step",
+        "decision",
+        "role",
+        "to_step",
         "created_at",
     )
 
     list_filter = (
         "workflow",
-        "is_start",
-        "is_terminal",
-        "is_active",
+        "decision",
+        "role",
     )
 
     search_fields = (
         "workflow__name",
-        "title",
-        "description",
-    )
-
-    ordering = (
-        "workflow",
-        "step_number",
+        "from_step__title",
+        "to_step__title",
+        "role__name",
     )
 
     autocomplete_fields = (
         "workflow",
+        "from_step",
+        "to_step",
+    )
+
+    list_select_related = (
+        "workflow",
+        "from_step",
+        "to_step",
+        "role",
     )
 
     readonly_fields = (
@@ -46,23 +49,14 @@ class PermitWorkflowStepAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (
-            "Step Definition",
+            "Transition Definition",
             {
                 "fields": (
                     "workflow",
-                    "step_number",
-                    "title",
-                    "description",
-                )
-            },
-        ),
-        (
-            "Workflow Behavior",
-            {
-                "fields": (
-                    "is_start",
-                    "is_terminal",
-                    "is_active",
+                    "from_step",
+                    "decision",
+                    "role",
+                    "to_step",
                 )
             },
         ),
