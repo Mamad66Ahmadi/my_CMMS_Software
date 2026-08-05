@@ -1,17 +1,11 @@
-# permits/services/workflow_service.py
 from dataclasses import dataclass
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from permits.models.approval_models import (
-    PermitApproval,
-    PermitApprovalRoleChoices,
-)
-from permits.models.workflow_models import (
-    Decision,
-    PermitWorkflowTransition,
-)
+from permits.models.approval_models import PermitApproval
+from permits.models.workflow_models import Decision, PermitWorkflowTransition
 from permits.services.authorization_service import WorkflowAuthorizationService
 from permits.services.condition_service import WorkflowConditionEvaluator
 
@@ -30,6 +24,9 @@ class TransitionResult:
 class PermitWorkflowService:
     """
     The single application-level write path for Permit workflow decisions.
+
+    Never update Permit.current_step directly in views, serializers,
+    admin actions, or unrelated model methods.
     """
 
     @classmethod
@@ -45,19 +42,20 @@ class PermitWorkflowService:
     ) -> TransitionResult:
         from permits.models.permit_models import Permit
 
-        # Lock the permit record to prevent race conditions in concurrent requests
+        cls._validate_decision(decision)
+
         permit = (
             Permit.objects.select_for_update()
             .select_related(
                 "workflow",
                 "current_step",
-                "location_tag__unit",  # Prefetch to support unit scope checks
+                "permit_type",
                 "department",
+                "location_tag",
+                "location_tag__unit",
             )
             .get(pk=permit_id)
         )
-
-        cls._validate_decision(decision)
 
         if not permit.workflow_id:
             raise WorkflowTransitionError(
@@ -69,26 +67,25 @@ class PermitWorkflowService:
                 "This permit does not have a current workflow step."
             )
 
-        try:
-            role = PermitApprovalRoleChoices.objects.get(code=role_code)
-        except PermitApprovalRoleChoices.DoesNotExist:
+        if permit.current_step.is_terminal:
             raise WorkflowTransitionError(
-                f"Approval role with code '{role_code}' does not exist."
+                "This permit is already at a terminal workflow step."
             )
 
-        # Retrieve transition matching context
         transition = (
             PermitWorkflowTransition.objects.select_related(
                 "workflow",
                 "from_step",
                 "to_step",
                 "role",
+                "role__required_qualification",
             )
+            .prefetch_related("conditions")
             .filter(
                 workflow_id=permit.workflow_id,
                 from_step_id=permit.current_step_id,
                 decision=decision,
-                role_id=role.pk,
+                role__code=role_code,
             )
             .first()
         )
@@ -99,20 +96,19 @@ class PermitWorkflowService:
                 "current step, and approval role."
             )
 
-        # Validate authorization rules
+        role = transition.role
+
         WorkflowAuthorizationService.ensure_actor_can_decide(
             actor=actor,
             permit=permit,
-            transition=transition,  # Fix: removed redundant 'role=role' keyword argument
+            transition=transition,
         )
 
-        # Validate workflow field-level conditions
         WorkflowConditionEvaluator.ensure_transition_allowed(
             permit=permit,
             transition=transition,
         )
 
-        # Build immutable approval record
         approval = PermitApproval.objects.create(
             permit=permit,
             actor=actor,
@@ -124,24 +120,25 @@ class PermitWorkflowService:
             transition=transition,
         )
 
-        # Update permit state
-        permit.current_step = transition.to_step
-
-        # Auto-populate timestamp audits depending on transition goals
         now = timezone.now()
-        
-        # Keep track of updated fields for optimal SQL performance
-        updated_fields = ["current_step"]
+
+        update_data = {
+            "current_step_id": transition.to_step_id,
+        }
 
         if transition.to_step.is_terminal:
-            permit.closed_at = now
-            updated_fields.append("closed_at")
+            update_data["closed_at"] = now
 
         if transition.decision == Decision.CANCEL:
-            permit.suspended_at = now
-            updated_fields.append("suspended_at")
+            update_data["suspended_at"] = now
 
-        permit.save(update_fields=updated_fields)
+        Permit.objects.filter(pk=permit.pk).update(**update_data)
+
+        permit.current_step = transition.to_step
+        permit.current_step_id = transition.to_step_id
+
+        for field_name, value in update_data.items():
+            setattr(permit, field_name, value)
 
         return TransitionResult(
             permit=permit,
@@ -152,6 +149,7 @@ class PermitWorkflowService:
     @staticmethod
     def _validate_decision(decision: str) -> None:
         valid_decisions = {choice for choice, _label in Decision.choices}
+
         if decision not in valid_decisions:
             raise WorkflowTransitionError(
                 {"decision": "The supplied decision is not valid."}
