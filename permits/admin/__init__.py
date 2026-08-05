@@ -5,3 +5,4 @@ from .permit_approval_admin import *
 from .permit_workflow_admin import *
 from .permit_workflow_step_admin import *  # noqa
 from .permit_workflow_transition_admin import *
+from .permit_approval_role_assignment_admin import *

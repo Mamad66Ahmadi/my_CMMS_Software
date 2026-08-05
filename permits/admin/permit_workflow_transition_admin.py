@@ -8,19 +8,71 @@ from permits.models.workflow_models import PermitWorkflowTransition
 
 @admin.register(PermitApprovalRoleChoices)
 class PermitApprovalRoleChoicesAdmin(TimeStampedAdmin):
-    """
-    Lookup Admin for Role Choices. Inherits from BaseLookupAdmin
-    which provides standardized search_fields, list_display, and Audit info.
-    """
-    search_fields = (
-        "code",
-        "name",
-    )
-
     list_display = (
         "code",
         "name",
+        "required_qualification",
+        "department_scope",
+        "unit_scope",
+        "is_active",
+        "created_at",
+        "modified_at",
+    )
+
+    list_filter = (
+        "department_scope",
+        "unit_scope",
+        "required_qualification",
+        "is_active",
+    )
+
+    search_fields = (
+        "code",
+        "name",
         "description",
+        "required_qualification__code",
+        "required_qualification__name",
+    )
+
+    list_select_related = (
+        "required_qualification",
+    )
+
+    fieldsets = (
+        (
+            "Role Definition",
+            {
+                "fields": (
+                    "code",
+                    "name",
+                    "description",
+                    "required_qualification",
+                ),
+            },
+        ),
+        (
+            "Responsibility Scope",
+            {
+                "fields": (
+                    "department_scope",
+                    "unit_scope",
+                ),
+                "description": (
+                    "Department scope is used for roles such as Work Supervisor. "
+                    "Unit scope is used for roles such as Area Authority, "
+                    "Area Supervisor, and Area Operator."
+                ),
+            },
+        ),
+        (
+            "Status",
+            {
+                "fields": (
+                    "is_active",
+                ),
+            },
+        ),
+        AUDIT_FIELDSET,
     )
 
 
@@ -33,6 +85,7 @@ class PermitWorkflowTransitionAdmin(TimeStampedAdmin):
         "decision",
         "role",
         "created_at",
+        "modified_at",
     )
 
     list_filter = (
@@ -45,6 +98,7 @@ class PermitWorkflowTransitionAdmin(TimeStampedAdmin):
         "workflow__name",
         "from_step__title",
         "to_step__title",
+        "role__code",
         "role__name",
     )
 
@@ -72,7 +126,7 @@ class PermitWorkflowTransitionAdmin(TimeStampedAdmin):
                     "to_step",
                     "decision",
                     "role",
-                )
+                ),
             },
         ),
         AUDIT_FIELDSET,

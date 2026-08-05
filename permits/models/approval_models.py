@@ -5,18 +5,27 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from equipment.models.equipment_models import TimeStampedModel
+from equipment.models.equipment_models import TimeStampedModel, Unit
+from accounts.models import Department,Qualification
+
 from permits.models.workflow_models import Decision
 
 
+
 class PermitApprovalRoleChoices(TimeStampedModel):
-    """
-    Dynamic roles configured by admin
-    (e.g. Area Authority, Safety Officer, Performing Authority).
-    """
+    class ScopeRequirement(models.TextChoices):
+        NOT_REQUIRED = "NOT_REQUIRED", "Not Required"
+        REQUIRED = "REQUIRED", "Required"
+
     code = models.CharField(max_length=30, unique=True, db_index=True)
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
+
+    required_qualification = models.ForeignKey(Qualification, null=True, blank=True, on_delete=models.PROTECT, related_name="approval_roles",)
+
+    department_scope = models.CharField(max_length=20, choices=ScopeRequirement.choices, default=ScopeRequirement.NOT_REQUIRED,)
+    
+    unit_scope = models.CharField(max_length=20, choices=ScopeRequirement.choices, default=ScopeRequirement.NOT_REQUIRED,)
 
     class Meta:
         verbose_name = "Permit Approval Role"
@@ -25,6 +34,29 @@ class PermitApprovalRoleChoices(TimeStampedModel):
     def __str__(self):
         return self.name
 
+
+
+class PermitApprovalRoleAssignment(TimeStampedModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="permit_role_assignments",)
+    role = models.ForeignKey(PermitApprovalRoleChoices, on_delete=models.CASCADE, related_name="assignments",)
+
+    permit_type = models.ForeignKey("permits.PermitType", null=True, blank=True, on_delete=models.PROTECT, related_name="approval_role_assignments",)
+
+    department = models.ForeignKey(Department,  null=True,  blank=True, on_delete=models.PROTECT, related_name="permit_role_assignments",)
+    units = models.ManyToManyField(Unit, blank=True, related_name="permit_role_assignments",)
+    all_units = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "role", "permit_type", "department"],
+                name="uq_user_role_type_department",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user} - {self.role}"
+    
 
 class PermitApproval(models.Model):
     """

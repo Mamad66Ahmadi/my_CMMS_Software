@@ -5,6 +5,13 @@ from permits.models.approval_models import PermitApproval
 
 @admin.register(PermitApproval)
 class PermitApprovalAdmin(admin.ModelAdmin):
+    """
+    Immutable approval audit records.
+
+    Approvals are created by the workflow service and cannot be manually
+    created, edited, or deleted from Django admin.
+    """
+
     list_display = (
         "permit",
         "actor",
@@ -24,6 +31,8 @@ class PermitApprovalAdmin(admin.ModelAdmin):
     search_fields = (
         "permit__permit_number",
         "actor__username",
+        "actor__first_name",
+        "actor__last_name",
         "role__code",
         "role__name",
         "comment",
@@ -42,9 +51,9 @@ class PermitApprovalAdmin(admin.ModelAdmin):
         "permit",
         "actor",
         "role",
+        "decision",
         "from_step",
         "to_step",
-        "decision",
         "comment",
         "transition",
         "created_at",
@@ -54,6 +63,9 @@ class PermitApprovalAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_active and request.user.is_staff
 
     def has_change_permission(self, request, obj=None):
         return False
