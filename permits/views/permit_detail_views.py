@@ -7,10 +7,11 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.db.models import Prefetch
 
 from permits.forms import PermitCreateForm
-from permits.models import Permit, Hazard, Precaution
+from permits.models import Permit, PermitHazard, PermitPrecaution
 from equipment.models import LocationTag
 
 
@@ -40,20 +41,19 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                 "current_step",
             )
             .prefetch_related(
-                # Prefetch only active hazards and precautions to avoid N+1 queries in templates
                 Prefetch(
-                    "hazards",
-                    queryset=Hazard.objects.filter(
-                        permit_assessments__is_active=True
-                    ).distinct(),
-                    to_attr="active_hazards",
+                    "hazard_assessments",
+                    queryset=PermitHazard.objects.filter(
+                        is_active=True,
+                    ).select_related("hazard"),
+                    to_attr="active_hazard_assessments",
                 ),
                 Prefetch(
-                    "precautions",
-                    queryset=Precaution.objects.filter(
-                        permit_requirements__is_active=True
-                    ).distinct(),
-                    to_attr="active_precautions",
+                    "precaution_requirements",
+                    queryset=PermitPrecaution.objects.filter(
+                        is_active=True,
+                    ).select_related("precaution"),
+                    to_attr="active_precaution_requirements",
                 ),
                 "continuations",  # Reverse FK: permits continued from this one
             )
@@ -62,6 +62,15 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         permit = self.object
+
+        permit.active_hazards = [
+            assessment.hazard
+            for assessment in permit.active_hazard_assessments
+        ]
+        permit.active_precautions = [
+            requirement.precaution
+            for requirement in permit.active_precaution_requirements
+        ]
 
         # Retrieve the workflow activity status via the standard current step evaluation
         context["is_currently_valid"] = permit.is_active
@@ -122,6 +131,7 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
 
         return context
 
+    @transaction.atomic
     def form_valid(self, form):
         self.object = form.save(commit=False)
 
@@ -133,8 +143,7 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
         # They should be initialized by your workflow service/model signal/model save logic.
         self.object.save()
 
-        # Required because form.save(commit=False) does not save ManyToMany fields.
-        form.save_m2m()
+        form.save_assessments(user=self.request.user)
 
         return redirect(self.get_success_url())
 
@@ -155,23 +164,22 @@ def get_permit_data(request):
         return JsonResponse({"error": "No permit selected"}, status=400)
 
     try:
-        # Optimized with prefetch for active items to populate target forms safely
         permit = (
             Permit.objects.select_related("location_tag", "department", "work_order")
             .prefetch_related(
                 Prefetch(
-                    "hazards",
-                    queryset=Hazard.objects.filter(
-                        permit_assessments__is_active=True
-                    ).distinct(),
-                    to_attr="active_hazards",
+                    "hazard_assessments",
+                    queryset=PermitHazard.objects.filter(
+                        is_active=True,
+                    ).select_related("hazard"),
+                    to_attr="active_hazard_assessments",
                 ),
                 Prefetch(
-                    "precautions",
-                    queryset=Precaution.objects.filter(
-                        permit_requirements__is_active=True
-                    ).distinct(),
-                    to_attr="active_precautions",
+                    "precaution_requirements",
+                    queryset=PermitPrecaution.objects.filter(
+                        is_active=True,
+                    ).select_related("precaution"),
+                    to_attr="active_precaution_requirements",
                 ),
             )
             .get(pk=permit_id)
@@ -179,9 +187,14 @@ def get_permit_data(request):
     except Permit.DoesNotExist:
         return JsonResponse({"error": "Permit not found"}, status=404)
 
-    # Return hazard and precaution lists to populate checkboxes/select2 elements in the form
-    active_hazards = [h.id for h in getattr(permit, "active_hazards", [])]
-    active_precautions = [p.id for p in getattr(permit, "active_precautions", [])]
+    active_hazards = [
+        assessment.hazard_id
+        for assessment in permit.active_hazard_assessments
+    ]
+    active_precautions = [
+        requirement.precaution_id
+        for requirement in permit.active_precaution_requirements
+    ]
 
     return JsonResponse({
         "scope_of_work": permit.scope_of_work or "",

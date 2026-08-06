@@ -4,7 +4,13 @@ from django.urls import reverse_lazy
 
 from accounts.models import UserQualification
 from equipment.models import LocationTag
-from permits.models import Permit, Hazard, Precaution
+from permits.models import (
+    Hazard,
+    Permit,
+    PermitHazard,
+    PermitPrecaution,
+    Precaution,
+)
 from work_orders.models.wo_models import WorkOrder
 
 
@@ -60,6 +66,20 @@ class PermitCreateForm(forms.ModelForm):
         queryset=User.objects.none(),
         required=False,
         widget=forms.HiddenInput(),
+    )
+
+    hazards = forms.ModelMultipleChoiceField(
+        queryset=Hazard.objects.none(),
+        required=False,
+        label="Identified Hazards",
+        widget=forms.CheckboxSelectMultiple(),
+    )
+
+    precautions = forms.ModelMultipleChoiceField(
+        queryset=Precaution.objects.none(),
+        required=False,
+        label="Required Precautions",
+        widget=forms.CheckboxSelectMultiple(),
     )
 
     class Meta:
@@ -401,6 +421,73 @@ class PermitCreateForm(forms.ModelForm):
                 )
 
         return cleaned_data
+
+    def save_assessments(self, *, user):
+        if not self.instance.pk:
+            raise ValueError(
+                "The permit must be saved before hazards and precautions."
+            )
+
+        self._sync_assessments(
+            through_model=PermitHazard,
+            related_field="hazard",
+            selected_objects=self.cleaned_data["hazards"],
+            user=user,
+        )
+        self._sync_assessments(
+            through_model=PermitPrecaution,
+            related_field="precaution",
+            selected_objects=self.cleaned_data["precautions"],
+            user=user,
+        )
+
+    def _sync_assessments(
+        self,
+        *,
+        through_model,
+        related_field,
+        selected_objects,
+        user,
+    ):
+        selected_ids = {obj.pk for obj in selected_objects}
+        related_id_field = f"{related_field}_id"
+
+        active_records = list(
+            through_model.objects.filter(
+                permit=self.instance,
+                is_active=True,
+            )
+        )
+        active_ids = {
+            getattr(record, related_id_field)
+            for record in active_records
+        }
+
+        for record in active_records:
+            if getattr(record, related_id_field) not in selected_ids:
+                record.deactivate(user=user)
+
+        for related_id in selected_ids - active_ids:
+            inactive_record = (
+                through_model.objects.filter(
+                    permit=self.instance,
+                    is_active=False,
+                    **{related_id_field: related_id},
+                )
+                .order_by("-modified_at", "-pk")
+                .first()
+            )
+
+            if inactive_record:
+                inactive_record.reactivate(user=user)
+                continue
+
+            through_model.objects.create(
+                permit=self.instance,
+                created_by=user,
+                modified_by=user,
+                **{related_id_field: related_id},
+            )
 
 
 # -------------- PIS -------------------------
