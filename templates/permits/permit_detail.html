@@ -4,7 +4,6 @@
 {% block title %}Permit {{ permit.permit_number }}{% endblock %}
 
 {% block extra_css %}
-
 {% endblock %}
 
 {% block content %}
@@ -19,17 +18,25 @@
             <div class="permit-icon-box">
                 <i class="bi bi-file-earmark-lock2"></i>
             </div>
+
             <div class="permit-title-group">
-                <h1>{{ permit.permit_number }}</h1>
+                <h1>{{ permit.permit_number|default:"—" }}</h1>
+
                 <div class="permit-subtitle">
                     <i class="bi bi-diagram-3"></i>
+
                     {% if permit.work_order %}
-                        Work Order: <a href="#">{{ permit.work_order }}</a>
+                        Work Order:
+                        <a href="#">
+                            {{ permit.work_order }}
+                        </a>
                     {% else %}
                         No linked work order
                     {% endif %}
+
                     {% if permit.continuation_of %}
-                        &nbsp;·&nbsp;<i class="bi bi-arrow-return-right"></i>
+                        &nbsp;·&nbsp;
+                        <i class="bi bi-arrow-return-right"></i>
                         Continuation of
                         <a href="{% url 'permits:permit_detail' permit.continuation_of.permit_number %}">
                             {{ permit.continuation_of.permit_number }}
@@ -38,14 +45,25 @@
                 </div>
             </div>
         </div>
+
         <div class="permit-header__right">
-            <span class="status-badge status-{{ permit.status|lower }}">
-                {{ permit.get_status_display }}
-            </span>
+
+            {% if permit.current_step %}
+                <span class="status-badge {% if permit.current_step.is_terminal %}status-closed{% elif permit.activated_at and not permit.closed_at %}status-active{% else %}status-default{% endif %}">
+                    {{ permit.current_step.title }}
+                </span>
+            {% else %}
+                <span class="status-badge status-default">
+                    No Workflow Step
+                </span>
+            {% endif %}
+
             <a href="#" class="continuation-item">
                 <i class="bi bi-pencil"></i> Edit
             </a>
-            <a href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn-permit-action">
+
+            <a href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+               class="btn-permit-action">
                 <i class="bi bi-arrow-left"></i> Back to List
             </a>
         </div>
@@ -56,17 +74,26 @@
         <div class="validity-item">
             <i class="bi bi-calendar-check"></i>
             <span class="label">Valid From:</span>
-            <span class="value">{{ permit.valid_from|date:"Y-m-d H:i" }}</span>
+            <span class="value">
+                {{ permit.valid_from|date:"Y-m-d H:i"|default:"—" }}
+            </span>
         </div>
+
         <div class="validity-item">
             <i class="bi bi-calendar-x"></i>
             <span class="label">Valid To:</span>
-            <span class="value">{{ permit.valid_to|date:"Y-m-d H:i" }}</span>
+            <span class="value">
+                {{ permit.valid_to|date:"Y-m-d H:i"|default:"—" }}
+            </span>
         </div>
 
         <span class="validity-pill {% if is_currently_valid %}validity-pill--valid{% else %}validity-pill--invalid{% endif %}">
             <i class="bi {% if is_currently_valid %}bi-check-circle-fill{% else %}bi-exclamation-circle-fill{% endif %}"></i>
-            {% if is_currently_valid %}Currently Valid{% else %}Not Valid{% endif %}
+            {% if is_currently_valid %}
+                Currently Active
+            {% else %}
+                Not Active
+            {% endif %}
         </span>
     </div>
 
@@ -76,82 +103,333 @@
         <!-- ================= LEFT COLUMN ================= -->
         <div class="permit-layout__main">
 
+            <!-- Workflow Information -->
+            <div class="detail-panel">
+                <div class="detail-panel__header">
+                    <i class="bi bi-diagram-3"></i> Workflow Information
+                </div>
+
+                <div class="detail-panel__body">
+                    <div class="field-grid">
+
+                        <div class="field-item">
+                            <span class="field-label">Permit Type</span>
+                            <span class="field-value">
+                                {% if permit.permit_type %}
+                                    {{ permit.permit_type.name }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Workflow</span>
+                            <span class="field-value">
+                                {% if permit.workflow %}
+                                    {{ permit.workflow.name }}
+                                    {% if permit.workflow.version %}
+                                        <span class="text-muted">v{{ permit.workflow.version }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Current Step</span>
+                            <span class="field-value">
+                                {% if permit.current_step %}
+                                    {{ permit.current_step.step_number }}. {{ permit.current_step.title }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Terminal Step</span>
+                            <span class="field-value">
+                                {% if permit.current_step %}
+                                    {% if permit.current_step.is_terminal %}
+                                        <span class="text-danger fw-bold">Yes</span>
+                                    {% else %}
+                                        <span class="text-muted">No</span>
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
             <!-- General Information -->
             <div class="detail-panel">
                 <div class="detail-panel__header">
                     <i class="bi bi-info-circle"></i> General Information
                 </div>
+
                 <div class="detail-panel__body">
                     <div class="field-grid">
+
                         <div class="field-item">
                             <span class="field-label">Location / Tag</span>
-                            <span class="field-value">{{ permit.location_tag|default:"—" }}</span>
+                            <span class="field-value">
+                                {{ permit.location_tag|default:"—" }}
+                            </span>
                         </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Unit</span>
+                            <span class="field-value">
+                                {% if permit.location_tag and permit.location_tag.unit %}
+                                    {{ permit.location_tag.unit.unit_code }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Train</span>
+                            <span class="field-value">
+                                {% if permit.location_tag %}
+                                    {{ permit.location_tag.train|default:"—" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
                         <div class="field-item">
                             <span class="field-label">Department</span>
-                            <span class="field-value">{{ permit.department|default:"—" }}</span>
+                            <span class="field-value">
+                                {{ permit.department|default:"—" }}
+                            </span>
                         </div>
+
                         <div class="field-item">
-                            <span class="field-label">Authorized Issuer</span>
-                            <span class="field-value">{{ permit.authorized_issuer|default:"—" }}</span>
+                            <span class="field-label">Work Supervisor</span>
+                            <span class="field-value">
+                                {{ permit.work_supervisor|default:"—" }}
+                            </span>
                         </div>
+
                         <div class="field-item">
-                            <span class="field-label">Permit Holder</span>
-                            <span class="field-value">{{ permit.permit_holder|default:"—" }}</span>
+                            <span class="field-label">Designated Area Authority</span>
+                            <span class="field-value">
+                                {{ permit.designated_area_authority|default:"—" }}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Designated Area Supervisor</span>
+                            <span class="field-value">
+                                {{ permit.designated_area_supervisor|default:"—" }}
+                            </span>
                         </div>
 
                         <hr class="field-divider">
 
                         <div class="field-item highlight-block" style="grid-column: 1 / -1;">
-                            <span class="field-label">Description</span>
+                            <span class="field-label">Scope of Work</span>
                             <span class="field-value text-block align-start-cell persian-text">
-                                <bdi>{{ permit.description|default:"—" }}</bdi>
+                                <bdi>{{ permit.scope_of_work|default:"—" }}</bdi>
                             </span>
                         </div>
 
-                        {% if permit.comment %}
-                        <div class="field-item" style="grid-column: 1 / -1;">
-                            <span class="field-label">Comment</span>
-                            <span class="field-value text-block align-start-cell persian-text">
-                                <bdi>{{ permit.comment }}</bdi>
-                            </span>
-                        </div>
+                        {% if permit.remarks %}
+                            <div class="field-item" style="grid-column: 1 / -1;">
+                                <span class="field-label">Remarks</span>
+                                <span class="field-value text-block align-start-cell persian-text">
+                                    <bdi>{{ permit.remarks }}</bdi>
+                                </span>
+                            </div>
                         {% endif %}
+
                     </div>
                 </div>
             </div>
 
-            <!-- Work Type Classification -->
+            <!-- Tools, Materials & Vehicle -->
             <div class="detail-panel">
                 <div class="detail-panel__header">
-                    <i class="bi bi-tools"></i> Work Type Classification
+                    <i class="bi bi-tools"></i> Tools, Materials &amp; Vehicle
                 </div>
+
                 <div class="detail-panel__body">
-                    <div class="precaution-list">
-                        <div class="precaution-row {% if not permit.requires_loto %}is-inactive{% endif %}">
-                            <i class="bi {% if permit.requires_loto %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
-                            Requires LOTO (Isolation)
+                    <div class="field-grid">
+
+                        <div class="field-item">
+                            <span class="field-label">Electrical Tools</span>
+                            <span class="field-value text-block">
+                                {{ permit.electrical_tools|default:"—" }}
+                            </span>
                         </div>
-                        <div class="precaution-row {% if not permit.is_excavation %}is-inactive{% endif %}">
-                            <i class="bi {% if permit.is_excavation %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
-                            Excavation Work
+
+                        <div class="field-item">
+                            <span class="field-label">Mechanical Tools</span>
+                            <span class="field-value text-block">
+                                {{ permit.mechanical_tools|default:"—" }}
+                            </span>
                         </div>
-                        <div class="precaution-row {% if not permit.is_confined_space %}is-inactive{% endif %}">
-                            <i class="bi {% if permit.is_confined_space %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
-                            Confined Space Entry
+
+                        <div class="field-item">
+                            <span class="field-label">Other Tools</span>
+                            <span class="field-value text-block">
+                                {{ permit.other_tools|default:"—" }}
+                            </span>
                         </div>
-                        <div class="precaution-row {% if not permit.is_equipment_test %}is-inactive{% endif %}">
-                            <i class="bi {% if permit.is_equipment_test %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
-                            Equipment Test / Commissioning
+
+                        <div class="field-item">
+                            <span class="field-label">Hazardous Materials</span>
+                            <span class="field-value text-block">
+                                {{ permit.hazardous_materials|default:"—" }}
+                            </span>
                         </div>
-                        <div class="precaution-row {% if not permit.is_radiography %}is-inactive{% endif %}">
-                            <i class="bi {% if permit.is_radiography %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
-                            Radiography
+
+                        <div class="field-item">
+                            <span class="field-label">Non-Explosion Proof Equipment</span>
+                            <span class="field-value text-block">
+                                {{ permit.non_explosion_proof_equipment|default:"—" }}
+                            </span>
                         </div>
-                        <div class="precaution-row {% if not permit.is_diving %}is-inactive{% endif %}">
-                            <i class="bi {% if permit.is_diving %}bi-check-circle-fill{% else %}bi-x-circle{% endif %}"></i>
-                            Diving Operation
+
+                        <div class="field-item">
+                            <span class="field-label">Vehicle Required</span>
+                            <span class="field-value">
+                                {% if permit.vehicle_required %}
+                                    <span class="text-danger fw-bold">
+                                        <i class="bi bi-check-circle-fill"></i> Yes
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">
+                                        <i class="bi bi-x-circle"></i> No
+                                    </span>
+                                {% endif %}
+                            </span>
                         </div>
+
+                        {% if permit.vehicle_required %}
+                            <div class="field-item" style="grid-column: 1 / -1;">
+                                <span class="field-label">Vehicle Description</span>
+                                <span class="field-value text-block">
+                                    {{ permit.vehicle_description|default:"—" }}
+                                </span>
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Preparation -->
+            <div class="detail-panel">
+                <div class="detail-panel__header">
+                    <i class="bi bi-shield-exclamation"></i> Equipment Preparation
+                </div>
+
+                <div class="detail-panel__body">
+                    <div class="field-grid">
+
+                        <div class="field-item">
+                            <span class="field-label">Mechanical Isolation</span>
+                            <span class="field-value">
+                                {% if permit.mechanical_isolation %}
+                                    {{ permit.get_mechanical_isolation_display }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Equipment Depressurized</span>
+                            <span class="field-value">
+                                {% if permit.equipment_depressurized %}
+                                    {{ permit.get_equipment_depressurized_display }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Equipment Drained</span>
+                            <span class="field-value">
+                                {% if permit.equipment_drained %}
+                                    {{ permit.get_equipment_drained_display }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Equipment Purged</span>
+                            <span class="field-value">
+                                {% if permit.equipment_purged %}
+                                    {{ permit.get_equipment_purged_display }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Process Isolation</span>
+                            <span class="field-value">
+                                {% if permit.process_isolation %}
+                                    {{ permit.get_process_isolation_display }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Area Authority Present Required</span>
+                            <span class="field-value">
+                                {% if permit.area_authority_present_required %}
+                                    <span class="text-danger fw-bold">
+                                        <i class="bi bi-check-circle-fill"></i> Yes
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">
+                                        <i class="bi bi-x-circle"></i> No
+                                    </span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="field-item">
+                            <span class="field-label">Fire Watch Required</span>
+                            <span class="field-value">
+                                {% if permit.fire_watch_present_required %}
+                                    <span class="text-danger fw-bold">
+                                        <i class="bi bi-check-circle-fill"></i> Yes
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">
+                                        <i class="bi bi-x-circle"></i> No
+                                    </span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        {% if permit.equipment_preparation_notes %}
+                            <div class="field-item" style="grid-column: 1 / -1;">
+                                <span class="field-label">Equipment Preparation Notes</span>
+                                <span class="field-value text-block align-start-cell persian-text">
+                                    <bdi>{{ permit.equipment_preparation_notes }}</bdi>
+                                </span>
+                            </div>
+                        {% endif %}
+
                     </div>
                 </div>
             </div>
@@ -161,95 +439,213 @@
                 <div class="detail-panel__header">
                     <i class="bi bi-exclamation-triangle"></i> Identified Hazards
                 </div>
+
                 <div class="detail-panel__body">
-                    {% if permit.hazard_codes.all %}
+                    {% if permit.active_hazards %}
                         <div class="hazard-chip-list">
-                            {% for hazard in permit.hazard_codes.all %}
+                            {% for hazard in permit.active_hazards %}
                                 <span class="hazard-chip">
                                     <i class="bi bi-exclamation-diamond-fill"></i>
-                                    {{ hazard.code }} — {{ hazard.description }}
+                                    {{ hazard.code }}
+                                    {% if hazard.description %}
+                                        — {{ hazard.description }}
+                                    {% elif hazard.name %}
+                                        — {{ hazard.name }}
+                                    {% endif %}
                                 </span>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <div class="empty-hint">No hazards recorded for this permit.</div>
+                        <div class="empty-hint">
+                            No active hazards recorded for this permit.
+                        </div>
                     {% endif %}
                 </div>
             </div>
 
-            {% if permit.special_conditions_summary %}
-            <!-- Special Conditions -->
+            <!-- Precautions -->
             <div class="detail-panel">
                 <div class="detail-panel__header">
-                    <i class="bi bi-shield-exclamation"></i> Special Conditions
+                    <i class="bi bi-shield-check"></i> Required Precautions
                 </div>
+
                 <div class="detail-panel__body">
-                    <div class="field-value text-block">{{ permit.special_conditions_summary }}</div>
+                    {% if permit.active_precautions %}
+                        <div class="precaution-list">
+                            {% for precaution in permit.active_precautions %}
+                                <div class="precaution-row">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>
+                                        {{ precaution.code }}
+                                        {% if precaution.description %}
+                                            — {{ precaution.description }}
+                                        {% elif precaution.name %}
+                                            — {{ precaution.name }}
+                                        {% endif %}
+
+                                        {% if precaution.requires_verification %}
+                                            <span class="badge text-bg-warning ms-2">
+                                                Verification Required
+                                            </span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-hint">
+                            No active precautions recorded for this permit.
+                        </div>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
-
-
 
         </div>
 
         <!-- ================= RIGHT COLUMN ================= -->
         <div class="permit-layout__side">
 
+            <!-- Lifecycle Info -->
+            <div class="detail-panel">
+                <div class="detail-panel__header">
+                    <i class="bi bi-activity"></i> Lifecycle
+                </div>
+
+                <div class="detail-panel__body">
+
+                    <div class="info-mini-row">
+                        <span class="label">
+                            <i class="bi bi-play-circle"></i> Activated At
+                        </span>
+                        <span class="value">
+                            {{ permit.activated_at|date:"Y-m-d H:i"|default:"—" }}
+                        </span>
+                    </div>
+
+                    <div class="info-mini-row">
+                        <span class="label">
+                            <i class="bi bi-pause-circle"></i> Suspended At
+                        </span>
+                        <span class="value">
+                            {{ permit.suspended_at|date:"Y-m-d H:i"|default:"—" }}
+                        </span>
+                    </div>
+
+                    <div class="info-mini-row">
+                        <span class="label">
+                            <i class="bi bi-check2-circle"></i> Completed At
+                        </span>
+                        <span class="value">
+                            {{ permit.completed_at|date:"Y-m-d H:i"|default:"—" }}
+                        </span>
+                    </div>
+
+                    <div class="info-mini-row">
+                        <span class="label">
+                            <i class="bi bi-lock"></i> Closed At
+                        </span>
+                        <span class="value">
+                            {{ permit.closed_at|date:"Y-m-d H:i"|default:"—" }}
+                        </span>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- Record Info -->
             <div class="detail-panel">
                 <div class="detail-panel__header">
                     <i class="bi bi-card-list"></i> Record Info
                 </div>
+
                 <div class="detail-panel__body">
+
                     <div class="info-mini-row">
-                        <span class="label"><i class="bi bi-person-plus"></i> Created By</span>
-                        <span class="value">{{ permit.created_by|default:"—" }}</span>
+                        <span class="label">
+                            <i class="bi bi-person-plus"></i> Created By
+                        </span>
+                        <span class="value">
+                            {{ permit.created_by|default:"—" }}
+                        </span>
                     </div>
+
                     <div class="info-mini-row">
-                        <span class="label"><i class="bi bi-calendar-plus"></i> Created At</span>
-                        <span class="value">{{ permit.created_at|date:"Y-m-d H:i" }}</span>
+                        <span class="label">
+                            <i class="bi bi-calendar-plus"></i> Created At
+                        </span>
+                        <span class="value">
+                            {{ permit.created_at|date:"Y-m-d H:i"|default:"—" }}
+                        </span>
                     </div>
+
                     <div class="info-mini-row">
-                        <span class="label"><i class="bi bi-person-check"></i> Modified By</span>
-                        <span class="value">{{ permit.modified_by|default:"—" }}</span>
+                        <span class="label">
+                            <i class="bi bi-person-check"></i> Modified By
+                        </span>
+                        <span class="value">
+                            {{ permit.modified_by|default:"—" }}
+                        </span>
                     </div>
+
                     <div class="info-mini-row">
-                        <span class="label"><i class="bi bi-calendar-check"></i> Modified At</span>
-                        <span class="value">{{ permit.modified_at|date:"Y-m-d H:i" }}</span>
+                        <span class="label">
+                            <i class="bi bi-calendar-check"></i> Modified At
+                        </span>
+                        <span class="value">
+                            {{ permit.modified_at|date:"Y-m-d H:i"|default:"—" }}
+                        </span>
                     </div>
+
                 </div>
             </div>
 
+            <!-- Continuation Permits -->
             {% if permit.continuations.all %}
-            <div class="detail-panel">
-                <div class="detail-panel__header">
-                    <i class="bi bi-arrow-repeat"></i> Continuation Permits
-                </div>
-                <div class="detail-panel__body">
-                    <div class="continuation-list">
-                        {% for cont in permit.continuations.all %}
-                        <a href="{% url 'permits:permit_detail' cont.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-                        class="continuation-item">
-                            <span class="permit-no">{{ cont.permit_number }}</span>
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                        {% endfor %}
+                <div class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-arrow-repeat"></i> Continuation Permits
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="continuation-list">
+                            {% for cont in permit.continuations.all %}
+                                <a href="{% url 'permits:permit_detail' cont.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                   class="continuation-item">
+                                    <span class="permit-no">
+                                        {{ cont.permit_number }}
+                                    </span>
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
-            </div>
             {% endif %}
 
-
+            <!-- Actions -->
             <div class="detail-panel">
                 <div class="detail-panel__body">
-                    <a href="{% url 'permits:permit_create' %}" class="btn btn-enterprise-primary w-100 d-inline-flex align-items-center justify-content-center">
+
+                    {# Enable this only if permits:permit_create exists in permits/urls.py #}
+                    {# 
+                    <a href="{% url 'permits:permit_create' %}"
+                       class="btn btn-enterprise-primary w-100 d-inline-flex align-items-center justify-content-center">
                         <i class="bi bi-plus-lg me-1"></i>
                         Issue New Permit
                     </a>
+                    #}
+
+                    <a href="{% url 'permits:permit_list' %}"
+                       class="btn btn-enterprise-primary w-100 d-inline-flex align-items-center justify-content-center">
+                        <i class="bi bi-list-ul me-1"></i>
+                        View All Permits
+                    </a>
+
                 </div>
             </div>
+
         </div>
     </div>
 </div>
+
 {% endblock %}

@@ -49,9 +49,14 @@
         {% for permit in permits %}
             <tr class="permit-row">
                 <td class="fw-bold">
-                    <span class="permit-number-link">
-                        {{ permit.permit_number|default:"-" }}
-                    </span>
+                    {% if permit.permit_number %}
+                        <a href="{% url 'permits:permit_detail' permit.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                        class="permit-number-link">
+                            {{ permit.permit_number }}
+                        </a>
+                    {% else %}
+                        <span class="permit-number-link text-muted">-</span>
+                    {% endif %}
                 </td>
 
                 <td class="text-secondary-ref">

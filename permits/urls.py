@@ -7,10 +7,12 @@ from permits.views import (
     PermitExportCSV,
     PermitFilterFavoriteSaveView,
     PermitFilterFavoriteDeleteView,
-    #permit_autocomplete,
-    #get_permit_data,
+    permit_autocomplete,
+    get_permit_data,
     PISQualificationListView,
     AddPISQualificationView,
+    PermitCreateView,
+    PermitDetailView,
 )
 
 
@@ -31,16 +33,16 @@ urlpatterns = [
     # -------------------------------------------------------------------------
     # Permit AJAX / autocomplete helpers
     # -------------------------------------------------------------------------
-    # path("autocomplete/permits/", permit_autocomplete, name="permit_autocomplete",),
-    # path("get-permit-data/", get_permit_data, name="get_permit_data",),
+    path("autocomplete/permits/", permit_autocomplete, name="permit_autocomplete",),
+    path("get-permit-data/", get_permit_data, name="get_permit_data",),
     # -------------------------------------------------------------------------
     # PIS qualifications
     # -------------------------------------------------------------------------
     path("pis-holders/", PISQualificationListView.as_view(), name="pis_holders",),
     path("pis-holders/add/", AddPISQualificationView.as_view(), name="add_pis",),
     # -------------------------------------------------------------------------
-    # Temporarily ignored:
+    # Permit Detail / Create
     # -------------------------------------------------------------------------
-    # path("create/", PermitCreateView.as_view(), name="permit_create"),
-    # path("<str:permit_number>/", PermitDetailView.as_view(), name="permit_detail"),
+    path("create/", PermitCreateView.as_view(), name="permit_create"),
+    path("<str:permit_number>/", PermitDetailView.as_view(), name="permit_detail"),
 ]

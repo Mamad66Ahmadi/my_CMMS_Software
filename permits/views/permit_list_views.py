@@ -1103,12 +1103,18 @@ class PermitExportCSV(LoginRequiredMixin, View):
         ])
 
         for permit in queryset:
-            # Extract lists from M2M relations cleanly
             hazards_list = ", ".join(
-                permit.hazards.filter(hazard_assessments__is_active=True).values_list("code", flat=True)
+                permit.hazards.filter(
+                    permit_assessments__permit=permit,
+                    permit_assessments__is_active=True,
+                ).values_list("code", flat=True).distinct()
             )
+
             precautions_list = ", ".join(
-                permit.precautions.filter(precaution_requirements__is_active=True).values_list("code", flat=True)
+                permit.precautions.filter(
+                    permit_requirements__permit=permit,
+                    permit_requirements__is_active=True,
+                ).values_list("code", flat=True).distinct()
             )
 
             writer.writerow([
@@ -1164,5 +1170,6 @@ class PermitExportCSV(LoginRequiredMixin, View):
                 permit.modified_at.strftime("%Y-%m-%d %H:%M:%S") if permit.modified_at else "",
                 permit.modified_by.username if permit.modified_by else "",
             ])
+
 
         return response
