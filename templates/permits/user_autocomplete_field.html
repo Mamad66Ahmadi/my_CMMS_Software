@@ -1,0 +1,33 @@
+<div class="form-field-block">
+    <label for="{{ input_id }}">
+        {{ label }}
+        {% if required %}
+            <span class="text-danger">*</span>
+        {% endif %}
+    </label>
+
+    <div class="position-relative">
+        <input
+            type="text"
+            id="{{ input_id }}"
+            class="form-control"
+            placeholder="Search by personnel number or name..."
+            autocomplete="off"
+            data-autocomplete-url="{% url 'accounts:user_autocomplete' %}"
+            value="{% if field.value %}{{ field.value }}{% endif %}"
+        >
+
+        <div
+            id="{{ results_id }}"
+            class="list-group mt-1 shadow position-absolute w-100 location-results"
+        ></div>
+
+        {{ field }}
+    </div>
+
+    {% if field.errors %}
+        <div class="field-errors">
+            {{ field.errors|striptags }}
+        </div>
+    {% endif %}
+</div>

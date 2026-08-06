@@ -625,22 +625,15 @@
             <!-- Actions -->
             <div class="detail-panel">
                 <div class="detail-panel__body">
+                    <div class="d-grid gap-3">
 
-                    {# Enable this only if permits:permit_create exists in permits/urls.py #}
-                    {# 
-                    <a href="{% url 'permits:permit_create' %}"
-                       class="btn btn-enterprise-primary w-100 d-inline-flex align-items-center justify-content-center">
-                        <i class="bi bi-plus-lg me-1"></i>
-                        Issue New Permit
-                    </a>
-                    #}
+                        <a href="{% url 'permits:permit_create' %}"
+                        class="btn btn-enterprise-primary d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Issue New Permit
+                        </a>
 
-                    <a href="{% url 'permits:permit_list' %}"
-                       class="btn btn-enterprise-primary w-100 d-inline-flex align-items-center justify-content-center">
-                        <i class="bi bi-list-ul me-1"></i>
-                        View All Permits
-                    </a>
-
+                    </div>
                 </div>
             </div>
 

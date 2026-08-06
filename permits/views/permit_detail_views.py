@@ -5,6 +5,7 @@ from django.views.generic import DetailView, CreateView
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 from django.urls import reverse
+from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
 
@@ -90,6 +91,7 @@ def permit_autocomplete(request):
 
 
 # ----------------- Create --------------------------------
+# ----------------- Create --------------------------------
 class PermitCreateView(LoginRequiredMixin, CreateView):
     model = Permit
     form_class = PermitCreateForm
@@ -97,37 +99,52 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
+
         location_id = self.request.GET.get("location_tag")
         if location_id:
             initial["location_tag"] = location_id
+
         return initial
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        location_id = self.request.GET.get("location_tag") or self.request.POST.get("location_tag")
+
+        location_id = (
+            self.request.GET.get("location_tag")
+            or self.request.POST.get("location_tag")
+        )
 
         if location_id:
             try:
                 context["location"] = LocationTag.objects.get(pk=location_id)
             except LocationTag.DoesNotExist:
-                pass
+                context["location"] = None
 
         return context
 
     def form_valid(self, form):
-        obj = form.save(commit=False)
-        # Note: Under the new engine, dynamic workflows replace legacy static status.
-        # This falls back gracefully if your CreateView/Form isn't fully migrated.
-        obj.created_by = self.request.user
-        obj.modified_by = self.request.user
-        obj.save()
+        self.object = form.save(commit=False)
+
+        # Audit fields
+        self.object.created_by = self.request.user
+        self.object.modified_by = self.request.user
+
+        # Workflow fields such as workflow/current_step/status are not set here.
+        # They should be initialized by your workflow service/model signal/model save logic.
+        self.object.save()
+
+        # Required because form.save(commit=False) does not save ManyToMany fields.
         form.save_m2m()
-        self.object = obj
-        return super().form_valid(form)
+
+        return redirect(self.get_success_url())
 
     def get_success_url(self):
-        return reverse("permits:permit_detail", kwargs={"permit_number": self.object.permit_number})
-    
+        return reverse(
+            "permits:permit_detail",
+            kwargs={
+                "permit_number": self.object.permit_number,
+            },
+        )
 
 # ------------------------ Filling the form based on permit number ---------------
 @login_required
