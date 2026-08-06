@@ -1,9 +1,13 @@
 {% comment %}
-Expected:
-column
-label
-sort_by
-query_params
+Expected context:
+- column
+- label
+- sort_by
+- query_params
+
+Important:
+header_query_params should NOT include "sort".
+Your view already builds it correctly.
 {% endcomment %}
 
 {% with asc=column desc="-"|add:column %}
@@ -20,11 +24,9 @@ query_params
             <span class="sort-arrow desc"></span>
         </th>
     {% else %}
-        <th
-            onclick="window.location.href='?sort={{ asc }}{% if query_params %}&{{ query_params }}{% endif %}'">
+        <th onclick="window.location.href='?sort={{ asc }}{% if query_params %}&{{ query_params }}{% endif %}'">
             {{ label }}
             <span class="sort-arrow"></span>
         </th>
     {% endif %}
 {% endwith %}
-

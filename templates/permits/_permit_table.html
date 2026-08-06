@@ -5,27 +5,39 @@
         <tr>
             {% include "permits/_permit_table_header.html" with column="permit_number" label="Permit Number" sort_by=sort_by query_params=header_query_params %}
             {% include "permits/_permit_table_header.html" with column="continuation_of" label="Continuation Of" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
+
+            {% include "permits/_permit_table_header.html" with column="workflow" label="Workflow" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="current_step" label="Step No." sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="current_step_title" label="Current Step" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="workflow_state" label="Workflow State" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="is_terminal" label="Terminal" sort_by=sort_by query_params=header_query_params %}
+
             {% include "permits/_permit_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="hazard_code" label="Hazard Code" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="description" label="Description" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
             {% include "permits/_permit_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
+
+            {% include "permits/_permit_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="hazard_code" label="Hazards" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="precaution_code" label="Precautions" sort_by=sort_by query_params=header_query_params %}
+
+            {% include "permits/_permit_table_header.html" with column="vehicle_required" label="Vehicle" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="mechanical_isolation" label="Mech. Isolation" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="process_isolation" label="Process Isolation" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="area_authority_present_required" label="AA Required" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="fire_watch_present_required" label="Fire Watch" sort_by=sort_by query_params=header_query_params %}
+
+            {% include "permits/_permit_table_header.html" with column="work_supervisor" label="Work Supervisor" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="designated_area_authority" label="Area Authority" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="designated_area_supervisor" label="Area Supervisor" sort_by=sort_by query_params=header_query_params %}
+
             {% include "permits/_permit_table_header.html" with column="valid_from" label="Valid From" sort_by=sort_by query_params=header_query_params %}
             {% include "permits/_permit_table_header.html" with column="valid_to" label="Valid To" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="special_conditions" label="Special Conditions" sort_by=sort_by query_params=header_query_params %}
-            
-            <!-- Sortable Boolean Fields -->
-            {% include "permits/_permit_table_header.html" with column="requires_loto" label="Requires LOTO" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="is_excavation" label="Excavation" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="is_confined_space" label="Confined Space" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="is_equipment_test" label="Equipment Test" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="is_radiography" label="Radiography" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="is_diving" label="Diving" sort_by=sort_by query_params=header_query_params %}
-            
-            {% include "permits/_permit_table_header.html" with column="authorized_issuer" label="Authorized Issuer" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="permit_holder" label="Permit Holder" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="activated_at" label="Activated At" sort_by=sort_by query_params=header_query_params %}
+            {% include "permits/_permit_table_header.html" with column="closed_at" label="Closed At" sort_by=sort_by query_params=header_query_params %}
+
             {% include "permits/_permit_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=header_query_params %}
             {% include "permits/_permit_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=header_query_params %}
             {% include "permits/_permit_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=header_query_params %}
@@ -35,102 +47,236 @@
 
     <tbody>
         {% for permit in permits %}
-        <tr class="permit-row"
-            <!-- Primary Number: Bold and Dark -->
-            <td class="fw-bold">
-                <a href="{% url 'permits:permit_detail' permit.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-                class="permit-number-link">
-                    {{ permit.permit_number }}
-                </a>
-            </td>
+            <tr class="permit-row">
+                <td class="fw-bold">
+                    <span class="permit-number-link">
+                        {{ permit.permit_number|default:"-" }}
+                    </span>
+                </td>
 
+                <td class="text-secondary-ref">
+                    {% if permit.continuation_of %}
+                        <span class="neutral-link">
+                            {{ permit.continuation_of.permit_number }}
+                        </span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
 
-            <!-- Continuation Number: Muted and distinct -->
-            <td class="text-secondary-ref">
-                {% if permit.continuation_of %}
-                <a href="{% url 'permits:permit_detail' permit.continuation_of.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-                class="neutral-link">
-                    {{ permit.continuation_of.permit_number }}
-                </a>
-                {% else %}
-                    <span style="color: #ccc;">-</span>
-                {% endif %}
-            </td>
+                <td>
+                    {% if permit.permit_type %}
+                        {{ permit.permit_type.name }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <td>{{ permit.location_tag.loc_tag|default:"-" }}</td>
+                <td>
+                    {% if permit.workflow %}
+                        {{ permit.workflow.name }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <td>
-                <span class="status-badge status-{{ permit.status|lower|default:'default' }}">
-                    {{ permit.get_status_display }}
-                </span>
-            </td>
+                <td class="text-center">
+                    {% if permit.current_step %}
+                        {{ permit.current_step.step_number }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <td>
-                {% if permit.hazard_codes.all %}
-                    {% for hc in permit.hazard_codes.all %}
-                        <span>{{ hc.code }}{% if not forloop.last %}, {% endif %}</span>
-                    {% endfor %}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
+                <td>
+                    {% if permit.current_step %}
+                        <span class="status-badge {% if permit.current_step.is_terminal %}status-closed{% else %}status-active{% endif %}">
+                            {{ permit.current_step.title }}
+                        </span>
+                    {% else %}
+                        <span class="status-badge status-default">No Step</span>
+                    {% endif %}
+                </td>
 
-            <td>{{ permit.work_order.wo_number|default:"-" }}</td>
+                <td>
+                    {% if permit.current_step and permit.current_step.is_terminal %}
+                        <span class="badge text-bg-secondary">Terminal</span>
+                    {% elif permit.closed_at %}
+                        <span class="badge text-bg-secondary">Closed</span>
+                    {% elif permit.completed_at %}
+                        <span class="badge text-bg-info">Completed</span>
+                    {% elif permit.suspended_at %}
+                        <span class="badge text-bg-warning">Suspended</span>
+                    {% elif permit.activated_at %}
+                        <span class="badge text-bg-success">Active</span>
+                    {% elif permit.current_step and permit.current_step.is_start %}
+                        <span class="badge text-bg-light">Draft / Start</span>
+                    {% else %}
+                        <span class="badge text-bg-light">In Progress</span>
+                    {% endif %}
+                </td>
 
-            <!-- Persian compatible Description -->
-            <td class="persian-text align-start-cell">
-                <bdi title="{{ permit.description }}">
-                    {{ permit.description|truncatechars:60 }}
-                </bdi>
-            </td>
+                <td class="text-center">
+                    {% if permit.current_step %}
+                        {% if permit.current_step.is_terminal %}
+                            <span class="text-danger fw-bold">True</span>
+                        {% else %}
+                            <span class="text-muted">False</span>
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <td>{{ permit.department.name }}</td>
+                <td>
+                    {% if permit.location_tag %}
+                        {{ permit.location_tag.loc_tag }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <td>{{ permit.location_tag.unit.unit_code|default:"-" }}</td>
+                <td>
+                    {% if permit.location_tag and permit.location_tag.unit %}
+                        {{ permit.location_tag.unit.unit_code }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <td>{{ permit.valid_from|date:"Y-m-d H:i" }}</td>
-            <td>{{ permit.valid_to|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if permit.location_tag %}
+                        {{ permit.location_tag.train|default:"-" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <!-- Persian compatible Special Conditions -->
-            <td class="persian-text">
-                <bdi title="{{ permit.special_conditions_summary }}">
-                    {{ permit.special_conditions_summary|truncatechars:40 }}
-                </bdi>
-            </td>
+                <td>
+                    {% if permit.work_order %}
+                        {{ permit.work_order.wo_number }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <!-- Boolean Fields: True (dark red), False (muted) -->
-            <td class="text-center {% if permit.requires_loto %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.requires_loto %}color: #8b0000 !important;{% endif %}">
-                {% if permit.requires_loto %}True{% else %}False{% endif %}
-            </td>
+                <td class="persian-text align-start-cell">
+                    <bdi title="{{ permit.scope_of_work|default:'' }}">
+                        {{ permit.scope_of_work|default:"-"|truncatechars:70 }}
+                    </bdi>
+                </td>
 
-            <td class="text-center {% if permit.is_excavation %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_excavation %}color: #8b0000 !important;{% endif %}">
-                {% if permit.is_excavation %}True{% else %}False{% endif %}
-            </td>
+                <td>
+                    {% if permit.department %}
+                        {{ permit.department.name }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <td class="text-center {% if permit.is_confined_space %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_confined_space %}color: #8b0000 !important;{% endif %}">
-                {% if permit.is_confined_space %}True{% else %}False{% endif %}
-            </td>
-            <td class="text-center {% if permit.is_equipment_test %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_equipment_test %}color: #8b0000 !important;{% endif %}">
-                {% if permit.is_equipment_test %}True{% else %}False{% endif %}
-            </td>
-            <td class="text-center {% if permit.is_radiography %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_radiography %}color: #8b0000 !important;{% endif %}">
-                {% if permit.is_radiography %}True{% else %}False{% endif %}
-            </td>
-            <td class="text-center {% if permit.is_diving %}text-danger fw-bold{% else %}text-muted{% endif %}" style="{% if permit.is_diving %}color: #8b0000 !important;{% endif %}">
-                {% if permit.is_diving %}True{% else %}False{% endif %}
-            </td>
+                <td>
+                    {% if permit.hazards.all %}
+                        {% for hazard in permit.hazards.all %}
+                            <span>{{ hazard.code }}{% if not forloop.last %}, {% endif %}</span>
+                        {% endfor %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
 
-            <td>{{ permit.authorized_issuer.username }}</td>
-            <td>{{ permit.permit_holder.username|default:"-" }}</td>
-            <td>{{ permit.created_at|date:"Y-m-d H:i" }}</td>
-            <td>{{ permit.created_by.username }}</td>
-            <td>{{ permit.modified_at|date:"Y-m-d H:i" }}</td>
-            <td>{{ permit.modified_by.username|default:"-" }}</td>
-        </tr>
+                <td>
+                    {% if permit.precautions.all %}
+                        {% for precaution in permit.precautions.all %}
+                            <span>{{ precaution.code }}{% if not forloop.last %}, {% endif %}</span>
+                        {% endfor %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td class="text-center {% if permit.vehicle_required %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                    {% if permit.vehicle_required %}True{% else %}False{% endif %}
+                </td>
+
+                <td class="text-center">
+                    {% if permit.mechanical_isolation %}
+                        {{ permit.get_mechanical_isolation_display }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td class="text-center">
+                    {% if permit.process_isolation %}
+                        {{ permit.get_process_isolation_display }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td class="text-center {% if permit.area_authority_present_required %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                    {% if permit.area_authority_present_required %}True{% else %}False{% endif %}
+                </td>
+
+                <td class="text-center {% if permit.fire_watch_present_required %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                    {% if permit.fire_watch_present_required %}True{% else %}False{% endif %}
+                </td>
+
+                <td>
+                    {% if permit.work_supervisor %}
+                        {{ permit.work_supervisor.username }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if permit.designated_area_authority %}
+                        {{ permit.designated_area_authority.username }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if permit.designated_area_supervisor %}
+                        {{ permit.designated_area_supervisor.username }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td>{{ permit.valid_from|date:"Y-m-d H:i"|default:"-" }}</td>
+                <td>{{ permit.valid_to|date:"Y-m-d H:i"|default:"-" }}</td>
+                <td>{{ permit.activated_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                <td>{{ permit.closed_at|date:"Y-m-d H:i"|default:"-" }}</td>
+
+                <td>{{ permit.created_at|date:"Y-m-d H:i"|default:"-" }}</td>
+
+                <td>
+                    {% if permit.created_by %}
+                        {{ permit.created_by.username }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td>{{ permit.modified_at|date:"Y-m-d H:i"|default:"-" }}</td>
+
+                <td>
+                    {% if permit.modified_by %}
+                        {{ permit.modified_by.username }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
         {% empty %}
-        <tr>
-            <td colspan="24" class="text-center text-muted py-4">No permits found match your search criteria.</td>
-        </tr>
+            <tr>
+                <td colspan="32" class="text-center text-muted py-4">
+                    No permits found matching your search criteria.
+                </td>
+            </tr>
         {% endfor %}
     </tbody>
 </table>

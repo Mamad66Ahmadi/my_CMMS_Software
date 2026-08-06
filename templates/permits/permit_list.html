@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block title %}Permits{% endblock %}
 
 {% block content %}
@@ -7,106 +8,119 @@
 
 <div class="container-fluid">
 
+    {# ---------------------------------------------------------------------- #}
+    {# Filters / favorites / advanced search                                  #}
+    {# ---------------------------------------------------------------------- #}
     {% include "permits/_permit_filter.html" %}
 
+
+    {# ---------------------------------------------------------------------- #}
+    {# Page header                                                            #}
+    {# ---------------------------------------------------------------------- #}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="d-flex align-items-center gap-3">
             <h1 class="mb-0">
                 Permits
-                <small>({{ permits.paginator.count }} Records)</small>
+                <small class="text-muted">
+                    ({{ permits.paginator.count }} Records)
+                </small>
             </h1>
 
-            <a href="{% url 'permits:permit_create' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-enterprise-primary">
-                <i class="bi bi-plus-lg me-1"></i>Issue New Permit
+            {# Create view is intentionally ignored for now. #}
+            <a href="#"
+               class="btn btn-enterprise-primary">
+                <i class="bi bi-plus-lg me-1"></i>
+                Issue New Permit
             </a>
         </div>
 
-        <div>
-            <a href="{% url 'permits:permit_export_csv' %}?{{ query_params }}" class="btn btn-outline-secondary">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'permits:permit_export_csv' %}{% if query_params %}?{{ query_params }}{% endif %}"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-filetype-csv me-1"></i>
                 Export CSV
             </a>
         </div>
     </div>
 
-    {% if active_filter_badges %}
-    <div class="active-filters-bar mb-3">
-        <span class="active-filters-label">
-            <i class="bi bi-funnel-fill"></i> Active Filters
-        </span>
 
-        <div class="active-filters-list">
-            {% for badge in active_filter_badges %}
-                <span class="filter-chip">
-                    <span class="filter-chip__label">{{ badge.label }}</span>
-                    <span class="filter-chip__value">{{ badge.value }}</span>
-                    <a href="{{ badge.remove_url }}" class="filter-chip__remove" title="Remove {{ badge.label }}">
-                        <i class="bi bi-x"></i>
-                    </a>
-                </span>
-            {% endfor %}
-        </div>
+    {# ---------------------------------------------------------------------- #}
+    {# Favorite/filter state notice                                           #}
+    {# ---------------------------------------------------------------------- #}
+    {% if using_favorite and selected_favorite %}
+        <div class="alert alert-info d-flex justify-content-between align-items-center py-2 mb-3">
+            <div>
+                <i class="bi bi-star-fill me-1"></i>
+                Using saved filter:
+                <strong>{{ selected_favorite.name }}</strong>
+                {% if selected_favorite.is_default %}
+                    <span class="badge text-bg-secondary ms-2">Default</span>
+                {% endif %}
+            </div>
 
-        {% if active_filter_badges|length > 1 %}
-            <a href="{% url 'permits:permit_list' %}" class="active-filters-clear">
-                <i class="bi bi-x-circle"></i> Clear All
+            <a href="{% url 'permits:permit_list' %}" class="btn btn-sm btn-outline-secondary">
+                Clear Favorite
             </a>
-        {% endif %}
-    </div>
+        </div>
     {% endif %}
 
-    {% if permits %}
+
+    {# ---------------------------------------------------------------------- #}
+    {# Active filter chips                                                    #}
+    {# ---------------------------------------------------------------------- #}
+    {% if active_filter_badges %}
+        <div class="active-filters-bar mb-3">
+            <span class="active-filters-label">
+                <i class="bi bi-funnel-fill"></i>
+                Active Filters
+            </span>
+
+            <div class="active-filters-list">
+                {% for badge in active_filter_badges %}
+                    <span class="filter-chip">
+                        <span class="filter-chip__label">
+                            {{ badge.label }}
+                        </span>
+
+                        <span class="filter-chip__value">
+                            {{ badge.value }}
+                        </span>
+
+                        <a href="{{ badge.remove_url }}"
+                           class="filter-chip__remove"
+                           title="Remove {{ badge.label }}">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    </span>
+                {% endfor %}
+            </div>
+
+            {% if active_filter_badges|length > 1 %}
+                <a href="{% url 'permits:permit_list' %}"
+                   class="active-filters-clear">
+                    <i class="bi bi-x-circle"></i>
+                    Clear All
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+
+    {# ---------------------------------------------------------------------- #}
+    {# Permit table                                                           #}
+    {# ---------------------------------------------------------------------- #}
+    {% if permits.object_list %}
         <div class="table-scroll-container">
             {% include "permits/_permit_table.html" %}
         </div>
+
         {% include "equipment/common/_pagination.html" with page_obj=permits %}
     {% else %}
-        <div class="alert alert-info">No permits found matching the criteria.</div>
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-1"></i>
+            No permits found matching the criteria.
+        </div>
     {% endif %}
+
 </div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".permit-row").forEach(row => {
-        row.addEventListener("click", function () {
-            const baseUrl = this.dataset.detailUrl;
-            if (!baseUrl || baseUrl === "#") return;
-
-            const query = window.location.search;
-            const detailUrl = baseUrl + query;
-
-            fetch(detailUrl)
-                .then(res => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    return res.text();
-                })
-                .then(html => {
-                    document.getElementById("permitModalContent").innerHTML = html;
-                    new bootstrap.Modal(document.getElementById("permitModal")).show();
-                })
-                .catch(err => {
-                    console.error("Error loading permit detail:", err);
-                    alert("Failed to load permit details.");
-                });
-        });
-    });
-});
-
-function cleanupPermitModal() {
-    const modalEl = document.getElementById("permitModal");
-    const existingModal = bootstrap.Modal.getInstance(modalEl);
-    if (existingModal) existingModal.dispose();
-    document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
-    document.body.classList.remove("modal-open");
-    document.body.style.removeProperty("overflow");
-    document.body.style.removeProperty("padding-right");
-}
-
-function closePermitModal() {
-    const modalEl = document.getElementById("permitModal");
-    const modalInstance = bootstrap.Modal.getInstance(modalEl);
-    if (modalInstance) modalInstance.hide();
-    setTimeout(cleanupPermitModal, 300);
-}
-window.closePermitModal = closePermitModal;
-</script>
 {% endblock %}

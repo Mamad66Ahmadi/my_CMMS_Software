@@ -1,13 +1,3 @@
-"""
-Master / lookup models for the Permit To Work (PTW) system.
-
-These tables contain relatively static data managed by HSE
-administrators. Most of them are referenced by the transactional
-Permit models.
-
-Author: Mohammad Ahmadi
-"""
-
 # permits/models/permit_base_models.py
 
 from django.core.exceptions import ValidationError
