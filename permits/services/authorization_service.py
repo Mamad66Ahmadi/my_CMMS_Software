@@ -1,4 +1,5 @@
 # permits/services/authorization_service.py
+
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.utils import timezone
@@ -7,7 +8,7 @@ from permits.models.approval_models import PermitApprovalRoleAssignment
 
 
 class WorkflowAuthorizationService:
-    
+
     @classmethod
     def ensure_actor_can_decide(cls, *, actor, permit, transition):
         if not actor.is_authenticated:
@@ -47,7 +48,7 @@ class WorkflowAuthorizationService:
                 department=permit.department,
             )
 
-        # 4. Unit constraint validation (traversing location_tag relationship)
+        # 4. Unit constraint validation
         if role.unit_scope == role.ScopeRequirement.REQUIRED:
             permit_unit = permit.location_tag.unit if permit.location_tag else None
 
@@ -68,13 +69,19 @@ class WorkflowAuthorizationService:
                 "for the designated department or unit scope."
             )
 
-    @staticmethod
-    def _ensure_required_qualification(*, actor, role, today):
+    @classmethod
+    def _ensure_required_qualification(cls, *, actor, role, today):
         if not role.required_qualification_id:
             return
 
-        # Checks for active qualification mappings on the actor
-        has_qualification = actor.user_qualifications.filter(
+        qualification_manager = cls._get_actor_qualification_manager(actor)
+
+        if qualification_manager is None:
+            raise PermissionDenied(
+                "Action blocked: this user has no qualification records configured."
+            )
+
+        has_qualification = qualification_manager.filter(
             qualification=role.required_qualification,
             is_active=True,
         ).filter(
@@ -90,3 +97,24 @@ class WorkflowAuthorizationService:
                 f"Action blocked: A valid '{role.required_qualification.name}' "
                 "qualification is required to execute this transition."
             )
+
+    @staticmethod
+    def _get_actor_qualification_manager(actor):
+        """
+        Return the related manager used for user qualification records.
+
+        Expected relation:
+            actor.user_qualifications
+
+        If the relation does not exist, return None instead of raising AttributeError.
+        """
+
+        qualification_manager = getattr(actor, "user_qualifications", None)
+
+        if qualification_manager is None:
+            return None
+
+        if not hasattr(qualification_manager, "filter"):
+            return None
+
+        return qualification_manager

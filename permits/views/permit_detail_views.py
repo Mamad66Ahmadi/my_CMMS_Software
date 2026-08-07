@@ -1,6 +1,7 @@
 # permits/views/permit_detail_views.py 
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.generic import DetailView, CreateView
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
@@ -13,7 +14,10 @@ from django.db.models import Prefetch
 from permits.forms import PermitCreateForm
 from permits.models import Permit, PermitHazard, PermitPrecaution
 from equipment.models import LocationTag
-
+from permits.models import PermitWorkflowTransition
+from permits.services.authorization_service import WorkflowAuthorizationService
+from permits.services.condition_service import WorkflowConditionEvaluator
+from permits.forms import PermitWorkflowDecisionForm
 
 class PermitDetailView(LoginRequiredMixin, DetailView):
     model = Permit
@@ -55,9 +59,80 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     ).select_related("precaution"),
                     to_attr="active_precaution_requirements",
                 ),
-                "continuations",  # Reverse FK: permits continued from this one
+                "continuations",
             )
         )
+
+    def get_available_workflow_actions(self, permit):
+        """
+        Return transitions the current user can perform from the permit's
+        current workflow step.
+
+        This is display-only. The POST view still validates again.
+        """
+
+        if not permit.workflow_id or not permit.current_step_id:
+            return []
+
+        if permit.current_step.is_terminal:
+            return []
+
+        transitions = (
+            PermitWorkflowTransition.objects.select_related(
+                "workflow",
+                "from_step",
+                "to_step",
+                "role",
+                "role__required_qualification",
+            )
+            .prefetch_related("conditions")
+            .filter(
+                workflow_id=permit.workflow_id,
+                from_step_id=permit.current_step_id,
+            )
+            .order_by(
+                "role__name",
+                "decision",
+                "to_step__step_number",
+            )
+        )
+
+        available_actions = []
+
+        for transition in transitions:
+            try:
+                WorkflowAuthorizationService.ensure_actor_can_decide(
+                    actor=self.request.user,
+                    permit=permit,
+                    transition=transition,
+                )
+
+                WorkflowConditionEvaluator.ensure_transition_allowed(
+                    permit=permit,
+                    transition=transition,
+                )
+
+            except (PermissionDenied, ValidationError):
+                continue
+
+            available_actions.append(
+                {
+                    "transition": transition,
+                    "role": transition.role,
+                    "role_code": transition.role.code,
+                    "decision": transition.decision,
+                    "decision_label": transition.get_decision_display(),
+                    "to_step": transition.to_step,
+                    "form": PermitWorkflowDecisionForm(
+                        initial={
+                            "role_code": transition.role.code,
+                            "decision": transition.decision,
+                        }
+                    ),
+                }
+            )
+
+        return available_actions
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -67,15 +142,17 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             assessment.hazard
             for assessment in permit.active_hazard_assessments
         ]
+
         permit.active_precautions = [
             requirement.precaution
             for requirement in permit.active_precaution_requirements
         ]
 
-        # Retrieve the workflow activity status via the standard current step evaluation
         context["is_currently_valid"] = permit.is_active
-        return context
 
+        context["workflow_actions"] = self.get_available_workflow_actions(permit)
+
+        return context
 
 # ----------------------- Auto complete ------------------
 @login_required
@@ -99,7 +176,6 @@ def permit_autocomplete(request):
     return JsonResponse({"results": results})
 
 
-# ----------------- Create --------------------------------
 # ----------------- Create --------------------------------
 class PermitCreateView(LoginRequiredMixin, CreateView):
     model = Permit

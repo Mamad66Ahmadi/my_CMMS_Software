@@ -13,7 +13,9 @@ from permits.views import (
     AddPISQualificationView,
     PermitCreateView,
     PermitDetailView,
+    PermitWorkflowTransitionView,
 )
+
 
 
 app_name = "permits"
@@ -44,5 +46,7 @@ urlpatterns = [
     # Permit Detail / Create
     # -------------------------------------------------------------------------
     path("create/", PermitCreateView.as_view(), name="permit_create"),
+    path("<str:permit_number>/workflow/action/", PermitWorkflowTransitionView.as_view(), name="permit_workflow_action",),
+    
     path("<str:permit_number>/", PermitDetailView.as_view(), name="permit_detail"),
 ]

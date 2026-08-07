@@ -96,7 +96,21 @@
             {% endif %}
         </span>
     </div>
-
+    {% if messages %}
+        <div class="mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {{ message }}
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Close">
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
     <!-- ============ Main Layout ============ -->
     <div class="permit-layout">
 
@@ -141,7 +155,10 @@
                             <span class="field-label">Current Step</span>
                             <span class="field-value">
                                 {% if permit.current_step %}
-                                    {{ permit.current_step.step_number }}. {{ permit.current_step.title }}
+                                    <span class="fw-semibold">
+                                        {{ permit.current_step.step_number }}.
+                                        {{ permit.current_step.title }}
+                                    </span>
                                 {% else %}
                                     —
                                 {% endif %}
@@ -149,13 +166,24 @@
                         </div>
 
                         <div class="field-item">
-                            <span class="field-label">Terminal Step</span>
+                            <span class="field-label">Step Type</span>
                             <span class="field-value">
                                 {% if permit.current_step %}
-                                    {% if permit.current_step.is_terminal %}
-                                        <span class="text-danger fw-bold">Yes</span>
+                                    {% if permit.current_step.is_start %}
+                                        <span class="badge text-bg-info">
+                                            <i class="bi bi-play-fill"></i>
+                                            Start Step
+                                        </span>
+                                    {% elif permit.current_step.is_terminal %}
+                                        <span class="badge text-bg-secondary">
+                                            <i class="bi bi-lock-fill"></i>
+                                            Terminal Step
+                                        </span>
                                     {% else %}
-                                        <span class="text-muted">No</span>
+                                        <span class="badge text-bg-primary">
+                                            <i class="bi bi-arrow-right-circle"></i>
+                                            In Progress
+                                        </span>
                                     {% endif %}
                                 {% else %}
                                     —
@@ -163,9 +191,26 @@
                             </span>
                         </div>
 
+                        {% if permit.current_step and permit.current_step.description %}
+                            <div class="field-item" style="grid-column: 1 / -1;">
+                                <span class="field-label">Step Description</span>
+                                <span class="field-value text-block align-start-cell">
+                                    {{ permit.current_step.description }}
+                                </span>
+                            </div>
+                        {% endif %}
+
                     </div>
+
+                    {% if permit.current_step and permit.current_step.is_terminal %}
+                        <div class="alert alert-secondary mt-3 mb-0">
+                            <i class="bi bi-lock-fill me-1"></i>
+                            This permit is currently at a terminal workflow step. No further workflow actions are expected.
+                        </div>
+                    {% endif %}
                 </div>
             </div>
+
 
             <!-- General Information -->
             <div class="detail-panel">
@@ -505,139 +550,90 @@
         <!-- ================= RIGHT COLUMN ================= -->
         <div class="permit-layout__side">
 
+            <!-- Workflow Actions -->
+            <div class="detail-panel">
+                <div class="detail-panel__header">
+                    <i class="bi bi-check2-square"></i> Workflow Actions
+                </div>
+
+                <div class="detail-panel__body">
+
+                    {% if workflow_actions %}
+                        <div class="d-grid gap-3">
+
+                            {% for action in workflow_actions %}
+                                <form method="post"
+                                    action="{% url 'permits:permit_workflow_action' permit.permit_number %}"
+                                    class="workflow-action-form">
+                                    {% csrf_token %}
+
+                                    {{ action.form.role_code }}
+                                    {{ action.form.decision }}
+
+                                    <div class="mb-2">
+                                        <div class="small text-muted mb-1">
+                                            <i class="bi bi-person-badge"></i>
+                                            Role:
+                                            <strong>{{ action.role.name }}</strong>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            <i class="bi bi-arrow-right"></i>
+                                            Next Step:
+                                            <strong>{{ action.to_step.title }}</strong>
+                                        </div>
+
+                                        <label class="form-label small">
+                                            Comment
+                                            <span class="text-muted">(optional)</span>
+                                        </label>
+                                        {{ action.form.comment }}
+                                    </div>
+
+                                    <button type="submit"
+                                            class="btn w-100 d-inline-flex align-items-center justify-content-center
+                                                {% if action.decision == 'APPROVE' %}
+                                                    btn-success
+                                                {% elif action.decision == 'RETURN' %}
+                                                    btn-warning
+                                                {% elif action.decision == 'CANCEL' %}
+                                                    btn-danger
+                                                {% else %}
+                                                    btn-enterprise-primary
+                                                {% endif %}">
+                                        {% if action.decision == "APPROVE" %}
+                                            <i class="bi bi-check-lg me-1"></i>
+                                        {% elif action.decision == "RETURN" %}
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                        {% elif action.decision == "CANCEL" %}
+                                            <i class="bi bi-x-circle me-1"></i>
+                                        {% else %}
+                                            <i class="bi bi-arrow-right me-1"></i>
+                                        {% endif %}
+
+                                        {{ action.decision_label }}
+                                    </button>
+                                </form>
+                            {% endfor %}
+
+                        </div>
+                    {% else %}
+                        <div class="empty-hint mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            No workflow actions are currently available for your user.
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
             <!-- Lifecycle Info -->
             <div class="detail-panel">
-                <div class="detail-panel__header">
-                    <i class="bi bi-activity"></i> Lifecycle
-                </div>
 
-                <div class="detail-panel__body">
 
-                    <div class="info-mini-row">
-                        <span class="label">
-                            <i class="bi bi-play-circle"></i> Activated At
-                        </span>
-                        <span class="value">
-                            {{ permit.activated_at|date:"Y-m-d H:i"|default:"—" }}
-                        </span>
-                    </div>
 
-                    <div class="info-mini-row">
-                        <span class="label">
-                            <i class="bi bi-pause-circle"></i> Suspended At
-                        </span>
-                        <span class="value">
-                            {{ permit.suspended_at|date:"Y-m-d H:i"|default:"—" }}
-                        </span>
-                    </div>
 
-                    <div class="info-mini-row">
-                        <span class="label">
-                            <i class="bi bi-check2-circle"></i> Completed At
-                        </span>
-                        <span class="value">
-                            {{ permit.completed_at|date:"Y-m-d H:i"|default:"—" }}
-                        </span>
-                    </div>
 
-                    <div class="info-mini-row">
-                        <span class="label">
-                            <i class="bi bi-lock"></i> Closed At
-                        </span>
-                        <span class="value">
-                            {{ permit.closed_at|date:"Y-m-d H:i"|default:"—" }}
-                        </span>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Record Info -->
-            <div class="detail-panel">
-                <div class="detail-panel__header">
-                    <i class="bi bi-card-list"></i> Record Info
-                </div>
-
-                <div class="detail-panel__body">
-
-                    <div class="info-mini-row">
-                        <span class="label">
-                            <i class="bi bi-person-plus"></i> Created By
-                        </span>
-                        <span class="value">
-                            {{ permit.created_by|default:"—" }}
-                        </span>
-                    </div>
-
-                    <div class="info-mini-row">
-                        <span class="label">
-                            <i class="bi bi-calendar-plus"></i> Created At
-                        </span>
-                        <span class="value">
-                            {{ permit.created_at|date:"Y-m-d H:i"|default:"—" }}
-                        </span>
-                    </div>
-
-                    <div class="info-mini-row">
-                        <span class="label">
-                            <i class="bi bi-person-check"></i> Modified By
-                        </span>
-                        <span class="value">
-                            {{ permit.modified_by|default:"—" }}
-                        </span>
-                    </div>
-
-                    <div class="info-mini-row">
-                        <span class="label">
-                            <i class="bi bi-calendar-check"></i> Modified At
-                        </span>
-                        <span class="value">
-                            {{ permit.modified_at|date:"Y-m-d H:i"|default:"—" }}
-                        </span>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Continuation Permits -->
-            {% if permit.continuations.all %}
-                <div class="detail-panel">
-                    <div class="detail-panel__header">
-                        <i class="bi bi-arrow-repeat"></i> Continuation Permits
-                    </div>
-
-                    <div class="detail-panel__body">
-                        <div class="continuation-list">
-                            {% for cont in permit.continuations.all %}
-                                <a href="{% url 'permits:permit_detail' cont.permit_number %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-                                   class="continuation-item">
-                                    <span class="permit-no">
-                                        {{ cont.permit_number }}
-                                    </span>
-                                    <i class="bi bi-chevron-left"></i>
-                                </a>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            <!-- Actions -->
-            <div class="detail-panel">
-                <div class="detail-panel__body">
-                    <div class="d-grid gap-3">
-
-                        <a href="{% url 'permits:permit_create' %}"
-                        class="btn btn-enterprise-primary d-inline-flex align-items-center justify-content-center">
-                            <i class="bi bi-plus-lg me-1"></i>
-                            Issue New Permit
-                        </a>
-
-                    </div>
-                </div>
-            </div>
-
-        </div>
     </div>
 </div>
 
