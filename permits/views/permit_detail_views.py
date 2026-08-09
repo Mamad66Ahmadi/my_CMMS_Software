@@ -123,7 +123,37 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     transition=transition,
                 )
 
-            except (PermissionDenied, ValidationError):
+            except PermissionDenied as exc:
+                print(
+                    "\n========== WORKFLOW ACTION BLOCKED =========="
+                )
+                print(f"User: {self.request.user}")
+                print(f"User ID: {self.request.user.pk}")
+                print(f"Permit: {permit.permit_number}")
+                print(f"Permit ID: {permit.pk}")
+                print(f"Workflow: {permit.workflow}")
+                print(f"Current Step: {permit.current_step}")
+                print(f"Transition: {transition}")
+                print(f"Role: {transition.role}")
+                print(f"Role Code: {transition.role.code}")
+                print(f"Decision: {transition.decision}")
+                print(f"Reason: {exc}")
+                print("===============================================\n")
+
+                continue
+
+            except ValidationError as exc:
+                print(
+                    "\n========== WORKFLOW CONDITION BLOCKED =========="
+                )
+                print(f"User: {self.request.user}")
+                print(f"Permit: {permit.permit_number}")
+                print(f"Transition: {transition}")
+                print(f"Role: {transition.role}")
+                print(f"Decision: {transition.decision}")
+                print(f"Reason: {exc}")
+                print("=================================================\n")
+
                 continue
 
             available_actions.append(
@@ -144,6 +174,7 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             )
 
         return available_actions
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -249,7 +280,7 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
 class PermitUpdateView(LoginRequiredMixin, UpdateView):
     model = Permit
     form_class = PermitUpdateForm
-    template_name = "permits/permit_form.html"
+    template_name = "permits/permit_form_update.html"
     context_object_name = "permit"
     slug_field = "permit_number"
     slug_url_kwarg = "permit_number"

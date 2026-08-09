@@ -1,0 +1,497 @@
+{# Advanced permit filtering fields. Keep field names aligned with the list view. #}
+                        {# ------------------------------------------------------------------ #}
+                        {# Identification / Workflow                                          #}
+                        {# ------------------------------------------------------------------ #}
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-hash"></i> Identification &amp; Workflow
+                            </div>
+
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Permit Number</label>
+                                    <input type="text"
+                                           name="permit_number"
+                                           class="filter-input"
+                                           placeholder="P-100, P-101"
+                                           value="{{ filters.permit_number }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Continuation Of</label>
+                                    <input type="text"
+                                           name="continuation_of"
+                                           class="filter-input"
+                                           placeholder="Parent permit no."
+                                           value="{{ filters.continuation_of }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Permit Type</label>
+                                    <select name="permit_type" class="filter-select">
+                                        <option value="">All Permit Types</option>
+                                        {% for permit_type in permit_types %}
+                                            <option value="{{ permit_type.name }}"
+                                                    {% if filters.permit_type == permit_type.name %}selected{% endif %}>
+                                                {{ permit_type.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Workflow</label>
+                                    <input type="text"
+                                           name="workflow"
+                                           class="filter-input"
+                                           placeholder="Workflow name"
+                                           value="{{ filters.workflow }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Current Step</label>
+                                    <select name="current_step" class="filter-select">
+                                        <option value="">All Steps</option>
+                                        {% for step in workflow_steps %}
+                                            <option value="{{ step.title }}"
+                                                    {% if filters.current_step == step.title %}selected{% endif %}>
+                                                {{ step.workflow.name }} v{{ step.workflow.version }}
+                                                - {{ step.step_number }}. {{ step.title }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Terminal Step</label>
+                                    <select name="is_terminal" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.is_terminal == "true" %}selected{% endif %}>True</option>
+                                        <option value="false" {% if filters.is_terminal == "false" %}selected{% endif %}>False</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ------------------------------------------------------------------ #}
+                        {# Location / WO                                                      #}
+                        {# ------------------------------------------------------------------ #}
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-geo-alt"></i> Location &amp; Work Order
+                            </div>
+
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Location Tag</label>
+                                    <input type="text"
+                                           name="location_tag"
+                                           class="filter-input"
+                                           placeholder="103-KM-101, 103-KM-102"
+                                           value="{{ filters.location_tag }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Parent Tag</label>
+                                    <input type="text"
+                                           name="parent_tag"
+                                           class="filter-input"
+                                           placeholder="Parent tag"
+                                           value="{{ filters.parent_tag }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Unit</label>
+                                    <input type="text"
+                                           name="unit"
+                                           class="filter-input"
+                                           placeholder="Unit code"
+                                           value="{{ filters.unit }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Train</label>
+                                    <input type="text"
+                                           name="train"
+                                           class="filter-input"
+                                           placeholder="Train"
+                                           value="{{ filters.train }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Work Order No.</label>
+                                    <input type="text"
+                                           name="work_order"
+                                           class="filter-input"
+                                           placeholder="WO-123, WO-124"
+                                           value="{{ filters.work_order }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ------------------------------------------------------------------ #}
+                        {# Department / People                                                #}
+                        {# ------------------------------------------------------------------ #}
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-person-lines-fill"></i> Department &amp; Personnel
+                            </div>
+
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Department</label>
+                                    <select name="department" class="filter-select">
+                                        <option value="">All Departments</option>
+                                        {% for dept in departments %}
+                                            <option value="{{ dept.name }}"
+                                                    {% if filters.department == dept.name %}selected{% endif %}>
+                                                {{ dept.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Work Supervisor</label>
+                                    <input type="text"
+                                           name="work_supervisor"
+                                           class="filter-input"
+                                           placeholder="Username"
+                                           value="{{ filters.work_supervisor }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Designated Area Authority</label>
+                                    <input type="text"
+                                           name="designated_area_authority"
+                                           class="filter-input"
+                                           placeholder="Username"
+                                           value="{{ filters.designated_area_authority }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Designated Area Supervisor</label>
+                                    <input type="text"
+                                           name="designated_area_supervisor"
+                                           class="filter-input"
+                                           placeholder="Username"
+                                           value="{{ filters.designated_area_supervisor }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Created By</label>
+                                    <input type="text"
+                                           name="created_by"
+                                           class="filter-input"
+                                           placeholder="Username"
+                                           value="{{ filters.created_by }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Modified By</label>
+                                    <input type="text"
+                                           name="modified_by"
+                                           class="filter-input"
+                                           placeholder="Username"
+                                           value="{{ filters.modified_by }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ------------------------------------------------------------------ #}
+                        {# Work Details / Hazards                                             #}
+                        {# ------------------------------------------------------------------ #}
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-card-text"></i> Work Details &amp; Risk Controls
+                            </div>
+
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Scope of Work</label>
+                                    <input type="text"
+                                           name="scope_of_work"
+                                           class="filter-input"
+                                           placeholder="Scope text"
+                                           value="{{ filters.scope_of_work }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Remarks</label>
+                                    <input type="text"
+                                           name="remarks"
+                                           class="filter-input"
+                                           placeholder="Remarks text"
+                                           value="{{ filters.remarks }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Hazard</label>
+                                    <select name="hazard_code" class="filter-select">
+                                        <option value="">All Hazards</option>
+                                        {% for hz in hazard_codes %}
+                                            <option value="{{ hz.code }}"
+                                                    {% if filters.hazard_code == hz.code %}selected{% endif %}>
+                                                {{ hz.code }} - {{ hz.description|default:hz.name|truncatechars:35 }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Precaution</label>
+                                    <input type="text"
+                                           name="precaution_code"
+                                           class="filter-input"
+                                           placeholder="Precaution code/name"
+                                           value="{{ filters.precaution_code }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ------------------------------------------------------------------ #}
+                        {# Tools / Materials                                                  #}
+                        {# ------------------------------------------------------------------ #}
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-tools"></i> Tools, Materials &amp; Vehicle
+                            </div>
+
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Electrical Tools</label>
+                                    <input type="text"
+                                           name="electrical_tools"
+                                           class="filter-input"
+                                           placeholder="Electrical tools"
+                                           value="{{ filters.electrical_tools }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Mechanical Tools</label>
+                                    <input type="text"
+                                           name="mechanical_tools"
+                                           class="filter-input"
+                                           placeholder="Mechanical tools"
+                                           value="{{ filters.mechanical_tools }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Hazardous Materials</label>
+                                    <input type="text"
+                                           name="hazardous_materials"
+                                           class="filter-input"
+                                           placeholder="Hazardous materials"
+                                           value="{{ filters.hazardous_materials }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Vehicle Required</label>
+                                    <select name="vehicle_required" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.vehicle_required == "true" %}selected{% endif %}>True</option>
+                                        <option value="false" {% if filters.vehicle_required == "false" %}selected{% endif %}>False</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ------------------------------------------------------------------ #}
+                        {# Equipment Preparation                                              #}
+                        {# ------------------------------------------------------------------ #}
+                        <div class="filter-section filter-section--full filter-section--conditions">
+                            <div class="filter-section__title">
+                                <i class="bi bi-shield-exclamation"></i> Equipment Preparation
+                            </div>
+
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Mechanical Isolation</label>
+                                    <input type="text"
+                                           name="mechanical_isolation"
+                                           class="filter-input"
+                                           placeholder="Choice value, comma-separated"
+                                           value="{{ filters.mechanical_isolation }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Equipment Depressurized</label>
+                                    <input type="text"
+                                           name="equipment_depressurized"
+                                           class="filter-input"
+                                           placeholder="Choice value, comma-separated"
+                                           value="{{ filters.equipment_depressurized }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Equipment Drained</label>
+                                    <input type="text"
+                                           name="equipment_drained"
+                                           class="filter-input"
+                                           placeholder="Choice value, comma-separated"
+                                           value="{{ filters.equipment_drained }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Equipment Purged</label>
+                                    <input type="text"
+                                           name="equipment_purged"
+                                           class="filter-input"
+                                           placeholder="Choice value, comma-separated"
+                                           value="{{ filters.equipment_purged }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Process Isolation</label>
+                                    <input type="text"
+                                           name="process_isolation"
+                                           class="filter-input"
+                                           placeholder="Choice value, comma-separated"
+                                           value="{{ filters.process_isolation }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Area Authority Present Required</label>
+                                    <select name="area_authority_present_required" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.area_authority_present_required == "true" %}selected{% endif %}>True</option>
+                                        <option value="false" {% if filters.area_authority_present_required == "false" %}selected{% endif %}>False</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Fire Watch Required</label>
+                                    <select name="fire_watch_present_required" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.fire_watch_present_required == "true" %}selected{% endif %}>True</option>
+                                        <option value="false" {% if filters.fire_watch_present_required == "false" %}selected{% endif %}>False</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ------------------------------------------------------------------ #}
+                        {# Validity / Lifecycle                                               #}
+                        {# ------------------------------------------------------------------ #}
+                        <div class="filter-section filter-section--full">
+                            <div class="filter-section__title">
+                                <i class="bi bi-calendar-range"></i> Validity &amp; Workflow Lifecycle
+                            </div>
+
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Valid From</label>
+                                    <input type="date"
+                                           name="valid_from_date"
+                                           class="filter-input"
+                                           value="{{ filters.valid_from_date }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Valid To</label>
+                                    <input type="date"
+                                           name="valid_to_date"
+                                           class="filter-input"
+                                           value="{{ filters.valid_to_date }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Currently Valid</label>
+                                    <select name="is_currently_valid" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.is_currently_valid == "true" %}selected{% endif %}>True</option>
+                                        <option value="false" {% if filters.is_currently_valid == "false" %}selected{% endif %}>False</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Expired</label>
+                                    <select name="has_expired" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.has_expired == "true" %}selected{% endif %}>True</option>
+                                        <option value="false" {% if filters.has_expired == "false" %}selected{% endif %}>False</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Activated</label>
+                                    <select name="activated" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.activated == "true" %}selected{% endif %}>Has Activation</option>
+                                        <option value="false" {% if filters.activated == "false" %}selected{% endif %}>No Activation</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Suspended</label>
+                                    <select name="suspended" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.suspended == "true" %}selected{% endif %}>Has Suspension</option>
+                                        <option value="false" {% if filters.suspended == "false" %}selected{% endif %}>No Suspension</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Completed</label>
+                                    <select name="completed" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.completed == "true" %}selected{% endif %}>Has Completion</option>
+                                        <option value="false" {% if filters.completed == "false" %}selected{% endif %}>No Completion</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Closed</label>
+                                    <select name="closed" class="filter-select">
+                                        <option value="">All</option>
+                                        <option value="true" {% if filters.closed == "true" %}selected{% endif %}>Has Closure</option>
+                                        <option value="false" {% if filters.closed == "false" %}selected{% endif %}>No Closure</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ------------------------------------------------------------------ #}
+                        {# Audit Dates                                                        #}
+                        {# ------------------------------------------------------------------ #}
+                        <div class="filter-section filter-section--full">
+                            <div class="filter-section__title">
+                                <i class="bi bi-clock-history"></i> Audit Dates
+                            </div>
+
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Created From</label>
+                                    <input type="date"
+                                           name="created_from"
+                                           class="filter-input"
+                                           value="{{ filters.created_from }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Created To</label>
+                                    <input type="date"
+                                           name="created_to"
+                                           class="filter-input"
+                                           value="{{ filters.created_to }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Modified From</label>
+                                    <input type="date"
+                                           name="modified_from"
+                                           class="filter-input"
+                                           value="{{ filters.modified_from }}">
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">Modified To</label>
+                                    <input type="date"
+                                           name="modified_to"
+                                           class="filter-input"
+                                           value="{{ filters.modified_to }}">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>

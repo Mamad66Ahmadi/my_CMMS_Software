@@ -1,0 +1,39 @@
+<div class="filter-panel__header">
+    <div class="d-flex flex-column gap-3 w-100">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div class="filter-search-group flex-grow-1">
+                <i class="bi bi-search filter-search-icon"></i>
+                <input type="text" name="q" form="advancedFilterForm" class="filter-search-input"
+                       placeholder="Search permit no., work order, location, scope, step, department..."
+                       value="{{ filters.q|default:'' }}">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" form="advancedFilterForm" class="btn-filter-primary"><i class="bi bi-search"></i> Search</button>
+                <button type="button" class="btn-filter-secondary {% if has_advanced_filters %}active{% endif %}"
+                        data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas" aria-controls="filterOffcanvas">
+                    <i class="bi bi-sliders2"></i> Filters{% if has_advanced_filters %}<span class="filter-badge">●</span>{% endif %}
+                </button>
+                {% if query_params or filters.q %}
+                    <a href="{% url 'permits:permit_list' %}" class="btn-filter-clear"><i class="bi bi-x-circle"></i> Clear</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="filter-label mb-0">Favorite Filters:</span>
+                {% for favorite in filter_favorites %}
+                    <a href="{% url 'permits:permit_list' %}?favorite={{ favorite.id }}"
+                       class="btn btn-sm {% if selected_favorite and selected_favorite.id == favorite.id and using_favorite %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        {{ favorite.name }}{% if favorite.is_default %}<i class="bi bi-star-fill ms-1"></i>{% endif %}
+                    </a>
+                {% empty %}
+                    <span class="text-muted small">No saved favorites yet.</span>
+                {% endfor %}
+            </div>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                {% if selected_favorite %}<span class="text-muted small">Selected: <strong>{{ selected_favorite.name }}</strong></span>{% endif %}
+                <span class="text-muted small">Maximum 5 favorites</span>
+            </div>
+        </div>
+    </div>
+</div>

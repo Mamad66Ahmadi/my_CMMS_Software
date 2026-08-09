@@ -1,0 +1,512 @@
+{# Create-mode behaviors: validity controls, autocomplete, and continuation loading. #}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const validFromInput = document.getElementById(
+        "{{ form.valid_from.id_for_label }}"
+    );
+
+    const validToInput = document.getElementById(
+        "{{ form.valid_to.id_for_label }}"
+    );
+
+    const setValidFromNowButton = document.getElementById(
+        "set-valid-from-now"
+    );
+
+    const validitySummary = document.getElementById("validity-summary");
+    const validitySummaryText = document.getElementById(
+        "validity-summary-text"
+    );
+
+    const validityHourButtons = document.querySelectorAll(
+        "[data-validity-hours]"
+    );
+
+    function toLocalDateTimeValue(date) {
+        const timezoneOffset = date.getTimezoneOffset() * 60000;
+
+        return new Date(date.getTime() - timezoneOffset)
+            .toISOString()
+            .slice(0, 16);
+    }
+
+    function formatDuration(milliseconds) {
+        const totalMinutes = Math.round(milliseconds / 60000);
+        const days = Math.floor(totalMinutes / 1440);
+        const hours = Math.floor((totalMinutes % 1440) / 60);
+        const minutes = totalMinutes % 60;
+        const parts = [];
+
+        if (days) {
+            parts.push(days + (days === 1 ? " day" : " days"));
+        }
+
+        if (hours) {
+            parts.push(hours + (hours === 1 ? " hour" : " hours"));
+        }
+
+        if (minutes || parts.length === 0) {
+            parts.push(minutes + (minutes === 1 ? " minute" : " minutes"));
+        }
+
+        return parts.join(" ");
+    }
+
+    function updateValiditySummary() {
+        if (
+            !validFromInput ||
+            !validToInput ||
+            !validitySummary ||
+            !validitySummaryText
+        ) {
+            return;
+        }
+
+        validToInput.min = validFromInput.value;
+
+        validitySummary.classList.remove("is-valid", "is-invalid");
+
+        if (!validFromInput.value || !validToInput.value) {
+            validitySummaryText.textContent =
+                "Select a start and end time to define the permit duration.";
+            return;
+        }
+
+        const validFrom = new Date(validFromInput.value);
+        const validTo = new Date(validToInput.value);
+        const duration = validTo - validFrom;
+
+        if (duration <= 0) {
+            validitySummary.classList.add("is-invalid");
+            validitySummaryText.textContent =
+                "End time must be later than the start time.";
+            return;
+        }
+
+        validitySummary.classList.add("is-valid");
+        validitySummaryText.textContent =
+            "Permit duration: " + formatDuration(duration) + ".";
+    }
+
+    if (setValidFromNowButton && validFromInput) {
+        setValidFromNowButton.addEventListener("click", function () {
+            validFromInput.value = toLocalDateTimeValue(new Date());
+            updateValiditySummary();
+            validFromInput.focus();
+        });
+    }
+
+    validityHourButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            if (!validFromInput || !validToInput) {
+                return;
+            }
+
+            if (!validFromInput.value) {
+                validFromInput.value = toLocalDateTimeValue(new Date());
+            }
+
+            const endDate = new Date(validFromInput.value);
+
+            endDate.setHours(
+                endDate.getHours() + Number(button.dataset.validityHours)
+            );
+
+            validToInput.value = toLocalDateTimeValue(endDate);
+            updateValiditySummary();
+        });
+    });
+
+    if (validFromInput && validToInput) {
+        validFromInput.addEventListener("change", updateValiditySummary);
+        validToInput.addEventListener("change", updateValiditySummary);
+        updateValiditySummary();
+    }
+
+    function setupAutocomplete(config) {
+        const input = document.getElementById(config.inputId);
+        const hiddenInput = document.getElementById(config.hiddenInputId);
+        const resultsContainer = document.getElementById(
+            config.resultsContainerId
+        );
+
+        if (!input || !hiddenInput || !resultsContainer) {
+            return;
+        }
+
+        let debounceTimer = null;
+        let activeIndex = -1;
+
+        function getOptions() {
+            return Array.from(
+                resultsContainer.querySelectorAll(".autocomplete-option")
+            );
+        }
+
+        function hideResults() {
+            resultsContainer.innerHTML = "";
+            resultsContainer.classList.remove("is-visible");
+            activeIndex = -1;
+        }
+
+        function showMessage(message, className) {
+            resultsContainer.innerHTML =
+                '<div class="list-group-item ' +
+                className +
+                '">' +
+                message +
+                "</div>";
+
+            resultsContainer.classList.add("is-visible");
+            activeIndex = -1;
+        }
+
+        function setActiveOption(index) {
+            const options = getOptions();
+
+            options.forEach(function (option, optionIndex) {
+                option.classList.toggle(
+                    "active",
+                    optionIndex === index
+                );
+            });
+
+            activeIndex = index;
+
+            if (activeIndex >= 0 && options[activeIndex]) {
+                options[activeIndex].scrollIntoView({
+                    block: "nearest"
+                });
+            }
+        }
+
+        function selectOption(option) {
+            input.value = option.dataset.text;
+            hiddenInput.value = option.dataset.id;
+
+            if (config.onSelect) {
+                config.onSelect(hiddenInput, option);
+            }
+
+            hideResults();
+        }
+
+        function renderResults(results) {
+            resultsContainer.innerHTML = "";
+            activeIndex = -1;
+
+            if (!results || results.length === 0) {
+                showMessage("No matches found", "text-muted small");
+                return;
+            }
+
+            results.forEach(function (item, index) {
+                const option = document.createElement("button");
+
+                option.type = "button";
+                option.className =
+                    "list-group-item list-group-item-action autocomplete-option";
+
+                option.textContent = item.text;
+                option.dataset.id = item.id;
+                option.dataset.text = item.text;
+
+                option.addEventListener("click", function () {
+                    selectOption(option);
+                });
+
+                option.addEventListener("mouseenter", function () {
+                    setActiveOption(index);
+                });
+
+                resultsContainer.appendChild(option);
+            });
+
+            resultsContainer.classList.add("is-visible");
+            setActiveOption(0);
+        }
+
+        input.addEventListener("input", function () {
+            const query = input.value.trim();
+
+            hiddenInput.value = "";
+            clearTimeout(debounceTimer);
+            activeIndex = -1;
+
+            if (query.length < 2) {
+                hideResults();
+                return;
+            }
+
+            debounceTimer = setTimeout(function () {
+                const url =
+                    input.dataset.autocompleteUrl +
+                    "?q=" +
+                    encodeURIComponent(query);
+
+                fetch(url, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("Autocomplete request failed.");
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        renderResults(data.results || []);
+                    })
+                    .catch(function () {
+                        showMessage(
+                            "Search failed",
+                            "text-danger small"
+                        );
+                    });
+            }, 250);
+        });
+
+        input.addEventListener("keydown", function (event) {
+            const options = getOptions();
+
+            if (
+                !resultsContainer.classList.contains("is-visible") ||
+                options.length === 0
+            ) {
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+
+                const nextIndex =
+                    activeIndex < options.length - 1
+                        ? activeIndex + 1
+                        : 0;
+
+                setActiveOption(nextIndex);
+            } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+
+                const previousIndex =
+                    activeIndex > 0
+                        ? activeIndex - 1
+                        : options.length - 1;
+
+                setActiveOption(previousIndex);
+            } else if (event.key === "Enter") {
+                if (activeIndex >= 0 && options[activeIndex]) {
+                    event.preventDefault();
+                    selectOption(options[activeIndex]);
+                }
+            } else if (event.key === "Escape") {
+                hideResults();
+            }
+        });
+
+        input.addEventListener("focus", function () {
+            if (getOptions().length > 0) {
+                resultsContainer.classList.add("is-visible");
+            }
+        });
+
+        document.addEventListener("click", function (event) {
+            if (
+                !resultsContainer.contains(event.target) &&
+                event.target !== input
+            ) {
+                hideResults();
+            }
+        });
+    }
+
+    setupAutocomplete({
+        inputId: "location-search-input",
+        hiddenInputId: "{{ form.location_tag.id_for_label }}",
+        resultsContainerId: "location-results-container"
+    });
+
+    setupAutocomplete({
+        inputId: "continuation-search-input",
+        hiddenInputId: "{{ form.continuation_of.id_for_label }}",
+        resultsContainerId: "continuation-results-container",
+
+        onSelect: function (hiddenInput) {
+            hiddenInput.dispatchEvent(
+                new Event("change", { bubbles: true })
+            );
+        }
+    });
+
+    setupAutocomplete({
+        inputId: "work-order-search-input",
+        hiddenInputId: "{{ form.work_order.id_for_label }}",
+        resultsContainerId: "work-order-results-container"
+    });
+
+    setupAutocomplete({
+        inputId: "work-supervisor-search-input",
+        hiddenInputId: "{{ form.work_supervisor.id_for_label }}",
+        resultsContainerId: "work-supervisor-results-container"
+    });
+
+    setupAutocomplete({
+        inputId: "area-authority-search-input",
+        hiddenInputId: "{{ form.designated_area_authority.id_for_label }}",
+        resultsContainerId: "area-authority-results-container"
+    });
+
+    setupAutocomplete({
+        inputId: "area-supervisor-search-input",
+        hiddenInputId: "{{ form.designated_area_supervisor.id_for_label }}",
+        resultsContainerId: "area-supervisor-results-container"
+    });
+});
+
+
+/*
+ * Populate the form when a continuation permit is selected.
+ *
+ * The get_permit_data view returns the fields below. Legacy fields such as
+ * description, hazard_codes, and work-type classification flags are no
+ * longer populated because they are not part of the new Permit model/form.
+ */
+document.body.addEventListener("htmx:afterRequest", function (event) {
+    if (
+        !event.detail ||
+        !event.detail.elt ||
+        event.detail.elt.id !== "{{ form.continuation_of.id_for_label }}" ||
+        !event.detail.xhr ||
+        event.detail.xhr.status !== 200
+    ) {
+        return;
+    }
+
+    let data;
+
+    try {
+        data = JSON.parse(event.detail.xhr.responseText);
+    } catch (error) {
+        console.error("Invalid permit data response.", error);
+        return;
+    }
+
+    function setFieldValue(fieldName, value) {
+        const field = document.querySelector(
+            '[name="' + fieldName + '"]'
+        );
+
+        if (!field) {
+            return;
+        }
+
+        field.value = value ?? "";
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function setCheckboxValue(fieldName, value) {
+        const field = document.querySelector(
+            '[name="' + fieldName + '"]'
+        );
+
+        if (!field) {
+            return;
+        }
+
+        field.checked = Boolean(value);
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function setAutocompleteValue(
+        hiddenFieldName,
+        visibleInputId,
+        value,
+        text
+    ) {
+        setFieldValue(hiddenFieldName, value);
+
+        const visibleInput = document.getElementById(visibleInputId);
+
+        if (visibleInput) {
+            visibleInput.value = text || "";
+        }
+    }
+
+    setFieldValue("scope_of_work", data.scope_of_work);
+    setFieldValue("remarks", data.remarks);
+    setFieldValue("department", data.department);
+
+    setAutocompleteValue(
+        "location_tag",
+        "location-search-input",
+        data.location_tag,
+        data.location_tag_text
+    );
+
+    setAutocompleteValue(
+        "work_order",
+        "work-order-search-input",
+        data.work_order,
+        data.work_order_text
+    );
+
+    setFieldValue("electrical_tools", data.electrical_tools);
+    setFieldValue("mechanical_tools", data.mechanical_tools);
+    setFieldValue("other_tools", data.other_tools);
+    setFieldValue("hazardous_materials", data.hazardous_materials);
+    setFieldValue(
+        "non_explosion_proof_equipment",
+        data.non_explosion_proof_equipment
+    );
+
+    setCheckboxValue("vehicle_required", data.vehicle_required);
+    setFieldValue("vehicle_description", data.vehicle_description);
+
+    setFieldValue("mechanical_isolation", data.mechanical_isolation);
+    setFieldValue("equipment_depressurized", data.equipment_depressurized);
+    setFieldValue("equipment_drained", data.equipment_drained);
+    setFieldValue("equipment_purged", data.equipment_purged);
+    setFieldValue("process_isolation", data.process_isolation);
+
+    setCheckboxValue(
+        "area_authority_present_required",
+        data.area_authority_present_required
+    );
+
+    setCheckboxValue(
+        "fire_watch_present_required",
+        data.fire_watch_present_required
+    );
+
+    setFieldValue(
+        "equipment_preparation_notes",
+        data.equipment_preparation_notes
+    );
+
+    function setMultipleChoiceValues(fieldName, selectedValues) {
+        const values = new Set(
+            (selectedValues || []).map(function (value) {
+                return String(value);
+            })
+        );
+
+        document
+            .querySelectorAll('[name="' + fieldName + '"]')
+            .forEach(function (field) {
+                field.checked = values.has(String(field.value));
+                field.dispatchEvent(
+                    new Event("change", { bubbles: true })
+                );
+            });
+    }
+
+    setMultipleChoiceValues("hazards", data.hazards);
+    setMultipleChoiceValues("precautions", data.precautions);
+
+    if (typeof updateValiditySummary === "function") {
+        updateValiditySummary();
+    }
+});
+</script>

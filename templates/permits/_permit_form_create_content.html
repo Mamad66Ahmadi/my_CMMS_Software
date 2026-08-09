@@ -1,0 +1,800 @@
+{# Create-mode layout. Shared controls remain in their dedicated partials. #}
+<div class="container-fluid px-4 py-4">
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="permit-header">
+            <div class="permit-header__left">
+                <div class="permit-icon-box">
+                    <i class="bi bi-file-earmark-plus"></i>
+                </div>
+
+                <div class="permit-title-group">
+                    <h1>Create Permit</h1>
+                    <div class="permit-subtitle">
+                        <i class="bi bi-pencil-square"></i>
+                        Complete the permit information before submitting it to the workflow.
+                    </div>
+                </div>
+            </div>
+
+            <div class="permit-header__right">
+                <span class="status-badge status-draft">
+                    <i class="bi bi-pencil"></i> Draft
+                </span>
+
+                <a
+                    href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                    class="btn-permit-action"
+                >
+                    <i class="bi bi-arrow-left"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        <div class="validity-strip">
+            <div class="validity-item">
+                <i class="bi bi-info-circle"></i>
+                <span class="label">Workflow:</span>
+                <span class="value">Initial workflow state</span>
+            </div>
+
+            <div class="validity-item">
+                <i class="bi bi-person"></i>
+                <span class="label">Created By:</span>
+                <span class="value">{{ request.user }}</span>
+            </div>
+
+            <span class="validity-pill validity-pill--invalid">
+                <i class="bi bi-clock"></i>
+                Not active yet
+            </span>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="form-error-box">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="permit-layout">
+
+            <main class="permit-layout__main">
+
+                <!-- General Information -->
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-info-circle"></i>
+                        General Information
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
+
+                            <div class="form-field-block">
+                                <label for="{{ form.permit_number.id_for_label }}">
+                                    Permit Number
+                                </label>
+                                {{ form.permit_number }}
+
+                                {% if form.permit_number.errors %}
+                                    <div class="field-errors">
+                                        {{ form.permit_number.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.permit_type.id_for_label }}">
+                                    Permit Type
+                                </label>
+                                {{ form.permit_type }}
+
+                                {% if form.permit_type.errors %}
+                                    <div class="field-errors">
+                                        {{ form.permit_type.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="continuation-search-input">
+                                    Continuation Of
+                                </label>
+
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="continuation-search-input"
+                                        class="form-control"
+                                        placeholder="Search permit number..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'permits:permit_autocomplete' %}"
+                                        value="{% if form.instance.continuation_of %}{{ form.instance.continuation_of.permit_number }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="continuation-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results"
+                                    ></div>
+
+                                    {{ form.continuation_of }}
+                                </div>
+
+                                {% if form.continuation_of.errors %}
+                                    <div class="field-errors">
+                                        {{ form.continuation_of.errors|striptags }}
+                                    </div>
+                                {% endif %}
+
+                                <div class="form-help text-muted">
+                                    Select an existing permit when this permit continues previous work.
+                                </div>
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="location-search-input">
+                                    Location / Tag
+                                </label>
+
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="location-search-input"
+                                        class="form-control"
+                                        placeholder="Search for a location tag..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}"
+                                        value="{% if location %}{{ location }}{% elif form.instance.location_tag %}{{ form.instance.location_tag }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="location-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results"
+                                    ></div>
+
+                                    {{ form.location_tag }}
+                                </div>
+
+                                {% if form.location_tag.errors %}
+                                    <div class="field-errors">
+                                        {{ form.location_tag.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="work-order-search-input">
+                                    Work Order
+                                </label>
+
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="work-order-search-input"
+                                        class="form-control"
+                                        placeholder="Search work order..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'work_orders:work_order_autocomplete' %}"
+                                        value="{% if form.instance.work_order %}{{ form.instance.work_order }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="work-order-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results"
+                                    ></div>
+
+                                    {{ form.work_order }}
+                                </div>
+
+                                {% if form.work_order.errors %}
+                                    <div class="field-errors">
+                                        {{ form.work_order.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.department.id_for_label }}">
+                                    Department
+                                </label>
+                                {{ form.department }}
+
+                                {% if form.department.errors %}
+                                    <div class="field-errors">
+                                        {{ form.department.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block field-full">
+                                <label for="{{ form.scope_of_work.id_for_label }}">
+                                    Scope of Work
+                                </label>
+                                {{ form.scope_of_work }}
+
+                                {% if form.scope_of_work.errors %}
+                                    <div class="field-errors">
+                                        {{ form.scope_of_work.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block field-full">
+                                <label for="{{ form.remarks.id_for_label }}">
+                                    Remarks
+                                </label>
+                                {{ form.remarks }}
+
+                                {% if form.remarks.errors %}
+                                    <div class="field-errors">
+                                        {{ form.remarks.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Responsible Personnel -->
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-people"></i>
+                        Responsible Personnel
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
+
+                            {% include "permits/user_autocomplete_field.html" with field=form.work_supervisor input_id="work-supervisor-search-input" results_id="work-supervisor-results-container" label="Work Supervisor" required=True %}
+
+                            {% include "permits/user_autocomplete_field.html" with field=form.designated_area_authority input_id="area-authority-search-input" results_id="area-authority-results-container" label="Designated Area Authority" %}
+
+                            {% include "permits/user_autocomplete_field.html" with field=form.designated_area_supervisor input_id="area-supervisor-search-input" results_id="area-supervisor-results-container" label="Designated Area Supervisor" %}
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Validity -->
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-calendar-range"></i>
+                        Validity
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="validity-range" id="permit-validity-range">
+
+                            <div class="validity-field-card">
+                                <div class="validity-field-card__heading">
+                                    <span class="validity-field-card__icon validity-field-card__icon--start">
+                                        <i class="bi bi-play-fill"></i>
+                                    </span>
+
+                                    <div>
+                                        <label for="{{ form.valid_from.id_for_label }}">
+                                            Starts
+                                        </label>
+                                        <span>When this permit becomes valid</span>
+                                    </div>
+                                </div>
+
+                                <div class="validity-input-wrap">
+                                    <i class="bi bi-calendar-event"></i>
+                                    {{ form.valid_from }}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="validity-quick-action"
+                                    id="set-valid-from-now"
+                                >
+                                    <i class="bi bi-clock"></i>
+                                    Set to current time
+                                </button>
+
+                                {% if form.valid_from.errors %}
+                                    <div class="field-errors">
+                                        {{ form.valid_from.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="validity-range__connector" aria-hidden="true">
+                                <span></span>
+                                <i class="bi bi-arrow-right"></i>
+                                <span></span>
+                            </div>
+
+                            <div class="validity-field-card">
+                                <div class="validity-field-card__heading">
+                                    <span class="validity-field-card__icon validity-field-card__icon--end">
+                                        <i class="bi bi-stop-fill"></i>
+                                    </span>
+
+                                    <div>
+                                        <label for="{{ form.valid_to.id_for_label }}">
+                                            Ends
+                                        </label>
+                                        <span>When this permit expires</span>
+                                    </div>
+                                </div>
+
+                                <div class="validity-input-wrap">
+                                    <i class="bi bi-calendar-check"></i>
+                                    {{ form.valid_to }}
+                                </div>
+
+                                <div class="validity-quick-actions">
+                                    <button
+                                        type="button"
+                                        class="validity-quick-action"
+                                        data-validity-hours="12"
+                                    >
+                                        +12 hours
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="validity-quick-action"
+                                        data-validity-hours="24"
+                                    >
+                                        +24 hours
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="validity-quick-action"
+                                        data-validity-hours="168"
+                                    >
+                                        +7 days
+                                    </button>
+                                </div>
+
+                                {% if form.valid_to.errors %}
+                                    <div class="field-errors">
+                                        {{ form.valid_to.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div
+                            class="validity-summary"
+                            id="validity-summary"
+                            aria-live="polite"
+                        >
+                            <i class="bi bi-info-circle"></i>
+                            <span id="validity-summary-text">
+                                Select a start and end time to define the permit duration.
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Duration and Personnel -->
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-hourglass-split"></i>
+                        Duration and Personnel
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
+
+                            <div class="form-field-block">
+                                <label for="{{ form.duration_value.id_for_label }}">
+                                    Duration
+                                </label>
+                                {{ form.duration_value }}
+
+                                {% if form.duration_value.errors %}
+                                    <div class="field-errors">
+                                        {{ form.duration_value.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.duration_unit.id_for_label }}">
+                                    Duration Unit
+                                </label>
+                                {{ form.duration_unit }}
+
+                                {% if form.duration_unit.errors %}
+                                    <div class="field-errors">
+                                        {{ form.duration_unit.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.estimated_personnel.id_for_label }}">
+                                    Estimated Personnel
+                                </label>
+                                {{ form.estimated_personnel }}
+
+                                {% if form.estimated_personnel.errors %}
+                                    <div class="field-errors">
+                                        {{ form.estimated_personnel.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Hazards and Precautions -->
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Hazards and Precautions
+                    </div>
+
+                    <div class="detail-panel__body">
+
+                        <div class="form-field-block">
+                            <label for="{{ form.hazards.id_for_label }}">
+                                Identified Hazards
+                            </label>
+
+                            <div class="hazard-box">
+                                <ul>
+                                    {% for checkbox in form.hazards %}
+                                        <li>
+                                            <label for="{{ checkbox.id_for_label }}">
+                                                {{ checkbox.tag }}
+                                                <span>{{ checkbox.choice_label }}</span>
+                                            </label>
+                                        </li>
+                                    {% empty %}
+                                        <li class="text-muted">
+                                            No active hazards are configured.
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            {% if form.hazards.errors %}
+                                <div class="field-errors">
+                                    {{ form.hazards.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="field-divider">
+
+                        <div class="form-field-block">
+                            <label for="{{ form.precautions.id_for_label }}">
+                                Required Precautions
+                            </label>
+
+                            <div class="hazard-box">
+                                <ul>
+                                    {% for checkbox in form.precautions %}
+                                        <li>
+                                            <label for="{{ checkbox.id_for_label }}">
+                                                {{ checkbox.tag }}
+                                                <span>{{ checkbox.choice_label }}</span>
+                                            </label>
+                                        </li>
+                                    {% empty %}
+                                        <li class="text-muted">
+                                            No active precautions are configured.
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            {% if form.precautions.errors %}
+                                <div class="field-errors">
+                                    {{ form.precautions.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Tools and Vehicle -->
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-tools"></i>
+                        Tools, Materials, and Vehicle
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
+
+                            <div class="form-field-block">
+                                <label for="{{ form.electrical_tools.id_for_label }}">
+                                    Electrical Tools
+                                </label>
+                                {{ form.electrical_tools }}
+
+                                {% if form.electrical_tools.errors %}
+                                    <div class="field-errors">
+                                        {{ form.electrical_tools.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.mechanical_tools.id_for_label }}">
+                                    Mechanical Tools
+                                </label>
+                                {{ form.mechanical_tools }}
+
+                                {% if form.mechanical_tools.errors %}
+                                    <div class="field-errors">
+                                        {{ form.mechanical_tools.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.other_tools.id_for_label }}">
+                                    Other Tools
+                                </label>
+                                {{ form.other_tools }}
+
+                                {% if form.other_tools.errors %}
+                                    <div class="field-errors">
+                                        {{ form.other_tools.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.hazardous_materials.id_for_label }}">
+                                    Hazardous Materials
+                                </label>
+                                {{ form.hazardous_materials }}
+
+                                {% if form.hazardous_materials.errors %}
+                                    <div class="field-errors">
+                                        {{ form.hazardous_materials.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block field-full">
+                                <label for="{{ form.non_explosion_proof_equipment.id_for_label }}">
+                                    Non-Explosion-Proof Equipment
+                                </label>
+                                {{ form.non_explosion_proof_equipment }}
+
+                                {% if form.non_explosion_proof_equipment.errors %}
+                                    <div class="field-errors">
+                                        {{ form.non_explosion_proof_equipment.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label class="checkbox-card" for="{{ form.vehicle_required.id_for_label }}">
+                                    {{ form.vehicle_required }}
+                                    <span>Vehicle Required</span>
+                                </label>
+
+                                {% if form.vehicle_required.errors %}
+                                    <div class="field-errors">
+                                        {{ form.vehicle_required.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.vehicle_description.id_for_label }}">
+                                    Vehicle Description
+                                </label>
+                                {{ form.vehicle_description }}
+
+                                {% if form.vehicle_description.errors %}
+                                    <div class="field-errors">
+                                        {{ form.vehicle_description.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Isolation and Preparation -->
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-shield-lock"></i>
+                        Isolation and Equipment Preparation
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
+
+                            <div class="form-field-block">
+                                <label for="{{ form.mechanical_isolation.id_for_label }}">
+                                    Mechanical Isolation
+                                </label>
+                                {{ form.mechanical_isolation }}
+
+                                {% if form.mechanical_isolation.errors %}
+                                    <div class="field-errors">
+                                        {{ form.mechanical_isolation.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.process_isolation.id_for_label }}">
+                                    Process Isolation
+                                </label>
+                                {{ form.process_isolation }}
+
+                                {% if form.process_isolation.errors %}
+                                    <div class="field-errors">
+                                        {{ form.process_isolation.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.equipment_depressurized.id_for_label }}">
+                                    Equipment Depressurized
+                                </label>
+                                {{ form.equipment_depressurized }}
+
+                                {% if form.equipment_depressurized.errors %}
+                                    <div class="field-errors">
+                                        {{ form.equipment_depressurized.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.equipment_drained.id_for_label }}">
+                                    Equipment Drained
+                                </label>
+                                {{ form.equipment_drained }}
+
+                                {% if form.equipment_drained.errors %}
+                                    <div class="field-errors">
+                                        {{ form.equipment_drained.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label for="{{ form.equipment_purged.id_for_label }}">
+                                    Equipment Purged
+                                </label>
+                                {{ form.equipment_purged }}
+
+                                {% if form.equipment_purged.errors %}
+                                    <div class="field-errors">
+                                        {{ form.equipment_purged.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label class="checkbox-card" for="{{ form.area_authority_present_required.id_for_label }}">
+                                    {{ form.area_authority_present_required }}
+                                    <span>Area Authority Presence Required</span>
+                                </label>
+
+                                {% if form.area_authority_present_required.errors %}
+                                    <div class="field-errors">
+                                        {{ form.area_authority_present_required.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block">
+                                <label class="checkbox-card" for="{{ form.fire_watch_present_required.id_for_label }}">
+                                    {{ form.fire_watch_present_required }}
+                                    <span>Fire Watch Required</span>
+                                </label>
+
+                                {% if form.fire_watch_present_required.errors %}
+                                    <div class="field-errors">
+                                        {{ form.fire_watch_present_required.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field-block field-full">
+                                <label for="{{ form.equipment_preparation_notes.id_for_label }}">
+                                    Equipment Preparation Notes
+                                </label>
+                                {{ form.equipment_preparation_notes }}
+
+                                {% if form.equipment_preparation_notes.errors %}
+                                    <div class="field-errors">
+                                        {{ form.equipment_preparation_notes.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+
+            <!-- Sidebar -->
+            <aside class="permit-layout__side">
+
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-card-list"></i>
+                        Draft Record Information
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="info-mini-row">
+                            <span class="label">
+                                <i class="bi bi-flag"></i>
+                                Initial State
+                            </span>
+                            <span class="value">Draft</span>
+                        </div>
+
+                        <div class="info-mini-row">
+                            <span class="label">
+                                <i class="bi bi-person-plus"></i>
+                                Created By
+                            </span>
+                            <span class="value">{{ request.user }}</span>
+                        </div>
+
+                        <div class="info-mini-row">
+                            <span class="label">
+                                <i class="bi bi-diagram-3"></i>
+                                Workflow
+                            </span>
+                            <span class="value">Assigned by workflow engine</span>
+                        </div>
+
+                        <div class="info-mini-row">
+                            <span class="label">
+                                <i class="bi bi-shield-check"></i>
+                                Validation
+                            </span>
+                            <span class="value">Model and form rules apply</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="detail-panel">
+                    <div class="detail-panel__header">
+                        <i class="bi bi-check2-square"></i>
+                        Actions
+                    </div>
+
+                    <div class="detail-panel__body">
+                        <div class="form-actions">
+                            <a
+                                href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                                class="btn-permit-action"
+                            >
+                                <i class="bi bi-x-circle"></i>
+                                Cancel
+                            </a>
+
+                            <button type="submit" class="btn-save-permit">
+                                <i class="bi bi-save"></i>
+                                Create Permit
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+            </aside>
+        </div>
+    </form>
+</div>

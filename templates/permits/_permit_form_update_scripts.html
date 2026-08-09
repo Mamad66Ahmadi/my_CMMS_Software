@@ -1,0 +1,466 @@
+{# Update-mode behaviors: validity controls and autocomplete. #}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function toLocalDateTimeValue(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    function formatDuration(milliseconds) {
+        const totalMinutes = Math.floor(milliseconds / 60000);
+        const days = Math.floor(totalMinutes / (60 * 24));
+        const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+        const minutes = totalMinutes % 60;
+
+        const parts = [];
+
+        if (days) {
+            parts.push(`${days} day${days !== 1 ? "s" : ""}`);
+        }
+
+        if (hours) {
+            parts.push(`${hours} hour${hours !== 1 ? "s" : ""}`);
+        }
+
+        if (minutes) {
+            parts.push(`${minutes} minute${minutes !== 1 ? "s" : ""}`);
+        }
+
+        return parts.length ? parts.join(", ") : "0 minutes";
+    }
+
+    function setValiditySummary(message, state) {
+        const summary = document.getElementById("validity-summary");
+        const summaryText = document.getElementById("validity-summary-text");
+
+        if (!summary || !summaryText) {
+            return;
+        }
+
+        summary.classList.remove("is-valid", "is-invalid");
+
+        if (state) {
+            summary.classList.add(state);
+        }
+
+        summaryText.textContent = message;
+    }
+
+    function updateValiditySummary() {
+        const validFromInput = document.getElementById("id_valid_from");
+        const validToInput = document.getElementById("id_valid_to");
+
+        if (!validFromInput || !validToInput) {
+            return;
+        }
+
+        const startValue = validFromInput.value;
+        const endValue = validToInput.value;
+
+        validFromInput.classList.remove("is-valid", "is-invalid");
+        validToInput.classList.remove("is-valid", "is-invalid");
+
+        if (startValue) {
+            validToInput.min = startValue;
+        } else {
+            validToInput.min = "";
+        }
+
+        if (!startValue || !endValue) {
+            setValiditySummary(
+                "Select a start and end time to define the permit duration.",
+                null
+            );
+            return;
+        }
+
+        const startDate = new Date(startValue);
+        const endDate = new Date(endValue);
+
+        if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+            setValiditySummary(
+                "Select a valid start and end time.",
+                "is-invalid"
+            );
+            return;
+        }
+
+        if (endDate <= startDate) {
+            validToInput.classList.add("is-invalid");
+            setValiditySummary(
+                "End time must be later than the start time.",
+                "is-invalid"
+            );
+            return;
+        }
+
+        validFromInput.classList.add("is-valid");
+        validToInput.classList.add("is-valid");
+
+        setValiditySummary(
+            `Permit duration: ${formatDuration(endDate - startDate)}`,
+            "is-valid"
+        );
+    }
+
+    const validFromInput = document.getElementById("id_valid_from");
+    const validToInput = document.getElementById("id_valid_to");
+    const setValidFromNowButton = document.getElementById("set-valid-from-now");
+    const quickValidityButtons = document.querySelectorAll("[data-validity-hours]");
+
+    if (validFromInput && validToInput) {
+        validFromInput.addEventListener("change", updateValiditySummary);
+        validFromInput.addEventListener("input", updateValiditySummary);
+
+        validToInput.addEventListener("change", updateValiditySummary);
+        validToInput.addEventListener("input", updateValiditySummary);
+
+        updateValiditySummary();
+    }
+
+    if (setValidFromNowButton && validFromInput) {
+        setValidFromNowButton.addEventListener("click", function () {
+            validFromInput.value = toLocalDateTimeValue(new Date());
+            validFromInput.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    }
+
+    quickValidityButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            if (!validFromInput || !validToInput) {
+                return;
+            }
+
+            let startDate;
+
+            if (validFromInput.value) {
+                startDate = new Date(validFromInput.value);
+            } else {
+                startDate = new Date();
+                validFromInput.value = toLocalDateTimeValue(startDate);
+            }
+
+            if (Number.isNaN(startDate.getTime())) {
+                return;
+            }
+
+            const hours = parseInt(button.dataset.validityHours, 10);
+
+            if (Number.isNaN(hours)) {
+                return;
+            }
+
+            const endDate = new Date(startDate.getTime() + hours * 60 * 60 * 1000);
+            validToInput.value = toLocalDateTimeValue(endDate);
+
+            validFromInput.dispatchEvent(new Event("change", { bubbles: true }));
+            validToInput.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    });
+
+    function setupAutocomplete(config) {
+        const input = document.getElementById(config.inputId);
+        const hiddenInput = document.getElementById(config.hiddenId);
+        const resultsContainer = document.getElementById(config.resultsId);
+
+        if (!input || !hiddenInput || !resultsContainer || !config.url) {
+            return;
+        }
+
+        let debounceTimer = null;
+        let selectedIndex = -1;
+        let currentResults = [];
+
+        function clearResults() {
+            resultsContainer.innerHTML = "";
+            resultsContainer.classList.remove("is-visible");
+            resultsContainer.style.display = "none";
+            selectedIndex = -1;
+            currentResults = [];
+        }
+
+        function setValue(item) {
+            input.value = item.text;
+            hiddenInput.value = item.id;
+
+            hiddenInput.dispatchEvent(new Event("change", { bubbles: true }));
+
+            clearResults();
+        }
+
+        function updateActiveOption() {
+            Array.from(resultsContainer.children).forEach(function (child, index) {
+                child.classList.toggle("active", index === selectedIndex);
+            });
+        }
+
+        function renderResults(items) {
+            currentResults = items || [];
+            resultsContainer.innerHTML = "";
+            selectedIndex = -1;
+
+            if (!currentResults.length) {
+                const emptyItem = document.createElement("div");
+                emptyItem.className = "list-group-item text-muted";
+                emptyItem.textContent = "No matches found";
+
+                resultsContainer.appendChild(emptyItem);
+                resultsContainer.classList.add("is-visible");
+                resultsContainer.style.display = "block";
+                return;
+            }
+
+            currentResults.forEach(function (item, index) {
+                const option = document.createElement("button");
+                option.type = "button";
+                option.className = "list-group-item list-group-item-action autocomplete-option";
+                option.textContent = item.text;
+                option.dataset.index = index;
+
+                option.addEventListener("click", function () {
+                    setValue(item);
+                });
+
+                resultsContainer.appendChild(option);
+            });
+
+            resultsContainer.classList.add("is-visible");
+            resultsContainer.style.display = "block";
+        }
+
+        function fetchResults(query) {
+            const url = new URL(config.url, window.location.origin);
+            url.searchParams.set("q", query);
+
+            fetch(url.toString(), {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Autocomplete request failed.");
+                    }
+
+                    return response.json();
+                })
+                .then(function (data) {
+                    renderResults(data.results || []);
+                })
+                .catch(function () {
+                    resultsContainer.innerHTML = "";
+
+                    const errorItem = document.createElement("div");
+                    errorItem.className = "list-group-item text-danger";
+                    errorItem.textContent = "Search failed";
+
+                    resultsContainer.appendChild(errorItem);
+                    resultsContainer.classList.add("is-visible");
+                    resultsContainer.style.display = "block";
+                });
+        }
+
+        input.addEventListener("input", function () {
+            const query = input.value.trim();
+
+            hiddenInput.value = "";
+
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+
+            if (query.length < 2) {
+                clearResults();
+                return;
+            }
+
+            debounceTimer = setTimeout(function () {
+                fetchResults(query);
+            }, 250);
+        });
+
+        input.addEventListener("keydown", function (event) {
+            if (resultsContainer.style.display !== "block" || !currentResults.length) {
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, currentResults.length - 1);
+                updateActiveOption();
+            } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateActiveOption();
+            } else if (event.key === "Enter") {
+                if (selectedIndex >= 0 && currentResults[selectedIndex]) {
+                    event.preventDefault();
+                    setValue(currentResults[selectedIndex]);
+                }
+            } else if (event.key === "Escape") {
+                clearResults();
+            }
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!input.contains(event.target) && !resultsContainer.contains(event.target)) {
+                clearResults();
+            }
+        });
+    }
+
+    setupAutocomplete({
+        inputId: "location-search-input",
+        hiddenId: "id_location_tag",
+        resultsId: "location-results-container",
+        url: document.getElementById("location-search-input")?.dataset.autocompleteUrl,
+    });
+
+    setupAutocomplete({
+        inputId: "work-order-search-input",
+        hiddenId: "id_work_order",
+        resultsId: "work-order-results-container",
+        url: document.getElementById("work-order-search-input")?.dataset.autocompleteUrl,
+    });
+
+    setupAutocomplete({
+        inputId: "work-supervisor-search-input",
+        hiddenId: "id_work_supervisor",
+        resultsId: "work-supervisor-results-container",
+        url: document.getElementById("work-supervisor-search-input")?.dataset.autocompleteUrl,
+    });
+
+    setupAutocomplete({
+        inputId: "area-authority-search-input",
+        hiddenId: "id_designated_area_authority",
+        resultsId: "area-authority-results-container",
+        url: document.getElementById("area-authority-search-input")?.dataset.autocompleteUrl,
+    });
+
+    setupAutocomplete({
+        inputId: "area-supervisor-search-input",
+        hiddenId: "id_designated_area_supervisor",
+        resultsId: "area-supervisor-results-container",
+        url: document.getElementById("area-supervisor-search-input")?.dataset.autocompleteUrl,
+    });
+
+    /*
+     * Continuation permit population is kept for compatibility.
+     * In update mode this usually should not run unless the hidden continuation
+     * field is actively changed by HTMX.
+     */
+    document.body.addEventListener("htmx:afterRequest", function (event) {
+        const target = event.detail.elt;
+        const xhr = event.detail.xhr;
+
+        if (!target || target.id !== "id_continuation_of") {
+            return;
+        }
+
+        if (xhr.status !== 200) {
+            return;
+        }
+
+        let data = null;
+
+        try {
+            data = JSON.parse(xhr.responseText);
+        } catch (error) {
+            console.error("Invalid permit data response.", error);
+            return;
+        }
+
+        if (!data || typeof data !== "object") {
+            console.error("Invalid permit data response.");
+            return;
+        }
+
+        const setFieldValue = function (fieldName, value) {
+            const field = document.getElementById(`id_${fieldName}`);
+
+            if (field) {
+                field.value = value ?? "";
+            }
+        };
+
+        const setCheckboxValue = function (fieldName, checked) {
+            const field = document.getElementById(`id_${fieldName}`);
+
+            if (field) {
+                field.checked = Boolean(checked);
+            }
+        };
+
+        const setAutocompleteValue = function (hiddenFieldName, visibleInputId, value, text) {
+            const hiddenField = document.getElementById(`id_${hiddenFieldName}`);
+            const visibleInput = document.getElementById(visibleInputId);
+
+            if (hiddenField) {
+                hiddenField.value = value ?? "";
+            }
+
+            if (visibleInput) {
+                visibleInput.value = text ?? "";
+            }
+        };
+
+        const setMultipleChoiceValues = function (fieldName, selectedValues) {
+            const selected = new Set((selectedValues || []).map(function (value) {
+                return String(value);
+            }));
+
+            document.querySelectorAll(`input[name="${fieldName}"]`).forEach(function (checkbox) {
+                checkbox.checked = selected.has(String(checkbox.value));
+            });
+        };
+
+        setFieldValue("scope_of_work", data.scope_of_work);
+        setFieldValue("remarks", data.remarks);
+        setFieldValue("department", data.department);
+
+        setAutocompleteValue(
+            "location_tag",
+            "location-search-input",
+            data.location_tag,
+            data.location_tag_text
+        );
+
+        setAutocompleteValue(
+            "work_order",
+            "work-order-search-input",
+            data.work_order,
+            data.work_order_text
+        );
+
+        setFieldValue("electrical_tools", data.electrical_tools);
+        setFieldValue("mechanical_tools", data.mechanical_tools);
+        setFieldValue("other_tools", data.other_tools);
+        setFieldValue("hazardous_materials", data.hazardous_materials);
+        setFieldValue("non_explosion_proof_equipment", data.non_explosion_proof_equipment);
+
+        setCheckboxValue("vehicle_required", data.vehicle_required);
+        setFieldValue("vehicle_description", data.vehicle_description);
+
+        setFieldValue("mechanical_isolation", data.mechanical_isolation);
+        setFieldValue("equipment_depressurized", data.equipment_depressurized);
+        setFieldValue("equipment_drained", data.equipment_drained);
+        setFieldValue("equipment_purged", data.equipment_purged);
+        setFieldValue("process_isolation", data.process_isolation);
+
+        setCheckboxValue("area_authority_present_required", data.area_authority_present_required);
+        setCheckboxValue("fire_watch_present_required", data.fire_watch_present_required);
+
+        setFieldValue("equipment_preparation_notes", data.equipment_preparation_notes);
+
+        setMultipleChoiceValues("hazards", data.hazards);
+        setMultipleChoiceValues("precautions", data.precautions);
+
+        updateValiditySummary();
+    });
+});
+</script>

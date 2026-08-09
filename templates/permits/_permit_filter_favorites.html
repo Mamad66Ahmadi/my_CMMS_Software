@@ -1,0 +1,136 @@
+{# Save, update, and delete favorite filter sets. #}
+                {# ---------------------------------------------------------------------- #}
+                {# Save Current Filters                                                    #}
+                {# ---------------------------------------------------------------------- #}
+                <div class="filter-sections border-top pt-3 mt-1">
+
+                    <div class="filter-section filter-section--full">
+                        <div class="filter-section__title">
+                            <i class="bi bi-bookmark-star"></i> Save Current Filters
+                        </div>
+
+                        <form method="post"
+                              action="{% url 'permits:permit_filter_favorite_save' %}"
+                              class="d-flex flex-wrap align-items-end gap-2"
+                              id="favoriteSaveForm">
+
+                            {% csrf_token %}
+
+                            {% if selected_favorite %}
+                                <input type="hidden" name="favorite_id" value="{{ selected_favorite.id }}">
+                            {% endif %}
+
+                            {# Current filter state. JS below also syncs from advancedFilterForm before submit. #}
+                            <input type="hidden" name="q" value="{{ filters.q|default:'' }}">
+                            <input type="hidden" name="permit_number" value="{{ filters.permit_number|default:'' }}">
+                            <input type="hidden" name="continuation_of" value="{{ filters.continuation_of|default:'' }}">
+                            <input type="hidden" name="permit_type" value="{{ filters.permit_type|default:'' }}">
+
+                            <input type="hidden" name="current_step" value="{{ filters.current_step|default:'' }}">
+                            <input type="hidden" name="workflow" value="{{ filters.workflow|default:'' }}">
+                            <input type="hidden" name="is_terminal" value="{{ filters.is_terminal|default:'' }}">
+
+                            <input type="hidden" name="location_tag" value="{{ filters.location_tag|default:'' }}">
+                            <input type="hidden" name="parent_tag" value="{{ filters.parent_tag|default:'' }}">
+                            <input type="hidden" name="unit" value="{{ filters.unit|default:'' }}">
+                            <input type="hidden" name="train" value="{{ filters.train|default:'' }}">
+                            <input type="hidden" name="work_order" value="{{ filters.work_order|default:'' }}">
+
+                            <input type="hidden" name="department" value="{{ filters.department|default:'' }}">
+                            <input type="hidden" name="work_supervisor" value="{{ filters.work_supervisor|default:'' }}">
+                            <input type="hidden" name="designated_area_authority" value="{{ filters.designated_area_authority|default:'' }}">
+                            <input type="hidden" name="designated_area_supervisor" value="{{ filters.designated_area_supervisor|default:'' }}">
+
+                            <input type="hidden" name="scope_of_work" value="{{ filters.scope_of_work|default:'' }}">
+                            <input type="hidden" name="remarks" value="{{ filters.remarks|default:'' }}">
+                            <input type="hidden" name="hazard_code" value="{{ filters.hazard_code|default:'' }}">
+                            <input type="hidden" name="precaution_code" value="{{ filters.precaution_code|default:'' }}">
+
+                            <input type="hidden" name="electrical_tools" value="{{ filters.electrical_tools|default:'' }}">
+                            <input type="hidden" name="mechanical_tools" value="{{ filters.mechanical_tools|default:'' }}">
+                            <input type="hidden" name="hazardous_materials" value="{{ filters.hazardous_materials|default:'' }}">
+                            <input type="hidden" name="vehicle_required" value="{{ filters.vehicle_required|default:'' }}">
+
+                            <input type="hidden" name="mechanical_isolation" value="{{ filters.mechanical_isolation|default:'' }}">
+                            <input type="hidden" name="equipment_depressurized" value="{{ filters.equipment_depressurized|default:'' }}">
+                            <input type="hidden" name="equipment_drained" value="{{ filters.equipment_drained|default:'' }}">
+                            <input type="hidden" name="equipment_purged" value="{{ filters.equipment_purged|default:'' }}">
+                            <input type="hidden" name="process_isolation" value="{{ filters.process_isolation|default:'' }}">
+                            <input type="hidden" name="area_authority_present_required" value="{{ filters.area_authority_present_required|default:'' }}">
+                            <input type="hidden" name="fire_watch_present_required" value="{{ filters.fire_watch_present_required|default:'' }}">
+
+                            <input type="hidden" name="valid_from_date" value="{{ filters.valid_from_date|default:'' }}">
+                            <input type="hidden" name="valid_to_date" value="{{ filters.valid_to_date|default:'' }}">
+                            <input type="hidden" name="is_currently_valid" value="{{ filters.is_currently_valid|default:'' }}">
+                            <input type="hidden" name="has_expired" value="{{ filters.has_expired|default:'' }}">
+
+                            <input type="hidden" name="activated" value="{{ filters.activated|default:'' }}">
+                            <input type="hidden" name="suspended" value="{{ filters.suspended|default:'' }}">
+                            <input type="hidden" name="completed" value="{{ filters.completed|default:'' }}">
+                            <input type="hidden" name="closed" value="{{ filters.closed|default:'' }}">
+
+                            <input type="hidden" name="created_from" value="{{ filters.created_from|default:'' }}">
+                            <input type="hidden" name="created_to" value="{{ filters.created_to|default:'' }}">
+                            <input type="hidden" name="modified_from" value="{{ filters.modified_from|default:'' }}">
+                            <input type="hidden" name="modified_to" value="{{ filters.modified_to|default:'' }}">
+                            <input type="hidden" name="created_by" value="{{ filters.created_by|default:'' }}">
+                            <input type="hidden" name="modified_by" value="{{ filters.modified_by|default:'' }}">
+
+                            <input type="hidden" name="sort" value="{{ sort_by|default:'' }}">
+                            <input type="hidden" name="per_page" value="{{ per_page|default:'' }}">
+
+                            <div class="filter-field flex-grow-1" style="min-width:160px;">
+                                <label class="filter-label">Favorite Name</label>
+                                <input type="text"
+                                       name="name"
+                                       class="filter-input"
+                                       placeholder="My active permits"
+                                       value="{% if selected_favorite %}{{ selected_favorite.name }}{% endif %}">
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="is_default"
+                                       id="id_is_default"
+                                       {% if selected_favorite and selected_favorite.is_default %}checked{% endif %}>
+                                <label class="form-check-label filter-label mb-0" for="id_is_default">
+                                    Set as default
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn-filter-primary">
+                                <i class="bi bi-bookmark-plus"></i>
+                                {% if selected_favorite %}Update Favorite{% else %}Save Favorite{% endif %}
+                            </button>
+                        </form>
+                    </div>
+
+                    {% if selected_favorite %}
+                        <div class="filter-section filter-section--full">
+                            <div class="filter-section__title">
+                                <i class="bi bi-bookmark-check"></i> Manage Selected Favorite
+                            </div>
+
+                            <p class="text-muted small mb-2">
+                                Currently editing <strong>{{ selected_favorite.name }}</strong>.
+                                Deleting it cannot be undone.
+                            </p>
+
+                            <form method="post"
+                                  action="{% url 'permits:permit_filter_favorite_delete' selected_favorite.id %}"
+                                  onsubmit="return confirm('Delete this favorite filter?');">
+                                {% csrf_token %}
+
+                                <button type="submit"
+                                        class="btn-filter-clear"
+                                        style="border:1px solid var(--c-status-danger-text); color: var(--c-status-danger-text);">
+                                    <i class="bi bi-trash"></i> Delete Favorite
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+

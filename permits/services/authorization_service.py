@@ -121,6 +121,7 @@ class WorkflowAuthorizationService:
 
         return True
 
+
     @classmethod
     def ensure_actor_has_role_for_permit(
         cls,
@@ -128,25 +129,8 @@ class WorkflowAuthorizationService:
         actor,
         permit,
         role,
-        action_label: str = "perform this action",
+        action_label="perform this action",
     ):
-        """
-        Reusable role authorization check.
-
-        This method checks:
-        - authentication
-        - superuser bypass
-        - required qualification
-        - active PermitApprovalRoleAssignment
-        - permit type scope
-        - department scope
-        - unit scope
-
-        Used by:
-        - ensure_actor_can_decide()
-        - ensure_actor_can_edit_permit()
-        """
-
         if not actor.is_authenticated:
             raise PermissionDenied("Authentication is required.")
 
@@ -160,7 +144,9 @@ class WorkflowAuthorizationService:
 
         today = timezone.localdate()
 
-        # 1. Qualification check
+        # ---------------------------------------------------------
+        # 1. Qualification
+        # ---------------------------------------------------------
         cls._ensure_required_qualification(
             actor=actor,
             role=role,
@@ -168,18 +154,68 @@ class WorkflowAuthorizationService:
             action_label=action_label,
         )
 
-        # 2. Start building assignment query
+        # ---------------------------------------------------------
+        # 2. Find role assignments
+        # ---------------------------------------------------------
         assignments = PermitApprovalRoleAssignment.objects.filter(
             user=actor,
             role=role,
             is_active=True,
-        ).filter(
+        )
+
+        # DEBUG
+        print("\n========== WORKFLOW AUTHORIZATION DEBUG ==========")
+        print(f"USER: {actor}")
+        print(f"ROLE: {role}")
+        print(f"ROLE CODE: {role.code}")
+        print(f"PERMIT: {permit.permit_number}")
+        print(f"PERMIT TYPE: {permit.permit_type}")
+        print(f"PERMIT TYPE ID: {permit.permit_type_id}")
+        print(f"PERMIT DEPARTMENT: {permit.department}")
+        print(f"PERMIT DEPARTMENT ID: {permit.department_id}")
+
+        print("ALL ROLE ASSIGNMENTS:")
+        for assignment in PermitApprovalRoleAssignment.objects.filter(
+            user=actor,
+            role=role,
+        ).prefetch_related("units"):
+            print(
+                "  Assignment:",
+                assignment.pk,
+                "| active =", getattr(assignment, "is_active", None),
+                "| permit_type =", assignment.permit_type,
+                "| permit_type_id =", assignment.permit_type_id,
+                "| department =", assignment.department,
+                "| department_id =", assignment.department_id,
+                "| all_units =", assignment.all_units,
+                "| units =", list(assignment.units.all()),
+            )
+
+        # ---------------------------------------------------------
+        # 3. Permit type scope
+        # ---------------------------------------------------------
+        assignments = assignments.filter(
             Q(permit_type__isnull=True)
             | Q(permit_type=permit.permit_type)
         )
 
-        # 3. Department constraint validation
+        print(
+            "AFTER PERMIT TYPE FILTER:",
+            list(assignments.values(
+                "id",
+                "permit_type_id",
+                "department_id",
+                "all_units",
+            ))
+        )
+
+        # ---------------------------------------------------------
+        # 4. Department scope
+        # ---------------------------------------------------------
         if role.department_scope == role.ScopeRequirement.REQUIRED:
+
+            print("DEPARTMENT SCOPE: REQUIRED")
+
             if not permit.department_id:
                 raise PermissionDenied(
                     "This permit has no originating department."
@@ -189,13 +225,39 @@ class WorkflowAuthorizationService:
                 department=permit.department,
             )
 
-        # 4. Unit constraint validation
+            print(
+                "AFTER DEPARTMENT FILTER:",
+                list(assignments.values(
+                    "id",
+                    "permit_type_id",
+                    "department_id",
+                    "all_units",
+                ))
+            )
+
+        else:
+            print("DEPARTMENT SCOPE: NOT REQUIRED")
+
+        # ---------------------------------------------------------
+        # 5. Unit scope
+        # ---------------------------------------------------------
         if role.unit_scope == role.ScopeRequirement.REQUIRED:
-            permit_unit = permit.location_tag.unit if permit.location_tag else None
+
+            print("UNIT SCOPE: REQUIRED")
+
+            permit_unit = (
+                permit.location_tag.unit
+                if permit.location_tag
+                else None
+            )
+
+            print("PERMIT UNIT:", permit_unit)
+            print("PERMIT UNIT ID:", getattr(permit_unit, "pk", None))
 
             if not permit_unit:
                 raise PermissionDenied(
-                    "The permit equipment location does not resolve to an operational unit."
+                    "The permit equipment location does not resolve "
+                    "to an operational unit."
                 )
 
             assignments = assignments.filter(
@@ -203,11 +265,30 @@ class WorkflowAuthorizationService:
                 | Q(units=permit_unit)
             )
 
-        # 5. Confirm assignment exists
+            print(
+                "AFTER UNIT FILTER:",
+                list(assignments.values(
+                    "id",
+                    "permit_type_id",
+                    "department_id",
+                    "all_units",
+                ))
+            )
+
+        else:
+            print("UNIT SCOPE: NOT REQUIRED")
+
+        # ---------------------------------------------------------
+        # 6. Final result
+        # ---------------------------------------------------------
+        print("FINAL MATCHING ASSIGNMENTS:", assignments.exists())
+        print("===================================================\n")
+
         if not assignments.exists():
             raise PermissionDenied(
-                f"You do not hold an active role assignment matching '{role.name}' "
-                f"to {action_label} for the designated permit type, department, or unit scope."
+                f"You do not hold an active role assignment matching "
+                f"'{role.name}' to {action_label} for the designated "
+                f"permit type, department, or unit scope."
             )
 
     @classmethod

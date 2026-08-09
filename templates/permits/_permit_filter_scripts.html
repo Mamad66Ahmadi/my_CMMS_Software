@@ -1,0 +1,21 @@
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const filterForm = document.getElementById("advancedFilterForm");
+    const favoriteForm = document.getElementById("favoriteSaveForm");
+
+    if (!filterForm || !favoriteForm) return;
+
+    favoriteForm.addEventListener("submit", function () {
+        for (const [key, value] of new FormData(filterForm).entries()) {
+            let field = favoriteForm.querySelector(`[name="${key}"]`);
+            if (!field) {
+                field = document.createElement("input");
+                field.type = "hidden";
+                field.name = key;
+                favoriteForm.appendChild(field);
+            }
+            field.value = value;
+        }
+    });
+});
+</script>
