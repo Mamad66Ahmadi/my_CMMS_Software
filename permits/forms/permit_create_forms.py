@@ -1,3 +1,5 @@
+# permits/forms/permit_create_form.py
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
@@ -411,14 +413,22 @@ class PermitCreateForm(forms.ModelForm):
             )
 
         continuation_of = cleaned_data.get("continuation_of")
-        permit_number = cleaned_data.get("permit_number")
+        permit_number = (cleaned_data.get("permit_number") or "").strip().upper()
 
         if continuation_of and permit_number:
-            if continuation_of.permit_number == permit_number:
+            continuation_number = (
+                continuation_of.permit_number or ""
+            ).strip().upper()
+
+            if continuation_number == permit_number:
                 self.add_error(
                     "continuation_of",
-                    "A permit cannot be a continuation of itself.",
+                    (
+                        "A permit cannot be a continuation of a permit with the same "
+                        "permit number."
+                    ),
                 )
+
 
         return cleaned_data
 

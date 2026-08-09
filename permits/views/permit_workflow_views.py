@@ -26,6 +26,8 @@ class PermitWorkflowTransitionView(LoginRequiredMixin, View):
             Permit.objects.select_related(
                 "workflow",
                 "current_step",
+                "current_step__editable_role",
+                "current_step__editable_role__required_qualification",
                 "permit_type",
             ),
             permit_number=permit_number,
@@ -57,7 +59,10 @@ class PermitWorkflowTransitionView(LoginRequiredMixin, View):
             )
 
         except WorkflowTransitionError as exc:
-            messages.error(request, exc.messages[0] if hasattr(exc, "messages") else str(exc))
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
 
         except PermissionDenied:
             messages.error(

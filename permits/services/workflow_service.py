@@ -1,3 +1,5 @@
+# permits/services/workflow_service.py
+
 from dataclasses import dataclass
 
 from django.core.exceptions import ValidationError
@@ -49,6 +51,8 @@ class PermitWorkflowService:
             .select_related(
                 "workflow",
                 "current_step",
+                "current_step__editable_role",
+                "current_step__editable_role__required_qualification",
                 "permit_type",
                 "department",
                 "location_tag",
@@ -77,6 +81,8 @@ class PermitWorkflowService:
                 "workflow",
                 "from_step",
                 "to_step",
+                "to_step__editable_role",
+                "to_step__editable_role__required_qualification",
                 "role",
                 "role__required_qualification",
             )

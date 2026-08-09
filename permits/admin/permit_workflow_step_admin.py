@@ -1,4 +1,5 @@
 # permits/admin/permit_workflow_step_admin.py
+
 from django.contrib import admin
 
 from permits.admin.base_admin import AUDIT_FIELDSET, TimeStampedAdmin
@@ -13,6 +14,8 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
         "title",
         "is_start",
         "is_terminal",
+        "is_editable_step",
+        "editable_role",
         "is_active",
         "created_at",
     )
@@ -21,6 +24,8 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
         "workflow",
         "is_start",
         "is_terminal",
+        "is_editable_step",
+        "editable_role",
         "is_active",
     )
 
@@ -28,6 +33,8 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
         "workflow__name",
         "title",
         "description",
+        "editable_role__name",
+        "editable_role__code",
     )
 
     ordering = (
@@ -37,6 +44,7 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
 
     autocomplete_fields = (
         "workflow",
+        "editable_role",
     )
 
     fieldsets = (
@@ -59,6 +67,19 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
                     "is_terminal",
                     "is_active",
                 )
+            },
+        ),
+        (
+            "Editing Rule",
+            {
+                "fields": (
+                    "is_editable_step",
+                    "editable_role",
+                ),
+                "description": (
+                    "Configure whether permits can be edited at this step and "
+                    "which single workflow role is allowed to edit."
+                ),
             },
         ),
         AUDIT_FIELDSET,

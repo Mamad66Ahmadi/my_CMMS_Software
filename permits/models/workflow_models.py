@@ -56,6 +56,10 @@ class PermitWorkflowStep(TimeStampedModel):
     is_start = models.BooleanField(default=False)
     is_terminal = models.BooleanField(default=False)
 
+    is_editable_step = models.BooleanField(default=False)
+    editable_role = models.ForeignKey("permits.PermitApprovalRoleChoices", on_delete=models.SET_NULL,null=True, blank=True, related_name="editable_workflow_steps")
+
+
     class Meta:
         verbose_name = "Permit Workflow Step"
         verbose_name_plural = "Permit Workflow Steps"
@@ -78,22 +82,39 @@ class PermitWorkflowStep(TimeStampedModel):
 
     def clean(self):
         super().clean()
+
         if self.is_start and self.is_terminal:
             raise ValidationError("A step cannot be both start and terminal.")
 
-        # Enforce that a workflow cannot have more than one start step
+        if self.is_terminal and self.is_editable_step:
+            raise ValidationError(
+                {"is_editable_step": "A terminal step cannot be editable."}
+            )
+
+        if self.is_editable_step and not self.editable_role_id:
+            raise ValidationError(
+                {"editable_role": "Select the single role allowed to edit permits at this step."}
+            )
+
+        if not self.is_editable_step and self.editable_role_id:
+            raise ValidationError(
+                {"editable_role": "Editable role should only be set when this step is editable."}
+            )
+
         if self.is_start and self.workflow_id:
             exists_query = PermitWorkflowStep.objects.filter(
-                workflow=self.workflow, 
-                is_start=True
+                workflow=self.workflow,
+                is_start=True,
             )
+
             if self.pk:
                 exists_query = exists_query.exclude(pk=self.pk)
-            
+
             if exists_query.exists():
                 raise ValidationError(
                     {"is_start": "This workflow already has a start step configured."}
                 )
+
 
     def save(self, *args, **kwargs):
         self.full_clean()

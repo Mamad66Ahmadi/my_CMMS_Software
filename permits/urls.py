@@ -14,6 +14,7 @@ from permits.views import (
     PermitCreateView,
     PermitDetailView,
     PermitWorkflowTransitionView,
+    PermitUpdateView,
 )
 
 
@@ -47,6 +48,6 @@ urlpatterns = [
     # -------------------------------------------------------------------------
     path("create/", PermitCreateView.as_view(), name="permit_create"),
     path("<str:permit_number>/workflow/action/", PermitWorkflowTransitionView.as_view(), name="permit_workflow_action",),
-    
+    path("<str:permit_number>/edit/", PermitUpdateView.as_view(), name="permit_update",),
     path("<str:permit_number>/", PermitDetailView.as_view(), name="permit_detail"),
 ]

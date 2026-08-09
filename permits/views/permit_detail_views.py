@@ -1,23 +1,32 @@
-# permits/views/permit_detail_views.py 
+# permits/views/permit_detail_views.py
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.views.generic import DetailView, CreateView
-from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
-from django.urls import reverse
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Prefetch
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
+from django.views import View
+from django.views.generic import DetailView, CreateView, UpdateView
 
-from permits.forms import PermitCreateForm
-from permits.models import Permit, PermitHazard, PermitPrecaution
 from equipment.models import LocationTag
-from permits.models import PermitWorkflowTransition
+from permits.forms import PermitCreateForm, PermitWorkflowDecisionForm,PermitUpdateForm
+from permits.models import (
+    Permit,
+    PermitHazard,
+    PermitPrecaution,
+    PermitWorkflowTransition,
+)
 from permits.services.authorization_service import WorkflowAuthorizationService
 from permits.services.condition_service import WorkflowConditionEvaluator
-from permits.forms import PermitWorkflowDecisionForm
+from permits.services.workflow_service import (
+    PermitWorkflowService,
+    WorkflowTransitionError,
+)
+
 
 class PermitDetailView(LoginRequiredMixin, DetailView):
     model = Permit
@@ -43,6 +52,8 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                 "permit_type",
                 "workflow",
                 "current_step",
+                "current_step__editable_role",
+                "current_step__editable_role__required_qualification",
             )
             .prefetch_related(
                 Prefetch(
@@ -152,9 +163,14 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
 
         context["workflow_actions"] = self.get_available_workflow_actions(permit)
 
+        context["can_edit_permit"] = WorkflowAuthorizationService.actor_can_edit_permit(
+            actor=self.request.user,
+            permit=permit,
+        )
+
         return context
 
-# ----------------------- Auto complete ------------------
+
 @login_required
 def permit_autocomplete(request):
     q = request.GET.get("q", "").strip()
@@ -176,7 +192,6 @@ def permit_autocomplete(request):
     return JsonResponse({"results": results})
 
 
-# ----------------- Create --------------------------------
 class PermitCreateView(LoginRequiredMixin, CreateView):
     model = Permit
     form_class = PermitCreateForm
@@ -193,6 +208,9 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context["is_update"] = False
+        context["page_title"] = "Create Permit"
 
         location_id = (
             self.request.GET.get("location_tag")
@@ -211,12 +229,9 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         self.object = form.save(commit=False)
 
-        # Audit fields
         self.object.created_by = self.request.user
         self.object.modified_by = self.request.user
 
-        # Workflow fields such as workflow/current_step/status are not set here.
-        # They should be initialized by your workflow service/model signal/model save logic.
         self.object.save()
 
         form.save_assessments(user=self.request.user)
@@ -231,7 +246,95 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
             },
         )
 
-# ------------------------ Filling the form based on permit number ---------------
+class PermitUpdateView(LoginRequiredMixin, UpdateView):
+    model = Permit
+    form_class = PermitUpdateForm
+    template_name = "permits/permit_form.html"
+    context_object_name = "permit"
+    slug_field = "permit_number"
+    slug_url_kwarg = "permit_number"
+
+    def get_queryset(self):
+        return (
+            Permit.objects.select_related(
+                "location_tag",
+                "location_tag__parent",
+                "location_tag__unit",
+                "work_order",
+                "department",
+                "work_supervisor",
+                "designated_area_authority",
+                "designated_area_supervisor",
+                "created_by",
+                "modified_by",
+                "continuation_of",
+                "permit_type",
+                "workflow",
+                "current_step",
+                "current_step__editable_role",
+                "current_step__editable_role__required_qualification",
+            )
+        )
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        try:
+            WorkflowAuthorizationService.ensure_actor_can_edit_permit(
+                actor=request.user,
+                permit=self.object,
+            )
+
+        except PermissionDenied as exc:
+            messages.error(
+                request,
+                exc.args[0] if exc.args else "You are not authorized to edit this permit.",
+            )
+            return redirect(
+                "permits:permit_detail",
+                permit_number=self.object.permit_number,
+            )
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["is_update"] = True
+        context["page_title"] = f"Edit Permit {self.object.permit_number}"
+
+        if self.object.location_tag_id:
+            context["location"] = self.object.location_tag
+        else:
+            context["location"] = None
+
+        return context
+
+    @transaction.atomic
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+
+        self.object.modified_by = self.request.user
+        self.object.save()
+
+        form.save_assessments(user=self.request.user)
+
+        messages.success(
+            self.request,
+            "Permit updated successfully.",
+        )
+
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            "permits:permit_detail",
+            kwargs={
+                "permit_number": self.object.permit_number,
+            },
+        )
+
+
 @login_required
 def get_permit_data(request):
     permit_id = request.GET.get("continuation_of")
@@ -280,8 +383,7 @@ def get_permit_data(request):
         "location_tag_text": str(permit.location_tag) if permit.location_tag else "",
         "work_order": permit.work_order_id or "",
         "work_order_text": str(permit.work_order) if permit.work_order else "",
-        
-        # Tools & Vehicle
+
         "electrical_tools": permit.electrical_tools or "",
         "mechanical_tools": permit.mechanical_tools or "",
         "other_tools": permit.other_tools or "",
@@ -290,7 +392,6 @@ def get_permit_data(request):
         "vehicle_required": permit.vehicle_required,
         "vehicle_description": permit.vehicle_description or "",
 
-        # Isolation details
         "mechanical_isolation": permit.mechanical_isolation or "",
         "equipment_depressurized": permit.equipment_depressurized or "",
         "equipment_drained": permit.equipment_drained or "",
@@ -300,7 +401,85 @@ def get_permit_data(request):
         "fire_watch_present_required": permit.fire_watch_present_required,
         "equipment_preparation_notes": permit.equipment_preparation_notes or "",
 
-        # M2Ms
         "hazards": active_hazards,
         "precautions": active_precautions,
     })
+
+
+class PermitWorkflowTransitionView(LoginRequiredMixin, View):
+    """
+    Handles workflow decisions for a permit.
+
+    Important:
+    - This view never updates Permit.current_step directly.
+    - It delegates all workflow movement to PermitWorkflowService.
+    """
+
+    def post(self, request, permit_number):
+        permit = get_object_or_404(
+            Permit.objects.select_related(
+                "workflow",
+                "current_step",
+                "current_step__editable_role",
+                "current_step__editable_role__required_qualification",
+                "permit_type",
+            ),
+            permit_number=permit_number,
+        )
+
+        form = PermitWorkflowDecisionForm(request.POST)
+
+        if not form.is_valid():
+            messages.error(
+                request,
+                "Invalid workflow action submission.",
+            )
+            return redirect(
+                "permits:permit_detail",
+                permit_number=permit.permit_number,
+            )
+
+        role_code = form.cleaned_data["role_code"]
+        decision = form.cleaned_data["decision"]
+        comment = form.cleaned_data.get("comment", "")
+
+        try:
+            result = PermitWorkflowService.transition(
+                permit_id=permit.pk,
+                actor=request.user,
+                role_code=role_code,
+                decision=decision,
+                comment=comment,
+            )
+
+        except WorkflowTransitionError as exc:
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
+
+        except PermissionDenied:
+            messages.error(
+                request,
+                "You are not authorized to perform this workflow action.",
+            )
+
+        except ValidationError as exc:
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
+
+        else:
+            messages.success(
+                request,
+                (
+                    f"Workflow action completed. "
+                    f"Permit moved to: {result.permit.current_step.title}"
+                ),
+            )
+
+        return redirect(
+            "permits:permit_detail",
+            permit_number=permit.permit_number,
+        )

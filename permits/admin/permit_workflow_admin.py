@@ -17,14 +17,22 @@ class PermitWorkflowStepInline(admin.TabularInline):
 
     model = PermitWorkflowStep
     extra = 1
+
     fields = (
         "step_number",
         "title",
         "description",
         "is_start",
         "is_terminal",
+        "is_editable_step",
+        "editable_role",
         "is_active",
     )
+
+    autocomplete_fields = (
+        "editable_role",
+    )
+
     ordering = ("step_number",)
     show_change_link = True
 

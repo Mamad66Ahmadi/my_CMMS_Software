@@ -188,10 +188,15 @@ class Permit(models.Model):
 
     def clean(self):
         super().clean()
+
         self.permit_number = (self.permit_number or "").strip().upper()
 
         if not self.permit_number:
-            raise ValidationError({"permit_number": "Permit number is required."})
+            raise ValidationError(
+                {
+                    "permit_number": "Permit number is required."
+                }
+            )
 
         if self.permit_type_id and not self.workflow_id:
             self.workflow = self.permit_type.active_workflow
@@ -219,25 +224,65 @@ class Permit(models.Model):
                 }
             )
 
-        # Ensure current step matches the permit's designated workflow version
         if self.current_step_id:
             if self.current_step.workflow_id != self.workflow_id:
-                raise ValidationError({"current_step": "The step does not belong to the workflow assigned to this permit."})
+                raise ValidationError(
+                    {
+                        "current_step": (
+                            "The step does not belong to the workflow assigned to this permit."
+                        )
+                    }
+                )
 
         if not self.location_tag_id and not self.work_order_id:
-            raise ValidationError("Either Work Order or Location Tag is required.")
+            raise ValidationError(
+                "Either Work Order or Location Tag is required."
+            )
 
         if self.valid_from and self.valid_to and self.valid_to <= self.valid_from:
-            raise ValidationError({"valid_to": "Valid To must be after Valid From."})
+            raise ValidationError(
+                {
+                    "valid_to": "Valid To must be after Valid From."
+                }
+            )
 
         if self.continuation_of_id:
             if self.pk and self.continuation_of_id == self.pk:
-                raise ValidationError({"continuation_of": "A permit cannot continue itself."})
-            if self.continuation_of and self.continuation_of.permit_type_id != self.permit_type_id:
-                raise ValidationError({"continuation_of": "A continuation must use the same permit type."})
+                raise ValidationError(
+                    {
+                        "continuation_of": "A permit cannot continue itself."
+                    }
+                )
+
+            continuation_number = (
+                self.continuation_of.permit_number or ""
+            ).strip().upper()
+
+            if continuation_number == self.permit_number:
+                raise ValidationError(
+                    {
+                        "continuation_of": (
+                            "A permit cannot be a continuation of a permit with the same "
+                            "permit number."
+                        )
+                    }
+                )
+
+            if self.continuation_of.permit_type_id != self.permit_type_id:
+                raise ValidationError(
+                    {
+                        "continuation_of": "A continuation must use the same permit type."
+                    }
+                )
 
         if self.vehicle_required and not self.vehicle_description.strip():
-            raise ValidationError({"vehicle_description": "Describe the vehicle when a vehicle is required."})
+            raise ValidationError(
+                {
+                    "vehicle_description": (
+                        "Describe the vehicle when a vehicle is required."
+                    )
+                }
+            )
 
     def save(self, *args, **kwargs):
         if self.work_order_id and not self.location_tag_id:
