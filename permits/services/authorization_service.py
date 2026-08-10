@@ -351,12 +351,10 @@ class WorkflowAuthorizationService:
         Return the related manager used for user qualification records.
 
         Expected relation:
-            actor.user_qualifications
-
-        If the relation does not exist, return None instead of raising AttributeError.
+            actor.qualifications
         """
 
-        qualification_manager = getattr(actor, "user_qualifications", None)
+        qualification_manager = getattr(actor, "qualifications", None)
 
         if qualification_manager is None:
             return None
