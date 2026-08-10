@@ -348,7 +348,7 @@ class PermitHazard(models.Model):
         on_delete=models.PROTECT,
         related_name="permit_assessments",
     )
-    remarks = models.TextField(blank=True)
+    remarks = models.CharField(max_length=50, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
@@ -486,7 +486,7 @@ class PermitPrecaution(models.Model):
         related_name="permit_requirements",
     )
 
-    remarks = models.TextField(blank=True)
+    remarks = models.CharField(max_length=50, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(

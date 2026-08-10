@@ -1,0 +1,282 @@
+        <div class="permit-layout__side">
+
+
+            <!-- Workflow Actions -->
+            <div class="detail-panel workflow-panel">
+                <div class="detail-panel__header">
+                    <i class="bi bi-check2-square"></i> Workflow Actions
+                </div>
+
+                <div class="detail-panel__body">
+                    {% if workflow_actions %}
+                        <form method="post"
+                            action="{% url 'permits:permit_workflow_action' permit.permit_number %}"
+                            id="unified-workflow-form"
+                            onsubmit="return confirmWorkflowAction();">
+                            {% csrf_token %}
+
+                            <input type="hidden" name="role_code" id="id_role_code">
+                            <input type="hidden" name="decision" id="id_decision">
+
+                            <div class="workflow-panel__role">
+                                <i class="bi bi-person-badge"></i>
+                                <span class="workflow-panel__role-label">Acting as</span>
+                                <strong>{{ workflow_actions.0.role.name }}</strong>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="workflow-panel__field-label">
+                                    Workflow Comment <span class="workflow-panel__optional">Optional</span>
+                                </label>
+                                <textarea name="comment"
+                                        class="form-control form-control-sm persian-text workflow-panel__comment"
+                                        rows="2"
+                                        placeholder="Type your comment here..."></textarea>
+                            </div>
+
+                            {% with primary_action=workflow_actions.0 %}
+                                <div class="workflow-actions-group" role="group">
+                                    <!-- Main primary action button -->
+                                    <button type="submit"
+                                            class="workflow-btn workflow-btn--primary
+                                                {% if primary_action.decision == 'APPROVE' %}workflow-btn--approve
+                                                {% elif primary_action.decision == 'RETURN' %}workflow-btn--return
+                                                {% elif primary_action.decision == 'CANCEL' %}workflow-btn--cancel
+                                                {% else %}workflow-btn--neutral{% endif %}"
+                                            onclick="prepareWorkflowAction(
+                                                '{{ primary_action.role.code }}',
+                                                '{{ primary_action.decision }}',
+                                                '{{ primary_action.decision_label }}'
+                                            )">
+                                        <span class="workflow-btn__icon">
+                                            {% if primary_action.decision == "APPROVE" %}
+                                                <i class="bi bi-check-lg"></i>
+                                            {% elif primary_action.decision == "RETURN" %}
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            {% elif primary_action.decision == "CANCEL" %}
+                                                <i class="bi bi-x-circle"></i>
+                                            {% else %}
+                                                <i class="bi bi-arrow-right"></i>
+                                            {% endif %}
+                                        </span>
+                                        <span class="workflow-btn__label">{{ primary_action.decision_label }}</span>
+                                    </button>
+
+                                    {% if workflow_actions|length > 1 %}
+                                        <div class="dropdown">
+                                            <button type="button"
+                                                    class="workflow-btn workflow-btn--toggle"
+                                                    data-bs-toggle="dropdown"
+                                                    data-bs-display="static"
+                                                    aria-expanded="false">
+                                                <span class="workflow-btn__caret" aria-hidden="true"></span>
+                                                <span class="visually-hidden">Toggle Dropdown</span>
+                                            </button>
+
+                                            <ul class="dropdown-menu dropdown-menu-end workflow-dropdown">
+                                                {% for action in workflow_actions %}
+                                                    {% if not forloop.first %}
+                                                        <li>
+                                                            <button type="submit"
+                                                                    class="workflow-dropdown__item"
+                                                                    onclick="prepareWorkflowAction(
+                                                                        '{{ action.role.code }}',
+                                                                        '{{ action.decision }}',
+                                                                        '{{ action.decision_label }}'
+                                                                    )">
+                                                                {% if action.decision == "APPROVE" %}
+                                                                    <i class="bi bi-check-lg workflow-dropdown__icon workflow-dropdown__icon--approve"></i>
+                                                                {% elif action.decision == "RETURN" %}
+                                                                    <i class="bi bi-arrow-counterclockwise workflow-dropdown__icon workflow-dropdown__icon--return"></i>
+                                                                {% elif action.decision == "CANCEL" %}
+                                                                    <i class="bi bi-x-circle workflow-dropdown__icon workflow-dropdown__icon--cancel"></i>
+                                                                {% else %}
+                                                                    <i class="bi bi-arrow-right workflow-dropdown__icon"></i>
+                                                                {% endif %}
+                                                                {{ action.decision_label }}
+                                                            </button>
+                                                        </li>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+
+                                </div>
+                            {% endwith %}
+                        </form>
+                    {% else %}
+                        <div class="empty-hint mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            No workflow actions are currently available.
+                        </div>
+                    {% endif %}
+                </div>
+
+            <script>
+                let selectedActionLabel = "";
+
+                function prepareWorkflowAction(roleCode, decision, label) {
+                    document.getElementById("id_role_code").value = roleCode;
+                    document.getElementById("id_decision").value = decision;
+                    selectedActionLabel = label;
+                }
+
+                function confirmWorkflowAction() {
+                    if (!document.getElementById("id_decision").value) {
+                        alert("Please select an action first.");
+                        return false;
+                    }
+
+                    return confirm(`Are you sure you want to "${selectedActionLabel}" this permit?`);
+                }
+            </script>
+
+            </div>
+
+
+
+            <!-- Approval & Decision History (Condensed Table) -->
+            <div class="detail-panel">
+                <div class="detail-panel__header">
+                    <i class="bi bi-clock-history"></i> Approval History
+                </div>
+
+                <div class="detail-panel__body p-0">
+                    {% with approvals=permit.approvals.all %}
+                        {% if approvals %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3 py-2 small">#</th>
+                                            <th class="py-2 small">Decision</th>
+                                            <th class="py-2 small">Actor</th>
+                                            <th class="py-2 small">Role</th>
+                                            <th class="py-2 small text-end pe-3">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for approval in approvals|dictsort:"created_at" %}
+                                            <tr class="{% if approval.comment %}border-bottom-0{% endif %}">
+                                                <td class="ps-3 py-2 small text-muted">
+                                                    {{ forloop.counter }}
+                                                </td>
+
+                                                <td class="py-2">
+                                                    {% if approval.decision == "APPROVE" %}
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2">
+                                                            Approve
+                                                        </span>
+                                                    {% elif approval.decision == "RETURN" %}
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2">
+                                                            Return
+                                                        </span>
+                                                    {% elif approval.decision == "CANCEL" %}
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">
+                                                            Cancel
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
+                                                            {{ approval.get_decision_display }}
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+
+                                                <td class="py-2 small">
+                                                    <span class="persian-text">
+                                                        <bdi>
+                                                            {{ approval.actor.get_full_name|default:approval.actor.username }}
+                                                        </bdi>
+                                                    </span>
+                                                </td>
+
+                                                <td class="py-2 small text-muted">
+                                                    {{ approval.role.name }}
+                                                </td>
+
+                                                <td class="py-2 pe-3 text-end text-muted small text-nowrap">
+                                                    {{ approval.created_at|date:"Y-m-d H:i" }}
+                                                </td>
+                                            </tr>
+
+                                            {% if approval.comment %}
+                                                <tr class="border-top-0">
+                                                    <td colspan="5" class="px-3 py-2">
+                                                        <div class="approval-comment small rounded px-2 py-1 persian-text">
+                                                            <bdi>
+                                                                <i class="bi bi-chat-left-text me-1"></i>
+                                                                {{ approval.comment }}
+                                                            </bdi>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty-hint p-3 mb-0">
+                                <i class="bi bi-info-circle"></i> No decisions logged.
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+
+            <!-- Continuations Table -->
+            <div class="detail-panel">
+                <div class="detail-panel__header">
+                    <i class="bi bi-layers"></i> Continuation Permits
+                </div>
+
+                <div class="detail-panel__body p-0">
+                    {% with continuations=permit.continuations.all %}
+                        {% if continuations %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3 py-2 small">Permit No.</th>
+                                            <th class="py-2 small">Status</th>
+                                            <th class="pe-3 py-2 text-end small">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for cont in continuations %}
+                                            <tr>
+                                                <td class="ps-3 py-2">
+                                                    <a href="{% url 'permits:permit_detail' cont.permit_number %}" class="fw-semibold text-decoration-none">
+                                                        {{ cont.permit_number }}
+                                                    </a>
+                                                </td>
+                                                <td class="py-2">
+                                                    {% if cont.current_step %}
+                                                        <span class="badge {% if cont.current_step.is_terminal %}bg-secondary{% else %}bg-info text-dark{% endif %}" style="font-size: 0.7rem;">
+                                                            {{ cont.current_step.title }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-light text-dark">—</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="pe-3 py-2 text-end text-muted small">
+                                                    {{ cont.created_at|date:"Y-m-d" }}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty-hint p-3 mb-0">
+                                <i class="bi bi-info-circle"></i>
+                                No continuations found.
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+        </div>

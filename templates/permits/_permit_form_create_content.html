@@ -239,6 +239,10 @@
                     </div>
                 </section>
 
+                <!-- Hazards and Precautions -->
+                {% include "permits/permit_create_partials/hazards_precautions_section.html" with form=form %}
+
+
                 <!-- Responsible Personnel -->
                 <section class="detail-panel">
                     <div class="detail-panel__header">
@@ -429,77 +433,6 @@
                     </div>
                 </section>
 
-                <!-- Hazards and Precautions -->
-                <section class="detail-panel">
-                    <div class="detail-panel__header">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Hazards and Precautions
-                    </div>
-
-                    <div class="detail-panel__body">
-
-                        <div class="form-field-block">
-                            <label for="{{ form.hazards.id_for_label }}">
-                                Identified Hazards
-                            </label>
-
-                            <div class="hazard-box">
-                                <ul>
-                                    {% for checkbox in form.hazards %}
-                                        <li>
-                                            <label for="{{ checkbox.id_for_label }}">
-                                                {{ checkbox.tag }}
-                                                <span>{{ checkbox.choice_label }}</span>
-                                            </label>
-                                        </li>
-                                    {% empty %}
-                                        <li class="text-muted">
-                                            No active hazards are configured.
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-
-                            {% if form.hazards.errors %}
-                                <div class="field-errors">
-                                    {{ form.hazards.errors }}
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <hr class="field-divider">
-
-                        <div class="form-field-block">
-                            <label for="{{ form.precautions.id_for_label }}">
-                                Required Precautions
-                            </label>
-
-                            <div class="hazard-box">
-                                <ul>
-                                    {% for checkbox in form.precautions %}
-                                        <li>
-                                            <label for="{{ checkbox.id_for_label }}">
-                                                {{ checkbox.tag }}
-                                                <span>{{ checkbox.choice_label }}</span>
-                                            </label>
-                                        </li>
-                                    {% empty %}
-                                        <li class="text-muted">
-                                            No active precautions are configured.
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-
-                            {% if form.precautions.errors %}
-                                <div class="field-errors">
-                                    {{ form.precautions.errors }}
-                                </div>
-                            {% endif %}
-                        </div>
-
-                    </div>
-                </section>
 
                 <!-- Tools and Vehicle -->
                 <section class="detail-panel">
@@ -727,74 +660,7 @@
             </main>
 
             <!-- Sidebar -->
-            <aside class="permit-layout__side">
-
-                <section class="detail-panel">
-                    <div class="detail-panel__header">
-                        <i class="bi bi-card-list"></i>
-                        Draft Record Information
-                    </div>
-
-                    <div class="detail-panel__body">
-                        <div class="info-mini-row">
-                            <span class="label">
-                                <i class="bi bi-flag"></i>
-                                Initial State
-                            </span>
-                            <span class="value">Draft</span>
-                        </div>
-
-                        <div class="info-mini-row">
-                            <span class="label">
-                                <i class="bi bi-person-plus"></i>
-                                Created By
-                            </span>
-                            <span class="value">{{ request.user }}</span>
-                        </div>
-
-                        <div class="info-mini-row">
-                            <span class="label">
-                                <i class="bi bi-diagram-3"></i>
-                                Workflow
-                            </span>
-                            <span class="value">Assigned by workflow engine</span>
-                        </div>
-
-                        <div class="info-mini-row">
-                            <span class="label">
-                                <i class="bi bi-shield-check"></i>
-                                Validation
-                            </span>
-                            <span class="value">Model and form rules apply</span>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="detail-panel">
-                    <div class="detail-panel__header">
-                        <i class="bi bi-check2-square"></i>
-                        Actions
-                    </div>
-
-                    <div class="detail-panel__body">
-                        <div class="form-actions">
-                            <a
-                                href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-                                class="btn-permit-action"
-                            >
-                                <i class="bi bi-x-circle"></i>
-                                Cancel
-                            </a>
-
-                            <button type="submit" class="btn-save-permit">
-                                <i class="bi bi-save"></i>
-                                Create Permit
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-            </aside>
+            {% include "permits/permit_create_partials/create_sidebar_section.html" %}
         </div>
     </form>
 </div>

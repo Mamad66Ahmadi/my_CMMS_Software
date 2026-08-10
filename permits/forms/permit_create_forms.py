@@ -3,6 +3,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
+from types import SimpleNamespace
 
 from equipment.models import LocationTag
 from permits.models import (
@@ -308,71 +309,133 @@ class PermitCreateForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
-        if self.is_bound:
-            location_tag_id = self.data.get("location_tag")
-            continuation_of_id = self.data.get("continuation_of")
-            work_order_id = self.data.get("work_order")
-            work_supervisor_id = self.data.get("work_supervisor")
-            area_authority_id = self.data.get("designated_area_authority")
-            area_supervisor_id = self.data.get("designated_area_supervisor")
+            if self.is_bound:
+                location_tag_id = self.data.get("location_tag")
+                continuation_of_id = self.data.get("continuation_of")
+                work_order_id = self.data.get("work_order")
+                work_supervisor_id = self.data.get("work_supervisor")
+                area_authority_id = self.data.get("designated_area_authority")
+                area_supervisor_id = self.data.get("designated_area_supervisor")
 
-        elif self.instance.pk:
-            location_tag_id = self.instance.location_tag_id
-            continuation_of_id = self.instance.continuation_of_id
-            work_order_id = self.instance.work_order_id
-            work_supervisor_id = self.instance.work_supervisor_id
-            area_authority_id = self.instance.designated_area_authority_id
-            area_supervisor_id = self.instance.designated_area_supervisor_id
+            elif self.instance.pk:
+                location_tag_id = self.instance.location_tag_id
+                continuation_of_id = self.instance.continuation_of_id
+                work_order_id = self.instance.work_order_id
+                work_supervisor_id = self.instance.work_supervisor_id
+                area_authority_id = self.instance.designated_area_authority_id
+                area_supervisor_id = self.instance.designated_area_supervisor_id
 
-        else:
-            location_tag_id = self.initial.get("location_tag")
-            continuation_of_id = self.initial.get("continuation_of")
-            work_order_id = self.initial.get("work_order")
-            work_supervisor_id = self.initial.get("work_supervisor")
-            area_authority_id = self.initial.get("designated_area_authority")
-            area_supervisor_id = self.initial.get("designated_area_supervisor")
+            else:
+                location_tag_id = self.initial.get("location_tag")
+                continuation_of_id = self.initial.get("continuation_of")
+                work_order_id = self.initial.get("work_order")
+                work_supervisor_id = self.initial.get("work_supervisor")
+                area_authority_id = self.initial.get("designated_area_authority")
+                area_supervisor_id = self.initial.get("designated_area_supervisor")
 
-        self.fields["location_tag"].queryset = self._single_object_queryset(
-            LocationTag,
-            location_tag_id,
+            self.fields["location_tag"].queryset = self._single_object_queryset(
+                LocationTag,
+                location_tag_id,
+            )
+
+            self.fields["continuation_of"].queryset = self._single_object_queryset(
+                Permit,
+                continuation_of_id,
+            )
+
+            self.fields["work_order"].queryset = self._single_object_queryset(
+                WorkOrder,
+                work_order_id,
+            )
+
+            self.fields["work_supervisor"].queryset = self._single_user_queryset(
+                work_supervisor_id,
+            )
+
+            self.fields["designated_area_authority"].queryset = self._single_user_queryset(
+                area_authority_id,
+            )
+
+            self.fields["designated_area_supervisor"].queryset = self._single_user_queryset(
+                area_supervisor_id,
+            )
+
+            # Only active master data should be selectable.
+            self.fields["hazards"].queryset = (
+                Hazard.objects
+                .filter(is_active=True)
+                .order_by("display_order", "code")
+            )
+
+            self.fields["precautions"].queryset = (
+                Precaution.objects
+                .filter(is_active=True)
+                .order_by("display_order", "code")
+            )
+
+            # Existing remarks, keyed by str(item_id) -> remark text.
+            # Empty on create (no instance yet); populated on update.
+            self._hazard_remarks = self._existing_remarks_map(
+                through_model=PermitHazard,
+                related_field="hazard",
+            )
+            self._precaution_remarks = self._existing_remarks_map(
+                through_model=PermitPrecaution,
+                related_field="precaution",
+            )
+
+    def _existing_remarks_map(self, *, through_model, related_field):
+        if not (self.instance and self.instance.pk):
+            return {}
+
+        related_id_field = f"{related_field}_id"
+
+        return {
+            str(getattr(record, related_id_field)): record.remarks
+            for record in through_model.objects.filter(
+                permit=self.instance,
+                is_active=True,
+            )
+        }
+
+    @property
+    def hazard_rows(self):
+        return self._build_rows(
+            field_name="hazards",
+            remark_prefix="hazard_remarks",
+            remarks_map=self._hazard_remarks,
         )
 
-        self.fields["continuation_of"].queryset = self._single_object_queryset(
-            Permit,
-            continuation_of_id,
+    @property
+    def precaution_rows(self):
+        return self._build_rows(
+            field_name="precautions",
+            remark_prefix="precaution_remarks",
+            remarks_map=self._precaution_remarks,
         )
 
-        self.fields["work_order"].queryset = self._single_object_queryset(
-            WorkOrder,
-            work_order_id,
-        )
+    def _build_rows(self, *, field_name, remark_prefix, remarks_map):
+        rows = []
 
-        self.fields["work_supervisor"].queryset = self._single_user_queryset(
-            work_supervisor_id,
-        )
+        for checkbox in self[field_name]:
+            item_id = checkbox.data["value"]
 
-        self.fields["designated_area_authority"].queryset = self._single_user_queryset(
-            area_authority_id,
-        )
+            if self.is_bound:
+                # Re-render after a failed submit: show what the user typed.
+                remark = (self.data.get(f"{remark_prefix}_{item_id}") or "").strip()
+            else:
+                # Fresh form (create: empty map, update: existing remarks).
+                remark = remarks_map.get(str(item_id), "")
 
-        self.fields["designated_area_supervisor"].queryset = self._single_user_queryset(
-            area_supervisor_id,
-        )
+            rows.append(
+                SimpleNamespace(checkbox=checkbox, item_id=item_id, remark=remark)
+            )
 
-        # Only active master data should be selectable.
-        self.fields["hazards"].queryset = (
-            Hazard.objects
-            .filter(is_active=True)
-            .order_by("display_order", "code")
-        )
+        return rows
 
-        self.fields["precautions"].queryset = (
-            Precaution.objects
-            .filter(is_active=True)
-            .order_by("display_order", "code")
-        )
+
 
     @staticmethod
     def _single_object_queryset(model, object_id):
@@ -432,6 +495,7 @@ class PermitCreateForm(forms.ModelForm):
 
         return cleaned_data
 
+
     def save_assessments(self, *, user):
         if not self.instance.pk:
             raise ValueError(
@@ -441,26 +505,35 @@ class PermitCreateForm(forms.ModelForm):
         self._sync_assessments(
             through_model=PermitHazard,
             related_field="hazard",
-            selected_objects=self.cleaned_data["hazards"],
+            remark_prefix="hazard_remarks",
+            selected_objects=self.cleaned_data.get("hazards", []),
             user=user,
         )
         self._sync_assessments(
             through_model=PermitPrecaution,
             related_field="precaution",
-            selected_objects=self.cleaned_data["precautions"],
+            remark_prefix="precaution_remarks",
+            selected_objects=self.cleaned_data.get("precautions", []),
             user=user,
         )
+
 
     def _sync_assessments(
         self,
         *,
         through_model,
         related_field,
+        remark_prefix,
         selected_objects,
         user,
     ):
         selected_ids = {obj.pk for obj in selected_objects}
         related_id_field = f"{related_field}_id"
+
+        remarks_map = {
+            obj.pk: (self.data.get(f"{remark_prefix}_{obj.pk}") or "").strip()
+            for obj in selected_objects
+        }
 
         active_records = list(
             through_model.objects.filter(
@@ -473,11 +546,24 @@ class PermitCreateForm(forms.ModelForm):
             for record in active_records
         }
 
+        # Deactivate removed items, update remarks for still-active ones
         for record in active_records:
-            if getattr(record, related_id_field) not in selected_ids:
-                record.deactivate(user=user)
+            rel_id = getattr(record, related_id_field)
 
+            if rel_id not in selected_ids:
+                record.deactivate(user=user)
+            else:
+                new_remark = remarks_map.get(rel_id, "")
+                if record.remarks != new_remark:
+                    record.remarks = new_remark
+                    record.modified_by = user
+                    record.save(
+                        update_fields=["remarks", "modified_by", "modified_at"]
+                    )
+
+        # Reactivate old records or create new ones
         for related_id in selected_ids - active_ids:
+            new_remark = remarks_map.get(related_id, "")
             inactive_record = (
                 through_model.objects.filter(
                     permit=self.instance,
@@ -490,14 +576,22 @@ class PermitCreateForm(forms.ModelForm):
 
             if inactive_record:
                 inactive_record.reactivate(user=user)
+                inactive_record.remarks = new_remark
+                inactive_record.modified_by = user
+                inactive_record.save(
+                    update_fields=["remarks", "modified_by", "modified_at"]
+                )
                 continue
 
             through_model.objects.create(
                 permit=self.instance,
                 created_by=user,
                 modified_by=user,
+                remarks=new_remark,
                 **{related_id_field: related_id},
             )
+
+
 
 # ------------------ Work flow ---------------------------
 

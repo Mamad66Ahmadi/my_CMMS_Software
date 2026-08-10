@@ -257,6 +257,12 @@
                     </div>
                 </section>
 
+                <!-- Hazards and Precautions -->
+                {% include "permits/permit_update_partials/hazards_precautions_section.html" with form=form %}
+
+
+
+
                 <!-- Responsible Personnel -->
                 <section class="detail-panel">
                     <div class="detail-panel__header">
@@ -428,73 +434,6 @@
                     </div>
                 </section>
 
-                <!-- Hazards and Precautions -->
-                <section class="detail-panel">
-                    <div class="detail-panel__header">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Hazards and Precautions
-                    </div>
-
-                    <div class="detail-panel__body">
-                        <div class="field-grid">
-
-                            <div class="form-field-block field-full">
-                                <label>{{ form.hazards.label }}</label>
-
-                                <div class="hazard-box">
-                                    <ul>
-                                        {% for checkbox in form.hazards %}
-                                            <li>
-                                                <label for="{{ checkbox.id_for_label }}">
-                                                    {{ checkbox.tag }}
-                                                    <span>{{ checkbox.choice_label }}</span>
-                                                </label>
-                                            </li>
-                                        {% empty %}
-                                            <li class="text-muted">
-                                                No active hazards are configured.
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-
-                                {% if form.hazards.errors %}
-                                    <div class="field-errors">
-                                        {{ form.hazards.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="form-field-block field-full">
-                                <label>{{ form.precautions.label }}</label>
-
-                                <div class="hazard-box">
-                                    <ul>
-                                        {% for checkbox in form.precautions %}
-                                            <li>
-                                                <label for="{{ checkbox.id_for_label }}">
-                                                    {{ checkbox.tag }}
-                                                    <span>{{ checkbox.choice_label }}</span>
-                                                </label>
-                                            </li>
-                                        {% empty %}
-                                            <li class="text-muted">
-                                                No active precautions are configured.
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-
-                                {% if form.precautions.errors %}
-                                    <div class="field-errors">
-                                        {{ form.precautions.errors }}
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                        </div>
-                    </div>
-                </section>
 
                 <!-- Tools, Materials, and Vehicle -->
                 <section class="detail-panel">
@@ -722,54 +661,8 @@
             </main>
 
             <!-- Sidebar -->
-            <aside class="permit-layout__side">
-                <section class="detail-panel">
-                    <div class="detail-panel__header">
-                        <i class="bi bi-card-list"></i>
-                        Editable Record Information
-                    </div>
+            {% include "permits/permit_update_partials/update_sidebar_section.html" with form=form %}
 
-                    <div class="detail-panel__body">
-                        <div class="info-mini-row">
-                            <span class="label">Permit Number</span>
-                            <span class="value">{{ permit.permit_number }}</span>
-                        </div>
-
-                        <div class="info-mini-row">
-                            <span class="label">Current Step</span>
-                            <span class="value">{{ permit.current_step }}</span>
-                        </div>
-
-                        <div class="info-mini-row">
-                            <span class="label">Workflow</span>
-                            <span class="value">{{ permit.workflow }}</span>
-                        </div>
-
-                        <div class="info-mini-row">
-                            <span class="label">Last Modified By</span>
-                            <span class="value">{{ permit.modified_by|default:"-" }}</span>
-                        </div>
-
-                        <div class="info-mini-row">
-                            <span class="label">Validation</span>
-                            <span class="value">Model and form rules apply</span>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="form-actions">
-                    <a href="{% url 'permits:permit_detail' permit_number=permit.permit_number %}"
-                       class="btn-permit-action">
-                        <i class="bi bi-x-circle"></i>
-                        Cancel
-                    </a>
-
-                    <button type="submit" class="btn-save-permit">
-                        <i class="bi bi-save"></i>
-                        Update Permit
-                    </button>
-                </div>
-            </aside>
         </div>
     </form>
 </div>

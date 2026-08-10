@@ -1,0 +1,84 @@
+<aside class="permit-layout__side">
+    <section class="detail-panel">
+        <div class="detail-panel__header">
+            <i class="bi bi-card-list"></i>
+            Editable Record Information
+        </div>
+
+        <div class="detail-panel__body">
+            <div class="info-mini-row">
+                <span class="label">
+                    <i class="bi bi-hash"></i>
+                    Permit Number
+                </span>
+                <span class="value">
+                    {{ permit.permit_number }}
+                </span>
+            </div>
+
+            <div class="info-mini-row">
+                <span class="label">
+                    <i class="bi bi-signpost-2"></i>
+                    Current Step
+                </span>
+                <span class="value">
+                    {{ permit.current_step|default:"-" }}
+                </span>
+            </div>
+
+            <div class="info-mini-row">
+                <span class="label">
+                    <i class="bi bi-diagram-3"></i>
+                    Workflow
+                </span>
+                <span class="value">
+                    {{ permit.workflow|default:"-" }}
+                </span>
+            </div>
+
+            <div class="info-mini-row">
+                <span class="label">
+                    <i class="bi bi-person-check"></i>
+                    Last Modified By
+                </span>
+                <span class="value">
+                    {{ permit.modified_by|default:"-" }}
+                </span>
+            </div>
+
+            <div class="info-mini-row">
+                <span class="label">
+                    <i class="bi bi-shield-check"></i>
+                    Validation
+                </span>
+                <span class="value">
+                    Model and form rules apply
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <section class="detail-panel">
+        <div class="detail-panel__header">
+            <i class="bi bi-check2-square"></i>
+            Actions
+        </div>
+
+        <div class="detail-panel__body">
+            <div class="form-actions">
+                <a
+                    href="{% url 'permits:permit_detail' permit_number=permit.permit_number %}"
+                    class="btn-permit-action"
+                >
+                    <i class="bi bi-x-circle"></i>
+                    Cancel
+                </a>
+
+                <button type="submit" class="btn-save-permit">
+                    <i class="bi bi-save"></i>
+                    Update Permit
+                </button>
+            </div>
+        </div>
+    </section>
+</aside>

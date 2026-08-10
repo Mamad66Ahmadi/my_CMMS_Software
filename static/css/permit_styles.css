@@ -2165,175 +2165,366 @@ textarea.form-control,
     transform: translateY(-1px);
     box-shadow: 0 10px 24px rgba(13, 148, 136, 0.25);
 }
+
+
 /* ===== Workflow Actions Panel ===== */
 .workflow-panel__role {
+    display: flex; align-items: center; gap: 6px;
+    padding-bottom: 10px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--border-subtle, #e2e5e9);
+    font-size: 12.5px; color: var(--text-muted, #6b7280);
+}
+.workflow-panel__role strong { color: var(--text-primary, #1f2430); font-weight: 600; }
+
+.workflow-panel__field-label {
+    display: block; font-size: 11.5px; font-weight: 600;
+    letter-spacing: .02em; text-transform: uppercase;
+    color: var(--text-muted, #6b7280); margin-bottom: 6px;
+}
+.workflow-panel__optional { text-transform: none; font-weight: 400; color: var(--text-faint, #9ca3af); }
+
+.workflow-panel__comment {
+    border-radius: 4px; border-color: var(--border-subtle, #d7dbe1);
+    font-size: 13px; resize: vertical;
+}
+.workflow-panel__comment:focus {
+    border-color: var(--accent-primary, #2f6fed);
+    box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12);
+}
+
+/* --- Button Group & Shared Styles --- */
+.workflow-actions-group {
+    display: flex; margin-top: 16px; border-radius: 5px;
+    overflow: visible; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.workflow-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 7px; height: 38px; font-size: 13px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer;
+    transition: filter .12s ease, box-shadow .12s ease;
+}
+
+.workflow-btn--primary {
+    flex: 1; padding: 0 16px;
+    border-radius: 5px 0 0 5px;
+    border-right: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* --- Toggle Button (Fixed contrast) --- */
+.workflow-btn--toggle {
+    width: 36px;
+    padding: 0;
+    border-radius: 0 5px 5px 0;
+    /* Fixed: Changed text color from #fff to a dark gray for visibility */
+    background-color: rgb(225, 235, 167); 
+    color: #4a5568; 
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+.workflow-btn--toggle:hover {
+    background-color: rgb(215, 225, 157);
+    filter: none;
+}
+.workflow-btn__arrow { font-size: 0.8rem; line-height: 1; }
+
+/* --- Interaction States --- */
+.workflow-btn:hover { filter: brightness(0.94); }
+.workflow-btn:active { filter: brightness(0.88); }
+.workflow-btn:focus-visible {
+    outline: none; box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.3); z-index: 1;
+}
+
+/* --- Status-driven Colors --- */
+.workflow-btn--approve { background: var(--status-success, #2C5745); color: #fff; }
+.workflow-btn--return  { background: var(--status-warning, #b5790a); color: #fff; }
+.workflow-btn--cancel  { background: var(--status-danger, #b3261e); color: #fff; }
+.workflow-btn--neutral { background: var(--accent-primary, #2f4a6e); color: #fff; }
+
+/* --- Dropdown menu --- */
+.workflow-dropdown {
+    min-width: 220px; padding: 6px;
+    border: 1px solid var(--border-subtle, #e2e5e9);
+    border-radius: 6px; box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+}
+.workflow-dropdown__item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 8px 10px; font-size: 13px; font-weight: 500;
+    color: var(--text-primary, #1f2430); background: transparent;
+    border: none; border-radius: 4px; text-align: left; cursor: pointer;
+}
+.workflow-dropdown__item:hover { background: var(--surface-hover, #f3f5f8); }
+.workflow-dropdown__icon { font-size: 14px; color: var(--text-muted, #6b7280); }
+.workflow-dropdown__icon--approve { color: var(--status-success, #1f8a4c); }
+.workflow-dropdown__icon--return  { color: var(--status-warning, #b5790a); }
+.workflow-dropdown__icon--cancel  { color: var(--status-danger, #b3261e); }
+.workflow-btn--toggle {
+    width: 36px;
+    padding: 0;
+    border-radius: 0 5px 5px 0;
+    background-color: rgb(225, 235, 167);
+    color: #334155;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.workflow-btn--toggle:hover {
+    background-color: rgb(206, 216, 144);
+    filter: none;
+}
+
+.workflow-btn__caret {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #334155;
+}
+.workflow-panel,
+.workflow-panel .detail-panel__body {
+    overflow: visible;
+}
+
+/* ===== Hazard Grid ===== */
+/* ===== Assessment Grid (shared by Hazards & Precautions) ===== */
+.assessment-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+@media (max-width: 992px) {
+    .assessment-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+    .assessment-grid { grid-template-columns: 1fr; }
+}
+
+.assessment-tile {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-subtle, #e2e5e9);
+    border-radius: 5px;
+    background: var(--surface, #fff);
+    transition: border-color .12s ease, background .12s ease;
+}
+
+.assessment-tile__mark {
+    flex: none;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding-bottom: 10px;
-    margin-bottom: 14px;
-    border-bottom: 1px solid var(--border-subtle, #e2e5e9);
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.assessment-tile__body {
+    min-width: 0;
+    flex: 1;
+}
+
+.assessment-tile__title {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 5px;
+    row-gap: 2px;
+}
+.assessment-tile__remarks {
+    font-size: 11.5px;
+    font-style: italic;
+    color: var(--text-muted, #6b7280);
+    line-height: 1.35;
+}
+.assessment-tile__remarks-label {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--text-faint, #9ca3af);
+}
+.assessment-tile__title .assessment-code {
+    font-family: var(--font-mono, "IBM Plex Mono", monospace);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted, #6b7280);
+    letter-spacing: .01em;
+    flex: none;
+}
+
+.assessment-tile__title .assessment-name {
     font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary, #1f2430);
+    line-height: 1.3;
+}
+
+.assessment-tile__remarks {
+    margin-top: 3px;
+    font-size: 11.5px;
+    font-style: italic;
+    color: var(--text-muted, #6b7280);
+    line-height: 1.35;
+}
+
+.assessment-tile__audit {
+    margin-top: 4px;
+    font-size: 10.5px;
+    color: var(--text-faint, #9ca3af);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.assessment-tile__audit-sep {
+    margin: 0 4px;
+    color: var(--border-subtle, #d7dbe1);
+}
+
+.assessment-tile__audit-removed {
+    color: var(--status-danger, #b3261e);
+}
+
+/* --- State: Selected --- */
+.assessment-tile--selected {
+    border-color: var(--status-success, #2C5745);
+    background: color-mix(in srgb, var(--status-success, #2C5745) 5%, white);
+}
+.assessment-tile--selected .assessment-tile__mark {
+    background: var(--status-success, #2C5745);
+    color: #fff;
+}
+
+/* --- State: Removed --- */
+.assessment-tile--removed {
+    border-color: var(--border-subtle, #e2e5e9);
+    background: var(--surface-muted, #f8f8f9);
+    opacity: .8;
+}
+.assessment-tile--removed .assessment-tile__mark {
+    background: var(--status-danger, #b3261e);
+    color: #fff;
+}
+.assessment-tile--removed .assessment-tile__title .assessment-name {
+    text-decoration: line-through;
+    text-decoration-color: var(--status-danger, #b3261e);
     color: var(--text-muted, #6b7280);
 }
 
-.workflow-panel__role strong {
-    color: var(--text-primary, #1f2430);
-    font-weight: 600;
+/* --- State: Unselected --- */
+.assessment-tile--unselected {
+    border-style: dashed;
+    background: transparent;
+}
+.assessment-tile--unselected .assessment-tile__mark {
+    background: var(--surface-muted, #eef0f2);
+    color: var(--text-faint, #9ca3af);
+}
+.assessment-tile--unselected .assessment-tile__title .assessment-name {
+    color: var(--text-muted, #6b7280);
+    font-weight: 500;
 }
 
-.workflow-panel__field-label {
+.assessment-select-heading {
     display: block;
     font-size: 11.5px;
     font-weight: 600;
     letter-spacing: .02em;
     text-transform: uppercase;
     color: var(--text-muted, #6b7280);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
-.workflow-panel__optional {
-    text-transform: none;
-    font-weight: 400;
-    color: var(--text-faint, #9ca3af);
+.assessment-select-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px 10px;
 }
 
-.workflow-panel__comment {
-    border-radius: 4px;
-    border-color: var(--border-subtle, #d7dbe1);
-    font-size: 13px;
-    resize: vertical;
+@media (max-width: 640px) {
+    .assessment-select-list { grid-template-columns: 1fr; }
 }
 
-.workflow-panel__comment:focus {
-    border-color: var(--accent-primary, #2f6fed);
-    box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12);
-}
-
-/* --- Button group --- */
-.workflow-actions-group {
+.assessment-select-item {
     display: flex;
-    margin-top: 16px;
-    border-radius: 5px;
-    overflow: visible;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
-}
-
-.workflow-btn {
-    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 7px;
-    height: 38px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: .01em;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: filter .12s ease, box-shadow .12s ease;
-}
-
-.workflow-btn--primary {
-    flex: 1;
-    padding: 0 16px;
-    border-radius: 5px 0 0 5px;
-    border-right: 1px solid rgba(255, 255, 255, 0.25);
-}
-
-.workflow-btn--toggle {
-    width: 34px;
-    padding: 0;
-    border-radius: 0 5px 5px 0;
-    
-    /* Dedicated color for the toggle */
-    background-color: rgb(225, 235, 167);
-    color: #fff;
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
-}
-.workflow-btn--toggle:hover {
-    background-color: rgb(235, 234, 167);
-    filter: none; /* Override the brightness filter from the main button */
-}
-
-/* Optional: Ensure the chevron icon is centered */
-.workflow-btn--toggle i {
-    font-size: 12px;
-}
-
-.workflow-btn:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.3);
-    z-index: 1;
-}
-
-.workflow-btn:hover {
-    filter: brightness(0.94);
-}
-
-.workflow-btn:active {
-    filter: brightness(0.88);
-}
-
-.workflow-btn__icon {
-    display: inline-flex;
-    font-size: 14px;
-}
-
-/* --- Status-driven color mapping (formal, muted tones — not saturated Bootstrap defaults) --- */
-.workflow-btn--approve {
-    background: var(--status-success, #2C5745);
-    color: #fff;
-}
-
-.workflow-btn--return {
-    background: var(--status-warning, #b5790a);
-    color: #fff;
-}
-
-.workflow-btn--cancel {
-    background: var(--status-danger, #b3261e);
-    color: #fff;
-}
-
-.workflow-btn--neutral {
-    background: var(--accent-primary, #2f4a6e);
-    color: #fff;
-}
-
-/* --- Dropdown menu --- */
-.workflow-dropdown {
-    min-width: 220px;
-    padding: 6px;
+    gap: 8px;
+    padding: 5px 8px;
     border: 1px solid var(--border-subtle, #e2e5e9);
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+    border-radius: 5px;
+    background: var(--surface, #fff);
+    transition: border-color .12s ease, background .12s ease;
 }
 
-.workflow-dropdown__item {
+.assessment-select-item--active {
+    border-color: var(--accent-primary, #2f6fed);
+    background: color-mix(in srgb, var(--accent-primary, #2f6fed) 4%, white);
+}
+
+.assessment-select-item__main {
     display: flex;
     align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 8px 10px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-primary, #1f2430);
-    background: transparent;
-    border: none;
-    border-radius: 4px;
-    text-align: left;
+    gap: 6px;
+    flex: none;
+    margin: 0;
+    cursor: pointer;
+    max-width: 45%;
+}
+
+.assessment-select-item__main input[type="checkbox"] {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    margin: 0;
     cursor: pointer;
 }
 
-.workflow-dropdown__item:hover {
-    background: var(--surface-hover, #f3f5f8);
+.assessment-select-item__label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary, #1f2430);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.workflow-dropdown__icon {
-    font-size: 14px;
-    color: var(--text-muted, #6b7280);
+.assessment-select-item__remark {
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+    padding: 0 6px;
+    font-size: 11.5px;
+    border: none;
+    border-bottom: 1px solid var(--border-subtle, #d7dbe1);
+    background: transparent;
+    color: var(--text-primary, #1f2430);
+    transition: border-color .12s ease, color .12s ease;
 }
 
-.workflow-dropdown__icon--approve { color: var(--status-success, #1f8a4c); }
-.workflow-dropdown__icon--return  { color: var(--status-warning, #b5790a); }
-.workflow-dropdown__icon--cancel  { color: var(--status-danger, #b3261e); }
+.assessment-select-item__remark::placeholder {
+    color: var(--text-faint, #b3b9c2);
+}
+
+.assessment-select-item__remark:disabled {
+    color: var(--text-faint, #c3c8d1);
+    border-bottom-style: dashed;
+    cursor: not-allowed;
+}
+
+.assessment-select-item__remark:focus {
+    outline: none;
+    border-bottom-color: var(--accent-primary, #2f6fed);
+}
+
+.field-errors {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--status-danger, #b3261e);
+}

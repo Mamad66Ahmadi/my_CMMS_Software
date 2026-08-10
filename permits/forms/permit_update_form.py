@@ -2,7 +2,6 @@ from django import forms
 from .permit_create_forms import PermitCreateForm
 from permits.models import Permit, PermitHazard, PermitPrecaution
 
-
 class PermitUpdateForm(PermitCreateForm):
     immutable_fields = (
         "permit_number",
@@ -33,19 +32,32 @@ class PermitUpdateForm(PermitCreateForm):
         self.fields["continuation_of"].widget = forms.HiddenInput()
 
         if self.instance and self.instance.pk and not self.is_bound:
-            self.fields["hazards"].initial = list(
+            active_hazard_ids = list(
                 PermitHazard.objects.filter(
                     permit=self.instance,
                     is_active=True,
                 ).values_list("hazard_id", flat=True)
             )
-
-            self.fields["precautions"].initial = list(
+            active_precaution_ids = list(
                 PermitPrecaution.objects.filter(
                     permit=self.instance,
                     is_active=True,
                 ).values_list("precaution_id", flat=True)
             )
+
+            # model_to_dict() (run inside ModelForm.__init__) populates
+            # self.initial["hazards"]/["precautions"] from the raw M2M
+            # manager, which returns hazards/precautions linked via ANY
+            # PermitHazard/PermitPrecaution row — active or not, since
+            # the M2M manager doesn't filter on is_active. That form-level
+            # self.initial value takes priority over field.initial when
+            # Django resolves what's checked, so it must be corrected here
+            # too, not just on the field.
+            self.initial["hazards"] = active_hazard_ids
+            self.initial["precautions"] = active_precaution_ids
+
+            self.fields["hazards"].initial = active_hazard_ids
+            self.fields["precautions"].initial = active_precaution_ids
 
     def clean_continuation_of(self):
         if self.instance and self.instance.pk:

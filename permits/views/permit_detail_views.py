@@ -27,8 +27,12 @@ from permits.services.workflow_service import (
     PermitWorkflowService,
     WorkflowTransitionError,
 )
+from permits.models.permit_base_models import Hazard, Precaution
 
 
+
+
+# ---------------- Detail View ----------------
 class PermitDetailView(LoginRequiredMixin, DetailView):
     model = Permit
     template_name = "permits/permit_detail.html"
@@ -180,25 +184,38 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
 
         return available_actions
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         permit = self.object
 
-        permit.active_hazards = [
-            assessment.hazard
-            for assessment in permit.active_hazard_assessments
-        ]
+        # 1. Fetch all master records
+        all_hazards = list(Hazard.objects.order_by("display_order", "code"))
+        all_precautions = list(Precaution.objects.order_by("display_order", "code"))
 
-        permit.active_precautions = [
-            requirement.precaution
-            for requirement in permit.active_precaution_requirements
-        ]
+        # 2. Build maps of permit-specific records
+        hazard_map = {
+            item.hazard_id: item
+            for item in permit.hazard_assessments.select_related("created_by", "modified_by", "removed_by")
+        }
+        
+        precaution_map = {
+            item.precaution_id: item
+            for item in permit.precaution_requirements.select_related("created_by", "modified_by", "removed_by")
+        }
 
-        context["is_currently_valid"] = permit.is_active
+        # 3. Attach the permit-specific assessment directly to each master instance
+        for hazard in all_hazards:
+            hazard.permit_assessment = hazard_map.get(hazard.id)
+
+        for precaution in all_precautions:
+            precaution.permit_assessment = precaution_map.get(precaution.id)
+
+        # 4. Bind variables to context
+        context["all_hazards"] = all_hazards
+        context["all_precautions"] = all_precautions
 
         context["workflow_actions"] = self.get_available_workflow_actions(permit)
-
+        context["is_currently_valid"] = permit.is_active
         context["can_edit_permit"] = WorkflowAuthorizationService.actor_can_edit_permit(
             actor=self.request.user,
             permit=permit,

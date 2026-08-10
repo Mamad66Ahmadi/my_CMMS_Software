@@ -1,0 +1,65 @@
+<div class="detail-panel">
+    <div class="detail-panel__header">
+        <i class="bi bi-shield-check"></i> Required Precautions
+    </div>
+
+    <div class="detail-panel__body">
+        {% if all_precautions %}
+            <div class="assessment-grid">
+                {% for precaution in all_precautions %}
+                    <div class="assessment-tile
+                        {% if precaution.permit_assessment %}
+                            {% if precaution.permit_assessment.is_active %}
+                                assessment-tile--selected
+                            {% else %}
+                                assessment-tile--removed
+                            {% endif %}
+                        {% else %}
+                            assessment-tile--unselected
+                        {% endif %}
+                    ">
+                        <div class="assessment-tile__mark">
+                            {% if precaution.permit_assessment and precaution.permit_assessment.is_active %}
+                                <i class="bi bi-check-lg"></i>
+                            {% elif precaution.permit_assessment %}
+                                <i class="bi bi-x-lg"></i>
+                            {% else %}
+                                <i class="bi bi-dash"></i>
+                            {% endif %}
+                        </div>
+
+                        <div class="assessment-tile__body">
+                            <div class="assessment-tile__title">
+                                <span class="assessment-name persian-text">
+                                    <bdi>{% if precaution.name %}{{ precaution.name }}{% else %}{{ precaution.description }}{% endif %}</bdi>
+                                </span>
+                                {% if precaution.permit_assessment and precaution.permit_assessment.remarks %}
+                                    <span class="assessment-tile__remarks persian-text">
+                                        &ndash; <span class="assessment-tile__remarks-label"></span>
+                                        <bdi>{{ precaution.permit_assessment.remarks }}</bdi>
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            {% if precaution.permit_assessment %}
+                                <div class="assessment-tile__audit">
+                                    <span class="persian-text">
+                                        <bdi>{{ precaution.permit_assessment.created_by.get_full_name|default:precaution.permit_assessment.created_by.username }}</bdi>
+                                    </span>
+                                    {% if precaution.permit_assessment.removed_by %}
+                                        <span class="assessment-tile__audit-sep">&rsaquo;</span>
+                                        <span class="assessment-tile__audit-removed persian-text">
+                                            <bdi>{{ precaution.permit_assessment.removed_by.get_full_name|default:precaution.permit_assessment.removed_by.username }}</bdi>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-hint">No master precautions are registered in the database.</div>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,104 @@
+<!-- Hazards -->
+<section class="detail-panel">
+    <div class="detail-panel__header">
+        <i class="bi bi-exclamation-triangle"></i>
+        Hazards
+    </div>
+
+    <div class="detail-panel__body">
+        <div class="form-field-block">
+            <div class="assessment-select-list">
+                {% for row in form.hazard_rows %}
+                    <div class="assessment-select-item">
+                        <label class="assessment-select-item__main" for="{{ row.checkbox.id_for_label }}">
+                            {{ row.checkbox.tag }}
+                            <span class="assessment-select-item__label persian-text">
+                                <bdi>{{ row.checkbox.choice_label }}</bdi>
+                            </span>
+                        </label>
+
+                        <input
+                            type="text"
+                            name="hazard_remarks_{{ row.item_id }}"
+                            class="assessment-select-item__remark persian-text"
+                            placeholder="Remark (optional)"
+                            value="{{ row.remark }}"
+                            {% if not row.checkbox.data.selected %}disabled{% endif %}
+                        >
+                    </div>
+                {% empty %}
+                    <div class="text-muted">No active hazards are configured.</div>
+                {% endfor %}
+            </div>
+
+            {% if form.hazards.errors %}
+                <div class="field-errors">{{ form.hazards.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Precautions -->
+<section class="detail-panel">
+    <div class="detail-panel__header">
+        <i class="bi bi-shield-check"></i>
+        Precautions
+    </div>
+
+    <div class="detail-panel__body">
+        <div class="form-field-block">
+            <div class="assessment-select-list">
+                {% for row in form.precaution_rows %}
+                    <div class="assessment-select-item">
+                        <label class="assessment-select-item__main" for="{{ row.checkbox.id_for_label }}">
+                            {{ row.checkbox.tag }}
+                            <span class="assessment-select-item__label persian-text">
+                                <bdi>{{ row.checkbox.choice_label }}</bdi>
+                            </span>
+                        </label>
+
+                        <input
+                            type="text"
+                            name="precaution_remarks_{{ row.item_id }}"
+                            class="assessment-select-item__remark persian-text"
+                            placeholder="Remark (optional)"
+                            value="{{ row.remark }}"
+                            {% if not row.checkbox.data.selected %}disabled{% endif %}
+                        >
+                    </div>
+                {% empty %}
+                    <div class="text-muted">No active precautions are configured.</div>
+                {% endfor %}
+            </div>
+
+            {% if form.precautions.errors %}
+                <div class="field-errors">{{ form.precautions.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.assessment-select-item').forEach(function (item) {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            const remark = item.querySelector('.assessment-select-item__remark');
+
+            function initSyncState() {
+                remark.disabled = !checkbox.checked;
+                item.classList.toggle('assessment-select-item--active', checkbox.checked);
+            }
+
+            function syncState() {
+                remark.disabled = !checkbox.checked;
+                item.classList.toggle('assessment-select-item--active', checkbox.checked);
+                if (!checkbox.checked) {
+                    remark.value = '';
+                }
+            }
+
+            checkbox.addEventListener('change', syncState);
+            initSyncState();
+        });
+    });
+</script>

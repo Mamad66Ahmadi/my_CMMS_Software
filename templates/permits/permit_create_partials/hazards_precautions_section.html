@@ -1,0 +1,95 @@
+<section class="detail-panel">
+    <div class="detail-panel__header">
+        <i class="bi bi-exclamation-triangle"></i>
+        Hazards
+    </div>
+
+    <div class="detail-panel__body">
+        <div class="form-field-block">
+            <div class="assessment-select-list">
+                {% for checkbox in form.hazards %}
+                    <div class="assessment-select-item">
+                        <label class="assessment-select-item__main" for="{{ checkbox.id_for_label }}">
+                            {{ checkbox.tag }}
+                            <span class="assessment-select-item__label persian-text">
+                                <bdi>{{ checkbox.choice_label }}</bdi>
+                            </span>
+                        </label>
+
+                        <input
+                            type="text"
+                            name="hazard_remarks_{{ checkbox.data.value }}"
+                            class="assessment-select-item__remark persian-text"
+                            placeholder="Remark (optional)"
+                            disabled
+                        >
+                    </div>
+                {% empty %}
+                    <div class="text-muted">No active hazards are configured.</div>
+                {% endfor %}
+            </div>
+
+            {% if form.hazards.errors %}
+                <div class="field-errors">{{ form.hazards.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+<section class="detail-panel">
+    <div class="detail-panel__header">
+        <i class="bi bi-shield-check"></i>
+        Precautions
+    </div>
+
+    <div class="detail-panel__body">
+        <div class="form-field-block">
+            <div class="assessment-select-list">
+                {% for checkbox in form.precautions %}
+                    <div class="assessment-select-item">
+                        <label class="assessment-select-item__main" for="{{ checkbox.id_for_label }}">
+                            {{ checkbox.tag }}
+                            <span class="assessment-select-item__label persian-text">
+                                <bdi>{{ checkbox.choice_label }}</bdi>
+                            </span>
+                        </label>
+
+                        <input
+                            type="text"
+                            name="precaution_remarks_{{ checkbox.data.value }}"
+                            class="assessment-select-item__remark persian-text"
+                            placeholder="Remark (optional)"
+                            disabled
+                        >
+                    </div>
+                {% empty %}
+                    <div class="text-muted">No active precautions are configured.</div>
+                {% endfor %}
+            </div>
+
+            {% if form.precautions.errors %}
+                <div class="field-errors">{{ form.precautions.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.assessment-select-item').forEach(function (item) {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            const remark = item.querySelector('.assessment-select-item__remark');
+
+            function syncState() {
+                remark.disabled = !checkbox.checked;
+                item.classList.toggle('assessment-select-item--active', checkbox.checked);
+                if (!checkbox.checked) {
+                    remark.value = '';
+                }
+            }
+
+            checkbox.addEventListener('change', syncState);
+            syncState();
+        });
+    });
+</script>

@@ -40,7 +40,7 @@ class BaseLookupModel(TimeStampedModel):
         ordering = ["display_order", "code"]
 
     def __str__(self):
-        return f"{self.code} - {self.name}"
+        return f"{self.name}"
 
     def clean(self):
         super().clean()

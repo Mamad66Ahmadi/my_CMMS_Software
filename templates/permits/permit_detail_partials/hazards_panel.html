@@ -1,0 +1,65 @@
+<div class="detail-panel">
+    <div class="detail-panel__header">
+        <i class="bi bi-exclamation-triangle"></i> Identified Hazards
+    </div>
+
+    <div class="detail-panel__body">
+        {% if all_hazards %}
+            <div class="assessment-grid">
+                {% for hazard in all_hazards %}
+                    <div class="assessment-tile
+                        {% if hazard.permit_assessment %}
+                            {% if hazard.permit_assessment.is_active %}
+                                assessment-tile--selected
+                            {% else %}
+                                assessment-tile--removed
+                            {% endif %}
+                        {% else %}
+                            assessment-tile--unselected
+                        {% endif %}
+                    ">
+                        <div class="assessment-tile__mark">
+                            {% if hazard.permit_assessment and hazard.permit_assessment.is_active %}
+                                <i class="bi bi-check-lg"></i>
+                            {% elif hazard.permit_assessment %}
+                                <i class="bi bi-x-lg"></i>
+                            {% else %}
+                                <i class="bi bi-dash"></i>
+                            {% endif %}
+                        </div>
+
+                        <div class="assessment-tile__body">
+                            <div class="assessment-tile__title">
+                                <span class="assessment-name persian-text">
+                                    <bdi>{% if hazard.name %}{{ hazard.name }}{% else %}{{ hazard.description }}{% endif %}</bdi>
+                                </span>
+                                {% if hazard.permit_assessment and hazard.permit_assessment.remarks %}
+                                    <span class="assessment-tile__remarks persian-text">
+                                        &ndash; <span class="assessment-tile__remarks-label"></span>
+                                        <bdi>{{ hazard.permit_assessment.remarks }}</bdi>
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            {% if hazard.permit_assessment %}
+                                <div class="assessment-tile__audit">
+                                    <span class="persian-text">
+                                        <bdi>{{ hazard.permit_assessment.created_by.get_full_name|default:hazard.permit_assessment.created_by.username }}</bdi>
+                                    </span>
+                                    {% if hazard.permit_assessment.removed_by %}
+                                        <span class="assessment-tile__audit-sep">&rsaquo;</span>
+                                        <span class="assessment-tile__audit-removed persian-text">
+                                            <bdi>{{ hazard.permit_assessment.removed_by.get_full_name|default:hazard.permit_assessment.removed_by.username }}</bdi>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-hint">No master hazards are registered in the database.</div>
+        {% endif %}
+    </div>
+</div>

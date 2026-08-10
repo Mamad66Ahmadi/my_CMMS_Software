@@ -1,0 +1,46 @@
+<aside class="permit-layout__side">
+    <section class="detail-panel">
+        <div class="detail-panel__header">
+            <i class="bi bi-card-list"></i>
+            Draft Record Information
+        </div>
+
+        <div class="detail-panel__body">
+            <div class="info-mini-row">
+                <span class="label"><i class="bi bi-flag"></i> Initial State</span>
+                <span class="value">Draft</span>
+            </div>
+            <div class="info-mini-row">
+                <span class="label"><i class="bi bi-person-plus"></i> Created By</span>
+                <span class="value">{{ request.user }}</span>
+            </div>
+            <div class="info-mini-row">
+                <span class="label"><i class="bi bi-diagram-3"></i> Workflow</span>
+                <span class="value">Assigned by workflow engine</span>
+            </div>
+            <div class="info-mini-row">
+                <span class="label"><i class="bi bi-shield-check"></i> Validation</span>
+                <span class="value">Model and form rules apply</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="detail-panel">
+        <div class="detail-panel__header">
+            <i class="bi bi-check2-square"></i>
+            Actions
+        </div>
+
+        <div class="detail-panel__body">
+            <div class="form-actions">
+                <a href="{% url 'permits:permit_list' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                   class="btn-permit-action">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+                <button type="submit" class="btn-save-permit">
+                    <i class="bi bi-save"></i> Create Permit
+                </button>
+            </div>
+        </div>
+    </section>
+</aside>
