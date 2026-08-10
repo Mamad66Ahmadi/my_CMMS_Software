@@ -19,6 +19,7 @@ from permits.models import (
     PermitHazard,
     PermitPrecaution,
     PermitWorkflowTransition,
+    PermitApproval,
 )
 from permits.services.authorization_service import WorkflowAuthorizationService
 from permits.services.condition_service import WorkflowConditionEvaluator
@@ -71,9 +72,13 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     to_attr="active_precaution_requirements",
                 ),
                 "continuations",
+                # Prefetch approvals sorted by execution time (newest first as per Meta class ordering)
+                Prefetch(
+                    "approvals",
+                    queryset=PermitApproval.objects.select_related("actor", "role", "from_step", "to_step")
+                ),
             )
         )
-
     def get_available_workflow_actions(self, permit):
         """
         Return transitions the current user can perform from the permit's
