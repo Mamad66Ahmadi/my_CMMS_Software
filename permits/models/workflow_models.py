@@ -42,13 +42,27 @@ class PermitWorkflow(TimeStampedModel):
         self.full_clean()
         return super().save(*args, **kwargs)
 
-
 class PermitWorkflowStep(TimeStampedModel):
+    class State(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        UNDER_REVIEW = "under_review", "Under Review"
+        ACTIVE = "active", "Active"
+        CLOSED = "closed", "Closed"
+
     workflow = models.ForeignKey(
-        PermitWorkflow, 
-        on_delete=models.CASCADE, 
-        related_name="steps"
+        PermitWorkflow,
+        on_delete=models.CASCADE,
+        related_name="steps",
     )
+
+    state = models.CharField(
+        max_length=30,
+        null=True,
+        blank=True,
+        choices=State.choices,
+        help_text="Stable machine-readable identifier for this workflow step.",
+    )
+
     step_number = models.PositiveSmallIntegerField()
     title = models.CharField(max_length=150)
     description = models.TextField(blank=True)
@@ -57,8 +71,13 @@ class PermitWorkflowStep(TimeStampedModel):
     is_terminal = models.BooleanField(default=False)
 
     is_editable_step = models.BooleanField(default=False)
-    editable_role = models.ForeignKey("permits.PermitApprovalRoleChoices", on_delete=models.SET_NULL,null=True, blank=True, related_name="editable_workflow_steps")
-
+    editable_role = models.ForeignKey(
+        "permits.PermitApprovalRoleChoices",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="editable_workflow_steps",
+    )
 
     class Meta:
         verbose_name = "Permit Workflow Step"
@@ -79,31 +98,53 @@ class PermitWorkflowStep(TimeStampedModel):
                 name="uq_workflow_start_step",
             ),
         ]
-
+        indexes = [
+            models.Index(
+                fields=["workflow", "state"],
+                name="workflow_step_state_idx",
+            ),
+        ]
+        
     def clean(self):
         super().clean()
 
         if self.is_start and self.is_terminal:
-            raise ValidationError("A step cannot be both start and terminal.")
+            raise ValidationError(
+                "A step cannot be both start and terminal."
+            )
 
         if self.is_terminal and self.is_editable_step:
             raise ValidationError(
-                {"is_editable_step": "A terminal step cannot be editable."}
+                {
+                    "is_editable_step": (
+                        "A terminal step cannot be editable."
+                    )
+                }
             )
 
         if self.is_editable_step and not self.editable_role_id:
             raise ValidationError(
-                {"editable_role": "Select the single role allowed to edit permits at this step."}
+                {
+                    "editable_role": (
+                        "Select the single role allowed to edit permits "
+                        "at this step."
+                    )
+                }
             )
 
         if not self.is_editable_step and self.editable_role_id:
             raise ValidationError(
-                {"editable_role": "Editable role should only be set when this step is editable."}
+                {
+                    "editable_role": (
+                        "Editable role should only be set when this step "
+                        "is editable."
+                    )
+                }
             )
 
         if self.is_start and self.workflow_id:
             exists_query = PermitWorkflowStep.objects.filter(
-                workflow=self.workflow,
+                workflow_id=self.workflow_id,
                 is_start=True,
             )
 
@@ -112,16 +153,23 @@ class PermitWorkflowStep(TimeStampedModel):
 
             if exists_query.exists():
                 raise ValidationError(
-                    {"is_start": "This workflow already has a start step configured."}
+                    {
+                        "is_start": (
+                            "This workflow already has a start step configured."
+                        )
+                    }
                 )
-
 
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.workflow.name} (v{self.workflow.version}) - Step {self.step_number} ({self.title})"
+        return (
+            f"{self.workflow.name} (v{self.workflow.version}) - "
+            f"Step {self.step_number} ({self.title})"
+        )
+
 
 
 class Decision(models.TextChoices):

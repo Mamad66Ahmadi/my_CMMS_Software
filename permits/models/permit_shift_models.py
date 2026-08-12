@@ -76,15 +76,6 @@ class PermitShiftSignoff(models.Model):
             ),
         ]
 
-        def __str__(self):
-            return (
-                f"{self.permit_type} - "
-                f"{self.role} - "
-                f"{self.sequence}"
-            )
-
-
-
     def __str__(self):
         return (
             f"{self.work_shift} - "
@@ -113,5 +104,10 @@ class PermitTypeActiveShiftRole(TimeStampedModel):
             ),
         ]
 
-
+    def __str__(self):
+        return (
+            f"{self.permit_type} - "
+            f"{self.role} - "
+            f"{self.sequence}"
+        )
 

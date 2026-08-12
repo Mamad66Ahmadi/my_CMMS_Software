@@ -11,6 +11,7 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
     list_display = (
         "workflow",
         "step_number",
+        "state",
         "title",
         "is_start",
         "is_terminal",
@@ -22,6 +23,7 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
 
     list_filter = (
         "workflow",
+        "state",
         "is_start",
         "is_terminal",
         "is_editable_step",
@@ -31,6 +33,7 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
 
     search_fields = (
         "workflow__name",
+        "state",
         "title",
         "description",
         "editable_role__name",
@@ -54,6 +57,7 @@ class PermitWorkflowStepAdmin(TimeStampedAdmin):
                 "fields": (
                     "workflow",
                     "step_number",
+                    "state",
                     "title",
                     "description",
                 )

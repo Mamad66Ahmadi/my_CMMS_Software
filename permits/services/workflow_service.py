@@ -125,13 +125,15 @@ class PermitWorkflowService:
         }
 
         # --------------------------------------------------------------
-        # Lifecycle actions
+        # Lifecycle actions based on step state
         # --------------------------------------------------------------
 
-        if (
-            transition.to_step.code
-            == PermitWorkflowStep.StepCode.ACTIVE
-        ):
+        entering_active_state = (
+            transition.to_step.state == PermitWorkflowStep.State.ACTIVE
+            and transition.from_step.state != PermitWorkflowStep.State.ACTIVE
+        )
+
+        if entering_active_state:
             PermitActivationService.activate(
                 permit=permit,
                 activated_at=now,
@@ -145,9 +147,16 @@ class PermitWorkflowService:
                 }
             )
 
-        if transition.to_step.is_terminal:
+        entering_closed_state = (
+            transition.to_step.state == PermitWorkflowStep.State.CLOSED
+            and transition.from_step.state != PermitWorkflowStep.State.CLOSED
+        )
+
+        if entering_closed_state:
             update_data["closed_at"] = now
 
+        # If you really use Decision.CANCEL as a suspension action,
+        # keep this. Otherwise rename it to the proper decision later.
         if transition.decision == Decision.CANCEL:
             update_data["suspended_at"] = now
 
@@ -157,7 +166,6 @@ class PermitWorkflowService:
 
         Permit.objects.filter(pk=permit.pk).update(**update_data)
 
-        # Keep the in-memory object synchronized
         for field_name, value in update_data.items():
             setattr(permit, field_name, value)
 
@@ -183,7 +191,6 @@ class PermitWorkflowService:
             approval=approval,
             transition=transition,
         )
-
 
     @staticmethod
     def _validate_decision(decision: str) -> None:
