@@ -127,8 +127,8 @@ class Permit(models.Model):
     # ------------------------------------------------------------------
     # Validity Timestamps
     # ------------------------------------------------------------------
-    valid_from = models.DateTimeField()
-    valid_to = models.DateTimeField()
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_to = models.DateTimeField(null=True, blank=True)
 
     # Step Audit Timestamps
     issued_by_supervisor_at = models.DateTimeField(null=True, blank=True)

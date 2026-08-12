@@ -9,6 +9,7 @@ from django.utils import timezone
 from permits.models.approval_models import PermitApproval
 from permits.models.workflow_models import Decision, PermitWorkflowTransition
 from permits.services.authorization_service import WorkflowAuthorizationService
+from permits.services.permit_activation_service import PermitActivationService
 from permits.services.condition_service import WorkflowConditionEvaluator
 
 
@@ -42,12 +43,15 @@ class PermitWorkflowService:
         decision: str,
         comment: str = "",
     ) -> TransitionResult:
+
         from permits.models.permit_models import Permit
+        from permits.models.workflow_models import PermitWorkflowStep
 
         cls._validate_decision(decision)
 
         permit = (
-            Permit.objects.select_for_update()
+            Permit.objects
+            .select_for_update()
             .select_related(
                 "workflow",
                 "current_step",
@@ -77,7 +81,8 @@ class PermitWorkflowService:
             )
 
         transition = (
-            PermitWorkflowTransition.objects.select_related(
+            PermitWorkflowTransition.objects
+            .select_related(
                 "workflow",
                 "from_step",
                 "to_step",
@@ -102,8 +107,6 @@ class PermitWorkflowService:
                 "current step, and approval role."
             )
 
-        role = transition.role
-
         WorkflowAuthorizationService.ensure_actor_can_decide(
             actor=actor,
             permit=permit,
@@ -115,22 +118,32 @@ class PermitWorkflowService:
             transition=transition,
         )
 
-        approval = PermitApproval.objects.create(
-            permit=permit,
-            actor=actor,
-            role=role,
-            from_step=transition.from_step,
-            to_step=transition.to_step,
-            decision=transition.decision,
-            comment=(comment or "").strip(),
-            transition=transition,
-        )
-
         now = timezone.now()
 
         update_data = {
             "current_step_id": transition.to_step_id,
         }
+
+        # --------------------------------------------------------------
+        # Lifecycle actions
+        # --------------------------------------------------------------
+
+        if (
+            transition.to_step.code
+            == PermitWorkflowStep.StepCode.ACTIVE
+        ):
+            PermitActivationService.activate(
+                permit=permit,
+                activated_at=now,
+            )
+
+            update_data.update(
+                {
+                    "activated_at": permit.activated_at,
+                    "valid_from": permit.valid_from,
+                    "valid_to": permit.valid_to,
+                }
+            )
 
         if transition.to_step.is_terminal:
             update_data["closed_at"] = now
@@ -138,19 +151,39 @@ class PermitWorkflowService:
         if transition.decision == Decision.CANCEL:
             update_data["suspended_at"] = now
 
+        # --------------------------------------------------------------
+        # Persist permit state
+        # --------------------------------------------------------------
+
         Permit.objects.filter(pk=permit.pk).update(**update_data)
 
-        permit.current_step = transition.to_step
-        permit.current_step_id = transition.to_step_id
-
+        # Keep the in-memory object synchronized
         for field_name, value in update_data.items():
             setattr(permit, field_name, value)
+
+        permit.current_step = transition.to_step
+
+        # --------------------------------------------------------------
+        # Immutable audit record
+        # --------------------------------------------------------------
+
+        approval = PermitApproval.objects.create(
+            permit=permit,
+            actor=actor,
+            role=transition.role,
+            from_step=transition.from_step,
+            to_step=transition.to_step,
+            decision=transition.decision,
+            comment=(comment or "").strip(),
+            transition=transition,
+        )
 
         return TransitionResult(
             permit=permit,
             approval=approval,
             transition=transition,
         )
+
 
     @staticmethod
     def _validate_decision(decision: str) -> None:
