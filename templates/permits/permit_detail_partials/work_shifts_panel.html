@@ -1,0 +1,599 @@
+{% load static %}
+{% load to_jalali %}
+
+<div class="detail-panel work-shift-panel mt-4">
+
+    <!-- =========================================================
+         Header
+         ========================================================= -->
+    <div class="detail-panel__header d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        <div>
+            <i class="bi bi-calendar2-week"></i>
+            Active Work Shifts
+        </div>
+
+        {% if is_active_state %}
+
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+
+                {% if permit.valid_from and permit.valid_to %}
+                    <div class="small text-start d-flex flex-wrap align-items-center gap-2" dir="ltr">
+
+                        <span class="text-muted fw-semibold">
+                            <bdi>Valid from:</bdi>
+                        </span>
+
+                        <span class="validity-chip validity-chip--from">
+                            <bdi>
+                                {{ permit.valid_from|date:"Y-m-d H:i" }}
+                                <span class="jalali-time">({{ permit.valid_from|to_jalali:"%Y/%m/%d" }})</span>
+                            </bdi>
+                        </span>
+
+                        <span class="text-muted fw-semibold">
+                            <bdi>to:</bdi>
+                        </span>
+
+                        <span class="validity-chip validity-chip--to">
+                            <bdi>
+                                {{ permit.valid_to|date:"Y-m-d H:i" }}
+                                <span class="jalali-time">({{ permit.valid_to|to_jalali:"%Y/%m/%d" }})</span>
+                            </bdi>
+                        </span>
+
+                    </div>
+                {% endif %}
+
+                {% if can_manage_work_shifts and not has_open_work_shift %}
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addWorkShiftModal"
+                    >
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Add Work Shift
+                    </button>
+                {% endif %}
+
+            </div>
+
+        {% else %}
+
+            <span class="badge rounded-pill text-bg-secondary persian-text px-3 py-2">
+                <i class="bi bi-pause-circle me-1"></i>
+                <bdi>Permit is not active — work shifts unavailable</bdi>
+            </span>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- =========================================================
+         Body
+         ========================================================= -->
+    <div class="detail-panel__body">
+
+        {% if is_active_state %}
+
+            {% if work_shifts %}
+
+                <!-- ============================================
+                     Work Shift Table
+                     ============================================ -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 work-shift-table">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 120px;" class="persian-text"><bdi>Date</bdi></th>
+                                <th style="width: 110px;" class="persian-text"><bdi>Shift</bdi></th>
+                                <th class="persian-text"><bdi>Work Leader</bdi></th>
+                                <th class="persian-text"><bdi>Signoffs</bdi></th>
+                                <th style="width: 190px;" class="persian-text"><bdi>Action</bdi></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for work_shift in work_shifts %}
+                                <tr class="shift-row {% if work_shift.status == "open" %}shift-row--open{% else %}shift-row--closed{% endif %}">
+
+                                    <!-- Date -->
+                                    <td>
+                                        <span class="fw-semibold persian-text">
+                                            <bdi>{{ work_shift.date|date:"Y-m-d" }}</bdi>
+                                        </span>
+                                    </td>
+
+                                    <!-- Shift -->
+                                    <td>
+                                        {% if work_shift.shift == "SHIFT_1" %}
+                                            <span class="badge badge-shift-1">
+                                                <i class="bi bi-clock me-1"></i>
+                                                <bdi>{{ work_shift.get_shift_display }}</bdi>
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-shift-2">
+                                                <i class="bi bi-clock me-1"></i>
+                                                <bdi>{{ work_shift.get_shift_display }}</bdi>
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+
+                                    <!-- Work Leader -->
+                                    <td>
+                                        {% if work_shift.work_leader %}
+                                            <span class="fw-semibold persian-text">
+                                                <bdi>{{ work_shift.work_leader }}</bdi>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Signoffs -->
+                                    <td>
+                                        {% with total=work_shift.signoffs.count %}
+                                            {% if total == 0 %}
+
+                                                <span class="text-muted persian-text">
+                                                    <bdi>No signoffs configured</bdi>
+                                                </span>
+
+                                            {% else %}
+
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    {% for signoff in work_shift.signoffs.all %}
+
+                                                        {% if signoff.signed_at %}
+
+                                                            <span
+                                                                class="signoff-chip signoff-chip--signed persian-text"
+                                                                title="{{ signoff.role.name }} — signed {{ signoff.signed_at|date:"Y-m-d H:i" }} by {{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}"
+                                                            >
+                                                                <i class="bi bi-check-circle-fill signoff-chip__icon"></i>
+                                                                <span class="signoff-chip__body">
+                                                                    <span class="signoff-chip__role"><bdi>{{ signoff.role.name }}</bdi></span>
+                                                                    <span class="signoff-chip__value"><bdi>{{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}</bdi></span>
+                                                                </span>
+                                                            </span>
+
+                                                        {% else %}
+
+                                                            <span
+                                                                class="signoff-chip signoff-chip--pending persian-text"
+                                                                title="Awaiting signature — {{ signoff.role.name }}"
+                                                            >
+                                                                <i class="bi bi-hourglass-split signoff-chip__icon"></i>
+                                                                <span class="signoff-chip__body">
+                                                                    <span class="signoff-chip__role"><bdi>{{ signoff.role.name }}</bdi></span>
+                                                                    <span class="signoff-chip__value"><bdi>Awaiting Signature</bdi></span>
+                                                                </span>
+                                                            </span>
+
+                                                        {% endif %}
+
+                                                    {% endfor %}
+                                                </div>
+
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+
+                                    <!-- Action -->
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-2">
+
+                                            {% for signoff in work_shift.signoffs.all %}
+                                                {% if work_shift.status == "open" and not signoff.signed_by_id and signoff.role.code in can_sign_shift_role_codes %}
+                                                    <form method="post" action="{% url 'permits:permit_shift_signoff' permit_number=permit.permit_number work_shift_id=work_shift.pk role_code=signoff.role.code %}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="confirm" value="on">
+                                                        <button type="submit" class="btn btn-sm btn-shift-action btn-shift-action--sign persian-text">
+                                                            <i class="bi bi-pencil-square me-1"></i>
+                                                            <bdi>Sign — {{ signoff.role.name }}</bdi>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            {% if can_manage_work_shifts and work_shift.status == "open" %}
+                                                <form method="post" action="{% url 'permits:permit_work_shift_close' permit_number=permit.permit_number work_shift_id=work_shift.pk %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-shift-action btn-shift-action--close persian-text">
+                                                        <i class="bi bi-lock-fill me-1"></i>
+                                                        <bdi>Close Shift</bdi>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+
+                    </table>
+                </div>
+
+            {% else %}
+
+                <!-- ============================================
+                     No shifts state
+                     ============================================ -->
+                <div class="text-center py-5 persian-text">
+                    <div class="mb-3">
+                        <i class="bi bi-calendar2-x fs-1 text-muted"></i>
+                    </div>
+                    <h6 class="text-muted"><bdi>No work shifts have been registered.</bdi></h6>
+
+                    {% if can_manage_work_shifts and not has_open_work_shift %}
+                        <p class="text-muted small mb-3">
+                            <bdi>Permit Office can add the first work shift for this active permit.</bdi>
+                        </p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWorkShiftModal">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            <bdi>Add Work Shift</bdi>
+                        </button>
+                    {% endif %}
+                </div>
+
+            {% endif %}
+
+        {% else %}
+
+            <!-- ============================================
+                 Inactive state
+                 ============================================ -->
+            <div class="alert alert-secondary mb-0 persian-text">
+                <i class="bi bi-lock-fill me-2"></i>
+                <bdi>Work shifts are available only while the permit is in the <strong>ACTIVE</strong> workflow state.</bdi>
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- =============================================================
+     ADD WORK SHIFT MODAL
+     ============================================================= -->
+
+{% if can_manage_work_shifts and is_active_state %}
+
+    <div class="modal fade" id="addWorkShiftModal" tabindex="-1" aria-labelledby="addWorkShiftModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addWorkShiftModalLabel">
+                        <i class="bi bi-calendar-plus me-2"></i>
+                        Add Work Shift
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="post" action="{% url 'permits:permit_work_shift_create' permit_number=permit.permit_number %}">
+                    {% csrf_token %}
+
+                    <div class="modal-body">
+
+                        {% if work_shift_form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in work_shift_form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Date -->
+                        <div class="mb-3">
+                            <label for="{{ work_shift_form.date.id_for_label }}" class="form-label">
+                                {{ work_shift_form.date.label }}
+                            </label>
+                            {{ work_shift_form.date }}
+                            {% for error in work_shift_form.date.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Shift -->
+                        <div class="mb-3">
+                            <label for="{{ work_shift_form.shift.id_for_label }}" class="form-label">
+                                {{ work_shift_form.shift.label }}
+                            </label>
+                            {{ work_shift_form.shift }}
+                            {% for error in work_shift_form.shift.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Work Leader -->
+                        <div class="mb-3">
+                            <label for="{{ work_shift_form.work_leader.id_for_label }}" class="form-label">
+                                {{ work_shift_form.work_leader.label }}
+                            </label>
+                            {{ work_shift_form.work_leader }}
+                            {% for error in work_shift_form.work_leader.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="alert alert-info small mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            After the work shift is created, the required approval roles
+                            configured for this permit type will be assigned to the shift.
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Create Work Shift
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+{% endif %}
+
+
+<!-- =============================================================
+     Scoped styles — Work Shift Panel
+     ============================================================= -->
+<style>
+
+    /* =========================================================
+       Design tokens
+       Scoped to .work-shift-panel so they never leak globally.
+       ========================================================= */
+    .work-shift-panel {
+        --wsp-success:        #198754;
+        --wsp-success-text:   #146c43;
+        --wsp-success-bg:     rgba(25, 135, 84, 0.10);
+        --wsp-success-bg-soft: rgba(25, 135, 84, 0.02);
+        --wsp-success-border: rgba(25, 135, 84, 0.30);
+
+        --wsp-neutral:        #495057;
+        --wsp-neutral-text:   #868e96;
+        --wsp-neutral-bg:     rgba(33, 37, 41, 0.05);
+        --wsp-neutral-bg-hover: rgba(98, 98, 99, 0.25);
+        --wsp-neutral-border: rgba(108, 117, 125, 0.25);
+
+        --wsp-amber-text:     #997404;
+        --wsp-amber-bg:       rgba(255, 193, 7, 0.15);
+
+        --wsp-orange-text:    #b45309;
+        --wsp-orange-bg:      rgba(217, 119, 6, 0.10);
+        --wsp-orange-border:  rgba(217, 119, 6, 0.25);
+
+        --wsp-radius-sm:  0.25rem;
+        --wsp-radius-md:  0.375rem;
+        --wsp-radius-pill: 50rem;
+    }
+
+
+    /* =========================================================
+       Table header
+       ========================================================= */
+    .work-shift-table > thead > tr:hover,
+    .work-shift-table > thead > tr:hover > th {
+        background-color: rgba(0, 0, 0, 0.02) !important;
+    }
+
+
+    /* =========================================================
+       Row status colouring
+       ========================================================= */
+    .work-shift-table > tbody > tr.shift-row--open {
+        background-color: var(--wsp-success-bg-soft);
+        border-left: 3px solid var(--wsp-success);
+    }
+    .work-shift-table > tbody > tr.shift-row--open:hover {
+        background-color: var(--wsp-success-bg-soft);
+    }
+    .work-shift-table > tbody > tr.shift-row--open td {
+        color: #000;
+    }
+
+    .work-shift-table > tbody > tr.shift-row--closed {
+        background-color: var(--wsp-neutral-bg);
+        border-left: 3px solid var(--wsp-neutral);
+    }
+    .work-shift-table > tbody > tr.shift-row--closed:hover {
+        background-color: var(--wsp-neutral-bg-hover);
+    }
+    .work-shift-table > tbody > tr.shift-row--closed td {
+        color: var(--wsp-neutral-text);
+    }
+
+
+    /* =========================================================
+       Status legend (dots)
+       ========================================================= */
+    .shift-legend {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .shift-legend__item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .shift-legend__dot {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .shift-legend__dot--open   { background-color: var(--wsp-success); }
+    .shift-legend__dot--closed { background-color: var(--wsp-neutral); }
+
+
+    /* =========================================================
+       Signoff summary badge
+       ========================================================= */
+    .signoff-summary__badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--wsp-radius-sm);
+    }
+    .signoff-summary__badge--complete {
+        color: var(--wsp-success-text);
+        background-color: var(--wsp-success-bg);
+    }
+    .signoff-summary__badge--pending {
+        color: var(--wsp-amber-text);
+        background-color: var(--wsp-amber-bg);
+    }
+
+
+    /* =========================================================
+       Signoff chips
+       ========================================================= */
+    .signoff-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: var(--wsp-radius-md);
+        font-size: 0.75rem;
+        line-height: 1.1;
+        border: 1px solid transparent;
+        cursor: default;
+    }
+    .signoff-chip__icon {
+        font-size: 0.85rem;
+    }
+    .signoff-chip__body {
+        display: flex;
+        flex-direction: column;
+    }
+    .signoff-chip__role {
+        font-size: 0.62rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        opacity: 0.75;
+    }
+    .signoff-chip__value {
+        font-weight: 600;
+    }
+
+    .signoff-chip--signed {
+        color: var(--wsp-success-text);
+        background-color: var(--wsp-success-bg);
+        border-color: var(--wsp-success-border);
+    }
+
+    .signoff-chip--pending {
+        color: #6c757d;
+        background-color: rgba(108, 117, 125, 0.08);
+        border-color: var(--wsp-neutral-border);
+    }
+    .signoff-chip--pending .signoff-chip__value {
+        font-style: italic;
+        font-weight: 500;
+    }
+
+
+    /* =========================================================
+       Action buttons
+       ========================================================= */
+    .btn-shift-action {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--wsp-radius-pill);
+        font-weight: 600;
+        font-size: 0.78rem;
+        padding: 0.32rem 0.85rem;
+        border-width: 1px;
+        transition: box-shadow 0.15s ease, transform 0.1s ease;
+    }
+    .btn-shift-action:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn-shift-action--sign {
+        color: var(--wsp-success-text);
+        border-color: var(--wsp-success);
+        background-color: #fff;
+    }
+    .btn-shift-action--sign:hover {
+        color: #fff;
+        background-color: var(--wsp-success);
+        box-shadow: 0 0.2rem 0.5rem var(--wsp-success-border);
+    }
+
+    .btn-shift-action--close {
+        color: #6c757d;
+        border-color: #6c757d;
+        background-color: #fff;
+    }
+    .btn-shift-action--close:hover {
+        color: #fff;
+        background-color: var(--wsp-neutral);
+        border-color: var(--wsp-neutral);
+        box-shadow: 0 0.2rem 0.5rem rgba(73, 80, 87, 0.25);
+    }
+
+
+    /* =========================================================
+       Validity chips (header)
+       ========================================================= */
+    .validity-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.55rem;
+        border-radius: var(--wsp-radius-md);
+        font-weight: 500;
+        font-size: 0.8rem;
+        line-height: 1.3;
+        border: 1px solid transparent;
+    }
+    .validity-chip .jalali-time {
+        opacity: 0.75;
+        font-size: 0.75rem;
+    }
+
+    .validity-chip--from {
+        color: var(--wsp-success-text);
+        background-color: var(--wsp-success-bg);
+        border-color: var(--wsp-success-border);
+    }
+
+    .validity-chip--to {
+        color: var(--wsp-orange-text);
+        background-color: var(--wsp-orange-bg);
+        border-color: var(--wsp-orange-border);
+    }
+    /* Badge Styles */
+    .badge-shift-1 {
+        background-color: #ffffff;
+        color: #495057;
+        border: 1px solid #ced4da;
+    }
+    .badge-shift-2 {
+        background-color: #000000;
+        color: #ffffff;
+        border: 1px solid #000000;
+    }
+
+</style>

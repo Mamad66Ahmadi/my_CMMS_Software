@@ -13,7 +13,13 @@ from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView
 
 from equipment.models import LocationTag
-from permits.forms import PermitCreateForm, PermitWorkflowDecisionForm,PermitUpdateForm
+from permits.forms import (
+    PermitCreateForm,
+    PermitShiftSignoffForm,
+    PermitUpdateForm,
+    PermitWorkShiftForm,
+    PermitWorkflowDecisionForm,
+)
 from permits.models import (
     Permit,
     PermitHazard,
@@ -21,6 +27,7 @@ from permits.models import (
     PermitWorkflowTransition,
     PermitApproval,
 )
+from permits.models.workflow_models import PermitWorkflowStep
 from permits.services.authorization_service import WorkflowAuthorizationService
 from permits.services.condition_service import WorkflowConditionEvaluator
 from permits.services.workflow_service import (
@@ -29,7 +36,8 @@ from permits.services.workflow_service import (
 )
 from permits.models.permit_base_models import Hazard, Precaution
 
-
+from permits.services.work_shift_service import PermitWorkShiftService
+from permits.models.permit_shift_models import PermitShiftSignoff, PermitTypeActiveShiftRole, PermitWorkShift
 
 
 # ---------------- Detail View ----------------
@@ -41,8 +49,36 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
     slug_url_kwarg = "permit_number"
 
     def get_queryset(self):
+        work_shift_queryset = (
+            PermitWorkShift.objects
+            .select_related(
+                "created_by",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "signoffs",
+                    queryset=(
+                        PermitShiftSignoff.objects
+                        .select_related(
+                            "role",
+                            "signed_by",
+                        )
+                        .order_by("sequence", "id")
+                    ),
+                ),
+            )
+            .order_by("date", "shift")
+        )
+
+        active_shift_role_queryset = (
+            PermitTypeActiveShiftRole.objects
+            .select_related("role")
+            .order_by("sequence", "id")
+        )
+
         return (
-            Permit.objects.select_related(
+            Permit.objects
+            .select_related(
                 "location_tag",
                 "location_tag__parent",
                 "location_tag__unit",
@@ -63,32 +99,59 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             .prefetch_related(
                 Prefetch(
                     "hazard_assessments",
-                    queryset=PermitHazard.objects.filter(
-                        is_active=True,
-                    ).select_related("hazard"),
+                    queryset=(
+                        PermitHazard.objects
+                        .filter(is_active=True)
+                        .select_related("hazard")
+                    ),
                     to_attr="active_hazard_assessments",
                 ),
+
                 Prefetch(
                     "precaution_requirements",
-                    queryset=PermitPrecaution.objects.filter(
-                        is_active=True,
-                    ).select_related("precaution"),
+                    queryset=(
+                        PermitPrecaution.objects
+                        .filter(is_active=True)
+                        .select_related("precaution")
+                    ),
                     to_attr="active_precaution_requirements",
                 ),
+
                 "continuations",
-                # Prefetch approvals sorted by execution time (newest first as per Meta class ordering)
+
                 Prefetch(
                     "approvals",
-                    queryset=PermitApproval.objects.select_related("actor", "role", "from_step", "to_step")
+                    queryset=(
+                        PermitApproval.objects
+                        .select_related(
+                            "actor",
+                            "role",
+                            "from_step",
+                            "to_step",
+                        )
+                    ),
+                ),
+
+                Prefetch(
+                    "work_shifts",
+                    queryset=work_shift_queryset,
+                    to_attr="prefetched_work_shifts",
+                ),
+
+                Prefetch(
+                    "permit_type__active_shift_roles",
+                    queryset=active_shift_role_queryset,
+                    to_attr="prefetched_active_shift_roles",
                 ),
             )
         )
     def get_available_workflow_actions(self, permit):
         """
-        Return transitions the current user can perform from the permit's
-        current workflow step.
+        Return workflow transitions that the current user is authorized
+        to perform.
 
-        This is display-only. The POST view still validates again.
+        This is display-only.
+        The POST endpoint validates everything again.
         """
 
         if not permit.workflow_id or not permit.current_step_id:
@@ -98,7 +161,8 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             return []
 
         transitions = (
-            PermitWorkflowTransition.objects.select_related(
+            PermitWorkflowTransition.objects
+            .select_related(
                 "workflow",
                 "from_step",
                 "to_step",
@@ -132,37 +196,7 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     transition=transition,
                 )
 
-            except PermissionDenied as exc:
-                print(
-                    "\n========== WORKFLOW ACTION BLOCKED =========="
-                )
-                print(f"User: {self.request.user}")
-                print(f"User ID: {self.request.user.pk}")
-                print(f"Permit: {permit.permit_number}")
-                print(f"Permit ID: {permit.pk}")
-                print(f"Workflow: {permit.workflow}")
-                print(f"Current Step: {permit.current_step}")
-                print(f"Transition: {transition}")
-                print(f"Role: {transition.role}")
-                print(f"Role Code: {transition.role.code}")
-                print(f"Decision: {transition.decision}")
-                print(f"Reason: {exc}")
-                print("===============================================\n")
-
-                continue
-
-            except ValidationError as exc:
-                print(
-                    "\n========== WORKFLOW CONDITION BLOCKED =========="
-                )
-                print(f"User: {self.request.user}")
-                print(f"Permit: {permit.permit_number}")
-                print(f"Transition: {transition}")
-                print(f"Role: {transition.role}")
-                print(f"Decision: {transition.decision}")
-                print(f"Reason: {exc}")
-                print("=================================================\n")
-
+            except (PermissionDenied, ValidationError):
                 continue
 
             available_actions.append(
@@ -183,45 +217,143 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             )
 
         return available_actions
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         permit = self.object
 
-        # 1. Fetch all master records
-        all_hazards = list(Hazard.objects.order_by("display_order", "code"))
-        all_precautions = list(Precaution.objects.order_by("display_order", "code"))
+        # ----------------------------------------------------------
+        # Hazard / precaution master data
+        # ----------------------------------------------------------
 
-        # 2. Build maps of permit-specific records
+        all_hazards = list(
+            Hazard.objects.order_by("display_order", "code")
+        )
+
+        all_precautions = list(
+            Precaution.objects.order_by("display_order", "code")
+        )
+
         hazard_map = {
             item.hazard_id: item
-            for item in permit.hazard_assessments.select_related("created_by", "modified_by", "removed_by")
-        }
-        
-        precaution_map = {
-            item.precaution_id: item
-            for item in permit.precaution_requirements.select_related("created_by", "modified_by", "removed_by")
+            for item in permit.hazard_assessments.select_related(
+                "created_by",
+                "modified_by",
+                "removed_by",
+            )
         }
 
-        # 3. Attach the permit-specific assessment directly to each master instance
+        precaution_map = {
+            item.precaution_id: item
+            for item in permit.precaution_requirements.select_related(
+                "created_by",
+                "modified_by",
+                "removed_by",
+            )
+        }
+
         for hazard in all_hazards:
             hazard.permit_assessment = hazard_map.get(hazard.id)
 
         for precaution in all_precautions:
-            precaution.permit_assessment = precaution_map.get(precaution.id)
+            precaution.permit_assessment = precaution_map.get(
+                precaution.id
+            )
 
-        # 4. Bind variables to context
         context["all_hazards"] = all_hazards
         context["all_precautions"] = all_precautions
 
-        context["workflow_actions"] = self.get_available_workflow_actions(permit)
-        context["is_currently_valid"] = permit.is_active
-        context["can_edit_permit"] = WorkflowAuthorizationService.actor_can_edit_permit(
-            actor=self.request.user,
-            permit=permit,
+        # ----------------------------------------------------------
+        # Workflow
+        # ----------------------------------------------------------
+
+        context["workflow_actions"] = (
+            self.get_available_workflow_actions(permit)
         )
 
+        context["is_currently_valid"] = permit.is_active
+
+        context["can_edit_permit"] = (
+            WorkflowAuthorizationService.actor_can_edit_permit(
+                actor=self.request.user,
+                permit=permit,
+            )
+        )
+
+        # ----------------------------------------------------------
+        # Active work shifts
+        # ----------------------------------------------------------
+        work_shifts = getattr(
+            permit,
+            "prefetched_work_shifts",
+            [],
+        )
+
+        active_shift_roles = getattr(
+            permit.permit_type,
+            "prefetched_active_shift_roles",
+            [],
+        )
+
+        context["work_shifts"] = work_shifts
+        context["has_open_work_shift"] = any(
+            work_shift.status == PermitWorkShift.Status.OPEN
+            for work_shift in work_shifts
+        )
+
+        for work_shift in work_shifts:
+            signoffs = list(work_shift.signoffs.all())
+            work_shift.completed_signoffs_count = sum(
+                signoff.signed_by_id is not None for signoff in signoffs
+            )
+            work_shift.is_ready = not any(
+                signoff.is_required and signoff.signed_by_id is None
+                for signoff in signoffs
+            )
+
+        context["active_shift_roles"] = active_shift_roles
+
+        context["is_active_state"] = (
+            permit.current_step is not None
+            and permit.current_step.state
+            == PermitWorkflowStep.State.ACTIVE
+        )
+
+        # ----------------------------------------------------------
+        # Shift management permissions
+        # ----------------------------------------------------------
+
+        context["can_manage_work_shifts"] = (
+            context["is_active_state"]
+            and PermitWorkShiftService.can_manage_work_shifts(
+                actor=self.request.user,
+                permit=permit,
+            )
+        )
+        context["work_shift_form"] = PermitWorkShiftForm(permit=permit)
+
+        # The POST endpoint repeats this authorization check.  This mapping
+        # only controls which pending signoff buttons are shown.
+        can_sign_role_codes = set()
+        if context["is_active_state"]:
+            for work_shift in work_shifts:
+                for signoff in work_shift.signoffs.all():
+                    if (
+                        work_shift.status != PermitWorkShift.Status.OPEN
+                        or signoff.signed_by_id
+                    ):
+                        continue
+                    if PermitWorkShiftService.can_sign_work_shift(
+                        actor=self.request.user,
+                        permit=permit,
+                        role=signoff.role,
+                    ):
+                        can_sign_role_codes.add(signoff.role.code)
+        context["can_sign_shift_role_codes"] = can_sign_role_codes
+
+
+
         return context
+
 
 
 @login_required
@@ -536,3 +668,157 @@ class PermitWorkflowTransitionView(LoginRequiredMixin, View):
             "permits:permit_detail",
             permit_number=permit.permit_number,
         )
+
+
+class PermitWorkShiftCreateView(LoginRequiredMixin, View):
+
+    def post(self, request, permit_number):
+        permit = get_object_or_404(
+            Permit.objects.select_related(
+                "permit_type",
+                "current_step",
+                "department",
+                "location_tag",
+                "location_tag__unit",
+            ),
+            permit_number=permit_number,
+        )
+
+        form = PermitWorkShiftForm(request.POST, permit=permit)
+
+        if not form.is_valid():
+            messages.error(
+                request,
+                "Invalid work-shift information.",
+            )
+            return redirect(
+                "permits:permit_detail",
+                permit_number=permit.permit_number,
+            )
+
+        try:
+            result = PermitWorkShiftService.create_work_shift(
+                permit_id=permit.pk,
+                actor=request.user,
+                date=form.cleaned_data["date"],
+                shift=form.cleaned_data["shift"],
+                work_leader=form.cleaned_data["work_leader"],
+            )
+
+        except PermissionDenied:
+            messages.error(
+                request,
+                "You are not authorized to create work shifts "
+                "for this permit.",
+            )
+
+        except ValidationError as exc:
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
+
+        else:
+            messages.success(
+                request,
+                (
+                    f"Work shift {result.work_shift.date} / "
+                    f"{result.work_shift.get_shift_display()} was created."
+                ),
+            )
+
+        return redirect(
+            "permits:permit_detail",
+            permit_number=permit.permit_number,
+        )
+
+class PermitWorkShiftSignoffView(LoginRequiredMixin, View):
+
+    def post(self, request, permit_number, work_shift_id, role_code):
+
+        work_shift = get_object_or_404(
+            PermitWorkShift.objects.select_related("permit"),
+            pk=work_shift_id,
+            permit__permit_number=permit_number,
+        )
+
+        form = PermitShiftSignoffForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, "Please confirm the signoff before signing.")
+            return redirect("permits:permit_detail", permit_number=permit_number)
+
+        try:
+            result = PermitWorkShiftService.sign_shift(
+                work_shift_id=work_shift_id,
+                actor=request.user,
+                role_code=role_code,
+            )
+
+        except PermissionDenied:
+            messages.error(
+                request,
+                "You are not authorized to perform this signoff.",
+            )
+
+        except ValidationError as exc:
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
+
+        else:
+            messages.success(
+                request,
+                (
+                    f"{result.signoff.role.name} signoff completed "
+                    f"for {result.signoff.work_shift.get_shift_display()}."
+                ),
+            )
+
+        return redirect(
+            "permits:permit_detail",
+            permit_number=work_shift.permit.permit_number,
+        )
+
+
+class PermitWorkShiftCloseView(LoginRequiredMixin, View):
+    """Permit Office endpoint for closing the current open work shift."""
+
+    def post(self, request, permit_number, work_shift_id):
+        work_shift = get_object_or_404(
+            PermitWorkShift.objects.select_related("permit"),
+            pk=work_shift_id,
+            permit__permit_number=permit_number,
+        )
+
+        try:
+            result = PermitWorkShiftService.close_work_shift(
+                work_shift_id=work_shift.pk,
+                actor=request.user,
+            )
+        except PermissionDenied:
+            messages.error(
+                request,
+                "You are not authorized to close work shifts for this permit.",
+            )
+        except ValidationError as exc:
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
+        else:
+            messages.success(
+                request,
+                (
+                    f"Work shift {result.work_shift.date} / "
+                    f"{result.work_shift.get_shift_display()} was closed."
+                ),
+            )
+
+        return redirect(
+            "permits:permit_detail",
+            permit_number=work_shift.permit.permit_number,
+        )
+
+
+

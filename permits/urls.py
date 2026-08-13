@@ -17,6 +17,8 @@ from permits.views import (
     PermitUpdateView,
 )
 
+from permits.views.permit_detail_views import PermitWorkShiftCloseView, PermitWorkShiftCreateView, PermitWorkShiftSignoffView
+
 
 
 app_name = "permits"
@@ -49,5 +51,8 @@ urlpatterns = [
     path("create/", PermitCreateView.as_view(), name="permit_create"),
     path("<str:permit_number>/workflow/action/", PermitWorkflowTransitionView.as_view(), name="permit_workflow_action",),
     path("<str:permit_number>/edit/", PermitUpdateView.as_view(), name="permit_update",),
+    path("<slug:permit_number>/work-shifts/<int:work_shift_id>/signoff/<str:role_code>/", PermitWorkShiftSignoffView.as_view(), name="permit_shift_signoff",),
+    path("<slug:permit_number>/work-shifts/<int:work_shift_id>/close/", PermitWorkShiftCloseView.as_view(), name="permit_work_shift_close",),
+    path("<slug:permit_number>/work-shifts/create/", PermitWorkShiftCreateView.as_view(), name="permit_work_shift_create",),
     path("<str:permit_number>/", PermitDetailView.as_view(), name="permit_detail"),
 ]
