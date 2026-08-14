@@ -28,6 +28,7 @@ class PermitWorkShift(models.Model):
     shift = models.CharField(max_length=20, choices=Shift.choices,)
 
     work_leader = models.CharField(max_length=45, blank=True, null=True,)
+    worker_count = models.PositiveIntegerField(null=True, blank=True, verbose_name="Number of workers", help_text="Number of workers planned to work during this shift.", )
 
     status = models.CharField(
         max_length=10,

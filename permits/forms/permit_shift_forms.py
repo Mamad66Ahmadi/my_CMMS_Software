@@ -26,6 +26,7 @@ class PermitWorkShiftForm(forms.ModelForm):
             "date",
             "shift",
             "work_leader",
+            "worker_count",
         )
 
         widgets = {
@@ -47,13 +48,35 @@ class PermitWorkShiftForm(forms.ModelForm):
                     "maxlength": 45,
                 }
             ),
+            "worker_count": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "min": 1,
+                    "step": 1,
+                    "placeholder": "e.g. 5",
+                }
+            ),
         }
 
         labels = {
             "date": "Work Date",
             "shift": "Shift",
             "work_leader": "Work Leader",
+            "worker_count": "Number of Workers",
         }
+
+    def clean_worker_count(self):
+        worker_count = self.cleaned_data["worker_count"]
+
+        if worker_count is None:
+            return worker_count
+
+        if worker_count < 1:
+            raise forms.ValidationError(
+                "The number of workers must be at least 1."
+            )
+
+        return worker_count
 
     def clean(self):
         cleaned_data = super().clean()
@@ -110,7 +133,6 @@ class PermitWorkShiftForm(forms.ModelForm):
                 )
 
         return cleaned_data
-
 
 class PermitShiftSignoffForm(forms.Form):
     """

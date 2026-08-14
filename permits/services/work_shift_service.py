@@ -67,7 +67,7 @@ class PermitWorkShiftService:
 
     @classmethod
     @transaction.atomic
-    def create_work_shift(cls, *, permit_id, actor, date, shift, work_leader=None):
+    def create_work_shift(cls, *, permit_id, actor, date, shift, work_leader=None, worker_count=None):
         from permits.models.permit_models import Permit
 
         permit = (
@@ -115,6 +115,7 @@ class PermitWorkShiftService:
             date=date,
             shift=shift,
             work_leader=(work_leader or "").strip() or None,
+            worker_count=worker_count,
             created_by=actor,
         )
         PermitShiftSignoff.objects.bulk_create([

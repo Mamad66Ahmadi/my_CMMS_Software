@@ -384,6 +384,7 @@
                     <th>Date</th>
                     <th>Shift</th>
                     <th>Work Leader</th>
+                    <th>Workers</th>
                     <th>Signoffs</th>
                 </tr>
             </thead>
@@ -403,6 +404,9 @@
                         {% else %}—{% endif %}
                     </td>
                     <td>
+                        <bdi>{{ work_shift.worker_count|default:"—" }}</bdi>
+                    </td>
+                    <td>
                         <div class="signoff-list">
                             {% for signoff in work_shift.signoffs.all %}
                                 {% if signoff.signed_at %}
@@ -417,6 +421,7 @@
                 {% endfor %}
                 {% for _ in work_shifts|padding_range:5 %}
                 <tr>
+                    <td>&nbsp;</td>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>

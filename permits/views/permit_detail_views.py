@@ -692,8 +692,8 @@ class PermitWorkShiftCreateView(LoginRequiredMixin, View):
                 "Invalid work-shift information.",
             )
             return redirect(
-                "permits:permit_detail",
-                permit_number=permit.permit_number,
+                reverse("permits:permit_detail", kwargs={"permit_number": permit.permit_number})
+                + "#work-shifts-panel"
             )
 
         try:
@@ -703,6 +703,7 @@ class PermitWorkShiftCreateView(LoginRequiredMixin, View):
                 date=form.cleaned_data["date"],
                 shift=form.cleaned_data["shift"],
                 work_leader=form.cleaned_data["work_leader"],
+                worker_count=form.cleaned_data["worker_count"],
             )
 
         except PermissionDenied:
@@ -728,9 +729,11 @@ class PermitWorkShiftCreateView(LoginRequiredMixin, View):
             )
 
         return redirect(
-            "permits:permit_detail",
-            permit_number=permit.permit_number,
+            reverse("permits:permit_detail", kwargs={"permit_number": permit.permit_number})
+            + "#work-shifts-panel"
         )
+
+
 
 class PermitWorkShiftSignoffView(LoginRequiredMixin, View):
 
@@ -745,7 +748,10 @@ class PermitWorkShiftSignoffView(LoginRequiredMixin, View):
         form = PermitShiftSignoffForm(request.POST)
         if not form.is_valid():
             messages.error(request, "Please confirm the signoff before signing.")
-            return redirect("permits:permit_detail", permit_number=permit_number)
+            return redirect(
+                reverse("permits:permit_detail", kwargs={"permit_number": permit_number})
+                + "#work-shifts-panel"
+            )
 
         try:
             result = PermitWorkShiftService.sign_shift(
@@ -776,8 +782,11 @@ class PermitWorkShiftSignoffView(LoginRequiredMixin, View):
             )
 
         return redirect(
-            "permits:permit_detail",
-            permit_number=work_shift.permit.permit_number,
+            reverse(
+                "permits:permit_detail",
+                kwargs={"permit_number": work_shift.permit.permit_number},
+            )
+            + "#work-shifts-panel"
         )
 
 
@@ -816,9 +825,11 @@ class PermitWorkShiftCloseView(LoginRequiredMixin, View):
             )
 
         return redirect(
-            "permits:permit_detail",
-            permit_number=work_shift.permit.permit_number,
+            reverse(
+                "permits:permit_detail",
+                kwargs={"permit_number": work_shift.permit.permit_number},
+            )
+            + "#work-shifts-panel"
         )
-
 
 
