@@ -1,0 +1,435 @@
+
+{% load permit_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Permit {{ permit.permit_number }} — Print</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 10pt;
+            color: #1a1a1a;
+            background: #fff;
+        }
+
+        /* ── A4 page shell ── */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 14mm 16mm 14mm;
+        }
+
+        @media screen {
+            body { background: #e8e8e8; }
+            .page {
+                background: #fff;
+                box-shadow: 0 2px 16px rgba(0,0,0,.18);
+                margin: 24px auto;
+            }
+            .print-toolbar {
+                width: 210mm;
+                margin: 0 auto 0;
+                padding: 10px 0;
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+            }
+            .btn-print {
+                padding: 7px 20px;
+                background: #0d6e6e;
+                color: #fff;
+                border: none;
+                border-radius: 5px;
+                font-size: 10pt;
+                cursor: pointer;
+            }
+            .btn-close-tab {
+                padding: 7px 20px;
+                background: #fff;
+                color: #444;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                font-size: 10pt;
+                cursor: pointer;
+            }
+        }
+
+        @media print {
+            .print-toolbar { display: none !important; }
+            body { background: #fff; }
+            .page { margin: 0; padding: 10mm 12mm; box-shadow: none; }
+            @page { size: A4 portrait; margin: 0; }
+        }
+
+        /* ── Header ── */
+        .p-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0d6e6e;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .p-header__title { font-size: 16pt; font-weight: 700; color: #0d6e6e; }
+        .p-header__meta { font-size: 8.5pt; color: #555; text-align: right; line-height: 1.6; }
+
+        .status-pill {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 8pt;
+            font-weight: 600;
+            background: #e0f2f2;
+            color: #0d6e6e;
+            border: 1px solid #0d6e6e;
+        }
+
+        /* ── Validity strip ── */
+        .validity-row {
+            display: flex;
+            gap: 24px;
+            font-size: 8.5pt;
+            color: #444;
+            margin-bottom: 10px;
+            padding: 5px 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .validity-row span { font-weight: 600; color: #1a1a1a; }
+
+        /* ── Section ── */
+        .section { margin-bottom: 10px; }
+        .section-title {
+            font-size: 9pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #0d6e6e;
+            border-bottom: 1px solid #b2dfdf;
+            padding-bottom: 3px;
+            margin-bottom: 6px;
+        }
+
+        /* ── Field grid ── */
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px 12px;
+        }
+        .field-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .field-grid.cols-1 { grid-template-columns: 1fr; }
+
+        .field { display: flex; flex-direction: column; }
+        .field-label { font-size: 7.5pt; color: #777; }
+        .field-value { font-size: 9pt; font-weight: 500; color: #1a1a1a; }
+        .field-value.block {
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+        .full-col { grid-column: 1 / -1; }
+
+        /* ── Hazard / Precaution list ── */
+        .check-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 3px 12px; }
+        .check-list li { font-size: 8.5pt; display: flex; align-items: center; gap: 4px; }
+        .check-list li::before { content: "✓"; color: #0d6e6e; font-weight: 700; }
+        .check-list li.unchecked::before { content: "○"; color: #aaa; }
+
+        /* ── Approvals table ── */
+        table.approvals {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+        }
+        table.approvals th {
+            background: #e0f2f2;
+            color: #0d6e6e;
+            font-weight: 600;
+            padding: 4px 6px;
+            border: 1px solid #b2dfdf;
+            text-align: left;
+        }
+        table.approvals td {
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        /* ── Footer ── */
+        .p-footer {
+            margin-top: 14px;
+            border-top: 1px solid #ccc;
+            padding-top: 6px;
+            font-size: 7.5pt;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signoff-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px 10px;
+            line-height: 1.3;
+        }
+        .signoff-item {
+            white-space: nowrap;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="print-toolbar">
+    <button class="btn-print" onclick="window.print()">🖨 Print</button>
+    <button class="btn-close-tab" onclick="window.close()">✕ Close</button>
+</div>
+
+<div class="page">
+
+    <!-- Header -->
+    <div class="p-header">
+        <div>
+            <div class="p-header__title">{{ permit.permit_number|default:"—" }}</div>
+            {% if permit.permit_type %}<div style="font-size:9pt;color:#555;margin-top:2px;">{{ permit.permit_type.name }}</div>{% endif %}
+            {% if permit.current_step %}
+                <span class="status-pill" style="margin-top:5px;display:inline-block;">{{ permit.current_step.title }}</span>
+            {% endif %}
+        </div>
+        <div class="p-header__meta">
+            Printed: {{ "now"|date:"Y-m-d H:i" }}<br>
+            {% if permit.workflow %}Workflow: {{ permit.workflow.name }}{% if permit.workflow.version %} v{{ permit.workflow.version }}{% endif %}{% endif %}<br>
+            {% if permit.work_order %}Work Order: {{ permit.work_order }}{% endif %}
+        </div>
+    </div>
+
+    <!-- Validity -->
+    <div class="validity-row">
+        <div>Valid From: <span>{{ permit.valid_from|date:"Y-m-d H:i"|default:"—" }}</span></div>
+        <div>Valid To: <span>{{ permit.valid_to|date:"Y-m-d H:i"|default:"—" }}</span></div>
+        <div>Status: <span>{% if is_currently_valid %}Active{% else %}Not Active{% endif %}</span></div>
+    </div>
+
+    <!-- General Information -->
+    <div class="section">
+        <div class="section-title">General Information</div>
+        <div class="field-grid">
+            <div class="field"><span class="field-label">Location / Tag</span><span class="field-value">{{ permit.location_tag|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Unit</span><span class="field-value">{% if permit.location_tag and permit.location_tag.unit %}{{ permit.location_tag.unit.unit_code }}{% else %}—{% endif %}</span></div>
+            <div class="field"><span class="field-label">Department</span><span class="field-value">{{ permit.department|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Work Supervisor</span><span class="field-value">{{ permit.work_supervisor|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Area Authority</span><span class="field-value">{{ permit.designated_area_authority|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Area Supervisor</span><span class="field-value">{{ permit.designated_area_supervisor|default:"—" }}</span></div>
+            <div class="field full-col"><span class="field-label">Scope of Work</span><span class="field-value block">{{ permit.scope_of_work|default:"—" }}</span></div>
+            {% if permit.remarks %}<div class="field full-col"><span class="field-label">Remarks</span><span class="field-value block">{{ permit.remarks }}</span></div>{% endif %}
+        </div>
+    </div>
+
+    <!-- Hazards -->
+    {% if all_hazards %}
+    <div class="section">
+        <div class="section-title">Identified Hazards</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px 10px;">
+            {% for hazard in all_hazards %}
+            <div style="font-size:8.5pt;display:flex;align-items:baseline;gap:4px;
+                {% if hazard.permit_assessment %}
+                    {% if hazard.permit_assessment.is_active %}color:#1a1a1a;{% else %}color:#aaa;text-decoration:line-through;{% endif %}
+                {% else %}color:#bbb;{% endif %}
+            ">
+                <span style="font-weight:700;
+                    {% if hazard.permit_assessment and hazard.permit_assessment.is_active %}color:#0d6e6e;
+                    {% elif hazard.permit_assessment %}color:#c0392b;
+                    {% else %}color:#ccc;{% endif %}
+                ">
+                    {% if hazard.permit_assessment and hazard.permit_assessment.is_active %}✓
+                    {% elif hazard.permit_assessment %}✕
+                    {% else %}–{% endif %}
+                </span>
+                <span>
+                    <bdi>{% if hazard.name %}{{ hazard.name }}{% else %}{{ hazard.description }}{% endif %}</bdi>
+                    {% if hazard.permit_assessment and hazard.permit_assessment.remarks %}
+                        <span style="color:#777;font-style:italic;"> – <bdi>{{ hazard.permit_assessment.remarks }}</bdi></span>
+                    {% endif %}
+                    {% if hazard.permit_assessment %}
+                        <span style="color:#aaa;font-size:7.5pt;">
+                            (<bdi>{{ hazard.permit_assessment.created_by.get_full_name|default:hazard.permit_assessment.created_by.username }}</bdi>{% if hazard.permit_assessment.removed_by %} › <bdi>{{ hazard.permit_assessment.removed_by.get_full_name|default:hazard.permit_assessment.removed_by.username }}</bdi>{% endif %})
+                        </span>
+                    {% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Precautions -->
+    {% if all_precautions %}
+    <div class="section">
+        <div class="section-title">Required Precautions</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px 10px;">
+            {% for precaution in all_precautions %}
+            <div style="font-size:8.5pt;display:flex;align-items:baseline;gap:4px;
+                {% if precaution.permit_assessment %}
+                    {% if precaution.permit_assessment.is_active %}color:#1a1a1a;{% else %}color:#aaa;text-decoration:line-through;{% endif %}
+                {% else %}color:#bbb;{% endif %}
+            ">
+                <span style="font-weight:700;
+                    {% if precaution.permit_assessment and precaution.permit_assessment.is_active %}color:#0d6e6e;
+                    {% elif precaution.permit_assessment %}color:#c0392b;
+                    {% else %}color:#ccc;{% endif %}
+                ">
+                    {% if precaution.permit_assessment and precaution.permit_assessment.is_active %}✓
+                    {% elif precaution.permit_assessment %}✕
+                    {% else %}–{% endif %}
+                </span>
+                <span>
+                    <bdi>{% if precaution.name %}{{ precaution.name }}{% else %}{{ precaution.description }}{% endif %}</bdi>
+                    {% if precaution.permit_assessment and precaution.permit_assessment.remarks %}
+                        <span style="color:#777;font-style:italic;"> – <bdi>{{ precaution.permit_assessment.remarks }}</bdi></span>
+                    {% endif %}
+                    {% if precaution.permit_assessment %}
+                        <span style="color:#aaa;font-size:7.5pt;">
+                            (<bdi>{{ precaution.permit_assessment.created_by.get_full_name|default:precaution.permit_assessment.created_by.username }}</bdi>{% if precaution.permit_assessment.removed_by %} › <bdi>{{ precaution.permit_assessment.removed_by.get_full_name|default:precaution.permit_assessment.removed_by.username }}</bdi>{% endif %})
+                        </span>
+                    {% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- Equipment Preparation -->
+    <div class="section">
+        <div class="section-title">Equipment Preparation</div>
+        <div class="field-grid">
+            <div class="field"><span class="field-label">Mechanical Isolation</span><span class="field-value">{{ permit.get_mechanical_isolation_display|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Depressurized</span><span class="field-value">{{ permit.get_equipment_depressurized_display|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Drained</span><span class="field-value">{{ permit.get_equipment_drained_display|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Purged</span><span class="field-value">{{ permit.get_equipment_purged_display|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Process Isolation</span><span class="field-value">{{ permit.get_process_isolation_display|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Fire Watch Required</span><span class="field-value">{% if permit.fire_watch_present_required %}Yes{% else %}No{% endif %}</span></div>
+            {% if permit.equipment_preparation_notes %}<div class="field full-col"><span class="field-label">Notes</span><span class="field-value block">{{ permit.equipment_preparation_notes }}</span></div>{% endif %}
+        </div>
+    </div>
+
+    <!-- Tools & Materials -->
+    <div class="section">
+        <div class="section-title">Tools, Materials &amp; Vehicle</div>
+        <div class="field-grid">
+            <div class="field"><span class="field-label">Electrical Tools</span><span class="field-value">{{ permit.electrical_tools|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Mechanical Tools</span><span class="field-value">{{ permit.mechanical_tools|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Other Tools</span><span class="field-value">{{ permit.other_tools|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Hazardous Materials</span><span class="field-value">{{ permit.hazardous_materials|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Non-Explosion Proof Equip.</span><span class="field-value">{{ permit.non_explosion_proof_equipment|default:"—" }}</span></div>
+            <div class="field"><span class="field-label">Vehicle Required</span><span class="field-value">{% if permit.vehicle_required %}Yes — {{ permit.vehicle_description|default:"" }}{% else %}No{% endif %}</span></div>
+        </div>
+    </div>
+
+    <!-- Approvals -->
+    <div class="section">
+        <div class="section-title">Approvals</div>
+        <table class="approvals">
+            <thead>
+                <tr>
+                    <th>Role</th>
+                    <th>Approver</th>
+                    <th>Decision</th>
+                    <th>Date</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% with approvals=permit.approvals.all %}
+                {% for approval in approvals|dictsort:"created_at" %}
+                <tr>
+                    <td>{{ approval.role.name|default:"—" }}</td>
+                    <td><bdi>{{ approval.actor.get_full_name|default:approval.actor.username }}</bdi></td>
+                    <td>{{ approval.get_decision_display|default:"—" }}</td>
+                    <td>{{ approval.created_at|date:"Y-m-d H:i"|default:"—" }}</td>
+                    <td><bdi>{{ approval.comment|default:"" }}</bdi></td>
+                </tr>
+                {% endfor %}
+                {% for _ in approvals|padding_range:5 %}
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                {% endfor %}
+                {% endwith %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Work Shifts (read-only) -->
+    <div class="section">
+        <div class="section-title">
+            <i class="bi bi-calendar2-week"></i> Active Work Shifts
+        </div>
+        <table class="approvals">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Shift</th>
+                    <th>Work Leader</th>
+                    <th>Signoffs</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for work_shift in work_shifts %}
+                <tr>
+                    <td>
+                        {% if work_shift.status == "open" %}
+                            <span class="status-dot status-dot--open" title="Open"></span>
+                        {% endif %}
+                        <bdi>{{ work_shift.date|date:"Y-m-d" }}</bdi>
+                    </td>
+                    <td><bdi>{{ work_shift.get_shift_display }}</bdi></td>
+                    <td>
+                        {% if work_shift.work_leader %}
+                            <bdi>{{ work_shift.work_leader }}</bdi>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        <div class="signoff-list">
+                            {% for signoff in work_shift.signoffs.all %}
+                                {% if signoff.signed_at %}
+                                    <span class="signoff-item">✓ <bdi>{{ signoff.role.name }}</bdi> (<bdi>{{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}</bdi>)</span>
+                                {% else %}
+                                    <span class="signoff-item">❌ <bdi>{{ signoff.role.name }}</bdi> (Awaiting)</span>
+                                {% endif %}
+                            {% empty %}—{% endfor %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% for _ in work_shifts|padding_range:5 %}
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-footer">
+        <span>{{ permit.permit_number }} — Confidential / Internal Use Only</span>
+        <span>Generated: {% now "Y-m-d H:i" %}</span>
+    </div>
+
+</div>
+
+</body>
+</html>

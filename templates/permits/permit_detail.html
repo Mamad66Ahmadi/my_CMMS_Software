@@ -67,6 +67,9 @@
                class="btn-permit-action">
                 <i class="bi bi-arrow-left"></i> Back to List
             </a>
+
+
+
         </div>
     </div>
 
@@ -88,6 +91,8 @@
             </span>
         </div>
 
+
+
         <span class="validity-pill {% if is_currently_valid %}validity-pill--valid{% else %}validity-pill--invalid{% endif %}">
             <i class="bi {% if is_currently_valid %}bi-check-circle-fill{% else %}bi-exclamation-circle-fill{% endif %}"></i>
             {% if is_currently_valid %}
@@ -96,6 +101,12 @@
                 Not Active
             {% endif %}
         </span>
+
+        <a href="{% url 'permits:permit_print' permit_number=permit.permit_number %}"
+        target="_blank"
+        class="btn-permit-action">
+            <i class="bi bi-printer"></i> Print
+        </a>
     </div>
     {% if messages %}
         <div class="mt-3">
