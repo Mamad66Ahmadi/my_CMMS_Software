@@ -196,9 +196,7 @@
         <div>
             <div class="p-header__title">{{ permit.permit_number|default:"—" }}</div>
             {% if permit.permit_type %}<div style="font-size:9pt;color:#555;margin-top:2px;">{{ permit.permit_type.name }}</div>{% endif %}
-            {% if permit.current_step %}
-                <span class="status-pill" style="margin-top:5px;display:inline-block;">{{ permit.current_step.title }}</span>
-            {% endif %}
+
         </div>
         <div class="p-header__meta">
             Printed: {{ "now"|date:"Y-m-d H:i" }}<br>
@@ -212,7 +210,13 @@
         <div>Valid From: <span>{{ permit.valid_from|date:"Y-m-d H:i"|default:"—" }}</span></div>
         <div>Valid To: <span>{{ permit.valid_to|date:"Y-m-d H:i"|default:"—" }}</span></div>
         <div>Status: <span>{% if is_currently_valid %}Active{% else %}Not Active{% endif %}</span></div>
+        <div style="margin-left:auto;">
+            {% if permit.current_step %}
+                <span class="status-pill" style="margin-top:-2px;display:inline-block;">{{ permit.current_step.title }}</span>
+            {% endif %}
+        </div>
     </div>
+
 
     <!-- General Information -->
     <div class="section">
@@ -404,7 +408,7 @@
                                 {% if signoff.signed_at %}
                                     <span class="signoff-item">✓ <bdi>{{ signoff.role.name }}</bdi> (<bdi>{{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}</bdi>)</span>
                                 {% else %}
-                                    <span class="signoff-item">❌ <bdi>{{ signoff.role.name }}</bdi> (Awaiting)</span>
+                                    <span class="signoff-item">✕ <bdi>{{ signoff.role.name }}</bdi> (Awaiting)</span>
                                 {% endif %}
                             {% empty %}—{% endfor %}
                         </div>
