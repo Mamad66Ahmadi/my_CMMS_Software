@@ -317,6 +317,8 @@ class WorkflowAuthorizationService:
         today,
         action_label: str = "perform this action",
     ):
+
+
         if not role.required_qualification_id:
             return
 

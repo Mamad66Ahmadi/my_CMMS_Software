@@ -207,17 +207,6 @@ class PermitWorkShiftService:
 
     @staticmethod
     def _ensure_actor_can_sign_work_shift(*, actor, permit, role):
-        """
-        Validate an active-shift signature.
-
-        Shift signoffs are role-based operational acknowledgements, not
-        workflow decisions.  They require an active role assignment for the
-        permit type.  They deliberately do not use workflow qualification,
-        department, or unit scope: those rules govern workflow decisions,
-        while shift acknowledgement follows the role assigned to the logged-in
-        user.  This permits central Check Point and Area Operator roles to
-        sign active shifts across operational departments.
-        """
         if not actor.is_authenticated:
             raise PermissionDenied("Authentication is required.")
         if actor.is_superuser:
@@ -225,19 +214,37 @@ class PermitWorkShiftService:
         if role is None:
             raise PermissionDenied("No role is configured for this shift signoff.")
 
+        permit_unit = permit.location_tag.unit if permit.location_tag else None
+
         assignments = PermitApprovalRoleAssignment.objects.filter(
-            user=actor,
-            role=role,
-            is_active=True,
+            user=actor, role=role, is_active=True,
         ).filter(
             Q(permit_type__isnull=True) | Q(permit_type=permit.permit_type)
         )
 
-        if not assignments.exists():
+        if role.department_scope == role.ScopeRequirement.REQUIRED:
+            assignments = assignments.filter(department=permit.department)
+
+        if role.unit_scope == role.ScopeRequirement.REQUIRED:
+            if permit_unit is None:
+                raise PermissionDenied("Permit has no operational unit.")
+            assignments = assignments.filter(Q(all_units=True) | Q(units=permit_unit))
+
+        final_match = assignments.exists()
+
+        print(
+            f"[AUTH] {actor} | role={role.code} | dept_scope={role.department_scope} "
+            f"unit_scope={role.unit_scope} | permit_dept={permit.department_id} "
+            f"permit_unit={getattr(permit_unit, 'pk', None)} | match={final_match}"
+        )
+
+        if not final_match:
             raise PermissionDenied(
-                f"You do not hold an active '{role.name}' role assignment "
-                "for this permit type."
+                f"You do not hold an active '{role.name}' assignment "
+                f"matching this permit's scope."
             )
+
+
 
     @classmethod
     def _get_permit_office_role(cls):
