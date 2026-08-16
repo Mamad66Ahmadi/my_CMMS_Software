@@ -9,6 +9,7 @@ from django.utils import timezone
 from permits.models.approval_models import PermitApproval
 from permits.models.workflow_models import Decision, PermitWorkflowTransition
 from permits.services.authorization_service import WorkflowAuthorizationService
+from permits.services.closeout_service import PermitCloseoutService
 from permits.services.permit_activation_service import PermitActivationService
 from permits.services.condition_service import WorkflowConditionEvaluator
 
@@ -170,6 +171,12 @@ class PermitWorkflowService:
             setattr(permit, field_name, value)
 
         permit.current_step = transition.to_step
+
+        if entering_active_state:
+            PermitCloseoutService.initialize_closeout_signoffs(
+                permit=permit,
+                actor=actor,
+            )
 
         # --------------------------------------------------------------
         # Immutable audit record

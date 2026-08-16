@@ -18,7 +18,12 @@ from permits.views import (
     PermitPrintView,
 )
 
-from permits.views.permit_detail_views import PermitWorkShiftCloseView, PermitWorkShiftCreateView, PermitWorkShiftSignoffView
+from permits.views.permit_detail_views import (
+    PermitWorkShiftCloseView,
+    PermitWorkShiftCreateView,
+    PermitWorkShiftSignoffView,
+    PermitCloseoutSignoffView
+)
 
 
 
@@ -56,5 +61,6 @@ urlpatterns = [
     path("<slug:permit_number>/work-shifts/<int:work_shift_id>/close/", PermitWorkShiftCloseView.as_view(), name="permit_work_shift_close",),
     path("<slug:permit_number>/work-shifts/create/", PermitWorkShiftCreateView.as_view(), name="permit_work_shift_create",),
     path("<str:permit_number>/print/", PermitPrintView.as_view(), name="permit_print"),
+    path("<str:permit_number>/closeout/<int:closeout_signoff_id>/sign/", PermitCloseoutSignoffView.as_view(), name="permit_closeout_signoff",),
     path("<str:permit_number>/", PermitDetailView.as_view(), name="permit_detail"),
 ]

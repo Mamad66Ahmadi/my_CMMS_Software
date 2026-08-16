@@ -13,6 +13,7 @@ from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView
 
 from equipment.models import LocationTag
+
 from permits.forms import (
     PermitCreateForm,
     PermitShiftSignoffForm,
@@ -20,6 +21,7 @@ from permits.forms import (
     PermitWorkShiftForm,
     PermitWorkflowDecisionForm,
 )
+
 from permits.models import (
     Permit,
     PermitHazard,
@@ -27,20 +29,49 @@ from permits.models import (
     PermitWorkflowTransition,
     PermitApproval,
 )
+
 from permits.models.workflow_models import PermitWorkflowStep
-from permits.services.authorization_service import WorkflowAuthorizationService
-from permits.services.condition_service import WorkflowConditionEvaluator
+
+from permits.models.permit_base_models import (
+    Hazard,
+    Precaution,
+)
+
+from permits.models.permit_shift_models import (
+    PermitShiftSignoff,
+    PermitTypeActiveShiftRole,
+    PermitWorkShift,
+)
+
+from permits.models.permit_closeout_models import (
+    PermitCloseoutSignoff,
+)
+
+from permits.services.authorization_service import (
+    WorkflowAuthorizationService,
+)
+
+from permits.services.condition_service import (
+    WorkflowConditionEvaluator,
+)
+
 from permits.services.workflow_service import (
     PermitWorkflowService,
     WorkflowTransitionError,
 )
-from permits.models.permit_base_models import Hazard, Precaution
 
-from permits.services.work_shift_service import PermitWorkShiftService
-from permits.models.permit_shift_models import PermitShiftSignoff, PermitTypeActiveShiftRole, PermitWorkShift
+from permits.services.work_shift_service import (
+    PermitWorkShiftService,
+)
 
+from permits.services.closeout_service import (
+    PermitCloseoutService
+)
 
-# ---------------- Detail View ----------------
+# =============================================================================
+# Permit Detail View
+# =============================================================================
+
 class PermitDetailView(LoginRequiredMixin, DetailView):
     model = Permit
     template_name = "permits/permit_detail.html"
@@ -49,6 +80,11 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
     slug_url_kwarg = "permit_number"
 
     def get_queryset(self):
+
+        # ----------------------------------------------------------
+        # Work shifts
+        # ----------------------------------------------------------
+
         work_shift_queryset = (
             PermitWorkShift.objects
             .select_related(
@@ -70,10 +106,33 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             .order_by("date", "shift")
         )
 
+        # ----------------------------------------------------------
+        # Active shift roles
+        # ----------------------------------------------------------
+
         active_shift_role_queryset = (
             PermitTypeActiveShiftRole.objects
             .select_related("role")
             .order_by("sequence", "id")
+        )
+
+        # ----------------------------------------------------------
+        # Permit close-out signoffs
+        # ----------------------------------------------------------
+
+        closeout_signoff_queryset = (
+            PermitCloseoutSignoff.objects
+            .select_related(
+                "closeout_item",
+                "closeout_item__role",
+                "signed_by",
+                "created_by",
+            )
+            .order_by(
+                "closeout_item__display_order",
+                "closeout_item__code",
+                "pk",
+            )
         )
 
         return (
@@ -97,6 +156,11 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                 "current_step__editable_role__required_qualification",
             )
             .prefetch_related(
+
+                # ------------------------------------------------------
+                # Hazards
+                # ------------------------------------------------------
+
                 Prefetch(
                     "hazard_assessments",
                     queryset=(
@@ -106,6 +170,10 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     ),
                     to_attr="active_hazard_assessments",
                 ),
+
+                # ------------------------------------------------------
+                # Precautions
+                # ------------------------------------------------------
 
                 Prefetch(
                     "precaution_requirements",
@@ -117,7 +185,15 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     to_attr="active_precaution_requirements",
                 ),
 
+                # ------------------------------------------------------
+                # Continuations
+                # ------------------------------------------------------
+
                 "continuations",
+
+                # ------------------------------------------------------
+                # Workflow approvals
+                # ------------------------------------------------------
 
                 Prefetch(
                     "approvals",
@@ -132,19 +208,42 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     ),
                 ),
 
+                # ------------------------------------------------------
+                # Work shifts
+                # ------------------------------------------------------
+
                 Prefetch(
                     "work_shifts",
                     queryset=work_shift_queryset,
                     to_attr="prefetched_work_shifts",
                 ),
 
+                # ------------------------------------------------------
+                # Active work-shift roles
+                # ------------------------------------------------------
+
                 Prefetch(
                     "permit_type__active_shift_roles",
                     queryset=active_shift_role_queryset,
                     to_attr="prefetched_active_shift_roles",
                 ),
+
+                # ------------------------------------------------------
+                # Permit close-out checklist
+                # ------------------------------------------------------
+
+                Prefetch(
+                    "closeout_signoffs",
+                    queryset=closeout_signoff_queryset,
+                    to_attr="prefetched_closeout_signoffs",
+                ),
             )
         )
+
+    # =========================================================================
+    # Workflow Actions
+    # =========================================================================
+
     def get_available_workflow_actions(self, permit):
         """
         Return workflow transitions that the current user is authorized
@@ -217,6 +316,11 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             )
 
         return available_actions
+
+    # =========================================================================
+    # Context
+    # =========================================================================
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         permit = self.object
@@ -280,8 +384,19 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         )
 
         # ----------------------------------------------------------
+        # Active workflow state
+        # ----------------------------------------------------------
+
+        context["is_active_state"] = (
+            permit.current_step is not None
+            and permit.current_step.state
+            == PermitWorkflowStep.State.ACTIVE
+        )
+
+        # ----------------------------------------------------------
         # Active work shifts
         # ----------------------------------------------------------
+
         work_shifts = getattr(
             permit,
             "prefetched_work_shifts",
@@ -295,6 +410,8 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         )
 
         context["work_shifts"] = work_shifts
+        context["active_shift_roles"] = active_shift_roles
+
         context["has_open_work_shift"] = any(
             work_shift.status == PermitWorkShift.Status.OPEN
             for work_shift in work_shifts
@@ -302,21 +419,17 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
 
         for work_shift in work_shifts:
             signoffs = list(work_shift.signoffs.all())
+
             work_shift.completed_signoffs_count = sum(
-                signoff.signed_by_id is not None for signoff in signoffs
-            )
-            work_shift.is_ready = not any(
-                signoff.is_required and signoff.signed_by_id is None
+                signoff.signed_by_id is not None
                 for signoff in signoffs
             )
 
-        context["active_shift_roles"] = active_shift_roles
-
-        context["is_active_state"] = (
-            permit.current_step is not None
-            and permit.current_step.state
-            == PermitWorkflowStep.State.ACTIVE
-        )
+            work_shift.is_ready = not any(
+                signoff.is_required
+                and signoff.signed_by_id is None
+                for signoff in signoffs
+            )
 
         # ----------------------------------------------------------
         # Shift management permissions
@@ -329,31 +442,86 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                 permit=permit,
             )
         )
-        context["work_shift_form"] = PermitWorkShiftForm(permit=permit)
 
-        # The POST endpoint repeats this authorization check.  This mapping
-        # only controls which pending signoff buttons are shown.
+        context["work_shift_form"] = PermitWorkShiftForm(
+            permit=permit
+        )
+
+        # ----------------------------------------------------------
+        # Work-shift signoff permissions
+        # ----------------------------------------------------------
+
         can_sign_role_codes = set()
+
         if context["is_active_state"]:
             for work_shift in work_shifts:
                 for signoff in work_shift.signoffs.all():
+
                     if (
-                        work_shift.status != PermitWorkShift.Status.OPEN
+                        work_shift.status
+                        != PermitWorkShift.Status.OPEN
                         or signoff.signed_by_id
                     ):
                         continue
+
                     if PermitWorkShiftService.can_sign_work_shift(
                         actor=self.request.user,
                         permit=permit,
                         role=signoff.role,
                     ):
-                        can_sign_role_codes.add(signoff.role.code)
-        context["can_sign_shift_role_codes"] = can_sign_role_codes
+                        can_sign_role_codes.add(
+                            signoff.role.code
+                        )
 
+        context["can_sign_shift_role_codes"] = (
+            can_sign_role_codes
+        )
 
+        # ----------------------------------------------------------
+        # Permit close-out
+        # ----------------------------------------------------------
+
+        closeout_signoffs = getattr(
+            permit,
+            "prefetched_closeout_signoffs",
+            [],
+        )
+
+        for signoff in closeout_signoffs:
+            signoff.is_signed = (
+                signoff.signed_by_id is not None
+            )
+
+            signoff.is_pending = (
+                signoff.signed_by_id is None
+            )
+
+        context["closeout_signoffs"] = closeout_signoffs
+
+        context["has_closeout_items"] = bool(
+            closeout_signoffs
+        )
+
+        context["closeout_total_count"] = len(
+            closeout_signoffs
+        )
+
+        context["closeout_completed_count"] = sum(
+            signoff.signed_by_id is not None
+            for signoff in closeout_signoffs
+        )
+
+        context["closeout_pending_count"] = (
+            context["closeout_total_count"]
+            - context["closeout_completed_count"]
+        )
+
+        context["closeout_is_complete"] = (
+            bool(closeout_signoffs)
+            and context["closeout_pending_count"] == 0
+        )
 
         return context
-
 
 
 @login_required
@@ -830,6 +998,73 @@ class PermitWorkShiftCloseView(LoginRequiredMixin, View):
                 kwargs={"permit_number": work_shift.permit.permit_number},
             )
             + "#work-shifts-panel"
+        )
+
+class PermitCloseoutSignoffView(LoginRequiredMixin, View):
+    """
+    Signs one permit close-out requirement.
+
+    The responsible role is determined from the stored
+    PermitCloseoutItem associated with the sign-off.
+
+    The browser never supplies the role.
+    """
+
+    def post(
+        self,
+        request,
+        permit_number,
+        closeout_signoff_id,
+    ):
+        signoff = get_object_or_404(
+            PermitCloseoutSignoff.objects.select_related(
+                "permit",
+                "closeout_item",
+                "closeout_item__role",
+            ),
+            pk=closeout_signoff_id,
+            permit__permit_number=permit_number,
+        )
+
+        try:
+            result = PermitCloseoutService.sign_closeout(
+                signoff_id=signoff.pk,
+                actor=request.user,
+            )
+
+        except PermissionDenied:
+            messages.error(
+                request,
+                "You are not authorized to perform this close-out signoff.",
+            )
+
+        except ValidationError as exc:
+            messages.error(
+                request,
+                (
+                    exc.messages[0]
+                    if hasattr(exc, "messages")
+                    else str(exc)
+                ),
+            )
+
+        else:
+            messages.success(
+                request,
+                (
+                    f"{result.signoff.closeout_item.name} "
+                    f"signoff completed."
+                ),
+            )
+
+        return redirect(
+            reverse(
+                "permits:permit_detail",
+                kwargs={
+                    "permit_number": signoff.permit.permit_number,
+                },
+            )
+            + "#permit-closeout-panel"
         )
 
 

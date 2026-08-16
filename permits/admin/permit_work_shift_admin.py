@@ -47,6 +47,8 @@ class PermitWorkShiftAdmin(admin.ModelAdmin):
         "date",
         "shift",
         "work_leader",
+        "worker_count",
+        "status",
         "created_by",
         "created_at",
         "signoff_status",
@@ -55,6 +57,7 @@ class PermitWorkShiftAdmin(admin.ModelAdmin):
     list_filter = (
         "shift",
         "date",
+        "status",
     )
 
     search_fields = (
@@ -68,16 +71,21 @@ class PermitWorkShiftAdmin(admin.ModelAdmin):
     autocomplete_fields = (
         "permit",
         "created_by",
+        "closed_by",
     )
 
     list_select_related = (
         "permit",
         "created_by",
+        "closed_by",
     )
 
     readonly_fields = (
         "created_at",
         "created_by",
+        "status",
+        "closed_at",
+        "closed_by",
     )
 
     ordering = (
@@ -94,6 +102,21 @@ class PermitWorkShiftAdmin(admin.ModelAdmin):
                     "date",
                     "shift",
                     "work_leader",
+                    "worker_count",
+                ),
+            },
+        ),
+        (
+            "Status",
+            {
+                "fields": (
+                    "status",
+                    "closed_at",
+                    "closed_by",
+                ),
+                "description": (
+                    "Work shifts are opened and closed through the shift "
+                    "workflow; these fields are read-only in admin."
                 ),
             },
         ),

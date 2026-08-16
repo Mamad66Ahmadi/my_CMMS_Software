@@ -1,0 +1,565 @@
+{% load static %}
+{% load to_jalali %}
+
+<!-- =================================================================
+     Permit Close-out Panel
+     Styled consistently with the Work Shift panel.
+     ================================================================= -->
+<div class="wsp-scope">
+
+    <div class="detail-panel work-shift-panel mt-4" id="closeout-panel">
+
+        <!-- =========================================================
+             Header
+             ========================================================= -->
+        <div class="detail-panel__header d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+            <div>
+                <i class="bi bi-clipboard-check"></i>
+                Permit Close-out
+            </div>
+
+            {% if is_active_state %}
+
+                {% if closeout_signoffs %}
+
+                    {% with total=closeout_signoffs|length %}
+
+                        <span class="badge rounded-pill text-bg-primary px-3 py-2">
+                            <i class="bi bi-list-check me-1"></i>
+                            {{ total }} Requirement{{ total|pluralize }}
+                        </span>
+
+                    {% endwith %}
+
+                {% else %}
+
+                    <span class="badge rounded-pill text-bg-secondary px-3 py-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        No close-out requirements
+                    </span>
+
+                {% endif %}
+
+            {% else %}
+
+                <span class="badge rounded-pill text-bg-secondary persian-text px-3 py-2">
+                    <i class="bi bi-pause-circle me-1"></i>
+                    <bdi>Permit is not active — close-out unavailable</bdi>
+                </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <!-- =========================================================
+             Body
+             ========================================================= -->
+        <div class="detail-panel__body">
+
+            {% if is_active_state %}
+
+                {% if closeout_signoffs %}
+
+                    <!-- ============================================
+                         Close-out Table
+                         ============================================ -->
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle mb-0 work-shift-table closeout-table">
+
+                            <thead class="table-light">
+                                <tr>
+                                    <!-- Wider requirement column -->
+                                    <th class="closeout-requirement-column persian-text">
+                                        <bdi>Close-out Requirement</bdi>
+                                    </th>
+
+                                    <!-- Everything related to signoff -->
+                                    <th class="closeout-signoff-column persian-text">
+                                        <bdi>Sign-off</bdi>
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for signoff in closeout_signoffs %}
+
+                                    <tr class="
+                                        closeout-row
+                                        {% if signoff.signed_at %}
+                                            closeout-row--signed
+                                        {% else %}
+                                            closeout-row--pending
+                                        {% endif %}
+                                    ">
+
+                                        <!-- =================================================
+                                             CLOSE-OUT REQUIREMENT
+                                             ================================================= -->
+                                        <td class="closeout-requirement-cell">
+
+                                            <div class="closeout-requirement">
+
+
+
+                                                <div class="closeout-requirement__name persian-text">
+                                                    <bdi>
+                                                        {{ signoff.closeout_item.name }}
+                                                    </bdi>
+                                                </div>
+
+                                                {% if signoff.closeout_item.description %}
+                                                    <div class="closeout-requirement__description persian-text">
+                                                        <bdi>
+                                                            {{ signoff.closeout_item.description }}
+                                                        </bdi>
+                                                    </div>
+                                                {% endif %}
+
+                                            </div>
+
+                                        </td>
+
+
+                                        <!-- =================================================
+                                             SIGN-OFF INFORMATION
+                                             Responsible role + status + signer + time
+                                             + sign button when applicable
+                                             ================================================= -->
+                                        <td class="closeout-signoff-cell">
+
+                                            <div class="closeout-signoff">
+
+                                                <!-- Responsible Role -->
+                                                <div class="closeout-signoff__role">
+
+                                                    <i class="bi bi-person-badge me-1"></i>
+
+
+                                                </div>
+
+
+                                                {% if signoff.signed_at %}
+
+                                                    <!-- Signed -->
+                                                    <div class="closeout-signoff__status">
+
+                                                        <span class="signoff-chip signoff-chip--signed persian-text">
+
+                                                            <i class="bi bi-check-circle-fill signoff-chip__icon"></i>
+
+                                                            <span class="signoff-chip__body">
+
+                                                                <span class="signoff-chip__role">
+                                                                    <bdi>Signed</bdi>
+                                                                </span>
+
+                                                                <span class="signoff-chip__value">
+                                                                    <bdi>
+                                                                        {{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}
+                                                                    </bdi>
+                                                                </span>
+
+                                                            </span>
+
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    <!-- Signed time -->
+                                                    <div class="closeout-signoff__time">
+
+                                                        <i class="bi bi-clock me-1"></i>
+
+                                                        <span class="persian-text">
+                                                            <bdi>
+                                                                {{ signoff.signed_at|date:"Y-m-d H:i" }}
+                                                                {% if signoff.signed_at %}
+                                                                    <span class="jalali-time">
+                                                                        ({{ signoff.signed_at|to_jalali:"%Y/%m/%d" }})
+                                                                    </span>
+                                                                {% endif %}
+                                                            </bdi>
+                                                        </span>
+
+                                                    </div>
+
+
+                                                {% else %}
+
+                                                    <!-- Pending -->
+                                                    <div class="closeout-signoff__status">
+
+                                                        <span class="signoff-chip signoff-chip--pending persian-text">
+
+                                                            <i class="bi bi-hourglass-split signoff-chip__icon"></i>
+
+                                                            <span class="signoff-chip__body">
+
+                                                                <span class="signoff-chip__role">
+                                                                    <bdi>Awaiting Signature</bdi>
+                                                                </span>
+
+                                                                <span class="signoff-chip__value">
+                                                                    <bdi>
+                                                                        {{ signoff.closeout_item.role.name }}
+                                                                    </bdi>
+                                                                </span>
+
+                                                            </span>
+
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    <!-- Sign button -->
+                                                    {% if signoff.closeout_item.role.code in can_sign_closeout_role_codes %}
+
+                                                        <form
+                                                            method="post"
+                                                            action="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number signoff_id=signoff.pk %}"
+                                                            class="closeout-signoff__action"
+                                                        >
+
+                                                            {% csrf_token %}
+
+                                                            <input
+                                                                type="hidden"
+                                                                name="confirm"
+                                                                value="on"
+                                                            >
+
+                                                            <button
+                                                                type="submit"
+                                                                class="btn btn-sm btn-shift-action btn-shift-action--sign persian-text"
+                                                            >
+                                                                <i class="bi bi-pencil-square me-1"></i>
+                                                                <bdi>
+                                                                    Sign — {{ signoff.closeout_item.role.name }}
+                                                                </bdi>
+                                                            </button>
+
+                                                        </form>
+
+                                                    {% endif %}
+
+                                                {% endif %}
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                {% else %}
+
+                    <!-- ============================================
+                         No close-out requirements
+                         ============================================ -->
+                    <div class="text-center py-5 persian-text">
+
+                        <div class="mb-3">
+                            <i class="bi bi-clipboard-x fs-1 text-muted"></i>
+                        </div>
+
+                        <h6 class="text-muted">
+                            <bdi>No close-out requirements have been configured.</bdi>
+                        </h6>
+
+                        <p class="text-muted small mb-0">
+                            <bdi>
+                                No active close-out items were found for this permit.
+                            </bdi>
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+            {% else %}
+
+                <!-- ============================================
+                     Inactive state
+                     ============================================ -->
+                <div class="alert alert-secondary mb-0 persian-text">
+
+                    <i class="bi bi-lock-fill me-2"></i>
+
+                    <bdi>
+                        Close-out sign-offs are available only while the
+                        permit is in the <strong>ACTIVE</strong> workflow state.
+                    </bdi>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================================
+     Scoped styles
+     Reuses the Work Shift panel's typography and general visual language.
+     ===================================================================== -->
+<style>
+
+    /* =========================================================
+       Close-out table layout
+       ========================================================= */
+
+    .closeout-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    /*
+     * The requirement gets substantially more horizontal space.
+     * This changes WIDTH only — not font size.
+     */
+    .closeout-requirement-column {
+        width: 62%;
+    }
+
+    .closeout-signoff-column {
+        width: 38%;
+    }
+
+
+    /* =========================================================
+       Close-out rows
+       ========================================================= */
+
+    .closeout-table > tbody > tr.closeout-row--signed {
+        background-color: var(--wsp-success-bg-soft);
+        border-left: 3px solid var(--wsp-success);
+    }
+
+    .closeout-table > tbody > tr.closeout-row--signed:hover {
+        background-color: var(--wsp-success-bg-soft);
+    }
+
+    .closeout-table > tbody > tr.closeout-row--signed td {
+        color: #000;
+    }
+
+
+    .closeout-table > tbody > tr.closeout-row--pending {
+        background-color: var(--wsp-neutral-bg);
+        border-left: 3px solid var(--wsp-neutral);
+    }
+
+    .closeout-table > tbody > tr.closeout-row--pending:hover {
+        background-color: var(--wsp-neutral-bg-hover);
+    }
+
+
+    /* =========================================================
+       Requirement
+       ========================================================= */
+
+    .closeout-requirement-cell {
+        vertical-align: middle;
+        padding: 1rem 1.25rem !important;
+    }
+
+    .closeout-requirement {
+        width: 100%;
+    }
+
+    .closeout-requirement__code {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        font-size: 0.62rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+
+        color: var(--wsp-text-secondary);
+
+        margin-bottom: 0.3rem;
+    }
+
+    .closeout-requirement__name {
+        font-weight: 600;
+        line-height: 1.45;
+
+        /*
+         * Keep the existing normal text size.
+         * The requirement looks larger because the column is wider.
+         */
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .closeout-requirement__description {
+        margin-top: 0.35rem;
+
+        font-size: 0.8125rem;
+        line-height: 1.45;
+
+        color: var(--wsp-text-secondary);
+    }
+
+
+    /* =========================================================
+       Requirement status dot
+       ========================================================= */
+
+    .status-dot--signed {
+        width: 6px;
+        height: 6px;
+
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+
+        background-color: var(--wsp-success);
+
+        box-shadow:
+            0 0 0 3px var(--wsp-success-bg);
+    }
+
+    .status-dot--pending {
+        width: 6px;
+        height: 6px;
+
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+
+        background-color: var(--wsp-neutral-text);
+
+        box-shadow:
+            0 0 0 3px var(--wsp-neutral-bg-soft);
+    }
+
+
+    /* =========================================================
+       Sign-off column
+       ========================================================= */
+
+    .closeout-signoff-cell {
+        vertical-align: middle;
+        padding: 0.75rem 1rem !important;
+    }
+
+    .closeout-signoff {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+
+    /* Responsible role */
+
+    .closeout-signoff__role {
+        display: flex;
+        align-items: center;
+
+        color: var(--wsp-text-secondary);
+
+        font-size: 0.8125rem;
+        font-weight: 600;
+    }
+
+    .closeout-signoff__role i {
+        color: var(--wsp-primary);
+    }
+
+
+    /* Status */
+
+    .closeout-signoff__status {
+        display: flex;
+        align-items: center;
+    }
+
+
+    /* Signed time */
+
+    .closeout-signoff__time {
+        display: flex;
+        align-items: center;
+
+        color: var(--wsp-text-secondary);
+
+        font-size: 0.75rem;
+    }
+
+    .closeout-signoff__time i {
+        color: var(--wsp-success);
+    }
+
+    .closeout-signoff__time .jalali-time {
+        opacity: 0.75;
+    }
+
+
+    /* Action button stays INSIDE sign-off column */
+
+    .closeout-signoff__action {
+        margin-top: 0.1rem;
+    }
+
+
+    /* =========================================================
+       Responsive
+       ========================================================= */
+
+    @media (max-width: 768px) {
+
+        .closeout-requirement-column {
+            width: 55%;
+        }
+
+        .closeout-signoff-column {
+            width: 45%;
+        }
+
+        .closeout-requirement-cell {
+            padding: 0.75rem !important;
+        }
+
+        .closeout-signoff-cell {
+            padding: 0.75rem !important;
+        }
+
+    }
+
+
+    @media (max-width: 576px) {
+
+        .closeout-table {
+            table-layout: auto;
+        }
+
+        .closeout-requirement-column,
+        .closeout-signoff-column {
+            width: auto;
+        }
+
+    }
+
+</style>

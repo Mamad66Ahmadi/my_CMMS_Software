@@ -3,7 +3,10 @@ from django.contrib import admin
 
 from permits.admin.base_admin import AUDIT_FIELDSET, TimeStampedAdmin
 from permits.models.approval_models import PermitApprovalRoleChoices
-from permits.models.workflow_models import PermitWorkflowTransition
+from permits.models.workflow_models import (
+    PermitWorkflowCondition,
+    PermitWorkflowTransition,
+)
 
 
 @admin.register(PermitApprovalRoleChoices)
@@ -76,8 +79,22 @@ class PermitApprovalRoleChoicesAdmin(TimeStampedAdmin):
     )
 
 
+class PermitWorkflowConditionInline(admin.TabularInline):
+    model = PermitWorkflowCondition
+    extra = 1
+    fields = (
+        "operand",
+        "field_path",
+        "operator",
+        "expected_value",
+        "description",
+    )
+
+
 @admin.register(PermitWorkflowTransition)
 class PermitWorkflowTransitionAdmin(TimeStampedAdmin):
+    inlines = (PermitWorkflowConditionInline,)
+
     list_display = (
         "workflow",
         "from_step",

@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from permits.admin.base_admin import TimeStampedAdmin
+from permits.admin.base_admin import AUDIT_FIELDS, AUDIT_FIELDSET, TimeStampedAdmin
 from permits.models.permit_base_models import (
     FireGasSystem,
     Hazard,
@@ -11,22 +11,6 @@ from permits.models.permit_base_models import (
     PermitType,
     Precaution,
     ShiftType,
-)
-
-
-AUDIT_FIELDS = (
-    "created_at",
-    "created_by",
-    "modified_at",
-    "modified_by",
-)
-
-AUDIT_FIELDSET = (
-    "Audit Information",
-    {
-        "fields": AUDIT_FIELDS,
-        "classes": ("collapse",),
-    },
 )
 
 

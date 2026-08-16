@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 
 
-from permits.models import BaseLookupModel,PermitApprovalRoleChoices,Permit
+from permits.models import BaseLookupModel
 
 
 # =============================================================================
@@ -23,7 +23,7 @@ class PermitCloseoutItem(BaseLookupModel):
     """
 
     role = models.ForeignKey(
-        PermitApprovalRoleChoices,
+        "PermitApprovalRoleChoices",
         on_delete=models.PROTECT,
         related_name="closeout_items",
     )
@@ -50,9 +50,9 @@ class PermitCloseoutSignoff(models.Model):
     Its signature fields can only be updated while the permit remains there.
     """
 
-    permit = models.ForeignKey(Permit, on_delete=models.CASCADE, related_name="closeout_signoffs",)
+    permit = models.ForeignKey("Permit", on_delete=models.CASCADE, related_name="closeout_signoffs",)
 
-    closeout_item = models.ForeignKey(PermitCloseoutItem, on_delete=models.PROTECT, related_name="permit_signoffs",)
+    closeout_item = models.ForeignKey("PermitCloseoutItem", on_delete=models.PROTECT, related_name="permit_signoffs",)
 
     signed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="permit_closeout_signoffs",)
 
@@ -95,21 +95,6 @@ class PermitCloseoutSignoff(models.Model):
     def clean(self):
         super().clean()
 
-        if not self.permit_id:
-            return
-
-        current_step = self.permit.current_step
-
-        # Rename `is_closeout_step` if you adopt another workflow-step field name.
-        if not current_step or current_step.state != current_step.State.ACTIVE:
-            raise ValidationError(
-                {
-                    "permit": (
-                        "Close-out sign-off data may only be entered while the "
-                        "permit is at its designated close-out step."
-                    )
-                }
-            )
 
         if self.signed_at and not self.signed_by_id:
             raise ValidationError(
@@ -120,9 +105,15 @@ class PermitCloseoutSignoff(models.Model):
                 }
             )
 
+        if self.signed_by_id and not self.signed_at:
+            raise ValidationError(
+                {
+                    "signed_at": (
+                        "A sign-off timestamp is required when a signer is set."
+                    )
+                }
+            )
 
     def save(self, *args, **kwargs):
-        if self.signed_by_id and not self.signed_at:
-            self.signed_at = timezone.now()
         self.full_clean()
         return super().save(*args, **kwargs)

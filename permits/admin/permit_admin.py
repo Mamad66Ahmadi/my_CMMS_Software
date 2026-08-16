@@ -164,7 +164,11 @@ class PermitAdmin(admin.ModelAdmin):
     raw_id_fields = ("related_permits",)
 
     # Inlines for M2M associations containing audit statuses
-    inlines = [PermitHazardInline, PermitPrecautionInline]
+    inlines = [
+        PermitHazardInline,
+        PermitPrecautionInline,
+        PermitCloseoutSignoffInline,
+    ]
 
     readonly_fields = (
         # Audit Metadata
@@ -329,20 +333,25 @@ class PermitAdmin(admin.ModelAdmin):
         instances = formset.save(commit=False)
 
         for obj in formset.deleted_objects:
-            obj.deactivate(user=request.user)
+            if hasattr(obj, "deactivate"):
+                obj.deactivate(user=request.user)
+            else:
+                obj.delete()
 
         for instance in instances:
-            if not instance.pk:
+            if hasattr(instance, "created_by") and not instance.pk:
                 instance.created_by = request.user
 
-            instance.modified_by = request.user
+            if hasattr(instance, "modified_by"):
+                instance.modified_by = request.user
 
-            if instance.is_active:
-                instance.removed_by = None
-                instance.removed_at = None
-            elif not instance.removed_by_id or not instance.removed_at:
-                instance.removed_by = request.user
-                instance.removed_at = timezone.now()
+            if hasattr(instance, "is_active"):
+                if instance.is_active:
+                    instance.removed_by = None
+                    instance.removed_at = None
+                elif not instance.removed_by_id or not instance.removed_at:
+                    instance.removed_by = request.user
+                    instance.removed_at = timezone.now()
 
             instance.save()
 
