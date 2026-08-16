@@ -5,6 +5,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from permits.models.permit_models import Permit, PermitHazard, PermitPrecaution
+from permits.models import PermitCloseoutSignoff
+
 
 
 class PermitHazardInline(admin.TabularInline):
@@ -98,6 +100,22 @@ class PermitPrecautionInline(admin.TabularInline):
 
         super().save_model(request, obj, form, change)
 
+
+
+
+class PermitCloseoutSignoffInline(admin.TabularInline):
+    model = PermitCloseoutSignoff
+    extra = 0
+    verbose_name = "Close-out Sign-off"
+    verbose_name_plural = "Close-out Sign-offs"
+    classes = ("collapse",)
+    autocomplete_fields = ["closeout_item", "signed_by"]
+    fields = (
+        "closeout_item",
+        "signed_by",
+        "signed_at",
+        "remarks",
+    )
 
 @admin.register(Permit)
 class PermitAdmin(admin.ModelAdmin):

@@ -204,3 +204,5 @@ class EquipmentStatus(models.TextChoices):
 class DurationUnit(models.TextChoices):
     SHIFT = "SHIFT", "Shift(s)"
     DAY = "DAY", "Day(s)"
+
+

@@ -10,8 +10,9 @@ from django.utils import timezone
 from accounts.models import Department
 from equipment.models.equipment_models import LocationTag
 from work_orders.models.wo_models import WorkOrder
+
 from permits.models.workflow_models import PermitWorkflow, PermitWorkflowStep
-from permits.models.permit_base_models import (
+from permits.models import (
     PermitType,
     Hazard,
     Precaution,
@@ -155,6 +156,17 @@ class Permit(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_permits",)
     modified_at = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="modified_permits",)
+
+    # ------------------------------------------------------------------
+    # Permit Close-out (between job completion and closed)
+    # ------------------------------------------------------------------
+    closeout_items = models.ManyToManyField(
+        "PermitCloseoutItem",
+        through="PermitCloseoutSignoff",
+        blank=True,
+        related_name="permits",
+    )
+
 
 
     class Meta:
@@ -313,6 +325,9 @@ class Permit(models.Model):
         Calculates if the permit is live/active based on dates and terminal/start step contexts.
         (Adjust this criteria depending on whether you want an explicit step checked)
         """
+        if self.valid_from is None or self.valid_to is None:
+            return False
+
         now = timezone.now()
         is_in_date_range = self.valid_from <= now <= self.valid_to
         
@@ -374,6 +389,7 @@ class PermitHazard(models.Model):
         on_delete=models.PROTECT,
         related_name="%(app_label)s_%(class)s_removed",
     )
+
 
     class Meta:
         ordering = ["hazard__display_order", "hazard__code"]
