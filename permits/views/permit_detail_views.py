@@ -521,6 +521,40 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             and context["closeout_pending_count"] == 0
         )
 
+
+        # ----------------------------------------------------------
+        # Close-out signoff permissions
+        # ----------------------------------------------------------
+
+        can_sign_closeout_role_codes = set()
+
+        if context["is_active_state"]:
+
+            for signoff in closeout_signoffs:
+
+                # Already signed
+                if signoff.signed_by_id:
+                    continue
+
+                role = signoff.closeout_item.role
+
+                # No role configured
+                if role is None:
+                    continue
+
+                if WorkflowAuthorizationService.actor_has_role_for_permit(
+                    actor=self.request.user,
+                    permit=permit,
+                    role=role,
+                ):
+                    can_sign_closeout_role_codes.add(
+                        role.code
+                    )
+
+        context["can_sign_closeout_role_codes"] = (
+            can_sign_closeout_role_codes
+        )
+
         return context
 
 

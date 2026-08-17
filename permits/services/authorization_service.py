@@ -138,158 +138,66 @@ class WorkflowAuthorizationService:
             return
 
         if role is None:
-            raise PermissionDenied(
-                f"No workflow role is configured to {action_label}."
-            )
+            raise PermissionDenied(f"No workflow role is configured to {action_label}.")
 
         today = timezone.localdate()
 
-        # ---------------------------------------------------------
-        # 1. Qualification
-        # ---------------------------------------------------------
-        cls._ensure_required_qualification(
-            actor=actor,
-            role=role,
-            today=today,
-            action_label=action_label,
-        )
+        # --- Qualification ---
+        print(f"\n[AUTH] user={actor} role={role.code!r} action={action_label!r}")
+        print(f"  [1] qualification required: {role.required_qualification_id}")
+        try:
+            cls._ensure_required_qualification(actor=actor, role=role, today=today, action_label=action_label)
+            print(f"  [1] qualification: PASS")
+        except PermissionDenied as e:
+            print(f"  [1] qualification: FAIL — {e}")
+            raise
 
-        # ---------------------------------------------------------
-        # 2. Find role assignments
-        # ---------------------------------------------------------
-        assignments = PermitApprovalRoleAssignment.objects.filter(
-            user=actor,
-            role=role,
-            is_active=True,
-        )
+        # --- Base assignments ---
+        assignments = PermitApprovalRoleAssignment.objects.filter(user=actor, role=role, is_active=True)
+        base_count = assignments.count()
+        print(f"  [2] active assignments for role: {base_count}")
+        if base_count == 0:
+            all_for_role = PermitApprovalRoleAssignment.objects.filter(user=actor, role=role)
+            print(f"      (inactive assignments exist: {all_for_role.count()})")
 
-        # DEBUG
-        print("\n========== WORKFLOW AUTHORIZATION DEBUG ==========")
-        print(f"USER: {actor}")
-        print(f"ROLE: {role}")
-        print(f"ROLE CODE: {role.code}")
-        print(f"PERMIT: {permit.permit_number}")
-        print(f"PERMIT TYPE: {permit.permit_type}")
-        print(f"PERMIT TYPE ID: {permit.permit_type_id}")
-        print(f"PERMIT DEPARTMENT: {permit.department}")
-        print(f"PERMIT DEPARTMENT ID: {permit.department_id}")
+        # --- Permit type filter ---
+        assignments = assignments.filter(Q(permit_type__isnull=True) | Q(permit_type=permit.permit_type))
+        print(f"  [3] after permit_type filter (permit_type={permit.permit_type_id}): {assignments.count()}")
 
-        print("ALL ROLE ASSIGNMENTS:")
-        for assignment in PermitApprovalRoleAssignment.objects.filter(
-            user=actor,
-            role=role,
-        ).prefetch_related("units"):
-            print(
-                "  Assignment:",
-                assignment.pk,
-                "| active =", getattr(assignment, "is_active", None),
-                "| permit_type =", assignment.permit_type,
-                "| permit_type_id =", assignment.permit_type_id,
-                "| department =", assignment.department,
-                "| department_id =", assignment.department_id,
-                "| all_units =", assignment.all_units,
-                "| units =", list(assignment.units.all()),
-            )
-
-        # ---------------------------------------------------------
-        # 3. Permit type scope
-        # ---------------------------------------------------------
-        assignments = assignments.filter(
-            Q(permit_type__isnull=True)
-            | Q(permit_type=permit.permit_type)
-        )
-
-        print(
-            "AFTER PERMIT TYPE FILTER:",
-            list(assignments.values(
-                "id",
-                "permit_type_id",
-                "department_id",
-                "all_units",
-            ))
-        )
-
-        # ---------------------------------------------------------
-        # 4. Department scope
-        # ---------------------------------------------------------
+        # --- Department scope ---
+        print(f"  [4] dept_scope={role.department_scope} | permit.department_id={permit.department_id}")
         if role.department_scope == role.ScopeRequirement.REQUIRED:
-
-            print("DEPARTMENT SCOPE: REQUIRED")
-
             if not permit.department_id:
-                raise PermissionDenied(
-                    "This permit has no originating department."
-                )
+                print(f"  [4] dept: FAIL — permit has no department")
+                raise PermissionDenied("This permit has no originating department.")
+            assignments = assignments.filter(department=permit.department)
+            print(f"  [4] after dept filter: {assignments.count()}")
 
-            assignments = assignments.filter(
-                department=permit.department,
-            )
-
-            print(
-                "AFTER DEPARTMENT FILTER:",
-                list(assignments.values(
-                    "id",
-                    "permit_type_id",
-                    "department_id",
-                    "all_units",
-                ))
-            )
-
-        else:
-            print("DEPARTMENT SCOPE: NOT REQUIRED")
-
-        # ---------------------------------------------------------
-        # 5. Unit scope
-        # ---------------------------------------------------------
+        # --- Unit scope ---
+        permit_unit = permit.location_tag.unit if permit.location_tag else None
+        print(f"  [5] unit_scope={role.unit_scope} | permit_unit={permit_unit}")
         if role.unit_scope == role.ScopeRequirement.REQUIRED:
-
-            print("UNIT SCOPE: REQUIRED")
-
-            permit_unit = (
-                permit.location_tag.unit
-                if permit.location_tag
-                else None
-            )
-
-            print("PERMIT UNIT:", permit_unit)
-            print("PERMIT UNIT ID:", getattr(permit_unit, "pk", None))
-
             if not permit_unit:
-                raise PermissionDenied(
-                    "The permit equipment location does not resolve "
-                    "to an operational unit."
-                )
+                print(f"  [5] unit: FAIL — no unit resolved from location_tag")
+                raise PermissionDenied("The permit equipment location does not resolve to an operational unit.")
+            assignments = assignments.filter(Q(all_units=True) | Q(units=permit_unit))
+            print(f"  [5] after unit filter: {assignments.count()}")
 
-            assignments = assignments.filter(
-                Q(all_units=True)
-                | Q(units=permit_unit)
-            )
-
-            print(
-                "AFTER UNIT FILTER:",
-                list(assignments.values(
-                    "id",
-                    "permit_type_id",
-                    "department_id",
-                    "all_units",
-                ))
-            )
-
-        else:
-            print("UNIT SCOPE: NOT REQUIRED")
-
-        # ---------------------------------------------------------
-        # 6. Final result
-        # ---------------------------------------------------------
-        print("FINAL MATCHING ASSIGNMENTS:", assignments.exists())
-        print("===================================================\n")
-
-        if not assignments.exists():
+        # --- Final ---
+        result = assignments.exists()
+        print(f"  [6] FINAL match={result}")
+        if not result:
+            # Show what assignments exist to diagnose mismatch
+            for a in PermitApprovalRoleAssignment.objects.filter(user=actor, role=role):
+                print(f"      assignment pk={a.pk} active={a.is_active} permit_type_id={a.permit_type_id} dept_id={a.department_id} all_units={a.all_units} units={list(a.units.values_list('pk', flat=True))}")
             raise PermissionDenied(
                 f"You do not hold an active role assignment matching "
                 f"'{role.name}' to {action_label} for the designated "
                 f"permit type, department, or unit scope."
             )
+
+
+
 
     @classmethod
     def actor_has_role_for_permit(cls, *, actor, permit, role) -> bool:

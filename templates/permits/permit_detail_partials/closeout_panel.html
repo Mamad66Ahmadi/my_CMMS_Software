@@ -67,18 +67,21 @@
                          ============================================ -->
                     <div class="table-responsive">
 
+
                         <table class="table table-hover align-middle mb-0 work-shift-table closeout-table">
 
                             <thead class="table-light">
                                 <tr>
-                                    <!-- Wider requirement column -->
-                                    <th class="closeout-requirement-column persian-text">
+                                    <th class="persian-text">
                                         <bdi>Close-out Requirement</bdi>
                                     </th>
 
-                                    <!-- Everything related to signoff -->
-                                    <th class="closeout-signoff-column persian-text">
+                                    <th class="persian-text">
                                         <bdi>Sign-off</bdi>
+                                    </th>
+
+                                    <th style="width: 190px;" class="persian-text">
+                                        <bdi>Action</bdi>
                                     </th>
                                 </tr>
                             </thead>
@@ -97,13 +100,11 @@
                                     ">
 
                                         <!-- =================================================
-                                             CLOSE-OUT REQUIREMENT
-                                             ================================================= -->
+                                            CLOSE-OUT REQUIREMENT
+                                            ================================================= -->
                                         <td class="closeout-requirement-cell">
 
                                             <div class="closeout-requirement">
-
-
 
                                                 <div class="closeout-requirement__name persian-text">
                                                     <bdi>
@@ -125,105 +126,72 @@
 
 
                                         <!-- =================================================
-                                             SIGN-OFF INFORMATION
-                                             Responsible role + status + signer + time
-                                             + sign button when applicable
-                                             ================================================= -->
-                                        <td class="closeout-signoff-cell">
+                                            SIGN-OFF
+                                        ================================================= -->
 
-                                            <div class="closeout-signoff">
+                                        <td class="closeout-signoff-cell text-center">
 
-                                                <!-- Responsible Role -->
-                                                <div class="closeout-signoff__role">
-
-                                                    <i class="bi bi-person-badge me-1"></i>
-
-
-                                                </div>
-
+                                            <div class="closeout-signoff d-flex flex-column align-items-center gap-1">
 
                                                 {% if signoff.signed_at %}
-
-                                                    <!-- Signed -->
+                                                    <!-- Signed State -->
                                                     <div class="closeout-signoff__status">
-
                                                         <span class="signoff-chip signoff-chip--signed persian-text">
-
                                                             <i class="bi bi-check-circle-fill signoff-chip__icon"></i>
-
                                                             <span class="signoff-chip__body">
-
-                                                                <span class="signoff-chip__role">
-                                                                    <bdi>Signed</bdi>
-                                                                </span>
-
+                                                                <span class="signoff-chip__role"><bdi>Signed</bdi></span>
                                                                 <span class="signoff-chip__value">
-                                                                    <bdi>
-                                                                        {{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}
-                                                                    </bdi>
+                                                                    <bdi>{{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}</bdi>
                                                                 </span>
-
                                                             </span>
-
                                                         </span>
-
                                                     </div>
 
-
-                                                    <!-- Signed time -->
-                                                    <div class="closeout-signoff__time">
-
+                                                    <!-- Moved Date/Time to be inside the centered flex container -->
+                                                    <div class="closeout-signoff__time text-muted small">
                                                         <i class="bi bi-clock me-1"></i>
-
                                                         <span class="persian-text">
                                                             <bdi>
                                                                 {{ signoff.signed_at|date:"Y-m-d H:i" }}
-                                                                {% if signoff.signed_at %}
-                                                                    <span class="jalali-time">
-                                                                        ({{ signoff.signed_at|to_jalali:"%Y/%m/%d" }})
-                                                                    </span>
-                                                                {% endif %}
+                                                                <span class="jalali-time">({{ signoff.signed_at|to_jalali:"%Y/%m/%d" }})</span>
                                                             </bdi>
                                                         </span>
-
                                                     </div>
-
 
                                                 {% else %}
-
-                                                    <!-- Pending -->
+                                                    <!-- Pending State -->
                                                     <div class="closeout-signoff__status">
-
                                                         <span class="signoff-chip signoff-chip--pending persian-text">
-
                                                             <i class="bi bi-hourglass-split signoff-chip__icon"></i>
-
                                                             <span class="signoff-chip__body">
-
-                                                                <span class="signoff-chip__role">
-                                                                    <bdi>Awaiting Signature</bdi>
-                                                                </span>
-
+                                                                <span class="signoff-chip__role"><bdi>Awaiting Signature</bdi></span>
                                                                 <span class="signoff-chip__value">
-                                                                    <bdi>
-                                                                        {{ signoff.closeout_item.role.name }}
-                                                                    </bdi>
+                                                                    <bdi>{{ signoff.closeout_item.role.name }}</bdi>
                                                                 </span>
-
                                                             </span>
-
                                                         </span>
-
                                                     </div>
+                                                {% endif %}
+
+                                            </div>
+
+                                        </td>
 
 
-                                                    <!-- Sign button -->
+                                        <!-- =================================================
+                                            ACTION
+                                        ================================================= -->
+                                        <td>
+
+                                            <div class="d-flex flex-wrap gap-2">
+
+                                                {% if not signoff.signed_at %}
+
                                                     {% if signoff.closeout_item.role.code in can_sign_closeout_role_codes %}
 
                                                         <form
                                                             method="post"
-                                                            action="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number signoff_id=signoff.pk %}"
-                                                            class="closeout-signoff__action"
+                                                            action="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number closeout_signoff_id=signoff.pk %}"
                                                         >
 
                                                             {% csrf_token %}
@@ -239,9 +207,7 @@
                                                                 class="btn btn-sm btn-shift-action btn-shift-action--sign persian-text"
                                                             >
                                                                 <i class="bi bi-pencil-square me-1"></i>
-                                                                <bdi>
-                                                                    Sign — {{ signoff.closeout_item.role.name }}
-                                                                </bdi>
+                                                                <bdi>Sign — {{ signoff.closeout_item.role.name }}</bdi>
                                                             </button>
 
                                                         </form>
@@ -263,6 +229,7 @@
                         </table>
 
                     </div>
+
 
 
                 {% else %}
@@ -335,11 +302,15 @@
      * This changes WIDTH only — not font size.
      */
     .closeout-requirement-column {
-        width: 62%;
+        width: 55%;
     }
 
     .closeout-signoff-column {
-        width: 38%;
+        width: 30%;
+    }
+
+    .closeout-action-column {
+        width: 15%;
     }
 
 
@@ -517,11 +488,6 @@
     }
 
 
-    /* Action button stays INSIDE sign-off column */
-
-    .closeout-signoff__action {
-        margin-top: 0.1rem;
-    }
 
 
     /* =========================================================
