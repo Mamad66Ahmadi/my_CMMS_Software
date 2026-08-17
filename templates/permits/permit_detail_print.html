@@ -1,3 +1,5 @@
+{% load to_jalali %}
+
 
 {% load permit_extras %}
 <!DOCTYPE html>
@@ -207,8 +209,8 @@
 
     <!-- Validity -->
     <div class="validity-row">
-        <div>Valid From: <span>{{ permit.valid_from|date:"Y-m-d H:i"|default:"—" }}</span></div>
-        <div>Valid To: <span>{{ permit.valid_to|date:"Y-m-d H:i"|default:"—" }}</span></div>
+        <div>Valid From: <span>{{ permit.valid_from|date:"Y-m-d H:i"|default:"—" }}</span><span style="font-size: 7.5pt; color: #777;"> ({{ permit.valid_from|to_jalali:"%Y/%m/%d" }})</span></div>
+        <div>Valid To: <span>{{ permit.valid_to|date:"Y-m-d H:i"|default:"—" }} <span style="font-size: 7.5pt; color: #777;">({{ permit.valid_to|to_jalali:"%Y/%m/%d" }})</span></span></div>
         <div>Status: <span>{% if is_currently_valid %}Active{% else %}Not Active{% endif %}</span></div>
         <div style="margin-left:auto;">
             {% if permit.current_step %}
@@ -355,7 +357,7 @@
                     <td>{{ approval.role.name|default:"—" }}</td>
                     <td><bdi>{{ approval.actor.get_full_name|default:approval.actor.username }}</bdi></td>
                     <td>{{ approval.get_decision_display|default:"—" }}</td>
-                    <td>{{ approval.created_at|date:"Y-m-d H:i"|default:"—" }}</td>
+                    <td>{{ approval.created_at|date:"Y-m-d H:i"|default:"—" }} <span style="font-size: 7.5pt; color: #777;">({{ approval.created_at|to_jalali:"%Y/%m/%d" }})</span></td>
                     <td><bdi>{{ approval.comment|default:"" }}</bdi></td>
                 </tr>
                 {% endfor %}
@@ -395,7 +397,7 @@
                         {% if work_shift.status == "open" %}
                             <span class="status-dot status-dot--open" title="Open"></span>
                         {% endif %}
-                        <bdi>{{ work_shift.date|date:"Y-m-d" }}</bdi>
+                        <bdi>{{ work_shift.date|date:"Y-m-d" }} <span style="font-size: 7.5pt; color: #777;">({{ work_shift.date|to_jalali:"%Y/%m/%d" }})</span></bdi>
                     </td>
                     <td><bdi>{{ work_shift.get_shift_display }}</bdi></td>
                     <td>
@@ -431,6 +433,53 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Close-out Requirements -->
+    {% if closeout_signoffs %}
+    <div class="section">
+        <div class="section-title">Permit Close-out</div>
+        <table class="approvals">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Requirement</th>
+                    <th style="width: 25%;">Status / Sign-off</th>
+                    <th style="width: 25%;">Date / Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for signoff in closeout_signoffs %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;"><bdi>{{ signoff.closeout_item.name }}</bdi></div>
+                        {% if signoff.closeout_item.description %}
+                            <div style="font-size: 7.5pt; color: #666; margin-top: 2px;"><bdi>{{ signoff.closeout_item.description }}</bdi></div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if signoff.signed_at %}
+                            <span style="color: #0d6e6e; font-weight: 600;">Signed</span> (<span style="font-size: 8pt;"><bdi>{{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}</bdi></span>)
+                            
+                        {% else %}
+                            <span style="color: #c0392b; font-weight: 600;">Pending</span> (<span style="font-size: 8pt;"><bdi>{{ signoff.closeout_item.role.name }}</bdi></span>)
+                            
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if signoff.signed_at %}
+                            <span style="font-size: 8.5pt;">{{ signoff.signed_at|date:"Y-m-d H:i" }}</span> <span style="font-size: 7.5pt; color: #777;">({{ signoff.signed_at|to_jalali:"%Y/%m/%d" }})</span>
+                            
+                        {% else %}
+                            <span style="color: #aaa;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+
 
     <!-- Footer -->
     <div class="p-footer">

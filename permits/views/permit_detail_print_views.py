@@ -11,6 +11,7 @@ from permits.models import (
     PermitShiftSignoff,
     PermitTypeActiveShiftRole,
     PermitWorkflowStep,
+    PermitCloseoutSignoff,
 )
 from permits.models.permit_base_models import Hazard, Precaution
 
@@ -45,6 +46,16 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
             .order_by("sequence", "id")
         )
 
+        closeout_signoff_queryset = (
+            PermitCloseoutSignoff.objects
+            .select_related(
+                "closeout_item",
+                "closeout_item__role",
+                "signed_by",
+            )
+            .order_by("id")
+        )
+
         return (
             Permit.objects
             .select_related(
@@ -73,7 +84,6 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                     ),
                     to_attr="active_hazard_assessments",
                 ),
-
                 Prefetch(
                     "precaution_requirements",
                     queryset=(
@@ -83,7 +93,6 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                     ),
                     to_attr="active_precaution_requirements",
                 ),
-
                 Prefetch(
                     "approvals",
                     queryset=(
@@ -96,17 +105,20 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                         )
                     ),
                 ),
-
                 Prefetch(
                     "work_shifts",
                     queryset=work_shift_queryset,
                     to_attr="prefetched_work_shifts",
                 ),
-
                 Prefetch(
                     "permit_type__active_shift_roles",
                     queryset=active_shift_role_queryset,
                     to_attr="prefetched_active_shift_roles",
+                ),
+                Prefetch(
+                    "closeout_signoffs",
+                    queryset=closeout_signoff_queryset,
+                    to_attr="prefetched_closeout_signoffs",
                 ),
             )
         )
@@ -119,13 +131,8 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
         # Hazard / precaution master data (with audit info)
         # ----------------------------------------------------------
 
-        all_hazards = list(
-            Hazard.objects.order_by("display_order", "code")
-        )
-
-        all_precautions = list(
-            Precaution.objects.order_by("display_order", "code")
-        )
+        all_hazards = list(Hazard.objects.order_by("display_order", "code"))
+        all_precautions = list(Precaution.objects.order_by("display_order", "code"))
 
         hazard_map = {
             item.hazard_id: item
@@ -149,9 +156,7 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
             hazard.permit_assessment = hazard_map.get(hazard.id)
 
         for precaution in all_precautions:
-            precaution.permit_assessment = precaution_map.get(
-                precaution.id
-            )
+            precaution.permit_assessment = precaution_map.get(precaution.id)
 
         context["all_hazards"] = all_hazards
         context["all_precautions"] = all_precautions
@@ -161,15 +166,13 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
         # ----------------------------------------------------------
 
         context["is_currently_valid"] = permit.is_active
-
         context["is_active_state"] = (
             permit.current_step is not None
-            and permit.current_step.state
-            == PermitWorkflowStep.State.ACTIVE
+            and permit.current_step.state == PermitWorkflowStep.State.ACTIVE
         )
 
         # ----------------------------------------------------------
-        # Work shifts (read-only, no permissions/forms)
+        # Work shifts
         # ----------------------------------------------------------
 
         work_shifts = getattr(permit, "prefetched_work_shifts", [])
@@ -191,5 +194,15 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                 signoff.is_required and signoff.signed_by_id is None
                 for signoff in signoffs
             )
+
+        # ----------------------------------------------------------
+        # Close-out signoffs
+        # ----------------------------------------------------------
+
+        context["closeout_signoffs"] = getattr(
+            permit,
+            "prefetched_closeout_signoffs",
+            [],
+        )
 
         return context
