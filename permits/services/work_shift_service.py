@@ -284,3 +284,41 @@ class PermitWorkShiftService:
     def _validate_shift(shift):
         if shift not in {value for value, _label in Shift.choices}:
             raise PermitWorkShiftError({"shift": "The supplied shift is not valid."})
+
+
+    @classmethod
+    def can_view_work_shifts(cls, *, actor, permit) -> bool:
+        """Role check only — work shifts stay visible in every permit status."""
+        if not actor.is_authenticated:
+            return False
+        try:
+            WorkflowAuthorizationService.ensure_actor_has_role_for_permit(
+                actor=actor,
+                permit=permit,
+                role=cls._get_permit_office_role(),
+                action_label="view permit work shifts",
+            )
+        except (PermissionDenied, ValidationError):
+            return False
+        return True
+
+    @classmethod
+    def can_manage_work_shifts(cls, *, actor, permit) -> bool:
+        """Role + ACTIVE check — mutations are only allowed on ACTIVE permits.
+
+        In every other status the actor can still view the existing rows,
+        but cannot add or close a work shift.
+        """
+        if not actor.is_authenticated:
+            return False
+        try:
+            cls._ensure_permit_is_active(permit)
+            WorkflowAuthorizationService.ensure_actor_has_role_for_permit(
+                actor=actor,
+                permit=permit,
+                role=cls._get_permit_office_role(),
+                action_label="manage permit work shifts",
+            )
+        except (PermissionDenied, ValidationError):
+            return False
+        return True

@@ -19,17 +19,15 @@
                 Permit Close-out
             </div>
 
-            {% if is_active_state %}
+            {% if can_view_closeout %}
 
                 {% if closeout_signoffs %}
 
                     {% with total=closeout_signoffs|length %}
-
                         <span class="badge rounded-pill text-bg-primary px-3 py-2">
                             <i class="bi bi-list-check me-1"></i>
                             {{ total }} Requirement{{ total|pluralize }}
                         </span>
-
                     {% endwith %}
 
                 {% else %}
@@ -44,8 +42,8 @@
             {% else %}
 
                 <span class="badge rounded-pill text-bg-secondary persian-text px-3 py-2">
-                    <i class="bi bi-pause-circle me-1"></i>
-                    <bdi>Permit is not active — close-out unavailable</bdi>
+                    <i class="bi bi-lock-fill me-1"></i>
+                    <bdi>Unauthorized</bdi>
                 </span>
 
             {% endif %}
@@ -58,7 +56,7 @@
              ========================================================= -->
         <div class="detail-panel__body">
 
-            {% if is_active_state %}
+            {% if can_view_closeout %}
 
                 {% if closeout_signoffs %}
 
@@ -67,20 +65,19 @@
                          ============================================ -->
                     <div class="table-responsive">
 
-
                         <table class="table table-hover align-middle mb-0 work-shift-table closeout-table">
 
                             <thead class="table-light">
                                 <tr>
-                                    <th class="persian-text">
+                                    <th class="closeout-requirement-column persian-text">
                                         <bdi>Close-out Requirement</bdi>
                                     </th>
 
-                                    <th class="persian-text">
+                                    <th class="closeout-signoff-column persian-text">
                                         <bdi>Sign-off</bdi>
                                     </th>
 
-                                    <th style="width: 190px;" class="persian-text">
+                                    <th class="closeout-action-column persian-text">
                                         <bdi>Action</bdi>
                                     </th>
                                 </tr>
@@ -100,8 +97,8 @@
                                     ">
 
                                         <!-- =================================================
-                                            CLOSE-OUT REQUIREMENT
-                                            ================================================= -->
+                                             CLOSE-OUT REQUIREMENT
+                                             ================================================= -->
                                         <td class="closeout-requirement-cell">
 
                                             <div class="closeout-requirement">
@@ -126,9 +123,8 @@
 
 
                                         <!-- =================================================
-                                            SIGN-OFF
-                                        ================================================= -->
-
+                                             SIGN-OFF
+                                             ================================================= -->
                                         <td class="closeout-signoff-cell text-center">
 
                                             <div class="closeout-signoff d-flex flex-column align-items-center gap-1">
@@ -147,7 +143,6 @@
                                                         </span>
                                                     </div>
 
-                                                    <!-- Moved Date/Time to be inside the centered flex container -->
                                                     <div class="closeout-signoff__time text-muted small">
                                                         <i class="bi bi-clock me-1"></i>
                                                         <span class="persian-text">
@@ -179,23 +174,18 @@
 
 
                                         <!-- =================================================
-                                            ACTION
-                                        ================================================= -->
+                                             ACTION
+                                             ================================================= -->
                                         <td>
-
                                             <div class="d-flex flex-wrap gap-2">
 
-                                                {% if not signoff.signed_at %}
-
+                                                {% if is_active_state and not signoff.signed_at %}
                                                     {% if signoff.closeout_item.role.code in can_sign_closeout_role_codes %}
-
                                                         <form
                                                             method="post"
                                                             action="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number closeout_signoff_id=signoff.pk %}"
                                                         >
-
                                                             {% csrf_token %}
-
                                                             <input
                                                                 type="hidden"
                                                                 name="confirm"
@@ -209,15 +199,11 @@
                                                                 <i class="bi bi-pencil-square me-1"></i>
                                                                 <bdi>Sign — {{ signoff.closeout_item.role.name }}</bdi>
                                                             </button>
-
                                                         </form>
-
                                                     {% endif %}
-
                                                 {% endif %}
 
                                             </div>
-
                                         </td>
 
                                     </tr>
@@ -229,8 +215,6 @@
                         </table>
 
                     </div>
-
-
 
                 {% else %}
 
@@ -247,11 +231,6 @@
                             <bdi>No close-out requirements have been configured.</bdi>
                         </h6>
 
-                        <p class="text-muted small mb-0">
-                            <bdi>
-                                No active close-out items were found for this permit.
-                            </bdi>
-                        </p>
 
                     </div>
 
@@ -260,15 +239,14 @@
             {% else %}
 
                 <!-- ============================================
-                     Inactive state
+                     Unauthorized state
                      ============================================ -->
                 <div class="alert alert-secondary mb-0 persian-text">
 
                     <i class="bi bi-lock-fill me-2"></i>
 
                     <bdi>
-                        Close-out sign-offs are available only while the
-                        permit is in the <strong>ACTIVE</strong> workflow state.
+                        You do not have authorization to view close-out sign-offs for this permit.
                     </bdi>
 
                 </div>
@@ -297,10 +275,6 @@
         width: 100%;
     }
 
-    /*
-     * The requirement gets substantially more horizontal space.
-     * This changes WIDTH only — not font size.
-     */
     .closeout-requirement-column {
         width: 55%;
     }
@@ -330,7 +304,6 @@
     .closeout-table > tbody > tr.closeout-row--signed td {
         color: #000;
     }
-
 
     .closeout-table > tbody > tr.closeout-row--pending {
         background-color: var(--wsp-neutral-bg);
@@ -373,21 +346,14 @@
     .closeout-requirement__name {
         font-weight: 600;
         line-height: 1.45;
-
-        /*
-         * Keep the existing normal text size.
-         * The requirement looks larger because the column is wider.
-         */
         white-space: normal;
         overflow-wrap: anywhere;
     }
 
     .closeout-requirement__description {
         margin-top: 0.35rem;
-
         font-size: 0.8125rem;
         line-height: 1.45;
-
         color: var(--wsp-text-secondary);
     }
 
@@ -399,29 +365,21 @@
     .status-dot--signed {
         width: 6px;
         height: 6px;
-
         border-radius: 50%;
         display: inline-block;
         flex-shrink: 0;
-
         background-color: var(--wsp-success);
-
-        box-shadow:
-            0 0 0 3px var(--wsp-success-bg);
+        box-shadow: 0 0 0 3px var(--wsp-success-bg);
     }
 
     .status-dot--pending {
         width: 6px;
         height: 6px;
-
         border-radius: 50%;
         display: inline-block;
         flex-shrink: 0;
-
         background-color: var(--wsp-neutral-text);
-
-        box-shadow:
-            0 0 0 3px var(--wsp-neutral-bg-soft);
+        box-shadow: 0 0 0 3px var(--wsp-neutral-bg-soft);
     }
 
 
@@ -442,15 +400,10 @@
         width: 100%;
     }
 
-
-    /* Responsible role */
-
     .closeout-signoff__role {
         display: flex;
         align-items: center;
-
         color: var(--wsp-text-secondary);
-
         font-size: 0.8125rem;
         font-weight: 600;
     }
@@ -459,23 +412,15 @@
         color: var(--wsp-primary);
     }
 
-
-    /* Status */
-
     .closeout-signoff__status {
         display: flex;
         align-items: center;
     }
 
-
-    /* Signed time */
-
     .closeout-signoff__time {
         display: flex;
         align-items: center;
-
         color: var(--wsp-text-secondary);
-
         font-size: 0.75rem;
     }
 
@@ -486,8 +431,6 @@
     .closeout-signoff__time .jalali-time {
         opacity: 0.75;
     }
-
-
 
 
     /* =========================================================
@@ -513,7 +456,6 @@
         }
 
     }
-
 
     @media (max-width: 576px) {
 

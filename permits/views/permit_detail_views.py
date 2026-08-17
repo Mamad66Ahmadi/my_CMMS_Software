@@ -434,6 +434,10 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         # ----------------------------------------------------------
         # Shift management permissions
         # ----------------------------------------------------------
+        context["can_view_work_shifts"] = PermitWorkShiftService.can_view_work_shifts(
+            actor=self.request.user,
+            permit=permit,
+        )
 
         context["can_manage_work_shifts"] = (
             context["is_active_state"]
@@ -477,6 +481,7 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             can_sign_role_codes
         )
 
+
         # ----------------------------------------------------------
         # Permit close-out
         # ----------------------------------------------------------
@@ -495,9 +500,15 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             signoff.is_pending = (
                 signoff.signed_by_id is None
             )
+        closeout_signoffs = PermitCloseoutService.get_closeout_signoffs_for_permit(permit=permit)
 
         context["closeout_signoffs"] = closeout_signoffs
 
+        context["can_view_closeout"] = PermitCloseoutService.can_view_closeout_signoffs(
+            permit=permit,
+            actor=self.request.user,
+        )
+        
         context["has_closeout_items"] = bool(
             closeout_signoffs
         )
@@ -1033,6 +1044,7 @@ class PermitWorkShiftCloseView(LoginRequiredMixin, View):
             )
             + "#work-shifts-panel"
         )
+
 
 class PermitCloseoutSignoffView(LoginRequiredMixin, View):
     """

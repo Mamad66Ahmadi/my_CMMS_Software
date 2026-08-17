@@ -19,60 +19,49 @@
                 Active Work Shifts
             </div>
 
-            {% if is_active_state %}
+            <div class="d-flex align-items-center gap-3 flex-wrap">
 
-                <div class="d-flex align-items-center gap-3 flex-wrap">
+                {% if permit.valid_from and permit.valid_to %}
+                    <div class="small text-start d-flex flex-wrap align-items-center gap-2" dir="ltr">
 
-                    {% if permit.valid_from and permit.valid_to %}
-                        <div class="small text-start d-flex flex-wrap align-items-center gap-2" dir="ltr">
+                        <span class="text-muted fw-semibold">
+                            <bdi>Valid from:</bdi>
+                        </span>
 
-                            <span class="text-muted fw-semibold">
-                                <bdi>Valid from:</bdi>
-                            </span>
+                        <span class="validity-chip validity-chip--from">
+                            <bdi>
+                                {{ permit.valid_from|date:"Y-m-d H:i" }}
+                                <span class="jalali-time">({{ permit.valid_from|to_jalali:"%Y/%m/%d" }})</span>
+                            </bdi>
+                        </span>
 
-                            <span class="validity-chip validity-chip--from">
-                                <bdi>
-                                    {{ permit.valid_from|date:"Y-m-d H:i" }}
-                                    <span class="jalali-time">({{ permit.valid_from|to_jalali:"%Y/%m/%d" }})</span>
-                                </bdi>
-                            </span>
+                        <span class="text-muted fw-semibold">
+                            <bdi>to:</bdi>
+                        </span>
 
-                            <span class="text-muted fw-semibold">
-                                <bdi>to:</bdi>
-                            </span>
+                        <span class="validity-chip validity-chip--to">
+                            <bdi>
+                                {{ permit.valid_to|date:"Y-m-d H:i" }}
+                                <span class="jalali-time">({{ permit.valid_to|to_jalali:"%Y/%m/%d" }})</span>
+                            </bdi>
+                        </span>
 
-                            <span class="validity-chip validity-chip--to">
-                                <bdi>
-                                    {{ permit.valid_to|date:"Y-m-d H:i" }}
-                                    <span class="jalali-time">({{ permit.valid_to|to_jalali:"%Y/%m/%d" }})</span>
-                                </bdi>
-                            </span>
+                    </div>
+                {% endif %}
 
-                        </div>
-                    {% endif %}
+                {% if can_manage_work_shifts and not has_open_work_shift %}
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addWorkShiftModal"
+                    >
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Add Work Shift
+                    </button>
+                {% endif %}
 
-                    {% if can_manage_work_shifts and not has_open_work_shift %}
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-primary"
-                            data-bs-toggle="modal"
-                            data-bs-target="#addWorkShiftModal"
-                        >
-                            <i class="bi bi-plus-lg me-1"></i>
-                            Add Work Shift
-                        </button>
-                    {% endif %}
-
-                </div>
-
-            {% else %}
-
-                <span class="badge rounded-pill text-bg-secondary persian-text px-3 py-2">
-                    <i class="bi bi-pause-circle me-1"></i>
-                    <bdi>Permit is not active — work shifts unavailable</bdi>
-                </span>
-
-            {% endif %}
+            </div>
 
         </div>
 
@@ -82,7 +71,7 @@
              ========================================================= -->
         <div class="detail-panel__body">
 
-            {% if is_active_state %}
+            {% if can_view_work_shifts %}
 
                 {% if work_shifts %}
 
@@ -105,7 +94,7 @@
 
                             <tbody>
                                 {% for work_shift in work_shifts %}
-                                    <tr class="shift-row {% if work_shift.status == "open" %}shift-row--open{% else %}shift-row--closed{% endif %}">
+                                    <tr class="shift-row {% if work_shift.status == 'open' %}shift-row--open{% else %}shift-row--closed{% endif %}">
 
                                         <!-- Date -->
                                         <td>
@@ -132,7 +121,6 @@
                                             {% endif %}
                                         </td>
 
-
                                         <!-- Work Leader -->
                                         <td>
                                             {% if work_shift.work_leader %}
@@ -143,6 +131,7 @@
                                                 <span class="text-muted">—</span>
                                             {% endif %}
                                         </td>
+
                                         <!-- Workers -->
                                         <td>
                                             {% if work_shift.worker_count is not None %}
@@ -173,7 +162,7 @@
 
                                                                 <span
                                                                     class="signoff-chip signoff-chip--signed persian-text"
-                                                                    title="{{ signoff.role.name }} — signed {{ signoff.signed_at|date:"Y-m-d H:i" }} by {{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}"
+                                                                    title="{{ signoff.role.name }} — signed {{ signoff.signed_at|date:'Y-m-d H:i' }} by {{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}"
                                                                 >
                                                                     <i class="bi bi-check-circle-fill signoff-chip__icon"></i>
                                                                     <span class="signoff-chip__body">
@@ -208,18 +197,20 @@
                                         <td>
                                             <div class="d-flex flex-wrap gap-2">
 
-                                                {% for signoff in work_shift.signoffs.all %}
-                                                    {% if work_shift.status == "open" and not signoff.signed_by_id and signoff.role.code in can_sign_shift_role_codes %}
-                                                        <form method="post" action="{% url 'permits:permit_shift_signoff' permit_number=permit.permit_number work_shift_id=work_shift.pk role_code=signoff.role.code %}">
-                                                            {% csrf_token %}
-                                                            <input type="hidden" name="confirm" value="on">
-                                                            <button type="submit" class="btn btn-sm btn-shift-action btn-shift-action--sign persian-text">
-                                                                <i class="bi bi-pencil-square me-1"></i>
-                                                                <bdi>Sign — {{ signoff.role.name }}</bdi>
-                                                            </button>
-                                                        </form>
-                                                    {% endif %}
-                                                {% endfor %}
+                                                {% if is_active_state %}
+                                                    {% for signoff in work_shift.signoffs.all %}
+                                                        {% if work_shift.status == "open" and not signoff.signed_by_id and signoff.role.code in can_sign_shift_role_codes %}
+                                                            <form method="post" action="{% url 'permits:permit_shift_signoff' permit_number=permit.permit_number work_shift_id=work_shift.pk role_code=signoff.role.code %}">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="confirm" value="on">
+                                                                <button type="submit" class="btn btn-sm btn-shift-action btn-shift-action--sign persian-text">
+                                                                    <i class="bi bi-pencil-square me-1"></i>
+                                                                    <bdi>Sign — {{ signoff.role.name }}</bdi>
+                                                                </button>
+                                                            </form>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
 
                                                 {% if can_manage_work_shifts and work_shift.status == "open" %}
                                                     <form method="post" action="{% url 'permits:permit_work_shift_close' permit_number=permit.permit_number work_shift_id=work_shift.pk %}">
@@ -268,11 +259,11 @@
             {% else %}
 
                 <!-- ============================================
-                     Inactive state
+                     Unauthorized state
                      ============================================ -->
                 <div class="alert alert-secondary mb-0 persian-text">
                     <i class="bi bi-lock-fill me-2"></i>
-                    <bdi>Work shifts are available only while the permit is in the <strong>ACTIVE</strong> workflow state.</bdi>
+                    <bdi>You do not have authorization to view work shifts for this permit.</bdi>
                 </div>
 
             {% endif %}
@@ -286,7 +277,7 @@
          ADD WORK SHIFT MODAL
          ============================================================= -->
 
-    {% if can_manage_work_shifts and is_active_state %}
+    {% if can_manage_work_shifts %}
 
         <div class="modal fade" id="addWorkShiftModal" tabindex="-1" aria-labelledby="addWorkShiftModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -394,7 +385,6 @@
     {% endif %}
 
 </div>
-
 
 <!-- =====================================================================
      Scoped styles — Work Shift Panel + Add Work Shift Modal
