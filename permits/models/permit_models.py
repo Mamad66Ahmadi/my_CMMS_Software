@@ -17,7 +17,7 @@ from permits.models import (
     EquipmentStatus,
     DurationUnit,
 )
-from permits.models.permit_hazard_precaution_models import Hazard,Precaution,PermitPrecaution,PermitHazard
+from permits.models.permit_hazard_precaution_models import Hazard,Precaution
 
 User = settings.AUTH_USER_MODEL
 
@@ -106,6 +106,17 @@ class Permit(models.Model):
     fire_watch_present_required = models.BooleanField(default=False)
 
     equipment_preparation_notes = models.TextField(blank=True)
+
+    # ------------------------------------------------------------------
+    # Fire, Gas & ESD Isolations
+    # ------------------------------------------------------------------
+    fire_gas_esd_items = models.ManyToManyField(
+        "FireGasESD",
+        through="PermitFireGasESD",
+        blank=True,
+        related_name="permits",
+    )
+
 
     # ------------------------------------------------------------------
     # Related Permits
