@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.text import slugify
 
 from accounts.models import Department, UserFilterFavorite
-from permits.models.permit_base_models import Hazard as HazardCode, PermitType
+from permits.models import Hazard as HazardCode, PermitType
 from permits.models.permit_models import Permit
 from permits.models.workflow_models import PermitWorkflowStep
 from permits.services.user_filter_favorite import (

@@ -32,7 +32,7 @@ from permits.models import (
 
 from permits.models.workflow_models import PermitWorkflowStep
 
-from permits.models.permit_base_models import (
+from permits.models import (
     Hazard,
     Precaution,
 )

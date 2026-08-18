@@ -69,32 +69,6 @@ class PermitType(BaseLookupModel):
         verbose_name = "Permit Type"
         verbose_name_plural = "Permit Types"
 
-# =============================================================================
-# Hazard
-# =============================================================================
-
-class Hazard(BaseLookupModel):
-    """
-    Hazard identification list.
-    """
-
-    class Category(models.TextChoices):
-        PROCESS = "PROCESS", "Process"
-        SAFETY = "SAFETY", "Safety"
-        ENVIRONMENT = "ENV", "Environment"
-        HEALTH = "HEALTH", "Occupational Health"
-        ELECTRICAL = "ELEC", "Electrical"
-
-    category = models.CharField(
-        max_length=20,
-        choices=Category.choices,
-        default=Category.SAFETY,
-    )
-
-    class Meta(BaseLookupModel.Meta):
-        verbose_name = "Hazard"
-        verbose_name_plural = "Hazards"
-
 
 # =============================================================================
 # Personal Protective Equipment
@@ -109,26 +83,6 @@ class PPE(BaseLookupModel):
 
 
 
-
-
-
-# =============================================================================
-# Precautions / Control Measures
-# =============================================================================
-
-class Precaution(BaseLookupModel):
-    """
-    Required control measures.
-    """
-
-    requires_verification = models.BooleanField(
-        default=True,
-    )
-    
-
-    class Meta(BaseLookupModel.Meta):
-        verbose_name = "Precaution"
-        verbose_name_plural = "Precautions"
 
 
 # =============================================================================

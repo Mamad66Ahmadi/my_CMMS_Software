@@ -8,7 +8,7 @@ from permits.models.approval_models import (
     PermitApprovalRoleAssignment,
 )
 
-
+# -----------------------------------------------------------------
 class PermitApprovalRoleAssignmentForm(forms.ModelForm):
     class Meta:
         model = PermitApprovalRoleAssignment

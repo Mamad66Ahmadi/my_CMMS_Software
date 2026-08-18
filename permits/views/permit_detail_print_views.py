@@ -12,8 +12,9 @@ from permits.models import (
     PermitTypeActiveShiftRole,
     PermitWorkflowStep,
     PermitCloseoutSignoff,
+    Hazard,
+    Precaution,
 )
-from permits.models.permit_base_models import Hazard, Precaution
 
 
 class PermitPrintView(LoginRequiredMixin, DetailView):

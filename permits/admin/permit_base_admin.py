@@ -3,13 +3,13 @@
 from django.contrib import admin
 
 from permits.admin.base_admin import AUDIT_FIELDS, AUDIT_FIELDSET, TimeStampedAdmin
-from permits.models.permit_base_models import (
+from permits.models import (
     FireGasSystem,
     Hazard,
+    Precaution,
     IsolationType,
     PPE,
     PermitType,
-    Precaution,
     ShiftType,
 )
 

@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.db import transaction
 from django.utils import timezone
 
-from permits.models.permit_models import Permit, PermitHazard, PermitPrecaution
+from permits.models import Permit, PermitHazard, PermitPrecaution
 from permits.models import PermitCloseoutSignoff
 
 
