@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from datetime import datetime, timedelta
 
 from permits.models.approval_models import PermitApprovalRoleAssignment
 from permits.models.permit_shift_models import (
@@ -11,6 +12,7 @@ from permits.models.permit_shift_models import (
     PermitTypeActiveShiftRole,
     PermitWorkShift,
     Shift,
+    ShiftSchedule,
 )
 from permits.services.authorization_service import WorkflowAuthorizationService
 
@@ -82,6 +84,8 @@ class PermitWorkShiftService:
             role=cls._get_permit_office_role(),
             action_label="create a permit work shift",
         )
+
+        cls._close_expired_work_shift_for_permit(permit=permit)
         cls._validate_shift(shift)
         cls._ensure_date_within_permit_validity(permit=permit, date=date)
 
@@ -322,3 +326,101 @@ class PermitWorkShiftService:
         except (PermissionDenied, ValidationError):
             return False
         return True
+
+
+    @classmethod
+    def _get_shift_change_datetime(cls, *, work_shift):
+        try:
+            schedule = ShiftSchedule.objects.get(
+                shift=work_shift.shift,
+                is_active=True,
+            )
+        except ShiftSchedule.DoesNotExist:
+            return None
+        except ShiftSchedule.MultipleObjectsReturned:
+            raise PermitWorkShiftError(
+                f"More than one active schedule exists for shift '{work_shift.shift}'."
+            )
+
+        next_schedule = (
+            ShiftSchedule.objects
+            .filter(
+                is_active=True,
+                start_time__gt=schedule.start_time,
+            )
+            .order_by("start_time", "id")
+            .first()
+        )
+
+        if next_schedule is None:
+            next_schedule = (
+                ShiftSchedule.objects
+                .filter(is_active=True)
+                .order_by("start_time", "id")
+                .first()
+            )
+
+            if next_schedule is None:
+                return None
+
+            change_date = work_shift.date + timedelta(days=1)
+        else:
+            change_date = work_shift.date
+
+        return timezone.make_aware(
+            datetime.combine(change_date, next_schedule.start_time),
+            timezone.get_current_timezone(),
+        )
+
+
+    @classmethod
+    @transaction.atomic
+    def _close_expired_work_shift_for_permit(cls, *, permit):
+        """
+        Close the currently open work shift when its configured next-shift
+        boundary has passed.
+
+        Expected to be called after the permit has been locked by the caller.
+        """
+        now = timezone.now()
+
+        work_shift = (
+            PermitWorkShift.objects
+            .select_for_update()
+            .filter(
+                permit=permit,
+                status=PermitWorkShift.Status.OPEN,
+            )
+            .order_by("id")
+            .first()
+        )
+
+        if work_shift is None:
+            return None
+
+        shift_change_at = cls._get_shift_change_datetime(work_shift=work_shift)
+
+        # Do not silently close shifts if schedule master data is absent.
+        if shift_change_at is None:
+            return None
+
+        if now < shift_change_at:
+            return None
+
+        work_shift.status = PermitWorkShift.Status.CLOSED
+        work_shift.closed_at = now
+        work_shift.closed_by = None
+
+        # Recommended if you add this field:
+        # work_shift.close_reason = PermitWorkShift.CloseReason.SHIFT_CHANGE
+
+        work_shift.save(
+            update_fields=[
+                "status",
+                "closed_at",
+                "closed_by",
+                # "close_reason",
+            ]
+        )
+
+        return work_shift

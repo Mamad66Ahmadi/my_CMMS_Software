@@ -102,7 +102,9 @@
                                                 {% if work_shift.status == "open" %}
                                                     <span class="status-dot status-dot--open" title="Open"></span>
                                                 {% endif %}
-                                                <bdi>{{ work_shift.date|date:"Y-m-d" }}</bdi>
+                                                <bdi title="{{ work_shift.date|to_jalali:'%Y/%m/%d' }}">
+                                                    {{ work_shift.date|date:"Y-m-d" }}
+                                                </bdi>
                                             </span>
                                         </td>
 

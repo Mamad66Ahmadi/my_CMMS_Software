@@ -3,7 +3,7 @@ from django.contrib import admin
 
 from permits.models.permit_shift_models import (
     PermitWorkShift,
-    Shift,
+    ShiftSchedule,
 )
 
 
@@ -153,3 +153,65 @@ class PermitWorkShiftAdmin(admin.ModelAdmin):
             return f"Complete ({signed}/{total})"
 
         return f"Pending ({signed}/{total})"
+
+
+# ============================================================
+# Shift Schedule
+# ============================================================
+
+@admin.register(ShiftSchedule)
+class ShiftScheduleAdmin(admin.ModelAdmin):
+    list_display = (
+        "shift",
+        "start_time",
+        "is_active",
+        "created_at",
+        "modified_at",
+    )
+
+    list_filter = (
+        "shift",
+        "is_active",
+    )
+
+    ordering = (
+        "start_time",
+    )
+
+    list_editable = (
+        "start_time",
+        "is_active",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "modified_at",
+    )
+
+    fieldsets = (
+        (
+            "Shift Schedule",
+            {
+                "fields": (
+                    "shift",
+                    "start_time",
+                    "is_active",
+                ),
+                "description": (
+                    "Define when each shift starts. The work-shift "
+                    "service can use these times to automatically close "
+                    "an open work shift when the next shift begins."
+                ),
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "created_at",
+                    "modified_at",
+                ),
+            },
+        ),
+    )

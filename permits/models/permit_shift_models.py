@@ -145,3 +145,26 @@ class PermitTypeActiveShiftRole(TimeStampedModel):
             f"{self.sequence}"
         )
 
+
+class ShiftSchedule(TimeStampedModel):
+    shift = models.CharField(
+        max_length=20,
+        choices=Shift.choices,
+        unique=True,
+    )
+
+    start_time = models.TimeField()
+
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["start_time"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["shift"],
+                condition=Q(is_active=True),
+                name="unique_active_shift_schedule_per_shift",
+            )
+        ]
+    def __str__(self):
+        return f"{self.get_shift_display()} - {self.start_time}"

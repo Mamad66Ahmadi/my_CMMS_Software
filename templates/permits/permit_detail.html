@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load to_jalali %}
 
 {% block title %}Permit {{ permit.permit_number }}{% endblock %}
 
@@ -81,6 +82,9 @@
             <span class="value">
                 {{ permit.valid_from|date:"Y-m-d H:i"|default:"—" }}
             </span>
+            {% if permit.valid_from %}
+                <span style="font-size: 7.5pt; color: #777;"> ({{ permit.valid_from|to_jalali:"%Y/%m/%d" }})</span>
+            {% endif %}
         </div>
 
         <div class="validity-item">
@@ -89,8 +93,10 @@
             <span class="value">
                 {{ permit.valid_to|date:"Y-m-d H:i"|default:"—" }}
             </span>
+            {% if permit.valid_to %}
+                <span style="font-size: 7.5pt; color: #777;"> ({{ permit.valid_to|to_jalali:"%Y/%m/%d" }})</span>
+            {% endif %}
         </div>
-
 
 
         <span class="validity-pill {% if is_currently_valid %}validity-pill--valid{% else %}validity-pill--invalid{% endif %}">
