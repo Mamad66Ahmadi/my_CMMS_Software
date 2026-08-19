@@ -325,6 +325,9 @@ class PermitCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
+            self._fg_esd_row_errors = {}
+
+
             if self.is_bound:
                 location_tag_id = self.data.get("location_tag")
                 continuation_of_id = self.data.get("continuation_of")
@@ -482,6 +485,7 @@ class PermitCreateForm(forms.ModelForm):
                     unit_zone=unit_zone,
                     remark=remark,
                     existing=existing,
+                    unit_zone_error=self._fg_esd_row_errors.get(str(item_id)),
                 )
             )
 
@@ -563,6 +567,31 @@ class PermitCreateForm(forms.ModelForm):
                     ),
                 )
 
+        # Validate dynamic Unit / Zone inputs for selected FG/ESD items.
+        selected_fg_esd_items = cleaned_data.get("fire_gas_esd_items")
+
+        if selected_fg_esd_items:
+            has_fg_esd_zone_error = False
+
+            for item in selected_fg_esd_items:
+                unit_zone = (
+                    self.data.get(f"fg_esd_unit_zone_{item.pk}") or ""
+                ).strip()
+
+                if not unit_zone:
+                    has_fg_esd_zone_error = True
+
+                    # Used by fire_gas_esd_rows to highlight the exact row.
+                    self._fg_esd_row_errors[str(item.pk)] = (
+                        "Unit / Zone is required when this isolation is selected."
+                    )
+
+            if has_fg_esd_zone_error:
+                # Makes form.is_valid() return False, therefore the Permit is not saved.
+                self.add_error(
+                    "fire_gas_esd_items",
+                    "Provide a Unit / Zone for every selected Fire, Gas & ESD isolation.",
+                )
 
         return cleaned_data
 

@@ -1,0 +1,67 @@
+<section class="detail-panel">
+    <div class="detail-panel__header">
+        <i class="bi bi-shield-exclamation"></i>
+        Fire, Gas &amp; ESD Isolations
+    </div>
+
+    <div class="detail-panel__body">
+        <div class="form-field-block">
+            <div class="fg-esd-select-list">
+                {% for checkbox in form.fire_gas_esd_items %}
+                    <div class="fg-esd-select-item">
+                        <label class="fg-esd-select-item__main" for="{{ checkbox.id_for_label }}">
+                            {{ checkbox.tag }}
+                            <span class="fg-esd-select-item__label persian-text">
+                                <bdi>{{ checkbox.choice_label }}</bdi>
+                            </span>
+                        </label>
+
+                        <input
+                            type="text"
+                            name="fg_esd_unit_zone_{{ checkbox.data.value }}"
+                            class="fg-esd-select-item__input persian-text"
+                            placeholder="Unit / Zone"
+                            disabled
+                        >
+
+                        <input
+                            type="text"
+                            name="fg_esd_remarks_{{ checkbox.data.value }}"
+                            class="fg-esd-select-item__input persian-text"
+                            placeholder="Remark (optional)"
+                            disabled
+                        >
+                    </div>
+                {% empty %}
+                    <div class="text-muted">No active Fire, Gas &amp; ESD items are configured.</div>
+                {% endfor %}
+            </div>
+
+            {% if form.fire_gas_esd_items.errors %}
+                <div class="field-errors">{{ form.fire_gas_esd_items.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.fg-esd-select-item').forEach(function (item) {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            const inputs = item.querySelectorAll('.fg-esd-select-item__input');
+
+            function syncState() {
+                inputs.forEach(function (input) {
+                    input.disabled = !checkbox.checked;
+                    if (!checkbox.checked) {
+                        input.value = '';
+                    }
+                });
+                item.classList.toggle('fg-esd-select-item--active', checkbox.checked);
+            }
+
+            checkbox.addEventListener('change', syncState);
+            syncState();
+        });
+    });
+</script>

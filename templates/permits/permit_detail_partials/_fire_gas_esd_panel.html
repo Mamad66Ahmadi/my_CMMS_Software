@@ -11,203 +11,371 @@
 
     <!-- Body -->
     <div class="detail-panel__body">
-        {% if fire_gas_esd_items %}
+        {% if all_fire_gas_esd_items %}
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 fg-esd-table">
                     <thead class="table-light">
                         <tr>
-                            <th style="min-width:260px"><bdi>System</bdi></th>
-                            <th><bdi>Zone</bdi></th>
-                            <th><bdi>Status</bdi></th>
+                            <th style="min-width:260px">
+                                <bdi>System</bdi>
+                            </th>
+
+                            <th>
+                                <bdi>Zone</bdi>
+                            </th>
+
+                            <th>
+                                <bdi>Remarks</bdi>
+                            </th>
+
+                            <th>
+                                <bdi>Status</bdi>
+                            </th>
+
                             <th style="min-width:160px">
                                 <bdi>Isolation</bdi>
                                 <div class="fg-esd-cell__row">
-                                    <small class="fg-esd-cell__label text-muted"><bdi>Confirmed By</bdi></small>
+                                    <small class="fg-esd-cell__label text-muted">
+                                        <bdi>Confirmed By</bdi>
+                                    </small>
                                 </div>
                             </th>
+
                             <th style="min-width:160px">
                                 <bdi>De-isolation</bdi>
                                 <div class="fg-esd-cell__row">
-                                    <small class="fg-esd-cell__label text-muted"><bdi>Confirmed By</bdi></small>
+                                    <small class="fg-esd-cell__label text-muted">
+                                        <bdi>Confirmed By</bdi>
+                                    </small>
                                 </div>
                             </th>
-                            <th style="width:1%; white-space:nowrap"><bdi>Actions</bdi></th>
+
+                            <th style="width:1%; white-space:nowrap">
+                                <bdi>Actions</bdi>
+                            </th>
                         </tr>
                     </thead>
 
-
                     <tbody>
-                        {% for item in fire_gas_esd_items %}
-                            <tr>
-                                <!-- System (role badge removed) -->
-                                <td>
-                                    <div class="fw-semibold persian-text lh-sm">
-                                        <bdi>{{ item.fire_gas_esd.name }}</bdi>
-                                    </div>
-                                </td>
+                        {% for master_item in all_fire_gas_esd_items %}
+                            {% with item=master_item.permit_item %}
+                                <tr
+                                    class="{% if item %}fg-esd-table__row--selected{% else %}fg-esd-table__row--unselected{% endif %}"
+                                >
 
-                                <!-- Zone -->
-                                <td>
-                                    <span class="badge bg-light text-dark border font-monospace">
-                                        <bdi>{{ item.unit_zone }}</bdi>
-                                    </span>
-                                </td>
+                                    <!-- System -->
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            {% if item %}
+                                                <span
+                                                    class="fg-esd-selection-mark fg-esd-selection-mark--selected"
+                                                    title="Selected for this permit"
+                                                >
+                                                    <i class="bi bi-check-lg"></i>
+                                                </span>
+                                            {% else %}
+                                                <span
+                                                    class="fg-esd-selection-mark fg-esd-selection-mark--unselected"
+                                                    title="Not selected for this permit"
+                                                >
+                                                    <i class="bi bi-dash-lg"></i>
+                                                </span>
+                                            {% endif %}
 
-                                <!-- Status -->
-                                <td>
-                                    {% if item.is_deisolated %}
-                                        <span class="badge text-bg-success">
-                                            <i class="bi bi-check2-circle me-1"></i><bdi>Restored</bdi>
-                                        </span>
-                                    {% elif item.is_isolated %}
-                                        <span class="badge text-bg-warning text-dark">
-                                            <i class="bi bi-shield-fill-exclamation me-1"></i><bdi>Isolated</bdi>
-                                        </span>
-                                    {% else %}
-                                        <span class="badge text-bg-light border text-muted">
-                                            <i class="bi bi-hourglass me-1"></i><bdi>Pending</bdi>
-                                        </span>
-                                    {% endif %}
-                                </td>
+                                            <div>
+                                                <div class="fw-semibold persian-text lh-sm">
+                                                    <bdi>{{ master_item.name }}</bdi>
+                                                </div>
 
-                                <!-- Isolation -->
-                                <td class="persian-text">
-                                    {% with role_name=item.fire_gas_esd.role.name jalali_at=item.isolated_confirmed_at|to_jalali %}
-                                    <div class="fg-esd-cell"
-                                        {% if item.isolated_confirmed_by %}
-                                            data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            data-bs-html="true"
-                                            title="<span class='d-block'><i class='bi bi-person-fill me-1'></i>{{ role_name }}</span><span class='d-block'><i class='bi bi-calendar3 me-1'></i>{{ jalali_at }}</span>"
-                                        {% endif %}>
-
-                                        <div class="fg-esd-cell__row">
-                                            <span>
-                                                {% if item.isolated_confirmed_by %}
-                                                    <bdi>{{ item.isolated_confirmed_by.get_full_name|default:item.isolated_confirmed_by.username }}</bdi>
-                                                {% else %}
-                                                    <span class="text-muted">—</span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        <div class="fg-esd-cell__row">
-                                            <span>
-                                                {% if item.isolated_confirmed_at %}
-                                                    <bdi>{{ item.isolated_confirmed_at|date:'Y-m-d H:i' }}</bdi>
-                                                {% else %}
-                                                    <span class="text-muted fst-italic small"><bdi>Pending</bdi></span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {% endwith %}
-                                </td>
-
-                                <!-- De-isolation -->
-                                <td class="persian-text">
-                                    {% with role_name=item.fire_gas_esd.role.name jalali_at=item.deisolated_confirmed_at|to_jalali %}
-                                    <div class="fg-esd-cell"
-                                        {% if item.deisolated_confirmed_by %}
-                                            data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            data-bs-html="true"
-                                            title="<span class='d-block'><i class='bi bi-person-fill me-1'></i>{{ role_name }}</span><span class='d-block'><i class='bi bi-calendar3 me-1'></i>{{ jalali_at }}</span>"
-                                        {% endif %}>
-
-                                        <div class="fg-esd-cell__row">
-                                            <span>
-                                                {% if item.deisolated_confirmed_by %}
-                                                    <bdi>{{ item.deisolated_confirmed_by.get_full_name|default:item.deisolated_confirmed_by.username }}</bdi>
-                                                {% else %}
-                                                    <span class="text-muted">—</span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        <div class="fg-esd-cell__row">
-                                            <span>
-                                                {% if item.deisolated_confirmed_at %}
-                                                    <bdi>{{ item.deisolated_confirmed_at|date:'Y-m-d H:i' }}</bdi>
-                                                {% elif item.is_isolated %}
-                                                    <span class="text-warning fst-italic small"><bdi>Awaiting</bdi></span>
-                                                {% else %}
-                                                    <span class="text-muted">—</span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {% endwith %}
-                                </td>
-
-
-                                <!-- Actions -->
-                                <td >
-                                    {% if item.can_sign_isolation %}
-                                        <form method="post"
-                                            action="{% url 'permits:permit_fire_gas_esd_isolate' permit_number=permit.permit_number item_id=item.pk %}"
-                                            class="d-flex flex-column gap-1">
-                                            {% csrf_token %}
-                                            <div class="input-group input-group-sm" style="max-width:220px">
-                                                <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
-                                                <input type="datetime-local" name="time" class="form-control form-control-sm" required>
                                             </div>
-                                            <div class="form-check form-check-sm d-flex align-items-center gap-1">
-                                                <input type="checkbox" name="confirm" id="iso-confirm-{{ item.pk }}" class="form-check-input" required>
-                                                <label class="form-check-label small text-muted" for="iso-confirm-{{ item.pk }}">
-                                                    <bdi>I confirm</bdi>
-                                                </label>
-                                            </div>
-                                            <button type="submit" class="btn btn-sm btn-outline-success persian-text text-nowrap">
-                                                <i class="bi bi-pencil-square me-1"></i><bdi>Confirm Isolation</bdi>
-                                            </button>
-                                        </form>
+                                        </div>
+                                    </td>
 
-                                    {% elif item.can_sign_deisolation %}
-                                        <form method="post"
-                                            action="{% url 'permits:permit_fire_gas_esd_deisolate' permit_number=permit.permit_number item_id=item.pk %}"
-                                            class="d-flex flex-column gap-1">
-                                            {% csrf_token %}
-                                            <div class="input-group input-group-sm" style="max-width:220px">
-                                                <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
-                                                <input type="datetime-local" name="time" class="form-control form-control-sm" required>
-                                            </div>
-                                            <div class="form-check d-flex align-items-center gap-1">
-                                                <input type="checkbox" name="confirm" id="deiso-confirm-{{ item.pk }}" class="form-check-input" required>
-                                                <label class="form-check-label small text-muted" for="deiso-confirm-{{ item.pk }}">
-                                                    <bdi>I confirm</bdi>
-                                                </label>
-                                            </div>
-                                            <button type="submit" class="btn btn-sm btn-outline-primary persian-text text-nowrap">
-                                                <i class="bi bi-arrow-counterclockwise me-1"></i><bdi>Confirm Restoration</bdi>
-                                            </button>
-                                        </form>
+                                    <!-- Zone -->
+                                    <td>
+                                        {% if item %}
+                                            <span class="badge bg-light text-dark border font-monospace">
+                                                <bdi>{{ item.unit_zone }}</bdi>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
 
-                                    {% else %}
-                                        <span class="text-muted small">—</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
+                                    <!-- Remarks -->
+                                    <td class="persian-text">
+                                        {% if item %}
+                                            {% if item.remarks %}
+                                                <span title="{{ item.remarks }}">
+                                                    <bdi>{{ item.remarks }}</bdi>
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Status -->
+                                    <td>
+                                        {% if not item %}
+                                            <span class="badge text-bg-light border text-muted">
+                                                <i class="bi bi-dash-circle me-1"></i>
+                                                <bdi>Not selected</bdi>
+                                            </span>
+
+                                        {% elif item.is_deisolated %}
+                                            <span class="badge text-bg-success">
+                                                <i class="bi bi-check2-circle me-1"></i>
+                                                <bdi>Restored</bdi>
+                                            </span>
+
+                                        {% elif item.is_isolated %}
+                                            <span class="badge text-bg-warning text-dark">
+                                                <i class="bi bi-shield-fill-exclamation me-1"></i>
+                                                <bdi>Isolated</bdi>
+                                            </span>
+
+                                        {% else %}
+                                            <span class="badge bg-dark text-white">
+                                                <i class="bi bi-hourglass me-1"></i>
+                                                <bdi>Pending</bdi>
+                                            </span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Isolation -->
+                                    <td class="persian-text">
+                                        {% if item %}
+                                            {% with role_name=master_item.role.name jalali_at=item.isolated_confirmed_at|to_jalali %}
+                                                <div
+                                                    class="fg-esd-cell"
+                                                    {% if item.isolated_confirmed_by %}
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="top"
+                                                        data-bs-html="true"
+                                                        title="<span class='d-block'><i class='bi bi-person-fill me-1'></i>{{ role_name }}</span><span class='d-block'><i class='bi bi-calendar3 me-1'></i>{{ jalali_at }}</span>"
+                                                    {% endif %}
+                                                >
+                                                    <div class="fg-esd-cell__row">
+                                                        <span>
+                                                            {% if item.isolated_confirmed_by %}
+                                                                <bdi>
+                                                                    {{ item.isolated_confirmed_by.get_full_name|default:item.isolated_confirmed_by.username }}
+                                                                </bdi>
+                                                            {% else %}
+                                                                <span class="text-muted">—</span>
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+
+                                                    <div class="fg-esd-cell__row">
+                                                        <span>
+                                                            {% if item.isolated_confirmed_at %}
+                                                                <bdi>
+                                                                    {{ item.isolated_confirmed_at|date:'Y-m-d H:i' }}
+                                                                </bdi>
+                                                            {% else %}
+                                                                <span class="text-muted fst-italic small">
+                                                                    <bdi>Pending</bdi>
+                                                                </span>
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- De-isolation -->
+                                    <td class="persian-text">
+                                        {% if item %}
+                                            {% with role_name=master_item.role.name jalali_at=item.deisolated_confirmed_at|to_jalali %}
+                                                <div
+                                                    class="fg-esd-cell"
+                                                    {% if item.deisolated_confirmed_by %}
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="top"
+                                                        data-bs-html="true"
+                                                        title="<span class='d-block'><i class='bi bi-person-fill me-1'></i>{{ role_name }}</span><span class='d-block'><i class='bi bi-calendar3 me-1'></i>{{ jalali_at }}</span>"
+                                                    {% endif %}
+                                                >
+                                                    <div class="fg-esd-cell__row">
+                                                        <span>
+                                                            {% if item.deisolated_confirmed_by %}
+                                                                <bdi>
+                                                                    {{ item.deisolated_confirmed_by.get_full_name|default:item.deisolated_confirmed_by.username }}
+                                                                </bdi>
+                                                            {% else %}
+                                                                <span class="text-muted">—</span>
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+
+                                                    <div class="fg-esd-cell__row">
+                                                        <span>
+                                                            {% if item.deisolated_confirmed_at %}
+                                                                <bdi>
+                                                                    {{ item.deisolated_confirmed_at|date:'Y-m-d H:i' }}
+                                                                </bdi>
+                                                            {% elif item.is_isolated %}
+                                                                <span class="text-warning fst-italic small">
+                                                                    <bdi>Awaiting</bdi>
+                                                                </span>
+                                                            {% else %}
+                                                                <span class="text-muted">—</span>
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Actions -->
+                                    <td>
+                                        {% if item %}
+
+                                            {% if item.can_sign_isolation %}
+                                                <form
+                                                    method="post"
+                                                    action="{% url 'permits:permit_fire_gas_esd_isolate' permit_number=permit.permit_number item_id=item.pk %}"
+                                                    class="d-flex flex-column gap-1"
+                                                >
+                                                    {% csrf_token %}
+
+                                                    <div
+                                                        class="input-group input-group-sm"
+                                                        style="max-width:220px"
+                                                    >
+                                                        <span class="input-group-text">
+                                                            <i class="bi bi-calendar-event"></i>
+                                                        </span>
+
+                                                        <input
+                                                            type="datetime-local"
+                                                            name="time"
+                                                            class="form-control form-control-sm"
+                                                            required
+                                                        >
+                                                    </div>
+
+                                                    <div class="form-check form-check-sm d-flex align-items-center gap-1">
+                                                        <input
+                                                            type="checkbox"
+                                                            name="confirm"
+                                                            id="iso-confirm-{{ item.pk }}"
+                                                            class="form-check-input"
+                                                            required
+                                                        >
+
+                                                        <label
+                                                            class="form-check-label small text-muted"
+                                                            for="iso-confirm-{{ item.pk }}"
+                                                        >
+                                                            <bdi>I confirm</bdi>
+                                                        </label>
+                                                    </div>
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-sm btn-outline-success persian-text text-nowrap"
+                                                    >
+                                                        <i class="bi bi-pencil-square me-1"></i>
+                                                        <bdi>Confirm Isolation</bdi>
+                                                    </button>
+                                                </form>
+
+                                            {% elif item.can_sign_deisolation %}
+                                                <form
+                                                    method="post"
+                                                    action="{% url 'permits:permit_fire_gas_esd_deisolate' permit_number=permit.permit_number item_id=item.pk %}"
+                                                    class="d-flex flex-column gap-1"
+                                                >
+                                                    {% csrf_token %}
+
+                                                    <div
+                                                        class="input-group input-group-sm"
+                                                        style="max-width:220px"
+                                                    >
+                                                        <span class="input-group-text">
+                                                            <i class="bi bi-calendar-event"></i>
+                                                        </span>
+
+                                                        <input
+                                                            type="datetime-local"
+                                                            name="time"
+                                                            class="form-control form-control-sm"
+                                                            required
+                                                        >
+                                                    </div>
+
+                                                    <div class="form-check d-flex align-items-center gap-1">
+                                                        <input
+                                                            type="checkbox"
+                                                            name="confirm"
+                                                            id="deiso-confirm-{{ item.pk }}"
+                                                            class="form-check-input"
+                                                            required
+                                                        >
+
+                                                        <label
+                                                            class="form-check-label small text-muted"
+                                                            for="deiso-confirm-{{ item.pk }}"
+                                                        >
+                                                            <bdi>I confirm</bdi>
+                                                        </label>
+                                                    </div>
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-sm btn-outline-primary persian-text text-nowrap"
+                                                    >
+                                                        <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                                        <bdi>Confirm Restoration</bdi>
+                                                    </button>
+                                                </form>
+
+                                            {% else %}
+                                                <span class="text-muted small">—</span>
+                                            {% endif %}
+
+                                        {% else %}
+                                            <span class="text-muted small">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endwith %}
                         {% endfor %}
                     </tbody>
-
                 </table>
             </div>
+
         {% else %}
             <div class="text-center py-5 persian-text">
                 <div class="mb-3">
                     <i class="bi bi-shield-slash fs-1 text-muted"></i>
                 </div>
+
                 <h6 class="text-muted">
-                    <bdi>No critical safety system isolations required.</bdi>
+                    <bdi>No Fire, Gas &amp; ESD master items are configured.</bdi>
                 </h6>
             </div>
         {% endif %}
     </div>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-        new bootstrap.Tooltip(el, { html: true });
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
+        new bootstrap.Tooltip(el, {
+            html: true
+        });
     });
 });
-
 </script>

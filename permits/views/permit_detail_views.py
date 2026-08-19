@@ -395,28 +395,59 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         # Fire, Gas & ESD isolations
         # ----------------------------------------------------------
 
+        all_fire_gas_esd_items = list(
+            FireGasESD.objects
+            .select_related("role")
+            .order_by("display_order", "code")
+        )
+
+        # Only the PermitFireGasESD rows selected for this permit.
         fire_gas_esd_items = list(
             getattr(permit, "prefetched_fire_gas_esd_items", None)
             or PermitFireGasESDService.get_permit_items(permit=permit)
         )
 
-        can_remove_fire_gas_esd_items = PermitFireGasESDService.can_remove_item(
-            permit=permit,
-            actor=self.request.user,
-        )
-
+        # Add action permissions to actual PermitFireGasESD rows.
         for item in fire_gas_esd_items:
             item.can_sign_isolation = PermitFireGasESDService.can_sign_isolation(
                 item=item,
                 actor=self.request.user,
             )
-            item.can_sign_deisolation = PermitFireGasESDService.can_sign_deisolation(
-                item=item,
-                actor=self.request.user,
+
+            item.can_sign_deisolation = (
+                PermitFireGasESDService.can_sign_deisolation(
+                    item=item,
+                    actor=self.request.user,
+                )
             )
 
+
+        permit_fg_esd_map = {
+            item.fire_gas_esd_id: item
+            for item in fire_gas_esd_items
+        }
+
+        for master_item in all_fire_gas_esd_items:
+            master_item.permit_item = permit_fg_esd_map.get(
+                master_item.id
+            )
+
+        can_remove_fire_gas_esd_items = (
+            PermitFireGasESDService.can_remove_item(
+                permit=permit,
+                actor=self.request.user,
+            )
+        )
+
+        # Keep this context key in case another existing template/pane uses it.
         context["fire_gas_esd_items"] = fire_gas_esd_items
-        context["can_remove_fire_gas_esd_items"] = can_remove_fire_gas_esd_items
+
+        # New key for the pane that must show every master option.
+        context["all_fire_gas_esd_items"] = all_fire_gas_esd_items
+
+        context["can_remove_fire_gas_esd_items"] = (
+            can_remove_fire_gas_esd_items
+        )
 
         # ----------------------------------------------------------
         # Workflow
