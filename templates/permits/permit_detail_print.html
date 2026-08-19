@@ -182,6 +182,123 @@
         }
 
 
+
+
+        /* ── Fire, Gas & ESD table ── */
+        table.fg-esd-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+        }
+
+        table.fg-esd-table th {
+            background: #e0f2f2;
+            color: #0d6e6e;
+            font-weight: 700;
+            padding: 4px 5px;
+            border: 1px solid #b2dfdf;
+            text-align: left;
+        }
+
+        table.fg-esd-table td {
+            padding: 4px 5px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+        }
+
+        table.fg-esd-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .fg-esd-system {
+            font-weight: 600;
+        }
+
+        .fg-esd-role {
+            display: block;
+            margin-top: 1px;
+            color: #777;
+            font-size: 7.2pt;
+        }
+
+        .fg-esd-selected {
+            color: #0d6e6e;
+            font-weight: 700;
+        }
+
+        .fg-esd-unselected {
+            color: #aaa;
+            font-weight: 700;
+        }
+
+        .fg-esd-status {
+            display: inline-block;
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 7.2pt;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .fg-esd-status--not-selected {
+            color: #777;
+            background: #f4f4f4;
+            border: 1px solid #ccc;
+        }
+
+        .fg-esd-status--pending {
+            color: #fff;
+            background: #333;
+        }
+
+        .fg-esd-status--isolated {
+            color: #5c4300;
+            background: #ffe69c;
+            border: 1px solid #e6bd35;
+        }
+
+        .fg-esd-status--restored {
+            color: #075a39;
+            background: #d1e7dd;
+            border: 1px solid #75b798;
+        }
+
+        .fg-esd-awaiting {
+            color: #9a6700;
+            font-size: 7.5pt;
+            font-weight: 600;
+        }
+
+        .fg-esd-muted {
+            color: #999;
+        }
+
+        .persian-text {
+            direction: rtl;
+            unicode-bidi: plaintext;
+            text-align: right;
+            line-height: 0.8;
+        }
+
+        .align-start-cell {
+            display: block;
+            text-align: start;
+        }
+
+        .text-block {
+            display: block;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .highlight-block {
+            background: #fff;
+            border: 1px solid #d6e8e8;
+            border-radius: 4px;
+            padding: 6px 8px;
+        }
+
     </style>
 </head>
 <body>
@@ -209,12 +326,50 @@
 
     <!-- Validity -->
     <div class="validity-row">
-        <div>Valid From: <span>{{ permit.valid_from|date:"Y-m-d H:i"|default:"—" }}</span><span style="font-size: 7.5pt; color: #777;"> ({{ permit.valid_from|to_jalali:"%Y/%m/%d" }})</span></div>
-        <div>Valid To: <span>{{ permit.valid_to|date:"Y-m-d H:i"|default:"—" }} <span style="font-size: 7.5pt; color: #777;">({{ permit.valid_to|to_jalali:"%Y/%m/%d" }})</span></span></div>
-        <div>Status: <span>{% if is_currently_valid %}Active{% else %}Not Active{% endif %}</span></div>
+        <div>
+            Valid From:
+            <span>
+                {% if permit.valid_from %}
+                    {{ permit.valid_from|date:"Y-m-d H:i" }}
+                    <span style="font-size: 7.5pt; color: #777;">
+                        ({{ permit.valid_from|to_jalali:"%Y/%m/%d" }})
+                    </span>
+                {% else %}
+                    —
+                {% endif %}
+            </span>
+        </div>
+
+        <div>
+            Valid To:
+            <span>
+                {% if permit.valid_to %}
+                    {{ permit.valid_to|date:"Y-m-d H:i" }}
+                    <span style="font-size: 7.5pt; color: #777;">
+                        ({{ permit.valid_to|to_jalali:"%Y/%m/%d" }})
+                    </span>
+                {% else %}
+                    —
+                {% endif %}
+            </span>
+        </div>
+
+        <div>
+            Status:
+            <span>
+                {% if is_currently_valid %}
+                    Active
+                {% else %}
+                    Not Active
+                {% endif %}
+            </span>
+        </div>
+
         <div style="margin-left:auto;">
             {% if permit.current_step %}
-                <span class="status-pill" style="margin-top:-2px;display:inline-block;">{{ permit.current_step.title }}</span>
+                <span class="status-pill" style="margin-top:-2px;display:inline-block;">
+                    {{ permit.current_step.title }}
+                </span>
             {% endif %}
         </div>
     </div>
@@ -230,8 +385,22 @@
             <div class="field"><span class="field-label">Work Supervisor</span><span class="field-value">{{ permit.work_supervisor|default:"—" }}</span></div>
             <div class="field"><span class="field-label">Area Authority</span><span class="field-value">{{ permit.designated_area_authority|default:"—" }}</span></div>
             <div class="field"><span class="field-label">Area Supervisor</span><span class="field-value">{{ permit.designated_area_supervisor|default:"—" }}</span></div>
-            <div class="field full-col"><span class="field-label">Scope of Work</span><span class="field-value block">{{ permit.scope_of_work|default:"—" }}</span></div>
-            {% if permit.remarks %}<div class="field full-col"><span class="field-label">Remarks</span><span class="field-value block">{{ permit.remarks }}</span></div>{% endif %}
+            <div class="field full-col highlight-block">
+                <span class="field-label">Scope of Work</span>
+                <span class="field-value text-block align-start-cell persian-text">
+                    <bdi>{{ permit.scope_of_work|default:"—" }}</bdi>
+                </span>
+            </div>
+
+            {% if permit.remarks %}
+                <div class="field full-col highlight-block">
+                    <span class="field-label">Remarks</span>
+                    <span class="field-value text-block align-start-cell persian-text">
+                        <bdi>{{ permit.remarks }}</bdi>
+                    </span>
+                </div>
+            {% endif %}
+
         </div>
     </div>
 
@@ -337,6 +506,154 @@
         </div>
     </div>
 
+
+    <!-- Fire, Gas & ESD Isolations -->
+    {% if all_fire_gas_esd_items %}
+    <div class="section">
+        <div class="section-title">Fire, Gas &amp; ESD Isolations</div>
+
+        <table class="fg-esd-table">
+            <thead>
+                <tr>
+                    <th style="width: 23%;">System</th>
+                    <th style="width: 13%;">Unit / Zone</th>
+                    <th style="width: 20%;">Remarks</th>
+                    <th style="width: 11%;">Status</th>
+                    <th style="width: 17%;">Isolation Confirmation</th>
+                    <th style="width: 16%;">De-isolation Confirmation</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for master_item in all_fire_gas_esd_items %}
+                    {% with item=master_item.permit_item %}
+                    <tr>
+                        <!-- System / Master Configuration -->
+                        <td>
+                            {% if item %}
+                                <span class="fg-esd-selected">✓</span>
+                            {% else %}
+                                <span class="fg-esd-unselected">✕</span>
+                            {% endif %}
+
+                            <span class="fg-esd-system">
+                                <bdi>{{ master_item.name|default:"—" }}</bdi>
+                            </span>
+
+                        </td>
+
+                        <!-- Unit / Zone -->
+                        <td>
+                            {% if item and item.unit_zone %}
+                                <bdi>{{ item.unit_zone }}</bdi>
+                            {% else %}
+                                <span class="fg-esd-muted">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Remarks -->
+                        <td>
+                            {% if item and item.remarks %}
+                                <bdi>{{ item.remarks }}</bdi>
+                            {% else %}
+                                <span class="fg-esd-muted">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Current State -->
+                        <td>
+                            {% if not item %}
+                                <span class="fg-esd-status fg-esd-status--not-selected">
+                                    Not selected
+                                </span>
+
+                            {% elif item.is_deisolated %}
+                                <span class="fg-esd-status fg-esd-status--restored">
+                                    Restored
+                                </span>
+
+                            {% elif item.is_isolated %}
+                                <span class="fg-esd-status fg-esd-status--isolated">
+                                    Isolated
+                                </span>
+
+                            {% else %}
+                                <span class="fg-esd-status fg-esd-status--pending">
+                                    Pending
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Isolation Confirmation -->
+                        <td>
+                            {% if item %}
+                                {% if item.isolated_confirmed_by %}
+                                    <div>
+                                        <bdi>
+                                            {{ item.isolated_confirmed_by.get_full_name|default:item.isolated_confirmed_by.username }}
+                                        </bdi>
+                                    </div>
+                                {% else %}
+                                    <span class="fg-esd-muted">—</span>
+                                {% endif %}
+
+                                {% if item.isolated_confirmed_at %}
+                                    <div style="font-size:7.2pt; color:#777; margin-top:2px;">
+                                        {{ item.isolated_confirmed_at|date:"Y-m-d H:i" }}
+                                        <br>
+                                        <bdi>
+                                            {{ item.isolated_confirmed_at|to_jalali:"%Y/%m/%d" }}
+                                        </bdi>
+                                    </div>
+                                {% elif not item.is_isolated %}
+                                    <div class="fg-esd-muted" style="font-size:7.2pt; margin-top:2px;">
+                                        Pending
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <span class="fg-esd-muted">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- De-isolation Confirmation -->
+                        <td>
+                            {% if item %}
+                                {% if item.deisolated_confirmed_by %}
+                                    <div>
+                                        <bdi>
+                                            {{ item.deisolated_confirmed_by.get_full_name|default:item.deisolated_confirmed_by.username }}
+                                        </bdi>
+                                    </div>
+                                {% else %}
+                                    <span class="fg-esd-muted">—</span>
+                                {% endif %}
+
+                                {% if item.deisolated_confirmed_at %}
+                                    <div style="font-size:7.2pt; color:#777; margin-top:2px;">
+                                        {{ item.deisolated_confirmed_at|date:"Y-m-d H:i" }}
+                                        <br>
+                                        <bdi>
+                                            {{ item.deisolated_confirmed_at|to_jalali:"%Y/%m/%d" }}
+                                        </bdi>
+                                    </div>
+                                {% elif item.is_isolated %}
+                                    <div class="fg-esd-awaiting" style="margin-top:2px;">
+                                        Awaiting restoration
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <span class="fg-esd-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    
     <!-- Approvals -->
     <div class="section">
         <div class="section-title">Approvals</div>

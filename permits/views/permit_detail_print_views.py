@@ -1,18 +1,20 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Prefetch
 from django.views.generic import DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 from permits.models import (
+    FireGasESD,
+    Hazard,
     Permit,
+    PermitApproval,
+    PermitCloseoutSignoff,
+    PermitFireGasESD,
     PermitHazard,
     PermitPrecaution,
-    PermitApproval,
-    PermitWorkShift,
     PermitShiftSignoff,
     PermitTypeActiveShiftRole,
     PermitWorkflowStep,
-    PermitCloseoutSignoff,
-    Hazard,
+    PermitWorkShift,
     Precaution,
 )
 
@@ -57,6 +59,22 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
             .order_by("id")
         )
 
+        fire_gas_esd_queryset = (
+            PermitFireGasESD.objects
+            .select_related(
+                "fire_gas_esd",
+                "fire_gas_esd__role",
+                "isolated_confirmed_by",
+                "deisolated_confirmed_by",
+            )
+            .order_by(
+                "fire_gas_esd__display_order",
+                "fire_gas_esd__code",
+                "unit_zone",
+                "id",
+            )
+        )
+
         return (
             Permit.objects
             .select_related(
@@ -81,7 +99,12 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                     queryset=(
                         PermitHazard.objects
                         .filter(is_active=True)
-                        .select_related("hazard")
+                        .select_related(
+                            "hazard",
+                            "created_by",
+                            "modified_by",
+                            "removed_by",
+                        )
                     ),
                     to_attr="active_hazard_assessments",
                 ),
@@ -90,7 +113,12 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                     queryset=(
                         PermitPrecaution.objects
                         .filter(is_active=True)
-                        .select_related("precaution")
+                        .select_related(
+                            "precaution",
+                            "created_by",
+                            "modified_by",
+                            "removed_by",
+                        )
                     ),
                     to_attr="active_precaution_requirements",
                 ),
@@ -105,6 +133,11 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                             "to_step",
                         )
                     ),
+                ),
+                Prefetch(
+                    "permit_fire_gas_esd_items",
+                    queryset=fire_gas_esd_queryset,
+                    to_attr="prefetched_fire_gas_esd_items",
                 ),
                 Prefetch(
                     "work_shifts",
@@ -129,27 +162,32 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
         permit = self.object
 
         # ----------------------------------------------------------
-        # Hazard / precaution master data (with audit info)
+        # Hazard / precaution master data
         # ----------------------------------------------------------
 
-        all_hazards = list(Hazard.objects.order_by("display_order", "code"))
-        all_precautions = list(Precaution.objects.order_by("display_order", "code"))
+        all_hazards = list(
+            Hazard.objects.order_by("display_order", "code")
+        )
+
+        all_precautions = list(
+            Precaution.objects.order_by("display_order", "code")
+        )
 
         hazard_map = {
             item.hazard_id: item
-            for item in permit.hazard_assessments.select_related(
-                "created_by",
-                "modified_by",
-                "removed_by",
+            for item in getattr(
+                permit,
+                "active_hazard_assessments",
+                [],
             )
         }
 
         precaution_map = {
             item.precaution_id: item
-            for item in permit.precaution_requirements.select_related(
-                "created_by",
-                "modified_by",
-                "removed_by",
+            for item in getattr(
+                permit,
+                "active_precaution_requirements",
+                [],
             )
         }
 
@@ -157,44 +195,87 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
             hazard.permit_assessment = hazard_map.get(hazard.id)
 
         for precaution in all_precautions:
-            precaution.permit_assessment = precaution_map.get(precaution.id)
+            precaution.permit_assessment = precaution_map.get(
+                precaution.id
+            )
 
         context["all_hazards"] = all_hazards
         context["all_precautions"] = all_precautions
 
         # ----------------------------------------------------------
-        # Validity / state (display only)
+        # Fire, Gas & ESD master + permit-specific items
+        # ----------------------------------------------------------
+
+        all_fire_gas_esd_items = list(
+            FireGasESD.objects
+            .select_related("role")
+            .order_by("display_order", "code")
+        )
+
+        fire_gas_esd_items = list(
+            getattr(
+                permit,
+                "prefetched_fire_gas_esd_items",
+                [],
+            )
+        )
+
+        permit_fg_esd_map = {
+            item.fire_gas_esd_id: item
+            for item in fire_gas_esd_items
+        }
+
+        for master_item in all_fire_gas_esd_items:
+            master_item.permit_item = permit_fg_esd_map.get(master_item.id)
+
+        context["fire_gas_esd_items"] = fire_gas_esd_items
+        context["all_fire_gas_esd_items"] = all_fire_gas_esd_items
+
+
+        # ----------------------------------------------------------
+        # Validity / workflow state
         # ----------------------------------------------------------
 
         context["is_currently_valid"] = permit.is_active
+
         context["is_active_state"] = (
             permit.current_step is not None
-            and permit.current_step.state == PermitWorkflowStep.State.ACTIVE
+            and permit.current_step.state
+            == PermitWorkflowStep.State.ACTIVE
         )
 
         # ----------------------------------------------------------
         # Work shifts
         # ----------------------------------------------------------
 
-        work_shifts = getattr(permit, "prefetched_work_shifts", [])
+        work_shifts = getattr(
+            permit,
+            "prefetched_work_shifts",
+            [],
+        )
+
         active_shift_roles = getattr(
             permit.permit_type,
             "prefetched_active_shift_roles",
             [],
         )
 
-        context["work_shifts"] = work_shifts
-        context["active_shift_roles"] = active_shift_roles
-
         for work_shift in work_shifts:
             signoffs = list(work_shift.signoffs.all())
+
             work_shift.completed_signoffs_count = sum(
-                signoff.signed_by_id is not None for signoff in signoffs
-            )
-            work_shift.is_ready = not any(
-                signoff.is_required and signoff.signed_by_id is None
+                signoff.signed_by_id is not None
                 for signoff in signoffs
             )
+
+            work_shift.is_ready = not any(
+                signoff.is_required
+                and signoff.signed_by_id is None
+                for signoff in signoffs
+            )
+
+        context["work_shifts"] = work_shifts
+        context["active_shift_roles"] = active_shift_roles
 
         # ----------------------------------------------------------
         # Close-out signoffs
