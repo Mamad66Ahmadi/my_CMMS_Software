@@ -16,26 +16,34 @@
                 <table class="table table-hover align-middle mb-0 fg-esd-table">
                     <thead class="table-light">
                         <tr>
-                            <th style="min-width:180px"><bdi>System</bdi></th>
+                            <th style="min-width:260px"><bdi>System</bdi></th>
                             <th><bdi>Zone</bdi></th>
                             <th><bdi>Status</bdi></th>
-                            <th style="min-width:160px"><bdi>Isolation</bdi></th>
-                            <th style="min-width:160px"><bdi>De-isolation</bdi></th>
-                            <th><bdi>Remarks</bdi></th>
-                            <th class="text-end"><bdi>Actions</bdi></th>
+                            <th style="min-width:160px">
+                                <bdi>Isolation</bdi>
+                                <div class="fg-esd-cell__row">
+                                    <small class="fg-esd-cell__label text-muted"><bdi>Confirmed By</bdi></small>
+                                </div>
+                            </th>
+                            <th style="min-width:160px">
+                                <bdi>De-isolation</bdi>
+                                <div class="fg-esd-cell__row">
+                                    <small class="fg-esd-cell__label text-muted"><bdi>Confirmed By</bdi></small>
+                                </div>
+                            </th>
+                            <th style="width:1%; white-space:nowrap"><bdi>Actions</bdi></th>
                         </tr>
                     </thead>
+
+
                     <tbody>
                         {% for item in fire_gas_esd_items %}
                             <tr>
-                                <!-- System -->
+                                <!-- System (role badge removed) -->
                                 <td>
                                     <div class="fw-semibold persian-text lh-sm">
                                         <bdi>{{ item.fire_gas_esd.name }}</bdi>
                                     </div>
-                                    <span class="badge text-bg-secondary fw-normal mt-1 persian-text">
-                                        <bdi>{{ item.fire_gas_esd.role.name }}</bdi>
-                                    </span>
                                 </td>
 
                                 <!-- Zone -->
@@ -62,21 +70,18 @@
                                     {% endif %}
                                 </td>
 
-                                <!-- Isolation (time + confirmed by/at stacked) -->
+                                <!-- Isolation -->
                                 <td class="persian-text">
-                                    <div class="fg-esd-cell">
+                                    {% with role_name=item.fire_gas_esd.role.name jalali_at=item.isolated_confirmed_at|to_jalali %}
+                                    <div class="fg-esd-cell"
+                                        {% if item.isolated_confirmed_by %}
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-html="true"
+                                            title="<span class='d-block'><i class='bi bi-person-fill me-1'></i>{{ role_name }}</span><span class='d-block'><i class='bi bi-calendar3 me-1'></i>{{ jalali_at }}</span>"
+                                        {% endif %}>
+
                                         <div class="fg-esd-cell__row">
-                                            <span class="fg-esd-cell__label text-muted"><bdi>Time</bdi></span>
-                                            <span>
-                                                {% if item.isolated_time %}
-                                                    <bdi>{{ item.isolated_time|date:'Y-m-d H:i' }}</bdi>
-                                                {% else %}
-                                                    <span class="text-muted">—</span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        <div class="fg-esd-cell__row">
-                                            <span class="fg-esd-cell__label text-muted"><bdi>By</bdi></span>
                                             <span>
                                                 {% if item.isolated_confirmed_by %}
                                                     <bdi>{{ item.isolated_confirmed_by.get_full_name|default:item.isolated_confirmed_by.username }}</bdi>
@@ -86,7 +91,6 @@
                                             </span>
                                         </div>
                                         <div class="fg-esd-cell__row">
-                                            <span class="fg-esd-cell__label text-muted"><bdi>At</bdi></span>
                                             <span>
                                                 {% if item.isolated_confirmed_at %}
                                                     <bdi>{{ item.isolated_confirmed_at|date:'Y-m-d H:i' }}</bdi>
@@ -96,23 +100,21 @@
                                             </span>
                                         </div>
                                     </div>
+                                    {% endwith %}
                                 </td>
 
-                                <!-- De-isolation (time + confirmed by/at stacked) -->
+                                <!-- De-isolation -->
                                 <td class="persian-text">
-                                    <div class="fg-esd-cell">
+                                    {% with role_name=item.fire_gas_esd.role.name jalali_at=item.deisolated_confirmed_at|to_jalali %}
+                                    <div class="fg-esd-cell"
+                                        {% if item.deisolated_confirmed_by %}
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-html="true"
+                                            title="<span class='d-block'><i class='bi bi-person-fill me-1'></i>{{ role_name }}</span><span class='d-block'><i class='bi bi-calendar3 me-1'></i>{{ jalali_at }}</span>"
+                                        {% endif %}>
+
                                         <div class="fg-esd-cell__row">
-                                            <span class="fg-esd-cell__label text-muted"><bdi>Time</bdi></span>
-                                            <span>
-                                                {% if item.deisolated_time %}
-                                                    <bdi>{{ item.deisolated_time|date:'Y-m-d H:i' }}</bdi>
-                                                {% else %}
-                                                    <span class="text-muted">—</span>
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        <div class="fg-esd-cell__row">
-                                            <span class="fg-esd-cell__label text-muted"><bdi>By</bdi></span>
                                             <span>
                                                 {% if item.deisolated_confirmed_by %}
                                                     <bdi>{{ item.deisolated_confirmed_by.get_full_name|default:item.deisolated_confirmed_by.username }}</bdi>
@@ -122,7 +124,6 @@
                                             </span>
                                         </div>
                                         <div class="fg-esd-cell__row">
-                                            <span class="fg-esd-cell__label text-muted"><bdi>At</bdi></span>
                                             <span>
                                                 {% if item.deisolated_confirmed_at %}
                                                     <bdi>{{ item.deisolated_confirmed_at|date:'Y-m-d H:i' }}</bdi>
@@ -134,84 +135,49 @@
                                             </span>
                                         </div>
                                     </div>
+                                    {% endwith %}
                                 </td>
 
-                                <!-- Remarks -->
-                                <td class="persian-text" style="max-width:160px">
-                                    {% if item.remarks %}
-                                        <span class="d-inline-block text-truncate w-100" title="{{ item.remarks|escape }}">
-                                            <bdi>{{ item.remarks|truncatechars:50 }}</bdi>
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </td>
 
                                 <!-- Actions -->
-                                <td class="text-end">
+                                <td >
                                     {% if item.can_sign_isolation %}
                                         <form method="post"
                                             action="{% url 'permits:permit_fire_gas_esd_isolate' permit_number=permit.permit_number item_id=item.pk %}"
-                                            class="d-flex flex-column gap-2 align-items-end">
+                                            class="d-flex flex-column gap-1">
                                             {% csrf_token %}
-
                                             <div class="input-group input-group-sm" style="max-width:220px">
                                                 <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
-                                                <input type="datetime-local"
-                                                    name="time"
-                                                    class="form-control form-control-sm"
-                                                    required>
+                                                <input type="datetime-local" name="time" class="form-control form-control-sm" required>
                                             </div>
-
                                             <div class="form-check form-check-sm d-flex align-items-center gap-1">
-                                                <input type="checkbox"
-                                                    name="confirm"
-                                                    id="iso-confirm-{{ item.pk }}"
-                                                    class="form-check-input"
-                                                    required>
-                                                <label class="form-check-label small text-muted"
-                                                    for="iso-confirm-{{ item.pk }}">
+                                                <input type="checkbox" name="confirm" id="iso-confirm-{{ item.pk }}" class="form-check-input" required>
+                                                <label class="form-check-label small text-muted" for="iso-confirm-{{ item.pk }}">
                                                     <bdi>I confirm</bdi>
                                                 </label>
                                             </div>
-
-                                            <button type="submit"
-                                                    class="btn btn-sm btn-outline-success persian-text text-nowrap">
-                                                <i class="bi bi-pencil-square me-1"></i>
-                                                <bdi>Confirm Isolation</bdi>
+                                            <button type="submit" class="btn btn-sm btn-outline-success persian-text text-nowrap">
+                                                <i class="bi bi-pencil-square me-1"></i><bdi>Confirm Isolation</bdi>
                                             </button>
                                         </form>
 
                                     {% elif item.can_sign_deisolation %}
                                         <form method="post"
                                             action="{% url 'permits:permit_fire_gas_esd_deisolate' permit_number=permit.permit_number item_id=item.pk %}"
-                                            class="d-flex flex-column gap-2 align-items-end">
+                                            class="d-flex flex-column gap-1">
                                             {% csrf_token %}
-
                                             <div class="input-group input-group-sm" style="max-width:220px">
                                                 <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
-                                                <input type="datetime-local"
-                                                    name="time"
-                                                    class="form-control form-control-sm"
-                                                    required>
+                                                <input type="datetime-local" name="time" class="form-control form-control-sm" required>
                                             </div>
-
                                             <div class="form-check d-flex align-items-center gap-1">
-                                                <input type="checkbox"
-                                                    name="confirm"
-                                                    id="deiso-confirm-{{ item.pk }}"
-                                                    class="form-check-input"
-                                                    required>
-                                                <label class="form-check-label small text-muted"
-                                                    for="deiso-confirm-{{ item.pk }}">
+                                                <input type="checkbox" name="confirm" id="deiso-confirm-{{ item.pk }}" class="form-check-input" required>
+                                                <label class="form-check-label small text-muted" for="deiso-confirm-{{ item.pk }}">
                                                     <bdi>I confirm</bdi>
                                                 </label>
                                             </div>
-
-                                            <button type="submit"
-                                                    class="btn btn-sm btn-outline-primary persian-text text-nowrap">
-                                                <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                                <bdi>Confirm Restoration</bdi>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary persian-text text-nowrap">
+                                                <i class="bi bi-arrow-counterclockwise me-1"></i><bdi>Confirm Restoration</bdi>
                                             </button>
                                         </form>
 
@@ -219,12 +185,10 @@
                                         <span class="text-muted small">—</span>
                                     {% endif %}
                                 </td>
-
-
-
                             </tr>
                         {% endfor %}
                     </tbody>
+
                 </table>
             </div>
         {% else %}
@@ -239,3 +203,11 @@
         {% endif %}
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new bootstrap.Tooltip(el, { html: true });
+    });
+});
+
+</script>

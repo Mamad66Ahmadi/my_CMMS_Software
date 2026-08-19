@@ -2531,3 +2531,14 @@ textarea.form-control,
 .work-shift-panel {
     scroll-margin-top: 6rem; /* match your navbar height */
 }
+
+
+.fg-esd-cell__label {
+    font-size: 0.7rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    display: block;
+    line-height: 1.2;
+}
