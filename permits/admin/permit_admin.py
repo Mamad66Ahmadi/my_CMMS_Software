@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from permits.models import Permit, PermitHazard, PermitPrecaution
 from permits.models import PermitCloseoutSignoff
+from permits.admin.permit_fg_esd_admin import PermitFireGasESDInline
 
 
 
@@ -117,6 +118,7 @@ class PermitCloseoutSignoffInline(admin.TabularInline):
         "remarks",
     )
 
+
 @admin.register(Permit)
 class PermitAdmin(admin.ModelAdmin):
     """
@@ -167,6 +169,7 @@ class PermitAdmin(admin.ModelAdmin):
     inlines = [
         PermitHazardInline,
         PermitPrecautionInline,
+        PermitFireGasESDInline,
         PermitCloseoutSignoffInline,
     ]
 

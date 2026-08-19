@@ -491,6 +491,10 @@
                 </div>
             </div>
 
+            <!-- Fire and Gas and ESD  -->
+            {% include "permits/permit_detail_partials/_fire_gas_esd_panel.html" with permit=permit %}
+
+
             <!-- Active Permit Work Shifts -->
             {% include "permits/permit_detail_partials/work_shifts_panel.html" with permit=permit %}
 

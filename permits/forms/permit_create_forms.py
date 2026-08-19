@@ -13,6 +13,8 @@ from permits.models import (
     PermitPrecaution,
     Precaution,
 )
+from permits.models.permit_fg_esd_models import FireGasESD, PermitFireGasESD
+from permits.services.fire_gas_esd_service import PermitFireGasESDService
 from work_orders.models.wo_models import WorkOrder
 from permits.models.workflow_models import Decision
 
@@ -85,6 +87,13 @@ class PermitCreateForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple(),
     )
 
+    fire_gas_esd_items = forms.ModelMultipleChoiceField(
+        queryset=FireGasESD.objects.none(),
+        required=False,
+        label="Fire, Gas & ESD Isolations",
+        widget=forms.CheckboxSelectMultiple(),
+    )
+
     class Meta:
         model = Permit
 
@@ -111,6 +120,9 @@ class PermitCreateForm(forms.ModelForm):
             # Hazards and precautions
             "hazards",
             "precautions",
+
+            # Fire, Gas & ESD isolations
+            "fire_gas_esd_items",
 
             # Duration and manpower
             "duration_value",
@@ -176,6 +188,7 @@ class PermitCreateForm(forms.ModelForm):
             ),
             "hazards": forms.CheckboxSelectMultiple(),
             "precautions": forms.CheckboxSelectMultiple(),
+            "fire_gas_esd_items": forms.CheckboxSelectMultiple(),
             "duration_value": forms.NumberInput(
                 attrs={
                     "class": "form-control",
@@ -296,6 +309,7 @@ class PermitCreateForm(forms.ModelForm):
             "remarks": "Remarks",
             "hazards": "Identified Hazards",
             "precautions": "Required Precautions",
+            "fire_gas_esd_items": "Fire, Gas & ESD Isolations",
             "duration_value": "Duration",
             "duration_unit": "Duration Unit",
             "estimated_personnel": "Estimated Personnel",
@@ -375,6 +389,10 @@ class PermitCreateForm(forms.ModelForm):
                 .order_by("display_order", "code")
             )
 
+            self.fields["fire_gas_esd_items"].queryset = (
+                PermitFireGasESDService.get_active_master_items()
+            )
+
             # Existing remarks, keyed by str(item_id) -> remark text.
             # Empty on create (no instance yet); populated on update.
             self._hazard_remarks = self._existing_remarks_map(
@@ -385,6 +403,10 @@ class PermitCreateForm(forms.ModelForm):
                 through_model=PermitPrecaution,
                 related_field="precaution",
             )
+
+            # Existing Fire/Gas/ESD rows, keyed by str(fire_gas_esd_id).
+            # Empty on create (no instance yet); populated on update.
+            self._fg_esd_rows_map = self._existing_fg_esd_rows_map()
 
     def _existing_remarks_map(self, *, through_model, related_field):
         if not (self.instance and self.instance.pk):
@@ -397,6 +419,17 @@ class PermitCreateForm(forms.ModelForm):
             for record in through_model.objects.filter(
                 permit=self.instance,
                 is_active=True,
+            )
+        }
+
+    def _existing_fg_esd_rows_map(self):
+        if not (self.instance and self.instance.pk):
+            return {}
+
+        return {
+            str(record.fire_gas_esd_id): record
+            for record in PermitFireGasESD.objects.filter(
+                permit=self.instance,
             )
         }
 
@@ -415,6 +448,44 @@ class PermitCreateForm(forms.ModelForm):
             remark_prefix="precaution_remarks",
             remarks_map=self._precaution_remarks,
         )
+
+    @property
+    def fire_gas_esd_rows(self):
+        """
+        One row per active FireGasESD master item, mirroring hazard_rows/
+        precaution_rows, but carrying the extra unit_zone field and any
+        existing isolation / de-isolation state (read-only here; signing
+        is handled separately by PermitFireGasESDService/views).
+        """
+        rows = []
+
+        for checkbox in self["fire_gas_esd_items"]:
+            item_id = checkbox.data["value"]
+            existing = self._fg_esd_rows_map.get(str(item_id))
+
+            if self.is_bound:
+                # Re-render after a failed submit: show what the user typed.
+                unit_zone = (
+                    self.data.get(f"fg_esd_unit_zone_{item_id}") or ""
+                ).strip()
+                remark = (
+                    self.data.get(f"fg_esd_remarks_{item_id}") or ""
+                ).strip()
+            else:
+                unit_zone = existing.unit_zone if existing else ""
+                remark = existing.remarks if existing else ""
+
+            rows.append(
+                SimpleNamespace(
+                    checkbox=checkbox,
+                    item_id=item_id,
+                    unit_zone=unit_zone,
+                    remark=remark,
+                    existing=existing,
+                )
+            )
+
+        return rows
 
     def _build_rows(self, *, field_name, remark_prefix, remarks_map):
         rows = []
@@ -514,6 +585,35 @@ class PermitCreateForm(forms.ModelForm):
             related_field="precaution",
             remark_prefix="precaution_remarks",
             selected_objects=self.cleaned_data.get("precautions", []),
+            user=user,
+        )
+
+
+    def save_fire_gas_esd_items(self, *, user):
+        if not self.instance.pk:
+            raise ValueError(
+                "The permit must be saved before Fire, Gas & ESD items."
+            )
+
+        selected_items = self.cleaned_data.get("fire_gas_esd_items", [])
+
+        rows = []
+        for item in selected_items:
+            item_id = item.pk
+            existing = self._fg_esd_rows_map.get(str(item_id))
+
+            rows.append(
+                {
+                    "pk": existing.pk if existing else None,
+                    "fire_gas_esd_id": item_id,
+                    "unit_zone": self.data.get(f"fg_esd_unit_zone_{item_id}") or "",
+                    "remarks": self.data.get(f"fg_esd_remarks_{item_id}") or "",
+                }
+            )
+
+        PermitFireGasESDService.sync_items(
+            permit=self.instance,
+            rows=rows,
             user=user,
         )
 

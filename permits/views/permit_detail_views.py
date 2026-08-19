@@ -16,6 +16,7 @@ from equipment.models import LocationTag
 
 from permits.forms import (
     PermitCreateForm,
+    PermitFireGasESDSignoffForm,
     PermitShiftSignoffForm,
     PermitUpdateForm,
     PermitWorkShiftForm,
@@ -36,6 +37,8 @@ from permits.models import (
     Hazard,
     Precaution,
 )
+
+from permits.models.permit_fg_esd_models import FireGasESD, PermitFireGasESD
 
 from permits.models.permit_shift_models import (
     PermitShiftSignoff,
@@ -66,6 +69,10 @@ from permits.services.work_shift_service import (
 
 from permits.services.closeout_service import (
     PermitCloseoutService
+)
+
+from permits.services.fire_gas_esd_service import (
+    PermitFireGasESDService,
 )
 
 # =============================================================================
@@ -183,6 +190,24 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                         .select_related("precaution")
                     ),
                     to_attr="active_precaution_requirements",
+                ),
+
+                # ------------------------------------------------------
+                # Fire, Gas & ESD Isolations
+                # ------------------------------------------------------
+
+                Prefetch(
+                    "permit_fire_gas_esd_items",
+                    queryset=(
+                        PermitFireGasESD.objects
+                        .select_related(
+                            "fire_gas_esd",
+                            "fire_gas_esd__role",
+                            "isolated_confirmed_by",
+                            "deisolated_confirmed_by",
+                        )
+                    ),
+                    to_attr="prefetched_fire_gas_esd_items",
                 ),
 
                 # ------------------------------------------------------
@@ -365,6 +390,33 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
 
         context["all_hazards"] = all_hazards
         context["all_precautions"] = all_precautions
+
+        # ----------------------------------------------------------
+        # Fire, Gas & ESD isolations
+        # ----------------------------------------------------------
+
+        fire_gas_esd_items = list(
+            getattr(permit, "prefetched_fire_gas_esd_items", None)
+            or PermitFireGasESDService.get_permit_items(permit=permit)
+        )
+
+        can_remove_fire_gas_esd_items = PermitFireGasESDService.can_remove_item(
+            permit=permit,
+            actor=self.request.user,
+        )
+
+        for item in fire_gas_esd_items:
+            item.can_sign_isolation = PermitFireGasESDService.can_sign_isolation(
+                item=item,
+                actor=self.request.user,
+            )
+            item.can_sign_deisolation = PermitFireGasESDService.can_sign_deisolation(
+                item=item,
+                actor=self.request.user,
+            )
+
+        context["fire_gas_esd_items"] = fire_gas_esd_items
+        context["can_remove_fire_gas_esd_items"] = can_remove_fire_gas_esd_items
 
         # ----------------------------------------------------------
         # Workflow
@@ -633,6 +685,7 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
         self.object.save()
 
         form.save_assessments(user=self.request.user)
+        form.save_fire_gas_esd_items(user=self.request.user)
 
         return redirect(self.get_success_url())
 
@@ -716,6 +769,7 @@ class PermitUpdateView(LoginRequiredMixin, UpdateView):
         self.object.save()
 
         form.save_assessments(user=self.request.user)
+        form.save_fire_gas_esd_items(user=self.request.user)
 
         messages.success(
             self.request,
@@ -758,6 +812,13 @@ def get_permit_data(request):
                     ).select_related("precaution"),
                     to_attr="active_precaution_requirements",
                 ),
+                Prefetch(
+                    "permit_fire_gas_esd_items",
+                    queryset=PermitFireGasESD.objects.select_related(
+                        "fire_gas_esd",
+                    ),
+                    to_attr="active_fire_gas_esd_items",
+                ),
             )
             .get(pk=permit_id)
         )
@@ -771,6 +832,13 @@ def get_permit_data(request):
     active_precautions = [
         requirement.precaution_id
         for requirement in permit.active_precaution_requirements
+    ]
+    active_fire_gas_esd_items = [
+        {
+            "fire_gas_esd": item.fire_gas_esd_id,
+            "unit_zone": item.unit_zone,
+        }
+        for item in permit.active_fire_gas_esd_items
     ]
 
     return JsonResponse({
@@ -801,6 +869,7 @@ def get_permit_data(request):
 
         "hazards": active_hazards,
         "precautions": active_precautions,
+        "fire_gas_esd_items": active_fire_gas_esd_items,
     })
 
 
@@ -1111,6 +1180,138 @@ class PermitCloseoutSignoffView(LoginRequiredMixin, View):
                 },
             )
             + "#permit-closeout-panel"
+        )
+
+
+class PermitFireGasESDIsolateView(LoginRequiredMixin, View):
+    """
+    Records the isolation date/time and signature for one
+    PermitFireGasESD row.
+
+    The responsible role is taken from the linked FireGasESD master item,
+    never supplied by the browser. Isolation can be signed at any time,
+    independently of the permit's workflow/editable state.
+    """
+
+    def post(self, request, permit_number, item_id):
+        item = get_object_or_404(
+            PermitFireGasESD.objects.select_related(
+                "permit",
+                "fire_gas_esd",
+                "fire_gas_esd__role",
+            ),
+            pk=item_id,
+            permit__permit_number=permit_number,
+        )
+
+        form = PermitFireGasESDSignoffForm(request.POST)
+        if not form.is_valid():
+            messages.error(
+                request,
+                "Please provide a valid isolation date/time and confirm before signing.",
+            )
+            return redirect(
+                reverse("permits:permit_detail", kwargs={"permit_number": permit_number})
+                + "#fire-gas-esd-panel"
+            )
+
+        try:
+            result = PermitFireGasESDService.sign_isolation(
+                item_id=item.pk,
+                isolated_time=form.cleaned_data["time"],
+                actor=request.user,
+            )
+
+        except PermissionDenied:
+            messages.error(
+                request,
+                "You are not authorized to sign this isolation.",
+            )
+
+        except ValidationError as exc:
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
+
+        else:
+            messages.success(
+                request,
+                f"Isolation signed for {result.item.fire_gas_esd}.",
+            )
+
+        return redirect(
+            reverse(
+                "permits:permit_detail",
+                kwargs={"permit_number": item.permit.permit_number},
+            )
+            + "#fire-gas-esd-panel"
+        )
+
+
+class PermitFireGasESDDeisolateView(LoginRequiredMixin, View):
+    """
+    Records the de-isolation date/time and signature for one
+    PermitFireGasESD row.
+
+    Same authorization rules as isolation: the responsible role comes
+    from the FireGasESD master item and de-isolation can be signed at
+    any time.
+    """
+
+    def post(self, request, permit_number, item_id):
+        item = get_object_or_404(
+            PermitFireGasESD.objects.select_related(
+                "permit",
+                "fire_gas_esd",
+                "fire_gas_esd__role",
+            ),
+            pk=item_id,
+            permit__permit_number=permit_number,
+        )
+
+        form = PermitFireGasESDSignoffForm(request.POST)
+        if not form.is_valid():
+            messages.error(
+                request,
+                "Please provide a valid de-isolation date/time and confirm before signing.",
+            )
+            return redirect(
+                reverse("permits:permit_detail", kwargs={"permit_number": permit_number})
+                + "#fire-gas-esd-panel"
+            )
+
+        try:
+            result = PermitFireGasESDService.sign_deisolation(
+                item_id=item.pk,
+                deisolated_time=form.cleaned_data["time"],
+                actor=request.user,
+            )
+
+        except PermissionDenied:
+            messages.error(
+                request,
+                "You are not authorized to sign this de-isolation.",
+            )
+
+        except ValidationError as exc:
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
+
+        else:
+            messages.success(
+                request,
+                f"De-isolation signed for {result.item.fire_gas_esd}.",
+            )
+
+        return redirect(
+            reverse(
+                "permits:permit_detail",
+                kwargs={"permit_number": item.permit.permit_number},
+            )
+            + "#fire-gas-esd-panel"
         )
 
 

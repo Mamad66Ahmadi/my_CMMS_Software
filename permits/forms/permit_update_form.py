@@ -1,6 +1,7 @@
 from django import forms
 from .permit_create_forms import PermitCreateForm
 from permits.models import Permit, PermitHazard, PermitPrecaution
+from permits.models.permit_fg_esd_models import PermitFireGasESD
 
 class PermitUpdateForm(PermitCreateForm):
     immutable_fields = (
@@ -44,6 +45,11 @@ class PermitUpdateForm(PermitCreateForm):
                     is_active=True,
                 ).values_list("precaution_id", flat=True)
             )
+            active_fire_gas_esd_ids = list(
+                PermitFireGasESD.objects.filter(
+                    permit=self.instance,
+                ).values_list("fire_gas_esd_id", flat=True)
+            )
 
             # model_to_dict() (run inside ModelForm.__init__) populates
             # self.initial["hazards"]/["precautions"] from the raw M2M
@@ -55,9 +61,11 @@ class PermitUpdateForm(PermitCreateForm):
             # too, not just on the field.
             self.initial["hazards"] = active_hazard_ids
             self.initial["precautions"] = active_precaution_ids
+            self.initial["fire_gas_esd_items"] = active_fire_gas_esd_ids
 
             self.fields["hazards"].initial = active_hazard_ids
             self.fields["precautions"].initial = active_precaution_ids
+            self.fields["fire_gas_esd_items"].initial = active_fire_gas_esd_ids
 
     def clean_continuation_of(self):
         if self.instance and self.instance.pk:

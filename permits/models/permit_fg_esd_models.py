@@ -14,6 +14,14 @@ User = settings.AUTH_USER_MODEL
 # Fire, Gas & ESD Master Data
 # =============================================================================
 class FireGasESD(BaseLookupModel):
+
+    role = models.ForeignKey(
+        "PermitApprovalRoleChoices",
+        on_delete=models.PROTECT,
+        related_name="fire_gas_isolations",
+        help_text="The role authorized to perform and confirm this type of isolation.",
+    )
+
     class Meta(BaseLookupModel.Meta):
         verbose_name = "Fire, Gas & ESD"
         verbose_name_plural = "Fire, Gas & ESDs"

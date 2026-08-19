@@ -10,3 +10,4 @@ from .permit_type_active_shift_role_admin import *
 from .permit_work_shift_admin import *
 from .permit_shift_signoff_admin import *
 from .permit_closeout_admin import *
+from .permit_fg_esd_admin import *
