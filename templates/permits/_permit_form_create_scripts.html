@@ -504,7 +504,12 @@ document.body.addEventListener("htmx:afterRequest", function (event) {
 
     setMultipleChoiceValues("hazards", data.hazards);
     setMultipleChoiceValues("precautions", data.precautions);
-
+    
+    if (typeof window.populateContinuationFgEsdItems === "function") {
+        window.populateContinuationFgEsdItems(data.fire_gas_esd_items);
+    } else {
+        console.error("populateContinuationFgEsdItems is not defined — check that fire_gas_esd_section.html loaded before this script ran.");
+    }
     if (typeof updateValiditySummary === "function") {
         updateValiditySummary();
     }
