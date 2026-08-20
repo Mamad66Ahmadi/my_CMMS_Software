@@ -132,6 +132,17 @@
 
                     return confirm(`Are you sure you want to "${selectedActionLabel}" this permit?`);
                 }
+                document.addEventListener("DOMContentLoaded", function () {
+                    const tooltipElements = document.querySelectorAll(
+                        '[data-bs-toggle="tooltip"]'
+                    );
+
+                    [...tooltipElements].forEach(function (element) {
+                        new bootstrap.Tooltip(element);
+                    });
+                });
+
+
             </script>
 
             </div>
@@ -166,23 +177,32 @@
                                                 </td>
 
                                                 <td class="py-2">
-                                                    {% if approval.decision == "APPROVE" %}
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2">
+                                                    <span
+                                                        class="badge px-2 approval-decision-badge
+                                                            {% if approval.decision == 'APPROVE' %}
+                                                                bg-success-subtle text-success border border-success-subtle
+                                                            {% elif approval.decision == 'RETURN' %}
+                                                                bg-warning-subtle text-warning-emphasis border border-warning-subtle
+                                                            {% elif approval.decision == 'CANCEL' %}
+                                                                bg-danger-subtle text-danger border border-danger-subtle
+                                                            {% else %}
+                                                                bg-secondary-subtle text-secondary border border-secondary-subtle
+                                                            {% endif %}"
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="top"
+                                                        data-bs-title="{{ approval.from_step.title }} → {{ approval.to_step.title }}"
+                                                        tabindex="0"
+                                                    >
+                                                        {% if approval.decision == "APPROVE" %}
                                                             Approve
-                                                        </span>
-                                                    {% elif approval.decision == "RETURN" %}
-                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2">
+                                                        {% elif approval.decision == "RETURN" %}
                                                             Return
-                                                        </span>
-                                                    {% elif approval.decision == "CANCEL" %}
-                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">
+                                                        {% elif approval.decision == "CANCEL" %}
                                                             Cancel
-                                                        </span>
-                                                    {% else %}
-                                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
+                                                        {% else %}
                                                             {{ approval.get_decision_display }}
-                                                        </span>
-                                                    {% endif %}
+                                                        {% endif %}
+                                                    </span>
                                                 </td>
 
                                                 <td class="py-2 small">

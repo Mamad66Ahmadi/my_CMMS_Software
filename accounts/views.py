@@ -4,12 +4,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 
 from equipment.models.request_equipment_models import (
     LocationTagChangeRequest,
     EquipmentChangeRequest,
 )
-
+from accounts.models import Department
 
 User = get_user_model()
 
@@ -64,6 +65,38 @@ def user_autocomplete(request):
             "text": f"{user.personnel_number} - {user.get_full_name() or user.username}",
         }
         for user in users
+    ]
+
+    return JsonResponse({"results": results})
+
+
+
+@login_required
+def department_autocomplete(request):
+    """
+    Select2-compatible autocomplete endpoint.
+
+    Searches active departments by department code or department name.
+    `id` is the Department primary key, which is department_code.
+    """
+    q = request.GET.get("q", "").strip()
+
+    departments = (
+        Department.objects
+        .filter(is_active=True)
+        .filter(
+            Q(department_code__icontains=q) |
+            Q(name__icontains=q)
+        )
+        .order_by("department_code")[:10]
+    )
+
+    results = [
+        {
+            "id": department.pk,  # department_code, because it is the PK
+            "text": f"{department.department_code} - {department.name}",
+        }
+        for department in departments
     ]
 
     return JsonResponse({"results": results})
