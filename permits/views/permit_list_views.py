@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.text import slugify
 
 from accounts.models import Department, UserFilterFavorite
-from permits.models import Hazard as HazardCode, PermitType
+from permits.models import Hazard as HazardCode, PermitType, Precaution, FireGasESD, EquipmentStatus
 from permits.models.permit_models import Permit
 from permits.models.workflow_models import PermitWorkflowStep
 from permits.services.user_filter_favorite import (
@@ -55,10 +55,12 @@ def get_request_filters(request):
         # Identification
         "permit_number": request.GET.get("permit_number", "").strip(),
         "continuation_of": request.GET.get("continuation_of", "").strip(),
+        "continuation_to": request.GET.get("continuation_to", "").strip(),
         "permit_type": request.GET.get("permit_type", "").strip(),
 
         # Workflow
         "current_step": current_step_param.strip() if current_step_param else "",
+        "step_state": request.GET.get("step_state", "").strip(),
         "workflow": request.GET.get("workflow", "").strip(),
         "is_terminal": request.GET.get("is_terminal", "").strip(),
 
@@ -68,6 +70,7 @@ def get_request_filters(request):
         "unit": request.GET.get("unit", "").strip(),
         "train": request.GET.get("train", "").strip(),
         "work_order": request.GET.get("work_order", "").strip(),
+        "work_shift_date": request.GET.get("work_shift_date", "").strip(),
 
         # Department / personnel
         "department": request.GET.get("department", "").strip(),
@@ -84,8 +87,12 @@ def get_request_filters(request):
         # Tools / materials
         "electrical_tools": request.GET.get("electrical_tools", "").strip(),
         "mechanical_tools": request.GET.get("mechanical_tools", "").strip(),
+        "other_tools": request.GET.get("other_tools", "").strip(),
         "hazardous_materials": request.GET.get("hazardous_materials", "").strip(),
+        "non_explosion_proof_equipment": request.GET.get("non_explosion_proof_equipment", "").strip(),
         "vehicle_required": request.GET.get("vehicle_required", "").strip(),
+        "vehicle": request.GET.get("vehicle", "").strip(),
+        "fire_gas_esd": request.GET.get("fire_gas_esd", "").strip(),
 
         # Equipment preparation
         "mechanical_isolation": request.GET.get("mechanical_isolation", "").strip(),
@@ -131,9 +138,11 @@ def get_post_filters(request):
 
         "permit_number": request.POST.get("permit_number", "").strip(),
         "continuation_of": request.POST.get("continuation_of", "").strip(),
+        "continuation_to": request.POST.get("continuation_to", "").strip(),
         "permit_type": request.POST.get("permit_type", "").strip(),
 
         "current_step": current_step_param.strip() if current_step_param else "",
+        "step_state": request.POST.get("step_state", "").strip(),
         "workflow": request.POST.get("workflow", "").strip(),
         "is_terminal": request.POST.get("is_terminal", "").strip(),
 
@@ -142,7 +151,8 @@ def get_post_filters(request):
         "unit": request.POST.get("unit", "").strip(),
         "train": request.POST.get("train", "").strip(),
         "work_order": request.POST.get("work_order", "").strip(),
-
+        "work_shift_date": request.POST.get("work_shift_date", "").strip(),
+        
         "department": request.POST.get("department", "").strip(),
         "work_supervisor": request.POST.get("work_supervisor", "").strip(),
         "designated_area_authority": request.POST.get("designated_area_authority", "").strip(),
@@ -155,8 +165,12 @@ def get_post_filters(request):
 
         "electrical_tools": request.POST.get("electrical_tools", "").strip(),
         "mechanical_tools": request.POST.get("mechanical_tools", "").strip(),
+        "other_tools": request.POST.get("other_tools", "").strip(),
         "hazardous_materials": request.POST.get("hazardous_materials", "").strip(),
+        "non_explosion_proof_equipment": request.POST.get("non_explosion_proof_equipment", "").strip(),
         "vehicle_required": request.POST.get("vehicle_required", "").strip(),
+        "vehicle": request.POST.get("vehicle", "").strip(),
+        "fire_gas_esd": request.POST.get("fire_gas_esd", "").strip(),
 
         "mechanical_isolation": request.POST.get("mechanical_isolation", "").strip(),
         "equipment_depressurized": request.POST.get("equipment_depressurized", "").strip(),
@@ -209,17 +223,20 @@ def get_allowed_sort():
     return {
         "permit_number": "permit_number",
         "continuation_of": "continuation_of__permit_number",
+        "continuation_to": "continuations__permit_number",
         "permit_type": "permit_type__name",
 
         "workflow": "workflow__name",
         "current_step": "current_step__step_number",
         "current_step_title": "current_step__title",
+        "step_state": "current_step__state",
         "is_terminal": "current_step__is_terminal",
 
         "location_tag": "location_tag__loc_tag",
         "unit": "location_tag__unit__unit_code",
         "train": "location_tag__train",
         "work_order": "work_order__wo_number",
+        "work_shift_date": "work_shifts__date",
 
         "scope_of_work": "scope_of_work",
         "department": "department__name",
@@ -240,6 +257,7 @@ def get_allowed_sort():
         "equipment_drained": "equipment_drained",
         "equipment_purged": "equipment_purged",
         "process_isolation": "process_isolation",
+        "fire_gas_esd": "permit_fire_gas_esd_items__fire_gas_esd__name",
 
         "valid_from": "valid_from",
         "valid_to": "valid_to",
@@ -404,6 +422,8 @@ def get_filtered_permits(filters):
         .prefetch_related(
             "hazards",
             "precautions",
+            "work_shifts",
+            "permit_fire_gas_esd_items__fire_gas_esd",
         )
         .all()
     )
@@ -485,7 +505,13 @@ def get_filtered_permits(filters):
                 quick_query |= Q(permit_type__code__icontains=value)
                 quick_query |= Q(permit_type__name__icontains=value)
                 quick_query |= Q(current_step__title__icontains=value)
+                quick_query |= Q(current_step__state__icontains=value)
                 quick_query |= Q(department__name__icontains=value)
+                quick_query |= Q(vehicle_description__icontains=value)
+                quick_query |= Q(other_tools__icontains=value)
+                quick_query |= Q(hazardous_materials__icontains=value)
+                quick_query |= Q(non_explosion_proof_equipment__icontains=value)
+                quick_query |= Q(permit_fire_gas_esd_items__unit_zone__icontains=value)
 
             queryset = queryset.filter(quick_query)
 
@@ -499,6 +525,11 @@ def get_filtered_permits(filters):
         queryset,
         filters.get("continuation_of", ""),
         "continuation_of__permit_number",
+    )
+    queryset = apply_multi_value_filter(
+        queryset,
+        filters.get("continuation_to", ""),
+        "continuations__permit_number",
     )
     queryset = apply_multi_value_filter(
         queryset,
@@ -518,6 +549,11 @@ def get_filtered_permits(filters):
         filters.get("current_step", ""),
         "current_step__title",
     )
+    queryset = apply_multi_value_filter(
+        queryset,
+        filters.get("step_state", ""),
+        "current_step__state",
+    )
 
     queryset = apply_boolean_filter(
         queryset,
@@ -536,6 +572,10 @@ def get_filtered_permits(filters):
         filters.get("work_order", ""),
         "work_order__wo_number",
     )
+    if filters.get("work_shift_date"):
+        queryset = queryset.filter(
+            work_shifts__date=filters["work_shift_date"],
+        )
     queryset = apply_multi_value_filter(
         queryset,
         filters.get("unit", ""),
@@ -635,13 +675,33 @@ def get_filtered_permits(filters):
     )
     queryset = apply_multi_value_filter(
         queryset,
+        filters.get("other_tools", ""),
+        "other_tools",
+    )
+    queryset = apply_multi_value_filter(
+        queryset,
         filters.get("hazardous_materials", ""),
         "hazardous_materials",
+    )
+    queryset = apply_multi_value_filter(
+        queryset,
+        filters.get("non_explosion_proof_equipment", ""),
+        "non_explosion_proof_equipment",
     )
     queryset = apply_boolean_filter(
         queryset,
         filters.get("vehicle_required", ""),
         "vehicle_required",
+    )
+    queryset = apply_multi_value_filter(
+        queryset,
+        filters.get("vehicle", ""),
+        "vehicle_description",
+    )
+    queryset = apply_multi_value_filter(
+        queryset,
+        filters.get("fire_gas_esd", ""),
+        "permit_fire_gas_esd_items__fire_gas_esd__name",
     )
 
     # Equipment preparation choices
@@ -841,14 +901,17 @@ class PermitList(LoginRequiredMixin, TemplateView):
         badge_labels = {
             "permit_number": "Permit No.",
             "continuation_of": "Continuation Of",
+            "continuation_to": "Continuation To",
             "permit_type": "Permit Type",
             "workflow": "Workflow",
             "current_step": "Current Step",
+            "step_state": "Step State",
             "location_tag": "Location Tag",
             "parent_tag": "Parent Tag",
             "unit": "Unit",
             "train": "Train",
             "work_order": "Work Order",
+            "work_shift_date": "Open Work Shift",
             "department": "Department",
             "work_supervisor": "Work Supervisor",
             "designated_area_authority": "Area Authority",
@@ -859,7 +922,11 @@ class PermitList(LoginRequiredMixin, TemplateView):
             "precaution_code": "Precaution",
             "electrical_tools": "Electrical Tools",
             "mechanical_tools": "Mechanical Tools",
+            "other_tools": "Other Tools",
             "hazardous_materials": "Hazardous Materials",
+            "non_explosion_proof_equipment": "Non-Explosion-Proof Equipment",
+            "vehicle": "Vehicle",
+            "fire_gas_esd": "Fire/Gas/ESD Isolation",
             "mechanical_isolation": "Mechanical Isolation",
             "equipment_depressurized": "Depressurized",
             "equipment_drained": "Drained",
@@ -950,6 +1017,9 @@ class PermitList(LoginRequiredMixin, TemplateView):
                     "step_number",
                 ),
                 "hazard_codes": HazardCode.objects.filter(is_active=True).order_by("code"),
+                "precaution_codes": Precaution.objects.filter(is_active=True).order_by("code"),
+                "fire_gas_esd_items": FireGasESD.objects.filter(is_active=True).order_by("code"),
+                "equipment_status_choices": EquipmentStatus.choices,
                 "departments": Department.objects.filter(is_active=True).order_by("name"),
 
                 "has_advanced_filters": has_advanced_filters,

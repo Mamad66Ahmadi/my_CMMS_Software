@@ -17,10 +17,12 @@ FILTER_KEYS = [
     # Identification
     "permit_number",
     "continuation_of",
+    "continuation_to",
     "permit_type",
 
     # Workflow
     "current_step",
+    "step_state",
     "workflow",
     "is_terminal",
 
@@ -30,6 +32,7 @@ FILTER_KEYS = [
     "unit",
     "train",
     "work_order",
+    "work_shift_date",
 
     # Department / personnel
     "department",
@@ -47,7 +50,11 @@ FILTER_KEYS = [
     "electrical_tools",
     "mechanical_tools",
     "hazardous_materials",
+    "other_tools",
+    "non_explosion_proof_equipment",
     "vehicle_required",
+    "vehicle",
+    "fire_gas_esd",
 
     # Equipment preparation
     "mechanical_isolation",

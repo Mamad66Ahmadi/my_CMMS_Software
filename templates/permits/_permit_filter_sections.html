@@ -25,6 +25,11 @@
                                            placeholder="Parent permit no."
                                            value="{{ filters.continuation_of }}">
                                 </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Continuation To</label>
+                                    <input type="text" name="continuation_to" class="filter-input"
+                                           placeholder="Child permit no." value="{{ filters.continuation_to }}">
+                                </div>
 
                                 <div class="filter-field">
                                     <label class="filter-label">Permit Type</label>
@@ -68,6 +73,16 @@
                                         <option value="">All</option>
                                         <option value="true" {% if filters.is_terminal == "true" %}selected{% endif %}>True</option>
                                         <option value="false" {% if filters.is_terminal == "false" %}selected{% endif %}>False</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Step State</label>
+                                    <select name="step_state" class="filter-select">
+                                        <option value="">All Step States</option>
+                                        <option value="draft" {% if filters.step_state == "draft" %}selected{% endif %}>Draft</option>
+                                        <option value="under_review" {% if filters.step_state == "under_review" %}selected{% endif %}>Under Review</option>
+                                        <option value="active" {% if filters.step_state == "active" %}selected{% endif %}>Active</option>
+                                        <option value="closed" {% if filters.step_state == "closed" %}selected{% endif %}>Closed</option>
                                     </select>
                                 </div>
                             </div>
@@ -125,6 +140,13 @@
                                            class="filter-input"
                                            placeholder="WO-123, WO-124"
                                            value="{{ filters.work_order }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Work Shift Date</label>
+                                    <input type="date"
+                                        name="work_shift_date"
+                                        class="filter-input"
+                                        value="{{ filters.work_shift_date }}">
                                 </div>
                             </div>
                         </div>
@@ -240,11 +262,14 @@
 
                                 <div class="filter-field">
                                     <label class="filter-label">Precaution</label>
-                                    <input type="text"
-                                           name="precaution_code"
-                                           class="filter-input"
-                                           placeholder="Precaution code/name"
-                                           value="{{ filters.precaution_code }}">
+                                    <select name="precaution_code" class="filter-select">
+                                        <option value="">All Precautions</option>
+                                        {% for precaution in precaution_codes %}
+                                            <option value="{{ precaution.code }}" {% if filters.precaution_code == precaution.code %}selected{% endif %}>
+                                                {{ precaution.code }} - {{ precaution.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -275,6 +300,11 @@
                                            placeholder="Mechanical tools"
                                            value="{{ filters.mechanical_tools }}">
                                 </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Other Tools</label>
+                                    <input type="text" name="other_tools" class="filter-input"
+                                           placeholder="Other tools" value="{{ filters.other_tools }}">
+                                </div>
 
                                 <div class="filter-field">
                                     <label class="filter-label">Hazardous Materials</label>
@@ -284,6 +314,11 @@
                                            placeholder="Hazardous materials"
                                            value="{{ filters.hazardous_materials }}">
                                 </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Non-Explosion-Proof Equipment</label>
+                                    <input type="text" name="non_explosion_proof_equipment" class="filter-input"
+                                           placeholder="Equipment description" value="{{ filters.non_explosion_proof_equipment }}">
+                                </div>
 
                                 <div class="filter-field">
                                     <label class="filter-label">Vehicle Required</label>
@@ -291,6 +326,22 @@
                                         <option value="">All</option>
                                         <option value="true" {% if filters.vehicle_required == "true" %}selected{% endif %}>True</option>
                                         <option value="false" {% if filters.vehicle_required == "false" %}selected{% endif %}>False</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Vehicle</label>
+                                    <input type="text" name="vehicle" class="filter-input"
+                                           placeholder="Vehicle description" value="{{ filters.vehicle }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Fire / Gas / ESD Isolation</label>
+                                    <select name="fire_gas_esd" class="filter-select">
+                                        <option value="">All Isolations</option>
+                                        {% for item in fire_gas_esd_items %}
+                                            <option value="{{ item.name }}" {% if filters.fire_gas_esd == item.name %}selected{% endif %}>
+                                                {{ item.code }} - {{ item.name }}
+                                            </option>
+                                        {% endfor %}
                                     </select>
                                 </div>
                             </div>
@@ -307,47 +358,30 @@
                             <div class="filter-grid">
                                 <div class="filter-field">
                                     <label class="filter-label">Mechanical Isolation</label>
-                                    <input type="text"
-                                           name="mechanical_isolation"
-                                           class="filter-input"
-                                           placeholder="Choice value, comma-separated"
-                                           value="{{ filters.mechanical_isolation }}">
+                                    <select name="mechanical_isolation" class="filter-select">
+                                        <option value="">All</option>
+                                        {% for value,label in equipment_status_choices %}<option value="{{ value }}" {% if filters.mechanical_isolation == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                                    </select>
                                 </div>
 
                                 <div class="filter-field">
                                     <label class="filter-label">Equipment Depressurized</label>
-                                    <input type="text"
-                                           name="equipment_depressurized"
-                                           class="filter-input"
-                                           placeholder="Choice value, comma-separated"
-                                           value="{{ filters.equipment_depressurized }}">
+                                    <select name="equipment_depressurized" class="filter-select"><option value="">All</option>{% for value,label in equipment_status_choices %}<option value="{{ value }}" {% if filters.equipment_depressurized == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
                                 </div>
 
                                 <div class="filter-field">
                                     <label class="filter-label">Equipment Drained</label>
-                                    <input type="text"
-                                           name="equipment_drained"
-                                           class="filter-input"
-                                           placeholder="Choice value, comma-separated"
-                                           value="{{ filters.equipment_drained }}">
+                                    <select name="equipment_drained" class="filter-select"><option value="">All</option>{% for value,label in equipment_status_choices %}<option value="{{ value }}" {% if filters.equipment_drained == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
                                 </div>
 
                                 <div class="filter-field">
                                     <label class="filter-label">Equipment Purged</label>
-                                    <input type="text"
-                                           name="equipment_purged"
-                                           class="filter-input"
-                                           placeholder="Choice value, comma-separated"
-                                           value="{{ filters.equipment_purged }}">
+                                    <select name="equipment_purged" class="filter-select"><option value="">All</option>{% for value,label in equipment_status_choices %}<option value="{{ value }}" {% if filters.equipment_purged == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
                                 </div>
 
                                 <div class="filter-field">
                                     <label class="filter-label">Process Isolation</label>
-                                    <input type="text"
-                                           name="process_isolation"
-                                           class="filter-input"
-                                           placeholder="Choice value, comma-separated"
-                                           value="{{ filters.process_isolation }}">
+                                    <select name="process_isolation" class="filter-select"><option value="">All</option>{% for value,label in equipment_status_choices %}<option value="{{ value }}" {% if filters.process_isolation == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
                                 </div>
 
                                 <div class="filter-field">
