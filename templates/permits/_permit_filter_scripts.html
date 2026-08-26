@@ -3,6 +3,72 @@ document.addEventListener("DOMContentLoaded", function () {
     const filterForm = document.getElementById("advancedFilterForm");
     const favoriteForm = document.getElementById("favoriteSaveForm");
 
+    document.querySelectorAll("[data-filter-multi-select]").forEach(function (picker) {
+        const hidden = picker.querySelector('input[type="hidden"]');
+        const control = picker.querySelector(".filter-multi-select__control");
+        const menu = picker.querySelector(".filter-multi-select__menu");
+        const search = picker.querySelector(".filter-multi-select__search");
+        const chips = picker.querySelector(".filter-multi-select__chips");
+        const placeholder = picker.querySelector(".filter-multi-select__placeholder");
+        const boxes = Array.from(picker.querySelectorAll('.filter-multi-select__option input[type="checkbox"]'));
+        const selected = new Set((hidden.value || "").split(",").map(v => v.trim()).filter(Boolean));
+
+        function render() {
+            boxes.forEach(box => { box.checked = selected.has(box.value); });
+            chips.innerHTML = "";
+            Array.from(selected).forEach(function (value) {
+                const box = boxes.find(item => item.value === value);
+                if (!box) return;
+                const chip = document.createElement("span");
+                chip.className = "filter-multi-select__chip";
+                chip.textContent = box.dataset.label || value;
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "filter-multi-select__chip-remove";
+                remove.setAttribute("aria-label", "Remove " + chip.textContent);
+                remove.innerHTML = "&times;";
+                remove.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    selected.delete(value);
+                    hidden.value = Array.from(selected).join(",");
+                    render();
+                });
+                chip.appendChild(remove);
+                chips.appendChild(chip);
+            });
+            placeholder.hidden = selected.size > 0;
+        }
+
+        control.addEventListener("click", function () {
+            const open = picker.classList.toggle("is-open");
+            control.setAttribute("aria-expanded", String(open));
+            if (open) search.focus();
+        });
+        boxes.forEach(function (box) {
+            box.addEventListener("change", function () {
+                box.checked ? selected.add(box.value) : selected.delete(box.value);
+                hidden.value = Array.from(selected).join(",");
+                render();
+            });
+        });
+        search.addEventListener("input", function () {
+            const query = search.value.trim().toLowerCase();
+            picker.querySelectorAll(".filter-multi-select__option").forEach(function (option) {
+                option.hidden = query && !option.dataset.search.toLowerCase().includes(query);
+            });
+        });
+        render();
+    });
+
+    document.addEventListener("click", function (event) {
+        document.querySelectorAll("[data-filter-multi-select].is-open").forEach(function (picker) {
+            if (!picker.contains(event.target)) {
+                picker.classList.remove("is-open");
+                picker.querySelector(".filter-multi-select__control").setAttribute("aria-expanded", "false");
+            }
+        });
+    });
+
     if (!filterForm || !favoriteForm) return;
 
     favoriteForm.addEventListener("submit", function () {

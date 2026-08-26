@@ -54,17 +54,33 @@
                                 </div>
 
                                 <div class="filter-field">
-                                    <label class="filter-label">Current Step</label>
-                                    <select name="current_step" class="filter-select">
-                                        <option value="">All Steps</option>
-                                        {% for step in workflow_steps %}
-                                            <option value="{{ step.title }}"
-                                                    {% if filters.current_step == step.title %}selected{% endif %}>
-                                                {{ step.workflow.name }} v{{ step.workflow.version }}
-                                                - {{ step.step_number }}. {{ step.title }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
+                                    <label class="filter-label" for="current_step_picker">Current Steps</label>
+                                    <div class="filter-multi-select" data-filter-multi-select>
+                                        <input type="hidden" name="current_step" value="{{ filters.current_step|default:'' }}">
+                                        <button type="button" id="current_step_picker"
+                                                class="filter-multi-select__control"
+                                                aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="filter-multi-select__chips"></span>
+                                            <span class="filter-multi-select__placeholder">+ Select current steps</span>
+                                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="filter-multi-select__menu" role="listbox" aria-multiselectable="true">
+                                            <input type="search" class="filter-multi-select__search"
+                                                   placeholder="Search current steps..." aria-label="Search current steps">
+                                            <div class="filter-multi-select__options">
+                                                {% for step in workflow_steps %}
+                                                    <label class="filter-multi-select__option"
+                                                           data-search="{{ step.workflow.name }} {{ step.workflow.version }} {{ step.step_number }} {{ step.title }}">
+                                                        <input type="checkbox" value="{{ step.title }}"
+                                                               data-label="{{ step.workflow.name }} v{{ step.workflow.version }} - {{ step.step_number }}. {{ step.title }}">
+                                                        <span>{{ step.workflow.name }} v{{ step.workflow.version }} - {{ step.step_number }}. {{ step.title }}</span>
+                                                    </label>
+                                                {% empty %}
+                                                    <span class="filter-multi-select__empty">No workflow steps configured.</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="filter-field">
@@ -161,16 +177,33 @@
 
                             <div class="filter-grid">
                                 <div class="filter-field">
-                                    <label class="filter-label">Department</label>
-                                    <select name="department" class="filter-select">
-                                        <option value="">All Departments</option>
-                                        {% for dept in departments %}
-                                            <option value="{{ dept.name }}"
-                                                    {% if filters.department == dept.name %}selected{% endif %}>
-                                                {{ dept.name }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
+                                    <label class="filter-label" for="department_picker">Departments</label>
+                                    <div class="filter-multi-select" data-filter-multi-select>
+                                        <input type="hidden" name="department" value="{{ filters.department|default:'' }}">
+                                        <button type="button" id="department_picker"
+                                                class="filter-multi-select__control"
+                                                aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="filter-multi-select__chips"></span>
+                                            <span class="filter-multi-select__placeholder">+ Select departments</span>
+                                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="filter-multi-select__menu" role="listbox" aria-multiselectable="true">
+                                            <input type="search" class="filter-multi-select__search"
+                                                   placeholder="Search departments..." aria-label="Search departments">
+                                            <div class="filter-multi-select__options">
+                                                {% for dept in departments %}
+                                                    <label class="filter-multi-select__option"
+                                                           data-search="{{ dept.name }}">
+                                                        <input type="checkbox" value="{{ dept.name }}"
+                                                               data-label="{{ dept.name }}">
+                                                        <span>{{ dept.name }}</span>
+                                                    </label>
+                                                {% empty %}
+                                                    <span class="filter-multi-select__empty">No active departments configured.</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="filter-field">
@@ -248,28 +281,63 @@
                                 </div>
 
                                 <div class="filter-field">
-                                    <label class="filter-label">Hazard</label>
-                                    <select name="hazard_code" class="filter-select">
-                                        <option value="">All Hazards</option>
-                                        {% for hz in hazard_codes %}
-                                            <option value="{{ hz.code }}"
-                                                    {% if filters.hazard_code == hz.code %}selected{% endif %}>
-                                                {{ hz.code }} - {{ hz.description|default:hz.name|truncatechars:35 }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
+                                    <label class="filter-label" for="hazard_code_picker">Hazards</label>
+                                    <div class="filter-multi-select" data-filter-multi-select>
+                                        <input type="hidden" name="hazard_code" value="{{ filters.hazard_code|default:'' }}">
+                                        <button type="button" id="hazard_code_picker"
+                                                class="filter-multi-select__control"
+                                                aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="filter-multi-select__chips"></span>
+                                            <span class="filter-multi-select__placeholder">+ Select hazards</span>
+                                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="filter-multi-select__menu" role="listbox" aria-multiselectable="true">
+                                            <input type="search" class="filter-multi-select__search"
+                                                   placeholder="Search hazards..." aria-label="Search hazards">
+                                            <div class="filter-multi-select__options">
+                                                {% for hz in hazard_codes %}
+                                                    <label class="filter-multi-select__option"
+                                                           data-search="{{ hz.code }} {{ hz.name }} {{ hz.description }}">
+                                                        <input type="checkbox" value="{{ hz.code }}"
+                                                               data-label="{{ hz.code }} - {{ hz.description|default:hz.name|truncatechars:35 }}">
+                                                        <span>{{ hz.code }} - {{ hz.description|default:hz.name|truncatechars:35 }}</span>
+                                                    </label>
+                                                {% empty %}
+                                                    <span class="filter-multi-select__empty">No active hazards configured.</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="filter-field">
-                                    <label class="filter-label">Precaution</label>
-                                    <select name="precaution_code" class="filter-select">
-                                        <option value="">All Precautions</option>
-                                        {% for precaution in precaution_codes %}
-                                            <option value="{{ precaution.code }}" {% if filters.precaution_code == precaution.code %}selected{% endif %}>
-                                                {{ precaution.code }} - {{ precaution.name }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
+                                    <label class="filter-label" for="precaution_code_picker">Precautions</label>
+                                    <div class="filter-multi-select" data-filter-multi-select>
+                                        <input type="hidden" name="precaution_code" value="{{ filters.precaution_code|default:'' }}">
+                                        <button type="button" id="precaution_code_picker"
+                                                class="filter-multi-select__control"
+                                                aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="filter-multi-select__chips"></span>
+                                            <span class="filter-multi-select__placeholder">+ Select precautions</span>
+                                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="filter-multi-select__menu" role="listbox" aria-multiselectable="true">
+                                            <input type="search" class="filter-multi-select__search"
+                                                   placeholder="Search precautions..." aria-label="Search precautions">
+                                            <div class="filter-multi-select__options">
+                                                {% for precaution in precaution_codes %}
+                                                    <label class="filter-multi-select__option"
+                                                           data-search="{{ precaution.code }} {{ precaution.name }} {{ precaution.description }}">
+                                                        <input type="checkbox" value="{{ precaution.code }}"
+                                                               data-label="{{ precaution.code }} - {{ precaution.name }}">
+                                                        <span>{{ precaution.code }} - {{ precaution.name }}</span>
+                                                    </label>
+                                                {% empty %}
+                                                    <span class="filter-multi-select__empty">No active precautions configured.</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
