@@ -55,53 +55,127 @@
     </div>
 </section>
 
+
 <script>
 // ============================================================
-// 1. Define the population function on window (top level, outside
-//    any DOMContentLoaded), so it's available to any caller.
+// 1. Enable / disable Unit-Zone and Remarks based on checkbox
+// ============================================================
+window.syncFgEsdItemState = function (row) {
+    const checkbox = row.querySelector('input[type="checkbox"]');
+
+    if (!checkbox) {
+        return;
+    }
+
+    const unitZoneInput = row.querySelector(
+        'input[name^="fg_esd_unit_zone_"]'
+    );
+
+    const remarksInput = row.querySelector(
+        'input[name^="fg_esd_remarks_"]'
+    );
+
+    const isChecked = checkbox.checked;
+
+    // Visual state
+    row.classList.toggle("checked", isChecked);
+
+    // Enable / disable the text fields
+    if (unitZoneInput) {
+        unitZoneInput.disabled = !isChecked;
+    }
+
+    if (remarksInput) {
+        remarksInput.disabled = !isChecked;
+    }
+};
+
+
+// ============================================================
+// 2. Populate Fire / Gas / ESD items from continuation data
 // ============================================================
 window.populateContinuationFgEsdItems = function (fgEsdItems) {
+
     console.group("Continuation FG/ESD population");
     console.log("received fire_gas_esd_items:", fgEsdItems);
 
     if (!Array.isArray(fgEsdItems)) {
-        console.error("fire_gas_esd_items is missing or not an array:", fgEsdItems);
+        console.error(
+            "fire_gas_esd_items is missing or not an array:",
+            fgEsdItems
+        );
         console.groupEnd();
         return;
     }
 
     fgEsdItems.forEach(function (item) {
+
         const itemId = item.fire_gas_esd_id;
-        const unitZone = item.fire_gas_esd_unit_zone ?? item.unit_zone ?? "";
-        const remarks = item.fire_gas_esd_remarks ?? item.remarks ?? "";
 
-        console.log("item:", item);
+        const unitZone =
+            item.fire_gas_esd_unit_zone ??
+            item.unit_zone ??
+            "";
 
-        const row = document.querySelector('.fg-esd-select-item[data-fg-esd-id="' + itemId + '"]');
+        const remarks =
+            item.fire_gas_esd_remarks ??
+            item.remarks ??
+            "";
+
+        console.log("Processing FG/ESD item:", item);
+
+        const row = document.querySelector(
+            '.fg-esd-select-item[data-fg-esd-id="' + itemId + '"]'
+        );
+
         if (!row) {
-            console.warn("No matching row for id", itemId);
+            console.warn(
+                "No matching FG/ESD row found for id:",
+                itemId
+            );
             return;
         }
 
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        // FIXED: names are fg_esd_unit_zone_<id> and fg_esd_remarks_<id>, so match by prefix
-        const unitZoneInput = row.querySelector('input[name^="fg_esd_unit_zone_"]');
-        const remarksInput = row.querySelector('input[name^="fg_esd_remarks_"]');
+        const checkbox = row.querySelector(
+            'input[type="checkbox"]'
+        );
+
+        const unitZoneInput = row.querySelector(
+            'input[name^="fg_esd_unit_zone_"]'
+        );
+
+        const remarksInput = row.querySelector(
+            'input[name^="fg_esd_remarks_"]'
+        );
+
+
+        // --------------------------------------------------------
+        // Check the item
+        // --------------------------------------------------------
 
         if (checkbox) {
             checkbox.checked = true;
-            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
-        // Inputs are disabled by default — enable them so they populate AND submit
+
+        // --------------------------------------------------------
+        // Enable inputs BEFORE assigning their values
+        // --------------------------------------------------------
+
         if (unitZoneInput) {
             unitZoneInput.disabled = false;
             unitZoneInput.value = unitZone;
         }
+
         if (remarksInput) {
             remarksInput.disabled = false;
             remarksInput.value = remarks;
         }
+
+
+        // --------------------------------------------------------
+        // Sync visual/input state
+        // --------------------------------------------------------
 
         window.syncFgEsdItemState(row);
     });
@@ -109,29 +183,43 @@ window.populateContinuationFgEsdItems = function (fgEsdItems) {
     console.groupEnd();
 };
 
-// ============================================================
-// 2. The checkbox-sync helper (also top level).
-// ============================================================
-window.syncFgEsdItemState = function (row) {
-    // Whatever your original sync logic was — keep it here.
-    // Minimal placeholder that just reflects checked state:
-    const checkbox = row.querySelector('input[type="checkbox"]');
-    if (checkbox) {
-        row.classList.toggle("checked", checkbox.checked);
-    }
-};
 
+// ============================================================
+// 3. Initialize checkbox handlers
+// ============================================================
 document.addEventListener("DOMContentLoaded", function () {
-    console.log("Script loaded & DOM ready");
-    // Set up initial handlers on the rows that exist in the DOM at load time.
-    document.querySelectorAll(".fg-esd-select-item").forEach(function (row) {
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        if (checkbox) {
+
+    console.log("FG/ESD script loaded & DOM ready");
+
+    document
+        .querySelectorAll(".fg-esd-select-item")
+        .forEach(function (row) {
+
+            const checkbox = row.querySelector(
+                'input[type="checkbox"]'
+            );
+
+            if (!checkbox) {
+                return;
+            }
+
+
+            // ----------------------------------------------------
+            // Checkbox changed
+            // ----------------------------------------------------
+
             checkbox.addEventListener("change", function () {
+
                 window.syncFgEsdItemState(row);
+
             });
-            window.syncFgEsdItemState(row); // sync initial state
-        }
-    });
+
+
+            // ----------------------------------------------------
+            // Initial state
+            // ----------------------------------------------------
+
+            window.syncFgEsdItemState(row);
+        });
 });
 </script>

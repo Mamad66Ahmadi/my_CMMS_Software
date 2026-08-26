@@ -38,6 +38,7 @@
 
                             {% with primary_action=workflow_actions.0 %}
                                 <div class="workflow-actions-group" role="group">
+
                                     <!-- Main primary action button -->
                                     <button type="submit"
                                             class="workflow-btn workflow-btn--primary
@@ -48,8 +49,9 @@
                                             onclick="prepareWorkflowAction(
                                                 '{{ primary_action.role.code }}',
                                                 '{{ primary_action.decision }}',
-                                                '{{ primary_action.decision_label }}'
+                                                '{% if primary_action.decision == "APPROVE" and primary_action.to_step %}Approve to {{ primary_action.to_step.title }}{% else %}{{ primary_action.decision_label }}{% endif %}'
                                             )">
+
                                         <span class="workflow-btn__icon">
                                             {% if primary_action.decision == "APPROVE" %}
                                                 <i class="bi bi-check-lg"></i>
@@ -61,21 +63,33 @@
                                                 <i class="bi bi-arrow-right"></i>
                                             {% endif %}
                                         </span>
-                                        <span class="workflow-btn__label">{{ primary_action.decision_label }}</span>
+
+                                        <span class="workflow-btn__label">
+                                            {% if primary_action.decision == "APPROVE" and primary_action.to_step %}
+                                                Approve to {{ primary_action.to_step.title }}
+                                            {% else %}
+                                                {{ primary_action.decision_label }}
+                                            {% endif %}
+                                        </span>
                                     </button>
+
 
                                     {% if workflow_actions|length > 1 %}
                                         <div class="dropdown">
+
                                             <button type="button"
                                                     class="workflow-btn workflow-btn--toggle"
                                                     data-bs-toggle="dropdown"
                                                     data-bs-display="static"
                                                     aria-expanded="false">
                                                 <span class="workflow-btn__caret" aria-hidden="true"></span>
-                                                <span class="visually-hidden">Toggle Dropdown</span>
+                                                <span class="visually-hidden">
+                                                    Toggle Dropdown
+                                                </span>
                                             </button>
 
                                             <ul class="dropdown-menu dropdown-menu-end workflow-dropdown">
+
                                                 {% for action in workflow_actions %}
                                                     {% if not forloop.first %}
                                                         <li>
@@ -84,28 +98,40 @@
                                                                     onclick="prepareWorkflowAction(
                                                                         '{{ action.role.code }}',
                                                                         '{{ action.decision }}',
-                                                                        '{{ action.decision_label }}'
+                                                                        '{% if action.decision == "APPROVE" and action.to_step %}Approve to {{ action.to_step.title }}{% else %}{{ action.decision_label }}{% endif %}'
                                                                     )">
+
                                                                 {% if action.decision == "APPROVE" %}
                                                                     <i class="bi bi-check-lg workflow-dropdown__icon workflow-dropdown__icon--approve"></i>
+
                                                                 {% elif action.decision == "RETURN" %}
                                                                     <i class="bi bi-arrow-counterclockwise workflow-dropdown__icon workflow-dropdown__icon--return"></i>
+
                                                                 {% elif action.decision == "CANCEL" %}
                                                                     <i class="bi bi-x-circle workflow-dropdown__icon workflow-dropdown__icon--cancel"></i>
+
                                                                 {% else %}
                                                                     <i class="bi bi-arrow-right workflow-dropdown__icon"></i>
                                                                 {% endif %}
-                                                                {{ action.decision_label }}
+
+                                                                {% if action.decision == "APPROVE" and action.to_step %}
+                                                                    Approve to {{ action.to_step.title }}
+                                                                {% else %}
+                                                                    {{ action.decision_label }}
+                                                                {% endif %}
+
                                                             </button>
                                                         </li>
                                                     {% endif %}
                                                 {% endfor %}
+
                                             </ul>
                                         </div>
                                     {% endif %}
 
                                 </div>
                             {% endwith %}
+
                         </form>
                     {% else %}
                         <div class="empty-hint mb-0">
