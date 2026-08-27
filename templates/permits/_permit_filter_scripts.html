@@ -60,6 +60,22 @@ document.addEventListener("DOMContentLoaded", function () {
         render();
     });
 
+    const dateMode = document.getElementById("work_shift_date_mode");
+    if (dateMode) {
+        const from = document.querySelector('[name="work_shift_date_from"]');
+        const to = document.querySelector('[name="work_shift_date_to"]');
+        function syncDateInputs() {
+            const ranged = dateMode.value === "custom_range";
+            const specific = dateMode.value === "specific";
+            from.hidden = !specific && !ranged;
+            to.hidden = !ranged;
+            from.disabled = !specific && !ranged;
+            to.disabled = !ranged;
+        }
+        dateMode.addEventListener("change", syncDateInputs);
+        syncDateInputs();
+    }
+
     document.addEventListener("click", function (event) {
         document.querySelectorAll("[data-filter-multi-select].is-open").forEach(function (picker) {
             if (!picker.contains(event.target)) {

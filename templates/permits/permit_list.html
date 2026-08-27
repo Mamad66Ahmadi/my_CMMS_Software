@@ -96,7 +96,7 @@
             </div>
 
             {% if active_filter_badges|length > 1 %}
-                <a href="{% url 'permits:permit_list' %}"
+                <a href="{% url 'permits:permit_list' %}?clear=1"
                    class="active-filters-clear">
                     <i class="bi bi-x-circle"></i>
                     Clear All

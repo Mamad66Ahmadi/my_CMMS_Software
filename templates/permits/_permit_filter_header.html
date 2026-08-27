@@ -14,7 +14,7 @@
                     <i class="bi bi-sliders2"></i> Filters{% if has_advanced_filters %}<span class="filter-badge">●</span>{% endif %}
                 </button>
                 {% if query_params or filters.q %}
-                    <a href="{% url 'permits:permit_list' %}" class="btn-filter-clear"><i class="bi bi-x-circle"></i> Clear</a>
+                    <a href="{% url 'permits:permit_list' %}?clear=1" class="btn-filter-clear"><i class="bi bi-x-circle"></i> Clear</a>
                 {% endif %}
             </div>
         </div>

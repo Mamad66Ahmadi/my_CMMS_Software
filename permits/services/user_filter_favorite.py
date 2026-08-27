@@ -32,7 +32,10 @@ FILTER_KEYS = [
     "unit",
     "train",
     "work_order",
-    "work_shift_date",
+    "work_shift_date_mode",
+    "work_shift_date_from",
+    "work_shift_date_to",
+    "work_shift_signed_role",
 
     # Department / personnel
     "department",

@@ -3,6 +3,7 @@
 from urllib.parse import urlencode
 import csv
 import re
+from datetime import date, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -19,6 +20,7 @@ from django.utils.text import slugify
 
 from accounts.models import Department, UserFilterFavorite
 from permits.models import Hazard as HazardCode, PermitType, Precaution, FireGasESD, EquipmentStatus
+from permits.models.approval_models import PermitApprovalRoleChoices
 from permits.models.permit_models import Permit
 from permits.models.workflow_models import PermitWorkflowStep
 from permits.services.user_filter_favorite import (
@@ -70,7 +72,10 @@ def get_request_filters(request):
         "unit": request.GET.get("unit", "").strip(),
         "train": request.GET.get("train", "").strip(),
         "work_order": request.GET.get("work_order", "").strip(),
-        "work_shift_date": request.GET.get("work_shift_date", "").strip(),
+        "work_shift_date_mode": request.GET.get("work_shift_date_mode", "").strip(),
+        "work_shift_date_from": request.GET.get("work_shift_date_from", "").strip(),
+        "work_shift_date_to": request.GET.get("work_shift_date_to", "").strip(),
+        "work_shift_signed_role": request.GET.get("work_shift_signed_role", "").strip(),
 
         # Department / personnel
         "department": request.GET.get("department", "").strip(),
@@ -151,7 +156,10 @@ def get_post_filters(request):
         "unit": request.POST.get("unit", "").strip(),
         "train": request.POST.get("train", "").strip(),
         "work_order": request.POST.get("work_order", "").strip(),
-        "work_shift_date": request.POST.get("work_shift_date", "").strip(),
+        "work_shift_date_mode": request.POST.get("work_shift_date_mode", "").strip(),
+        "work_shift_date_from": request.POST.get("work_shift_date_from", "").strip(),
+        "work_shift_date_to": request.POST.get("work_shift_date_to", "").strip(),
+        "work_shift_signed_role": request.POST.get("work_shift_signed_role", "").strip(),
         
         "department": request.POST.get("department", "").strip(),
         "work_supervisor": request.POST.get("work_supervisor", "").strip(),
@@ -352,6 +360,15 @@ def get_effective_state(request):
     manual_sort = normalize_sort(request.GET.get("sort", DEFAULT_SORT))
     manual_per_page = normalize_per_page(request.GET.get("per_page", DEFAULT_PER_PAGE))
     favorite_id = request.GET.get("favorite")
+
+    if request.GET.get("clear") == "1":
+        return {
+            "filters": manual_filters,
+            "sort_by": manual_sort,
+            "per_page": manual_per_page,
+            "selected_favorite": None,
+            "using_favorite": False,
+        }
 
     selected_favorite = get_favorite_by_id(request.user, favorite_id)
 
@@ -572,9 +589,27 @@ def get_filtered_permits(filters):
         filters.get("work_order", ""),
         "work_order__wo_number",
     )
-    if filters.get("work_shift_date"):
+    shift_mode = filters.get("work_shift_date_mode", "")
+    today = timezone.localdate()
+    if shift_mode in {"today", "yesterday", "last_7_days", "last_30_days"}:
+        days = {"today": 0, "yesterday": 1, "last_7_days": 6, "last_30_days": 29}[shift_mode]
+        queryset = queryset.filter(work_shifts__date__range=(today - timedelta(days=days), today))
+    elif shift_mode in {"specific", "custom_range"}:
+        try:
+            start = date.fromisoformat(filters.get("work_shift_date_from", ""))
+            end = date.fromisoformat(filters.get("work_shift_date_to", "") or filters.get("work_shift_date_from", ""))
+        except (TypeError, ValueError):
+            start = end = None
+        if start and end:
+            if end < start:
+                start, end = end, start
+            queryset = queryset.filter(work_shifts__date__range=(start, end))
+    if filters.get("work_shift_signed_role"):
         queryset = queryset.filter(
-            work_shifts__date=filters["work_shift_date"],
+            work_shifts__signoffs__role__code__in=[
+                value.strip() for value in filters["work_shift_signed_role"].split(",") if value.strip()
+            ],
+            work_shifts__signoffs__signed_by__isnull=False,
         )
     queryset = apply_multi_value_filter(
         queryset,
@@ -911,7 +946,10 @@ class PermitList(LoginRequiredMixin, TemplateView):
             "unit": "Unit",
             "train": "Train",
             "work_order": "Work Order",
-            "work_shift_date": "Open Work Shift",
+            "work_shift_date_mode": "Work Shift Date",
+            "work_shift_date_from": "Work Shift From",
+            "work_shift_date_to": "Work Shift To",
+            "work_shift_signed_role": "Signed By Role",
             "department": "Department",
             "work_supervisor": "Work Supervisor",
             "designated_area_authority": "Area Authority",
@@ -1021,6 +1059,7 @@ class PermitList(LoginRequiredMixin, TemplateView):
                 "fire_gas_esd_items": FireGasESD.objects.filter(is_active=True).order_by("code"),
                 "equipment_status_choices": EquipmentStatus.choices,
                 "departments": Department.objects.filter(is_active=True).order_by("name"),
+                "shift_signoff_roles": PermitApprovalRoleChoices.objects.filter(is_active=True).order_by("name"),
 
                 "has_advanced_filters": has_advanced_filters,
                 "active_filter_badges": active_filter_badges,
@@ -1041,6 +1080,7 @@ class PermitFilterFavoriteSaveView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         name = request.POST.get("name", "").strip()
         favorite_id = request.POST.get("favorite_id", "").strip()
+        save_as_new = request.POST.get("save_as_new") in ["1", "true", "on", "yes"]
         is_default = request.POST.get("is_default") in ["1", "true", "on", "yes"]
 
         if not name:
@@ -1059,7 +1099,7 @@ class PermitFilterFavoriteSaveView(LoginRequiredMixin, View):
                     is_default=True,
                 ).update(is_default=False)
 
-            if favorite_id:
+            if favorite_id and not save_as_new:
                 favorite = get_object_or_404(
                     UserFilterFavorite,
                     pk=favorite_id,

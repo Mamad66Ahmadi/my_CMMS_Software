@@ -35,6 +35,10 @@
                             <input type="hidden" name="unit" value="{{ filters.unit|default:'' }}">
                             <input type="hidden" name="train" value="{{ filters.train|default:'' }}">
                             <input type="hidden" name="work_order" value="{{ filters.work_order|default:'' }}">
+                            <input type="hidden" name="work_shift_date_mode" value="{{ filters.work_shift_date_mode|default:'' }}">
+                            <input type="hidden" name="work_shift_date_from" value="{{ filters.work_shift_date_from|default:'' }}">
+                            <input type="hidden" name="work_shift_date_to" value="{{ filters.work_shift_date_to|default:'' }}">
+                            <input type="hidden" name="work_shift_signed_role" value="{{ filters.work_shift_signed_role|default:'' }}">
 
                             <input type="hidden" name="department" value="{{ filters.department|default:'' }}">
                             <input type="hidden" name="work_supervisor" value="{{ filters.work_supervisor|default:'' }}">
@@ -99,10 +103,15 @@
                                 </label>
                             </div>
 
-                            <button type="submit" class="btn-filter-primary">
+                            <button type="submit" name="save_as_new" value="1" class="btn-filter-primary">
                                 <i class="bi bi-bookmark-plus"></i>
-                                {% if selected_favorite %}Update Favorite{% else %}Save Favorite{% endif %}
+                                Save as New Favorite
                             </button>
+                            {% if selected_favorite %}
+                                <button type="submit" name="update_favorite" value="1" class="btn-filter-secondary">
+                                    <i class="bi bi-pencil-square"></i> Update Favorite
+                                </button>
+                            {% endif %}
                         </form>
                     </div>
 

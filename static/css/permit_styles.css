@@ -587,6 +587,10 @@ textarea:focus-visible,
 .filter-multi-select__option:hover { background: var(--c-bg-subtle); }
 .filter-multi-select__option input { margin-top: 2px; accent-color: var(--c-accent); }
 .filter-multi-select__empty { display: block; padding: 8px 4px; color: var(--c-text-secondary); font-size: 12px; }
+.filter-date-rule { display: flex; flex-direction: column; gap: 6px; }
+.filter-date-rule .filter-select { width: 100%; }
+.filter-date-rule__pickers { display: flex; gap: 6px; width: 100%; }
+.filter-date-rule__pickers .filter-input { flex: 1 1 125px; min-width: 0; }
 
 .filter-panel__footer {
     display: flex;

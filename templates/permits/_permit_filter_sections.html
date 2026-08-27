@@ -157,12 +157,62 @@
                                            placeholder="WO-123, WO-124"
                                            value="{{ filters.work_order }}">
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-calendar2-week"></i> Work Shift &amp; Sign-off
+                            </div>
+                            <div class="filter-grid">
                                 <div class="filter-field">
-                                    <label class="filter-label">Work Shift Date</label>
-                                    <input type="date"
-                                        name="work_shift_date"
-                                        class="filter-input"
-                                        value="{{ filters.work_shift_date }}">
+                                    <label class="filter-label" for="work_shift_date_mode">Work Shift Date</label>
+                                    <div class="filter-date-rule">
+                                        <select id="work_shift_date_mode" name="work_shift_date_mode" class="filter-select">
+                                            <option value="">Any date</option>
+                                            <option value="today" {% if filters.work_shift_date_mode == "today" %}selected{% endif %}>Today</option>
+                                            <option value="yesterday" {% if filters.work_shift_date_mode == "yesterday" %}selected{% endif %}>Yesterday</option>
+                                            <option value="last_7_days" {% if filters.work_shift_date_mode == "last_7_days" %}selected{% endif %}>Last 7 days</option>
+                                            <option value="last_30_days" {% if filters.work_shift_date_mode == "last_30_days" %}selected{% endif %}>Last 30 days</option>
+                                            <option value="specific" {% if filters.work_shift_date_mode == "specific" %}selected{% endif %}>Specific Date</option>
+                                            <option value="custom_range" {% if filters.work_shift_date_mode == "custom_range" %}selected{% endif %}>Custom Range</option>
+                                        </select>
+                                        <div class="filter-date-rule__pickers">
+                                            <input type="date" name="work_shift_date_from" class="filter-input"
+                                                   value="{{ filters.work_shift_date_from|default:'' }}"
+                                                   aria-label="Work shift start date">
+                                            <input type="date" name="work_shift_date_to" class="filter-input"
+                                                   value="{{ filters.work_shift_date_to|default:'' }}"
+                                                   aria-label="Work shift end date">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label" for="work_shift_signed_role_picker">Signed By Roles</label>
+                                    <div class="filter-multi-select" data-filter-multi-select>
+                                        <input type="hidden" name="work_shift_signed_role" value="{{ filters.work_shift_signed_role|default:'' }}">
+                                        <button type="button" id="work_shift_signed_role_picker"
+                                                class="filter-multi-select__control" aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="filter-multi-select__chips"></span>
+                                            <span class="filter-multi-select__placeholder">+ Select signed-by roles</span>
+                                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="filter-multi-select__menu" role="listbox" aria-multiselectable="true">
+                                            <input type="search" class="filter-multi-select__search"
+                                                   placeholder="Search sign-off roles..." aria-label="Search sign-off roles">
+                                            <div class="filter-multi-select__options">
+                                                {% for role in shift_signoff_roles %}
+                                                    <label class="filter-multi-select__option" data-search="{{ role.code }} {{ role.name }}">
+                                                        <input type="checkbox" value="{{ role.code }}" data-label="{{ role.code }} - {{ role.name }}">
+                                                        <span>{{ role.code }} - {{ role.name }}</span>
+                                                    </label>
+                                                {% empty %}
+                                                    <span class="filter-multi-select__empty">No active sign-off roles configured.</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
