@@ -16,6 +16,8 @@ from permits.views import (
     PermitWorkflowTransitionView,
     PermitUpdateView,
     PermitPrintView,
+    WorkShiftListView,
+    WorkShiftDetailView,
 )
 
 from permits.views.permit_detail_views import (
@@ -37,6 +39,8 @@ urlpatterns = [
     # Permit list / filters / export
     # -------------------------------------------------------------------------
     path("list/", PermitList.as_view(), name="permit_list",),
+    path("work-shifts/", WorkShiftListView.as_view(), name="work_shift_list"),
+    path("work-shifts/<int:pk>/", WorkShiftDetailView.as_view(), name="work_shift_detail"),
     path("list/export/csv/", PermitExportCSV.as_view(), name="permit_export_csv",),
     # -------------------------------------------------------------------------
     # Saved filter favorites

@@ -65,6 +65,7 @@
             </button>
             <div id="permitsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
                 <a href="{% url 'permits:permit_list'%}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> View Permits</a>
+                <a href="{% url 'permits:work_shift_list' %}" class="sidebar-sub-link"><i class="bi bi-calendar2-week dot"></i> Work Shifts</a>
                 <a href="#" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Add Permit</a>
                 <a href="{% url 'permits:pis_holders' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> PIS Qualified Users</a>
             </div>

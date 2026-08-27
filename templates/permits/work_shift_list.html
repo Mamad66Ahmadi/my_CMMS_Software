@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Work Shifts{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">{% endblock %}
+{% block content %}
+<div class="container-fluid work-shift-list-page">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="mb-0">Work Shifts <small class="text-muted">({{ work_shifts.paginator.count }} Records)</small></h1>
+            <div class="text-muted">Operational view for <strong>{{ selected_date|date:"l, Y-m-d" }}</strong></div>
+        </div>
+        <div class="btn-group">
+            <a class="btn btn-outline-secondary" href="{{ previous_url }}">← Previous Day</a>
+            <a class="btn btn-outline-primary" href="{{ today_url }}">Today</a>
+            <a class="btn btn-outline-secondary" href="{{ next_url }}">Next Day →</a>
+        </div>
+    </div>
+
+    <div class="filter-panel mb-3">
+        <div class="filter-panel__header">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 w-100">
+                <form method="get" class="filter-search-group flex-grow-1">
+                    <i class="bi bi-search filter-search-icon"></i>
+                    <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                    <input type="text" name="permit_number" class="filter-search-input"
+                           placeholder="Search by permit number..."
+                           value="{{ request.GET.permit_number }}">
+                    {% if request.GET.shift %}<input type="hidden" name="shift" value="{{ request.GET.shift }}">{% endif %}
+                    {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+                    {% if request.GET.permit_type %}<input type="hidden" name="permit_type" value="{{ request.GET.permit_type }}">{% endif %}
+                    {% if request.GET.department %}<input type="hidden" name="department" value="{{ request.GET.department }}">{% endif %}
+                    {% if request.GET.location %}<input type="hidden" name="location" value="{{ request.GET.location }}">{% endif %}
+                    {% if request.GET.unit %}<input type="hidden" name="unit" value="{{ request.GET.unit }}">{% endif %}
+                    {% if request.GET.train %}<input type="hidden" name="train" value="{{ request.GET.train }}">{% endif %}
+                    {% if request.GET.work_order %}<input type="hidden" name="work_order" value="{{ request.GET.work_order }}">{% endif %}
+                    {% if request.GET.scope_of_work %}<input type="hidden" name="scope_of_work" value="{{ request.GET.scope_of_work }}">{% endif %}
+                    {% if request.GET.work_leader %}<input type="hidden" name="work_leader" value="{{ request.GET.work_leader }}">{% endif %}
+                </form>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-filter-primary" onclick="this.closest('.filter-panel').querySelector('.filter-search-group').requestSubmit()">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                    <button type="button" class="btn-filter-secondary {% if has_filters %}active{% endif %}"
+                            data-bs-toggle="offcanvas" data-bs-target="#workShiftFilterOffcanvas"
+                            aria-controls="workShiftFilterOffcanvas">
+                        <i class="bi bi-sliders2"></i> Filters
+                        {% if has_filters %}<span class="filter-badge">●</span>{% endif %}
+                    </button>
+                    {% if has_filters %}
+                        <a href="{% url 'permits:work_shift_list' %}" class="btn-filter-clear">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="offcanvas offcanvas-end filter-offcanvas" tabindex="-1"
+             id="workShiftFilterOffcanvas" aria-labelledby="workShiftFilterOffcanvasLabel">
+            <div class="offcanvas-header border-bottom">
+                <h5 class="offcanvas-title" id="workShiftFilterOffcanvasLabel">
+                    <i class="bi bi-funnel-fill"></i> Work Shift Filters
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body d-flex flex-column p-0">
+                <div class="filter-panel__body flex-grow-1" style="overflow-y:auto;">
+                    <form method="get" id="workShiftFilterForm">
+                        <div class="filter-sections">
+                            <div class="filter-section filter-section--full">
+                                <div class="filter-section__title">
+                                    <i class="bi bi-calendar2-week"></i> Date &amp; Shift
+                                </div>
+                                <div class="filter-grid">
+                                    <div class="filter-field">
+                                        <label class="filter-label">Work Shift Date</label>
+                                        <input type="date" name="date" class="filter-input"
+                                               value="{{ selected_date|date:'Y-m-d' }}">
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Shift</label>
+                                        <select name="shift" class="filter-select">
+                                            <option value="">All Shifts</option>
+                                            {% for value,label in shift_choices %}
+                                                <option value="{{ value }}" {% if request.GET.shift == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Status</label>
+                                        <select name="status" class="filter-select">
+                                            <option value="">All Statuses</option>
+                                            {% for value,label in status_choices %}
+                                                <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="filter-section filter-section--full">
+                                <div class="filter-section__title">
+                                    <i class="bi bi-card-checklist"></i> Permit &amp; Work Details
+                                </div>
+                                <div class="filter-grid">
+                                    <div class="filter-field">
+                                        <label class="filter-label">Permit Number</label>
+                                        <input type="text" name="permit_number" class="filter-input"
+                                               placeholder="Permit number" value="{{ request.GET.permit_number }}">
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Permit Type</label>
+                                        <input type="text" name="permit_type" class="filter-input"
+                                               placeholder="Permit type" value="{{ request.GET.permit_type }}">
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label" for="work_shift_department_picker">Departments</label>
+                                        <div class="filter-multi-select" data-filter-multi-select>
+                                            <input type="hidden" name="department" value="{{ request.GET.department|default:'' }}">
+                                            <button type="button" id="work_shift_department_picker"
+                                                    class="filter-multi-select__control"
+                                                    aria-haspopup="listbox" aria-expanded="false">
+                                                <span class="filter-multi-select__chips"></span>
+                                                <span class="filter-multi-select__placeholder">+ Select departments</span>
+                                                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                            </button>
+                                            <div class="filter-multi-select__menu" role="listbox" aria-multiselectable="true">
+                                                <input type="search" class="filter-multi-select__search"
+                                                       placeholder="Search departments..." aria-label="Search departments">
+                                                <div class="filter-multi-select__options">
+                                                    {% for dept in departments %}
+                                                        <label class="filter-multi-select__option" data-search="{{ dept.name }}">
+                                                            <input type="checkbox" value="{{ dept.name }}" data-label="{{ dept.name }}">
+                                                            <span>{{ dept.name }}</span>
+                                                        </label>
+                                                    {% empty %}
+                                                        <span class="filter-multi-select__empty">No active departments configured.</span>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Location</label>
+                                        <input type="text" name="location" class="filter-input"
+                                               placeholder="Location tag" value="{{ request.GET.location }}">
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Unit</label>
+                                        <input type="text" name="unit" class="filter-input"
+                                               placeholder="Unit code" value="{{ request.GET.unit }}">
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Train</label>
+                                        <input type="text" name="train" class="filter-input"
+                                               placeholder="Train" value="{{ request.GET.train }}">
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Work Order</label>
+                                        <input type="text" name="work_order" class="filter-input"
+                                               placeholder="WO number" value="{{ request.GET.work_order }}">
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Scope of Work</label>
+                                        <input type="text" name="scope_of_work" class="filter-input"
+                                               placeholder="Scope text" value="{{ request.GET.scope_of_work }}">
+                                    </div>
+                                    <div class="filter-field">
+                                        <label class="filter-label">Work Leader</label>
+                                        <input type="text" name="work_leader" class="filter-input"
+                                               placeholder="Work leader" value="{{ request.GET.work_leader }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="filter-panel__footer border-top"
+                     style="position:sticky; bottom:0; background:var(--c-bg-surface); margin-top:0; padding:14px 16px;">
+                    <button type="submit" form="workShiftFilterForm" class="btn-filter-primary w-100">
+                        <i class="bi bi-funnel-fill"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col"><div class="card card-body py-2"><small>Total Shifts</small><strong>{{ summary.total|default:0 }}</strong></div></div>
+        <div class="col"><div class="card card-body py-2"><small>Open</small><strong>{{ summary.open|default:0 }}</strong></div></div>
+        <div class="col"><div class="card card-body py-2"><small>Closed</small><strong>{{ summary.closed|default:0 }}</strong></div></div>
+        <div class="col"><div class="card card-body py-2"><small>Total Workers</small><strong>{{ summary.workers|default:0 }}</strong></div></div>
+        <div class="col"><div class="card card-body py-2"><small>Shift 1 / 2</small><strong>{{ shift_counts.SHIFT_1 }} / {{ shift_counts.SHIFT_2 }}</strong></div></div>
+    </div>
+
+    {% for shift_value, shift_label in shift_choices %}
+        <section class="card mb-3 table-scroll-container">
+            <div class="card-header d-flex justify-content-between"><strong>{{ shift_label }}</strong><span>{% for row in shift_count_rows %}{% if row.value == shift_value %}{{ row.count }}{% endif %}{% endfor %} shifts</span></div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 permit-table">
+                    <thead><tr>
+                        {% include "permits/_permit_table_header.html" with column="date" label="Date" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="shift" label="Shift" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="permit_number" label="Permit No" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="location" label="Location" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="work_leader" label="Work Leader" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="worker_count" label="Workers" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=header_query_params %}
+                        {% include "permits/_permit_table_header.html" with column="signed_signoffs" label="Signoff Progress" sort_by=sort_by query_params=header_query_params %}
+                        <th>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for work_shift in work_shifts %}
+                        {% if work_shift.shift == shift_value %}
+                        <tr>
+                            <td>{{ work_shift.date|date:"Y-m-d" }}</td>
+                            <td>{{ work_shift.get_shift_display }}</td>
+                            <td class="fw-bold"><a class="permit-number-link" href="{% url 'permits:permit_detail' work_shift.permit.permit_number %}">{{ work_shift.permit.permit_number }}</a></td>
+                            <td>{{ work_shift.permit.permit_type.name }}</td><td>{{ work_shift.permit.department|default:"—" }}</td><td>{{ work_shift.permit.location_tag|default:"—" }}</td>
+                            <td>{% if work_shift.permit.location_tag and work_shift.permit.location_tag.unit %}{{ work_shift.permit.location_tag.unit.unit_code }}{% else %}—{% endif %}</td>
+                            <td>{{ work_shift.permit.location_tag.train|default:"—" }}</td>
+                            <td>{% if work_shift.permit.work_order %}{{ work_shift.permit.work_order.wo_number }}{% else %}—{% endif %}</td>
+                            <td title="{{ work_shift.permit.scope_of_work }}">{{ work_shift.permit.scope_of_work|default:"—"|truncatechars:60 }}</td>
+                            <td>{{ work_shift.work_leader|default:"—" }}</td><td>{{ work_shift.worker_count|default:"—" }}</td>
+                            <td><span class="badge {% if work_shift.status == 'open' %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ work_shift.get_status_display }}</span></td>
+                            <td>{{ work_shift.signed_signoffs }}/{{ work_shift.required_signoffs }}</td>
+                            <td><a class="btn btn-sm btn-outline-primary" href="{% url 'permits:work_shift_detail' work_shift.pk %}">View</a></td>
+                        </tr>
+                        {% endif %}
+                    {% empty %}<tr><td colspan="15" class="text-muted">No work shifts found.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endfor %}
+    {% include "equipment/common/_pagination.html" with page_obj=work_shifts %}
+</div>
+{% include "permits/_permit_filter_scripts.html" %}
+{% endblock %}

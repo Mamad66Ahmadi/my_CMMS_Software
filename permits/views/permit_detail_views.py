@@ -1142,6 +1142,9 @@ class PermitWorkShiftSignoffView(LoginRequiredMixin, View):
                 ),
             )
 
+        next_url = request.POST.get("next", "").strip()
+        if next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
         return redirect(
             reverse(
                 "permits:permit_detail",
@@ -1185,6 +1188,9 @@ class PermitWorkShiftCloseView(LoginRequiredMixin, View):
                 ),
             )
 
+        next_url = request.POST.get("next", "").strip()
+        if next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
         return redirect(
             reverse(
                 "permits:permit_detail",
