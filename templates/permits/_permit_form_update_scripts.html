@@ -329,6 +329,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     setupAutocomplete({
+        inputId: "department-search-input",
+        hiddenId: "id_department",
+        resultsId: "department-results-container",
+        url: document.getElementById("department-search-input")?.dataset.autocompleteUrl,
+    });
+
+    setupAutocomplete({
         inputId: "work-supervisor-search-input",
         hiddenId: "id_work_supervisor",
         resultsId: "work-supervisor-results-container",
@@ -421,7 +428,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         setFieldValue("scope_of_work", data.scope_of_work);
         setFieldValue("remarks", data.remarks);
-        setFieldValue("department", data.department);
+        setAutocompleteValue(
+            "department",
+            "department-search-input",
+            data.department,
+            data.department_text
+        );
 
         setAutocompleteValue(
             "location_tag",

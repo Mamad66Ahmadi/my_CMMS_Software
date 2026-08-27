@@ -918,6 +918,11 @@ def get_permit_data(request):
             "scope_of_work": permit.scope_of_work or "",
             "remarks": permit.remarks or "",
             "department": permit.department_id or "",
+            "department_text": (
+                f"{permit.department.department_code} - {permit.department.name}"
+                if permit.department
+                else ""
+            ),
             "location_tag": permit.location_tag_id or "",
             "location_tag_text": (
                 str(permit.location_tag)

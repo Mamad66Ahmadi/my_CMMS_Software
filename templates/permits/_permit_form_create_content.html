@@ -197,10 +197,28 @@
                             </div>
 
                             <div class="form-field-block">
-                                <label for="{{ form.department.id_for_label }}">
+                                <label for="department-search-input">
                                     Department
                                 </label>
-                                {{ form.department }}
+
+                                <div class="position-relative">
+                                    <input
+                                        type="text"
+                                        id="department-search-input"
+                                        class="form-control"
+                                        placeholder="Search department..."
+                                        autocomplete="off"
+                                        data-autocomplete-url="{% url 'accounts:department_autocomplete' %}"
+                                        value="{% if form.instance.department %}{{ form.instance.department.department_code }} - {{ form.instance.department.name }}{% endif %}"
+                                    >
+
+                                    <div
+                                        id="department-results-container"
+                                        class="list-group mt-1 shadow position-absolute w-100 location-results"
+                                    ></div>
+
+                                    {{ form.department.as_hidden }}
+                                </div>
 
                                 {% if form.department.errors %}
                                     <div class="field-errors">

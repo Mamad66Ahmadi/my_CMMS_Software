@@ -347,6 +347,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     setupAutocomplete({
+        inputId: "department-search-input",
+        hiddenInputId: "{{ form.department.id_for_label }}",
+        resultsContainerId: "department-results-container"
+    });
+
+    setupAutocomplete({
         inputId: "work-supervisor-search-input",
         hiddenInputId: "{{ form.work_supervisor.id_for_label }}",
         resultsContainerId: "work-supervisor-results-container"
@@ -436,7 +442,12 @@ document.body.addEventListener("htmx:afterRequest", function (event) {
 
     setFieldValue("scope_of_work", data.scope_of_work);
     setFieldValue("remarks", data.remarks);
-    setFieldValue("department", data.department);
+    setAutocompleteValue(
+        "department",
+        "department-search-input",
+        data.department,
+        data.department_text
+    );
 
     setAutocompleteValue(
         "location_tag",
