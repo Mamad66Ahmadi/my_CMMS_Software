@@ -58,6 +58,8 @@ FILTER_KEYS = [
     "vehicle_required",
     "vehicle",
     "fire_gas_esd",
+    "fire_gas_esd_isolation_confirmed",
+    "fire_gas_esd_deisolation_confirmed",
 
     # Equipment preparation
     "mechanical_isolation",

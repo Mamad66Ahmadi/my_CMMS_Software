@@ -514,6 +514,20 @@ textarea:focus-visible,
     gap: 10px 14px;
 }
 
+.filter-grid--fg-esd-types {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.filter-grid--fg-esd-confirmation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 10px;
+}
+
+.filter-grid--risk-control {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 10px;
+}
+
 .filter-section--conditions .filter-grid {
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 8px 12px;

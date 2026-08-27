@@ -98,6 +98,8 @@ def get_request_filters(request):
         "vehicle_required": request.GET.get("vehicle_required", "").strip(),
         "vehicle": request.GET.get("vehicle", "").strip(),
         "fire_gas_esd": request.GET.get("fire_gas_esd", "").strip(),
+        "fire_gas_esd_isolation_confirmed": request.GET.get("fire_gas_esd_isolation_confirmed", "").strip(),
+        "fire_gas_esd_deisolation_confirmed": request.GET.get("fire_gas_esd_deisolation_confirmed", "").strip(),
 
         # Equipment preparation
         "mechanical_isolation": request.GET.get("mechanical_isolation", "").strip(),
@@ -179,6 +181,8 @@ def get_post_filters(request):
         "vehicle_required": request.POST.get("vehicle_required", "").strip(),
         "vehicle": request.POST.get("vehicle", "").strip(),
         "fire_gas_esd": request.POST.get("fire_gas_esd", "").strip(),
+        "fire_gas_esd_isolation_confirmed": request.POST.get("fire_gas_esd_isolation_confirmed", "").strip(),
+        "fire_gas_esd_deisolation_confirmed": request.POST.get("fire_gas_esd_deisolation_confirmed", "").strip(),
 
         "mechanical_isolation": request.POST.get("mechanical_isolation", "").strip(),
         "equipment_depressurized": request.POST.get("equipment_depressurized", "").strip(),
@@ -733,11 +737,21 @@ def get_filtered_permits(filters):
         filters.get("vehicle", ""),
         "vehicle_description",
     )
-    queryset = apply_multi_value_filter(
-        queryset,
-        filters.get("fire_gas_esd", ""),
-        "permit_fire_gas_esd_items__fire_gas_esd__name",
-    )
+    if filters.get("fire_gas_esd"):
+        isolation_query = Q()
+        for value in split_csv(filters["fire_gas_esd"]):
+            isolation_query |= Q(permit_fire_gas_esd_items__fire_gas_esd__code__iexact=value)
+            isolation_query |= Q(permit_fire_gas_esd_items__fire_gas_esd__name__icontains=value)
+        queryset = queryset.filter(isolation_query)
+    for key, lookup in (
+        ("fire_gas_esd_isolation_confirmed", "permit_fire_gas_esd_items__isolated_confirmed_at"),
+        ("fire_gas_esd_deisolation_confirmed", "permit_fire_gas_esd_items__deisolated_confirmed_at"),
+    ):
+        value = str(filters.get(key, "")).strip().lower()
+        if value in {"true", "1", "yes", "on"}:
+            queryset = queryset.filter(**{f"{lookup}__isnull": False})
+        elif value in {"false", "0", "no", "off"}:
+            queryset = queryset.filter(**{f"{lookup}__isnull": True})
 
     # Equipment preparation choices
     queryset = apply_choice_filter(
@@ -965,6 +979,8 @@ class PermitList(LoginRequiredMixin, TemplateView):
             "non_explosion_proof_equipment": "Non-Explosion-Proof Equipment",
             "vehicle": "Vehicle",
             "fire_gas_esd": "Fire/Gas/ESD Isolation",
+            "fire_gas_esd_isolation_confirmed": "Isolation Confirmed",
+            "fire_gas_esd_deisolation_confirmed": "De-isolation Confirmed",
             "mechanical_isolation": "Mechanical Isolation",
             "equipment_depressurized": "Depressurized",
             "equipment_drained": "Drained",
@@ -1057,6 +1073,7 @@ class PermitList(LoginRequiredMixin, TemplateView):
                 "hazard_codes": HazardCode.objects.filter(is_active=True).order_by("code"),
                 "precaution_codes": Precaution.objects.filter(is_active=True).order_by("code"),
                 "fire_gas_esd_items": FireGasESD.objects.filter(is_active=True).order_by("code"),
+                "fire_gas_esd_confirmation_roles": PermitApprovalRoleChoices.objects.filter(is_active=True).order_by("name"),
                 "equipment_status_choices": EquipmentStatus.choices,
                 "departments": Department.objects.filter(is_active=True).order_by("name"),
                 "shift_signoff_roles": PermitApprovalRoleChoices.objects.filter(is_active=True).order_by("name"),

@@ -311,7 +311,7 @@
                                 <i class="bi bi-card-text"></i> Work Details &amp; Risk Controls
                             </div>
 
-                            <div class="filter-grid">
+                            <div class="filter-grid filter-grid--work-details">
                                 <div class="filter-field">
                                     <label class="filter-label">Scope of Work</label>
                                     <input type="text"
@@ -330,6 +330,9 @@
                                            value="{{ filters.remarks }}">
                                 </div>
 
+                            </div>
+
+                            <div class="filter-grid filter-grid--risk-control">
                                 <div class="filter-field">
                                     <label class="filter-label" for="hazard_code_picker">Hazards</label>
                                     <div class="filter-multi-select" data-filter-multi-select>
@@ -360,6 +363,9 @@
                                     </div>
                                 </div>
 
+                            </div>
+
+                            <div class="filter-grid filter-grid--risk-control">
                                 <div class="filter-field">
                                     <label class="filter-label" for="precaution_code_picker">Precautions</label>
                                     <div class="filter-multi-select" data-filter-multi-select>
@@ -451,15 +457,58 @@
                                     <input type="text" name="vehicle" class="filter-input"
                                            placeholder="Vehicle description" value="{{ filters.vehicle }}">
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-lightning-charge"></i> Fire / Gas / ESD Isolation
+                            </div>
+                            <div class="filter-grid filter-grid--fg-esd-types">
                                 <div class="filter-field">
-                                    <label class="filter-label">Fire / Gas / ESD Isolation</label>
-                                    <select name="fire_gas_esd" class="filter-select">
-                                        <option value="">All Isolations</option>
-                                        {% for item in fire_gas_esd_items %}
-                                            <option value="{{ item.name }}" {% if filters.fire_gas_esd == item.name %}selected{% endif %}>
-                                                {{ item.code }} - {{ item.name }}
-                                            </option>
-                                        {% endfor %}
+                                    <label class="filter-label" for="fire_gas_esd_picker">Isolation Types</label>
+                                    <div class="filter-multi-select" data-filter-multi-select>
+                                        <input type="hidden" name="fire_gas_esd" value="{{ filters.fire_gas_esd|default:'' }}">
+                                        <button type="button" id="fire_gas_esd_picker" class="filter-multi-select__control"
+                                                aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="filter-multi-select__chips"></span>
+                                            <span class="filter-multi-select__placeholder">+ Select isolation types</span>
+                                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="filter-multi-select__menu" role="listbox" aria-multiselectable="true">
+                                            <input type="search" class="filter-multi-select__search"
+                                                   placeholder="Search isolation types..." aria-label="Search isolation types">
+                                            <div class="filter-multi-select__options">
+                                                {% for item in fire_gas_esd_items %}
+                                                    <label class="filter-multi-select__option" data-search="{{ item.code }} {{ item.name }}">
+                                                        <input type="checkbox" value="{{ item.code }}" data-label="{{ item.code }} - {{ item.name }}">
+                                                        <span><strong>{{ item.code }}</strong> - {{ item.name }}</span>
+                                                    </label>
+                                                {% empty %}
+                                                    <span class="filter-multi-select__empty">No active isolation types configured.</span>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="filter-grid filter-grid--fg-esd-confirmation">
+                                <div class="filter-field">
+                                    <label class="filter-label">ISO CONF</label>
+                                    <select name="fire_gas_esd_isolation_confirmed" class="filter-select">
+                                        <option value="">Any</option>
+                                        <option value="true" {% if filters.fire_gas_esd_isolation_confirmed == "true" %}selected{% endif %}>Confirmed</option>
+                                        <option value="false" {% if filters.fire_gas_esd_isolation_confirmed == "false" %}selected{% endif %}>Not Confirmed</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">DEISO CONF</label>
+                                    <select name="fire_gas_esd_deisolation_confirmed" class="filter-select">
+                                        <option value="">Any</option>
+                                        <option value="true" {% if filters.fire_gas_esd_deisolation_confirmed == "true" %}selected{% endif %}>Confirmed</option>
+                                        <option value="false" {% if filters.fire_gas_esd_deisolation_confirmed == "false" %}selected{% endif %}>Not Confirmed</option>
                                     </select>
                                 </div>
                             </div>
