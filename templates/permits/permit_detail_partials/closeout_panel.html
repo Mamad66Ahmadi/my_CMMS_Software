@@ -5,7 +5,7 @@
      Permit Close-out Panel
      Styled consistently with the Work Shift panel.
      ================================================================= -->
-<div class="wsp-scope">
+<div class="wsp-scope" id="closeout-panel-wrapper">
 
     <div class="detail-panel work-shift-panel mt-4" id="closeout-panel">
 
@@ -184,6 +184,9 @@
                                                         <form
                                                             method="post"
                                                             action="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number closeout_signoff_id=signoff.pk %}"
+                                                            hx-post="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number closeout_signoff_id=signoff.pk %}"
+                                                            hx-target="#closeout-panel-wrapper"
+                                                            hx-swap="outerHTML"
                                                         >
                                                             {% csrf_token %}
                                                             <input

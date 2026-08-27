@@ -245,6 +245,9 @@
                                                 <form
                                                     method="post"
                                                     action="{% url 'permits:permit_fire_gas_esd_isolate' permit_number=permit.permit_number item_id=item.pk %}"
+                                                    hx-post="{% url 'permits:permit_fire_gas_esd_isolate' permit_number=permit.permit_number item_id=item.pk %}"
+                                                    hx-target="#fg-esd-panel"
+                                                    hx-swap="outerHTML"
                                                     class="d-flex flex-column gap-1"
                                                 >
                                                     {% csrf_token %}
@@ -295,6 +298,9 @@
                                                 <form
                                                     method="post"
                                                     action="{% url 'permits:permit_fire_gas_esd_deisolate' permit_number=permit.permit_number item_id=item.pk %}"
+                                                    hx-post="{% url 'permits:permit_fire_gas_esd_deisolate' permit_number=permit.permit_number item_id=item.pk %}"
+                                                    hx-target="#fg-esd-panel"
+                                                    hx-swap="outerHTML"
                                                     class="d-flex flex-column gap-1"
                                                 >
                                                     {% csrf_token %}

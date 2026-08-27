@@ -120,5 +120,75 @@
 .signoff-chip--pending { color:#6c757d; background:rgba(108,117,125,.08); border-color:rgba(108,117,125,.25); }
 .badge-shift-1 { background:#fff; color:#495057; border:1px solid #ced4da; }
 .badge-shift-2 { background:#000; color:#fff; border:1px solid #000; }
+/* =========================================================
+   Row action buttons — same style as Work Shift pane
+   ========================================================= */
+
+.btn-shift-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+
+    border-radius: var(--wsp-radius-pill);
+
+    font-weight: 600;
+    font-size: 0.78rem;
+
+    padding: 0.32rem 0.85rem;
+
+    border-width: 1px;
+
+    transition:
+        box-shadow 0.15s ease,
+        transform 0.1s ease,
+        background-color 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.btn-shift-action:hover {
+    transform: translateY(-1px);
+}
+
+
+/* ---------------------------------------------------------
+   Sign
+   --------------------------------------------------------- */
+
+.btn-shift-action--sign {
+    color: var(--wsp-success-text);
+    border-color: var(--wsp-success);
+    background-color: var(--wsp-surface);
+}
+
+.btn-shift-action--sign:hover {
+    color: var(--wsp-surface);
+    background-color: var(--wsp-success);
+    border-color: var(--wsp-success);
+
+    box-shadow:
+        0 0.2rem 0.5rem var(--wsp-success-border);
+}
+
+
+/* ---------------------------------------------------------
+   Close Shift
+   --------------------------------------------------------- */
+
+.btn-shift-action--close {
+    color: var(--wsp-text-secondary);
+    border-color: var(--wsp-neutral-text);
+    background-color: var(--wsp-surface);
+}
+
+.btn-shift-action--close:hover {
+    color: var(--wsp-surface);
+    background-color: var(--wsp-neutral);
+    border-color: var(--wsp-neutral);
+
+    box-shadow:
+        0 0.2rem 0.5rem var(--wsp-neutral-border);
+}
 </style>
 {% endblock %}

@@ -5,7 +5,7 @@
      Work Shift Panel + Add Work Shift Modal
      Wrapped in .wsp-scope so both share one token system below.
      ================================================================= -->
-<div class="wsp-scope">
+<div class="wsp-scope" id="work-shifts-panel-wrapper">
 
     <div class="detail-panel work-shift-panel mt-4" id="work-shifts-panel">
 
@@ -202,7 +202,7 @@
                                                 {% if is_active_state %}
                                                     {% for signoff in work_shift.signoffs.all %}
                                                         {% if work_shift.status == "open" and not signoff.signed_by_id and signoff.role.code in can_sign_shift_role_codes %}
-                                                            <form method="post" action="{% url 'permits:permit_shift_signoff' permit_number=permit.permit_number work_shift_id=work_shift.pk role_code=signoff.role.code %}">
+                                                            <form method="post" action="{% url 'permits:permit_shift_signoff' permit_number=permit.permit_number work_shift_id=work_shift.pk role_code=signoff.role.code %}" hx-post="{% url 'permits:permit_shift_signoff' permit_number=permit.permit_number work_shift_id=work_shift.pk role_code=signoff.role.code %}" hx-target="#work-shifts-panel-wrapper" hx-swap="outerHTML">
                                                                 {% csrf_token %}
                                                                 <input type="hidden" name="confirm" value="on">
                                                                 <button type="submit" class="btn btn-sm btn-shift-action btn-shift-action--sign persian-text">
@@ -215,7 +215,7 @@
                                                 {% endif %}
 
                                                 {% if can_manage_work_shifts and work_shift.status == "open" %}
-                                                    <form method="post" action="{% url 'permits:permit_work_shift_close' permit_number=permit.permit_number work_shift_id=work_shift.pk %}">
+                                                    <form method="post" action="{% url 'permits:permit_work_shift_close' permit_number=permit.permit_number work_shift_id=work_shift.pk %}" hx-post="{% url 'permits:permit_work_shift_close' permit_number=permit.permit_number work_shift_id=work_shift.pk %}" hx-target="#work-shifts-panel-wrapper" hx-swap="outerHTML">
                                                         {% csrf_token %}
                                                         <button type="submit" class="btn btn-sm btn-shift-action btn-shift-action--close persian-text">
                                                             <i class="bi bi-lock-fill me-1"></i>
@@ -293,7 +293,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
 
-                    <form method="post" action="{% url 'permits:permit_work_shift_create' permit_number=permit.permit_number %}">
+                    <form method="post" action="{% url 'permits:permit_work_shift_create' permit_number=permit.permit_number %}" hx-post="{% url 'permits:permit_work_shift_create' permit_number=permit.permit_number %}" hx-target="#work-shifts-panel-wrapper" hx-swap="outerHTML">
                         {% csrf_token %}
 
                         <div class="modal-body shift-modal__body">
@@ -799,20 +799,40 @@
 </style>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    function bindWorkShiftModalHelpers() {
         const todayBtn = document.getElementById("todayButton");
         if (todayBtn) {
-            todayBtn.addEventListener("click", function () {
+            todayBtn.onclick = function () {
                 const dateInput = document.getElementById("{{ work_shift_form.date.id_for_label }}");
                 if (dateInput) {
-                    // Local date, avoiding UTC off-by-one
                     const now = new Date();
-                    const yyyy = now.getFullYear();
-                    const mm = String(now.getMonth() + 1).padStart(2, "0");
-                    const dd = String(now.getDate()).padStart(2, "0");
-                    dateInput.value = `${yyyy}-${mm}-${dd}`;
+                    dateInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
                 }
-            });
+            };
         }
-    });
+    }
+
+    function cleanWorkShiftModalState() {
+        document.querySelectorAll(".modal-backdrop").forEach(function (backdrop) {
+            backdrop.remove();
+        });
+        document.body.classList.remove("modal-open");
+        document.body.style.removeProperty("overflow");
+        document.body.style.removeProperty("padding-right");
+    }
+
+    document.addEventListener("DOMContentLoaded", bindWorkShiftModalHelpers);
+    if (window.htmx && !window.workShiftHtmxBound) {
+        window.workShiftHtmxBound = true;
+        document.body.addEventListener("htmx:afterSwap", function (event) {
+            if (!event.detail.target || event.detail.target.id !== "work-shifts-panel-wrapper") return;
+            cleanWorkShiftModalState();
+            bindWorkShiftModalHelpers();
+            const modal = document.getElementById("addWorkShiftModal");
+            const hasErrors = modal && modal.querySelector(".shift-modal__alert, .text-danger");
+            if (modal && hasErrors && window.bootstrap) {
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+            }
+        });
+    }
 </script>

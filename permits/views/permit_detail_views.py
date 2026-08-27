@@ -7,7 +7,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Prefetch
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView
@@ -74,6 +74,18 @@ from permits.services.closeout_service import (
 from permits.services.fire_gas_esd_service import (
     PermitFireGasESDService,
 )
+
+
+def _render_detail_fragment(request, permit_number, template_name, extra_context=None):
+    """Build the normal Permit Detail context and render one panel for HTMX."""
+    detail_view = PermitDetailView()
+    detail_view.request = request
+    detail_view.kwargs = {"permit_number": permit_number}
+    detail_view.object = detail_view.get_object()
+    context = detail_view.get_context_data(object=detail_view.object)
+    if extra_context:
+        context.update(extra_context)
+    return render(request, template_name, context)
 
 # =============================================================================
 # Permit Detail View
@@ -1052,6 +1064,13 @@ class PermitWorkShiftCreateView(LoginRequiredMixin, View):
                 request,
                 "Invalid work-shift information.",
             )
+            if request.headers.get("HX-Request") == "true":
+                return _render_detail_fragment(
+                    request,
+                    permit.permit_number,
+                    "permits/permit_detail_partials/work_shifts_panel.html",
+                    {"work_shift_form": form},
+                )
             return redirect(
                 reverse("permits:permit_detail", kwargs={"permit_number": permit.permit_number})
                 + "#work-shifts-panel"
@@ -1073,12 +1092,14 @@ class PermitWorkShiftCreateView(LoginRequiredMixin, View):
                 "You are not authorized to create work shifts "
                 "for this permit.",
             )
+            form.add_error(None, "You are not authorized to create work shifts for this permit.")
 
         except ValidationError as exc:
             messages.error(
                 request,
                 exc.messages[0] if hasattr(exc, "messages") else str(exc),
             )
+            form.add_error(None, exc.messages[0] if hasattr(exc, "messages") else str(exc))
 
         else:
             messages.success(
@@ -1089,6 +1110,13 @@ class PermitWorkShiftCreateView(LoginRequiredMixin, View):
                 ),
             )
 
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                permit.permit_number,
+                "permits/permit_detail_partials/work_shifts_panel.html",
+                {"work_shift_form": form},
+            )
         return redirect(
             reverse("permits:permit_detail", kwargs={"permit_number": permit.permit_number})
             + "#work-shifts-panel"
@@ -1142,6 +1170,12 @@ class PermitWorkShiftSignoffView(LoginRequiredMixin, View):
                 ),
             )
 
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                work_shift.permit.permit_number,
+                "permits/permit_detail_partials/work_shifts_panel.html",
+            )
         next_url = request.POST.get("next", "").strip()
         if next_url.startswith("/") and not next_url.startswith("//"):
             return redirect(next_url)
@@ -1188,6 +1222,12 @@ class PermitWorkShiftCloseView(LoginRequiredMixin, View):
                 ),
             )
 
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                work_shift.permit.permit_number,
+                "permits/permit_detail_partials/work_shifts_panel.html",
+            )
         next_url = request.POST.get("next", "").strip()
         if next_url.startswith("/") and not next_url.startswith("//"):
             return redirect(next_url)
@@ -1257,6 +1297,12 @@ class PermitCloseoutSignoffView(LoginRequiredMixin, View):
                 ),
             )
 
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                signoff.permit.permit_number,
+                "permits/permit_detail_partials/closeout_panel.html",
+            )
         return redirect(
             reverse(
                 "permits:permit_detail",
@@ -1325,6 +1371,12 @@ class PermitFireGasESDIsolateView(LoginRequiredMixin, View):
                 f"Isolation signed for {result.item.fire_gas_esd}.",
             )
 
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                item.permit.permit_number,
+                "permits/permit_detail_partials/_fire_gas_esd_panel.html",
+            )
         return redirect(
             reverse(
                 "permits:permit_detail",
@@ -1391,6 +1443,12 @@ class PermitFireGasESDDeisolateView(LoginRequiredMixin, View):
                 f"De-isolation signed for {result.item.fire_gas_esd}.",
             )
 
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                item.permit.permit_number,
+                "permits/permit_detail_partials/_fire_gas_esd_panel.html",
+            )
         return redirect(
             reverse(
                 "permits:permit_detail",
