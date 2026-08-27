@@ -1,0 +1,40 @@
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/static/fonts/Vazirmatn-Regular.woff2') format('woff2');
+}
+
+body {
+    font-family: 'Inter', 'Vazirmatn', sans-serif;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.page-wrapper {
+    margin-left: 250px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body.sidebar-collapsed .page-wrapper {
+    margin-left: 60px;
+}
+
+.content {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f6f8fa;
+    cursor: pointer;
+}
+
+/* Weekday colors used by the global date/top-bar presentation. */
+.weekday-Monday { color: #b20000; }
+.weekday-Tuesday { color: #b27300; }
+.weekday-Wednesday { color: #a83569; }
+.weekday-Thursday { color: #006400; }
+.weekday-Friday { color: #2b1e06; }
+.weekday-Saturday { color: #0073b2; }
+.weekday-Sunday { color: #4b0082; }
