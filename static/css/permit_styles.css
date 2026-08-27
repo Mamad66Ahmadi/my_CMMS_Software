@@ -1673,6 +1673,185 @@ textarea.form-control,
     }
 }
 
+/* ==================================================================
+   PERMIT DETAIL — A4-inspired document shell
+   Scoped to the read-only detail view so list/forms keep their layout.
+   The existing two-column pane arrangement is intentionally preserved.
+   ================================================================== */
+
+.permit-detail-page {
+    width: min(100%, 1480px);
+    min-height: 297mm;
+    margin: 24px auto;
+    padding: 22px 26px 30px !important;
+    background: var(--c-bg-surface);
+    border: 1px solid #d7e1de;
+    box-shadow: 0 8px 28px rgba(18, 58, 55, 0.12);
+}
+
+.permit-detail-page .permit-header {
+    border: 0;
+    border-bottom: 2px solid var(--c-primary);
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0 0 14px;
+    margin-bottom: 12px;
+}
+
+.permit-detail-page .permit-icon-box {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+    border-radius: 4px;
+}
+
+.permit-detail-page .permit-title-group h1 {
+    font-size: 19px;
+    letter-spacing: 0;
+}
+
+.permit-detail-page .permit-subtitle {
+    font-size: 11.5px;
+    margin-top: 3px;
+}
+
+.permit-detail-page .permit-header__right {
+    gap: 8px;
+}
+
+.permit-detail-page .permit-header__right .continuation-item,
+.permit-detail-page .btn-permit-action {
+    padding: 6px 11px;
+    font-size: 11.5px;
+}
+
+.permit-detail-page .status-badge {
+    padding: 4px 10px;
+    font-size: 10.5px;
+}
+
+.permit-detail-page .validity-strip {
+    border-radius: 3px;
+    padding: 7px 11px;
+    margin-bottom: 14px;
+    gap: 16px;
+    background: #f3f7f6;
+}
+
+.permit-detail-page .validity-item {
+    gap: 5px;
+    font-size: 11.5px;
+}
+
+.permit-detail-page .validity-item i {
+    font-size: 12px;
+}
+
+.permit-detail-page .validity-item .value {
+    font-size: 11.5px;
+}
+
+.permit-detail-page .validity-pill {
+    padding: 4px 9px;
+    font-size: 10.5px;
+}
+
+.permit-detail-page .permit-layout {
+    gap: 14px;
+}
+
+.permit-detail-page .permit-layout__main,
+.permit-detail-page .permit-layout__side {
+    gap: 14px;
+}
+
+.permit-detail-page .detail-panel {
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(18, 58, 55, 0.07);
+}
+
+.permit-detail-page .detail-panel__header {
+    min-height: 34px;
+    padding: 8px 12px;
+    font-size: 11.5px;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+    color: var(--c-primary);
+    background: #edf4f2;
+    border-bottom-color: #c9d9d5;
+}
+
+.permit-detail-page .detail-panel__header i {
+    font-size: 12px;
+}
+
+.permit-detail-page .detail-panel__body {
+    padding: 13px 14px;
+}
+
+.permit-detail-page .field-grid {
+    gap: 10px 18px;
+}
+
+.permit-detail-page .field-item {
+    gap: 2px;
+}
+
+.permit-detail-page .field-label {
+    font-size: 9px;
+    letter-spacing: .055em;
+}
+
+.permit-detail-page .field-value {
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.permit-detail-page .field-value.text-block {
+    font-size: 11.5px;
+    line-height: 1.45;
+}
+
+.permit-detail-page .field-divider {
+    margin: 2px 0;
+}
+
+.permit-detail-page .alert {
+    padding: 7px 10px;
+    font-size: 11px;
+}
+
+.permit-detail-page .table {
+    font-size: 11px;
+}
+
+.permit-detail-page .table th,
+.permit-detail-page .table td {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+@media (max-width: 992px) {
+    .permit-detail-page {
+        width: 100%;
+        margin: 0 auto;
+        border-left: 0;
+        border-right: 0;
+        box-shadow: none;
+    }
+}
+
+@media print {
+    .permit-detail-page {
+        width: 100%;
+        min-height: 0;
+        margin: 0;
+        padding: 10mm 12mm !important;
+        border: 0;
+        box-shadow: none;
+    }
+}
+
 .precaution-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
