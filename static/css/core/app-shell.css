@@ -10,14 +10,14 @@ body {
 }
 
 .page-wrapper {
-    margin-left: 250px;
+    margin-left: var(--sidebar-width, 208px);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
 body.sidebar-collapsed .page-wrapper {
-    margin-left: 60px;
+    margin-left: var(--sidebar-collapsed-width, 56px);
 }
 
 .content {

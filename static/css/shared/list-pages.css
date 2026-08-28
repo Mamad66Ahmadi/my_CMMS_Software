@@ -1,0 +1,116 @@
+/* Shared list-page shell used by permit and equipment registers. */
+.equipment-list-page {
+    --c-primary: #43334c;
+    --c-primary-hover: #34283c;
+    --c-primary-light: #5a4a63;
+    --c-accent: #755684;
+    --c-accent-light: rgba(117, 86, 132, 0.12);
+    --c-bg-page: #f8fafc;
+    --c-bg-surface: #ffffff;
+    --c-bg-subtle: #f9fafb;
+    --c-bg-subtle-2: #f1edf3;
+    --c-border: #e5e7eb;
+    --c-border-strong: #d1d5db;
+    --c-text-primary: #1f2937;
+    --c-text-secondary: #4b5563;
+    --c-text-muted: #9ca3af;
+    --c-text-inverse: #ffffff;
+}
+
+.equipment-list-page,
+.permit-list-page {
+    padding-top: var(--space-5, 20px);
+    padding-bottom: var(--space-5, 20px);
+}
+
+.equipment-list-page h1,
+.permit-list-page h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.equipment-list-page h1 small,
+.permit-list-page h1 small {
+    display: inline;
+    margin-left: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.equipment-filter-panel .filter-panel__header {
+    justify-content: space-between;
+}
+
+.equipment-list-page .btn-filter-primary {
+    background: var(--ifs-accent, #43334c);
+    border-color: var(--ifs-accent, #43334c);
+}
+
+.equipment-list-page .btn-filter-primary:hover {
+    background: var(--ifs-accent-light, #5a4a63);
+    border-color: var(--ifs-accent-light, #5a4a63);
+}
+
+.equipment-list-page .btn-filter-secondary.active {
+    background: rgba(67, 51, 76, 0.1);
+    border-color: var(--ifs-accent, #43334c);
+    color: var(--ifs-accent, #43334c);
+}
+
+.equipment-list-page .filter-section__title i {
+    color: var(--ifs-accent, #43334c);
+}
+
+.equipment-filter-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.equipment-filter-heading__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: rgba(67, 51, 76, 0.1);
+    color: var(--ifs-accent, #43334c);
+}
+
+.equipment-filter-heading__title {
+    color: var(--ifs-gray-800, #1f2937);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.equipment-filter-heading__subtitle {
+    color: var(--ifs-gray-500, #6b7280);
+    font-size: 12px;
+}
+
+.equipment-filter-panel .filter-panel__footer {
+    padding: 14px 16px;
+}
+
+.equipment-filter-toggle {
+    justify-content: center;
+}
+
+.equipment-list-page .table-scroll-container {
+    margin-top: 0;
+}
+
+@media (max-width: 768px) {
+    .equipment-list-page__header {
+        align-items: flex-start !important;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .equipment-filter-panel .filter-panel__header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

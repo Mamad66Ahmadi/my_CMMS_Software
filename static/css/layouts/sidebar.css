@@ -4,7 +4,7 @@
     background: #343a40;
     color: white;
     min-height: 100vh;
-    padding: 20px;
+    padding: 12px;
     flex-shrink: 0;
     overflow-y: auto;
 }
@@ -62,8 +62,8 @@
     --sidebar-active-bg: #0d2137;
     --sidebar-border: #1e2e3e;
     --sidebar-sub-bg: #0c1620;
-    --sidebar-width: 240px;
-    --sidebar-collapsed-width: 58px;
+    --sidebar-width: 183px;
+    --sidebar-collapsed-width: 56px;
 }
 
 .sidebar {
@@ -78,7 +78,7 @@
     flex-direction: column;
     transition: width 0.25s ease;
     overflow: hidden;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-family: 'Segoe UI', system-ui, sans-serif;
     border-right: 1px solid var(--sidebar-border);
     z-index: 1000;
@@ -102,8 +102,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 14px;
-    height: 56px;
+    padding: 0 12px;
+    height: 52px;
     background: var(--sidebar-header-bg);
     border-bottom: 1px solid var(--sidebar-border);
     flex-shrink: 0;
@@ -112,20 +112,20 @@
 .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     overflow: hidden;
 }
 
 .brand-icon {
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     color: var(--sidebar-accent);
     flex-shrink: 0;
 }
 
 .brand-text {
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
     color: #e8f0f8;
     white-space: nowrap;
 }
@@ -143,40 +143,43 @@
 .sidebar-toggle-icon:hover { color: var(--sidebar-accent); }
 
 .sidebar-section-label {
-    font-size: 0.68rem;
+    font-size: 0.64rem;
     font-weight: 600;
-    letter-spacing: 0.1em;
-    color: #3a5a7a;
-    padding: 14px 16px 4px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #4a6a8a;
+    padding: 14px 14px 5px;
     white-space: nowrap;
     overflow: hidden;
     flex-shrink: 0;
 }
 
-.sidebar-item { border-bottom: 1px solid #111d27; }
+.sidebar-item { margin: 1px 0; }
 
 .sidebar-nav-btn {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     width: 100%;
-    padding: 10px 14px;
+    padding: 8px 12px;
     background: none;
     border: none;
+    border-left: 3px solid transparent;
     color: var(--sidebar-text);
     text-align: left;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
     white-space: nowrap;
     overflow: hidden;
+    font-size: 0.8rem;
 }
 
 .sidebar-nav-btn > i:first-child {
-    font-size: 1rem;
+    font-size: 0.92rem;
     flex-shrink: 0;
     color: #4a7a9a;
     transition: color 0.15s;
-    width: 18px;
+    width: 17px;
     text-align: center;
 }
 
@@ -193,13 +196,18 @@
     color: var(--sidebar-text-hover);
 }
 
+.sidebar-nav-btn:not(.collapsed) {
+    background: var(--sidebar-active-bg);
+    border-left-color: var(--sidebar-accent);
+}
+
 .sidebar-nav-btn:hover > i:first-child,
 .sidebar-nav-btn:not(.collapsed) > i:first-child {
     color: var(--sidebar-accent);
 }
 
 .chevron {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: #3a5a7a;
     transition: transform 0.2s;
     flex-shrink: 0;
@@ -213,31 +221,32 @@
 .badge-pill {
     background: #c0392b;
     color: #fff;
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 10px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 9px;
     flex-shrink: 0;
 }
 
 .sidebar-sub-link {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 7px 14px 7px 42px;
+    gap: 9px;
+    padding: 6px 12px 6px 40px;
     color: #7a9ab8;
     text-decoration: none;
     background: var(--sidebar-sub-bg);
-    border-bottom: 1px solid #0e1a24;
+    border-left: 3px solid transparent;
     transition: background 0.15s, color 0.15s;
     white-space: nowrap;
     overflow: hidden;
-    font-size: 0.8rem;
+    font-size: 0.76rem;
 }
 
 .sidebar-sub-link:hover {
     background: #132030;
     color: #c8dff0;
+    border-left-color: #2a5a8a;
 }
 
 .dot {
@@ -266,7 +275,8 @@
 
 .sidebar.collapsed .sidebar-nav-btn {
     justify-content: center;
-    padding: 12px 0;
+    padding: 11px 0;
+    border-left-width: 0;
 }
 
 .sidebar.collapsed .sidebar-nav-btn > i:first-child {

@@ -1,81 +1,110 @@
-<form method="get" action="">
-    <div class="filter-bar">
-
-        <div class="filter-group">
-            <label class="filter-label">Functional Location</label>
-            <input type="text" name="functional_location"
-                   class="filter-input"
-                   placeholder="Search Location..."
-                   value="{{ filters.functional_location }}">
+<div class="filter-panel equipment-filter-panel">
+    <div class="filter-panel__header">
+        <div class="equipment-filter-heading">
+            <div class="equipment-filter-heading__icon">
+                <i class="bi bi-cpu"></i>
+            </div>
+            <div>
+                <div class="equipment-filter-heading__title">Equipment Search</div>
+                <div class="equipment-filter-heading__subtitle">Filter the equipment register</div>
+            </div>
         </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Serial Number</label>
-            <input type="text" name="serial_number"
-                   class="filter-input"
-                   placeholder="Search Serial..."
-                   value="{{ filters.serial_number }}">
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Manufacturer</label>
-            <input type="text" name="manufacturer"
-                   class="filter-input"
-                   placeholder="Search Manufacturer..."
-                   value="{{ filters.manufacturer }}">
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Model</label>
-            <input type="text" name="model"
-                   class="filter-input"
-                   placeholder="Search Model..."
-                   value="{{ filters.model }}">
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Note</label>
-            <input type="text" name="note"
-                   class="filter-input"
-                   placeholder="Search Note..."
-                   value="{{ filters.note }}">
-        </div>
-
-        <!-- Active Toggle -->
-        <div class="filter-group toggle-center">
-            <label class="filter-label">Active Only</label>
-
-            <input type="hidden" name="is_active" value="false">
-
-            <label class="toggle-switch">
-                <input type="checkbox"
-                       name="is_active"
-                       value="true"
-                       {% if filters.is_active != "false" %}checked{% endif %}>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Rows Per Page (max = 200)</label>
-            <input type="number"
-                   name="per_page"
-                   class="filter-input"
-                   min="10"
-                   max="200"
-                   value="{{ per_page }}">
-        </div>
-
         <div class="filter-actions">
-            <button type="submit" class="btn-search">Apply</button>
-
+            <button type="submit" form="equipmentFilterForm" class="btn-filter-primary">
+                <i class="bi bi-search"></i> Search
+            </button>
+            <button type="button"
+                    class="btn-filter-secondary {% if filters.functional_location or filters.serial_number or filters.manufacturer or filters.model or filters.note %}active{% endif %}"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#equipmentFilterOffcanvas"
+                    aria-controls="equipmentFilterOffcanvas">
+                <i class="bi bi-sliders2"></i> Filters
+            </button>
             {% if filters.functional_location or filters.serial_number or filters.manufacturer or filters.model or filters.note %}
-                <a href="?sort={{ sort_by }}&order={{ sort_order }}"
-                   class="btn-clear">
-                    Clear All
+                <a href="?sort={{ sort_by }}&order={{ sort_order }}" class="btn-filter-clear">
+                    <i class="bi bi-x-circle"></i> Clear
                 </a>
             {% endif %}
         </div>
-
     </div>
-</form>
+
+    <div class="offcanvas offcanvas-end filter-offcanvas"
+         tabindex="-1"
+         id="equipmentFilterOffcanvas"
+         aria-labelledby="equipmentFilterOffcanvasLabel">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title" id="equipmentFilterOffcanvasLabel">
+                <i class="bi bi-cpu"></i> Equipment Filters
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+
+        <div class="offcanvas-body d-flex flex-column p-0">
+            <div class="filter-panel__body flex-grow-1">
+                <form method="get" action="" id="equipmentFilterForm">
+                    <div class="filter-sections">
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-search"></i> Equipment Identification
+                            </div>
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Functional Location</label>
+                                    <input type="text" name="functional_location" class="filter-input"
+                                           placeholder="Search location..." value="{{ filters.functional_location }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Serial Number</label>
+                                    <input type="text" name="serial_number" class="filter-input"
+                                           placeholder="Search serial..." value="{{ filters.serial_number }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Manufacturer</label>
+                                    <input type="text" name="manufacturer" class="filter-input"
+                                           placeholder="Search manufacturer..." value="{{ filters.manufacturer }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Model</label>
+                                    <input type="text" name="model" class="filter-input"
+                                           placeholder="Search model..." value="{{ filters.model }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Note</label>
+                                    <input type="text" name="note" class="filter-input"
+                                           placeholder="Search note..." value="{{ filters.note }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-sliders"></i> Register Options
+                            </div>
+                            <div class="filter-grid">
+                                <div class="filter-field equipment-filter-toggle">
+                                    <label class="filter-label">Active Only</label>
+                                    <input type="hidden" name="is_active" value="false">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="is_active" value="true"
+                                               {% if filters.is_active != "false" %}checked{% endif %}>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Rows Per Page (max = 200)</label>
+                                    <input type="number" name="per_page" class="filter-input"
+                                           min="10" max="200" value="{{ per_page }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="filter-panel__footer border-top">
+                <button type="submit" form="equipmentFilterForm" class="btn-filter-primary w-100">
+                    <i class="bi bi-funnel-fill"></i> Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
