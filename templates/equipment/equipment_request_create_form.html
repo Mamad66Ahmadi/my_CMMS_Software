@@ -5,23 +5,36 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/shared/form-pages.css' %}">
 
-<div class="container" style="max-width:1000px; margin-top:30px;">
-    <div class="section-header">Request New Equipment Creation</div>
+<div class="equipment-form-page equipment-form-page--equipment">
+    <header class="equipment-form-page__header">
+        <div class="equipment-form-page__identity">
+            <div class="equipment-form-page__icon"><i class="bi bi-cpu"></i></div>
+            <div>
+                <div class="equipment-form-page__eyebrow">Equipment Workflow</div>
+                <h1 class="equipment-form-page__title">Request New Equipment Creation</h1>
+                <div class="equipment-form-page__subtitle">Register a new equipment asset and supporting documentation.</div>
+            </div>
+        </div>
+        <div class="equipment-form-page__actions">
+            <span class="status-badge status-draft"><i class="bi bi-pencil"></i> Draft</span>
+        </div>
+    </header>
 
     <div class="form-card">
         <p>You are requesting the creation of a <strong>New Equipment</strong> asset.</p>
         <hr>
         
         <!-- MAIN FORM -->
-        <form method="post" id="main-equipment-form">
+        <form method="post" id="main-equipment-form" class="equipment-form">
             {% csrf_token %}
 
-            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+            <div class="equipment-form-page__columns">
                 
                 <!-- LEFT COLUMN: Main Fields -->
-                <div style="flex: 1; min-width: 300px;">
-                    <h5>Equipment Details</h5>
+                <div class="equipment-form-page__panel">
+                    <h2 class="equipment-form-page__panel-title"><i class="bi bi-card-text"></i> Equipment Details</h2>
                     <p style="position: relative;">
                         {{ form.functional_location_search.label_tag }}
                         {{ form.functional_location_search }}
@@ -40,9 +53,9 @@
                 </div>
 
                 <!-- RIGHT COLUMN: HTMX Upload System -->
-                <div style="flex: 1; min-width: 300px;">
-                    <h5>Upload Supporting Documents</h5>
-                    <div id="upload-box" style="border:2px dashed #ccc; padding:20px; border-radius:8px; background:#f9f9f9;">
+                <div class="equipment-form-page__panel">
+                    <h2 class="equipment-form-page__panel-title"><i class="bi bi-cloud-arrow-up"></i> Upload Supporting Documents</h2>
+                    <div id="upload-box" class="equipment-upload-box">
                         <p>
                             <label>Select File:</label>
                             <input type="file" name="file" id="id_new_file" class="form-control">

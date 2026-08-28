@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/shared/form-pages.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -15,7 +16,23 @@
 </div>
 {% endif %}
 
-<div class="container" style="max-width:750px; margin-top:30px;">
+<div class="equipment-form-page equipment-form-page--location-tag">
+    <header class="equipment-form-page__header">
+        <div class="equipment-form-page__identity">
+            <div class="equipment-form-page__icon"><i class="bi bi-geo-alt"></i></div>
+            <div>
+                <div class="equipment-form-page__eyebrow">Location Tag Workflow</div>
+                <h1 class="equipment-form-page__title">Request New Location Tag</h1>
+                <div class="equipment-form-page__subtitle">Create a new controlled location record.</div>
+            </div>
+        </div>
+        <div class="equipment-form-page__actions">
+            <span class="status-badge status-draft"><i class="bi bi-pencil"></i> Draft</span>
+            <a href="{% url 'equipment:location_tag_list' %}" class="btn-secondary-custom">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </header>
 
 
     {% if messages %}
@@ -27,22 +44,18 @@
     {% endif %}
 
 
-    <div class="section-header">
-        Request New Location Tag
-    </div>
-
     <div class="form-card">
 
-        <form method="post" autocomplete="off">
+        <form method="post" autocomplete="off" class="equipment-form">
             {% csrf_token %}
 
-            <p>
+            <p class="form-field-block">
                 {{ form.loc_tag.label_tag }}
                 {{ form.loc_tag }}
             </p>
 
             <!-- Parent Search -->
-            <p style="position: relative;">
+            <p class="form-field-block" style="position: relative;">
                 {{ form.parent_search.label_tag }}
                 {{ form.parent_search }}
                 <div id="parent-results" class="autocomplete-results"></div>
@@ -51,47 +64,47 @@
             <!-- Hidden parent field -->
             {{ form.parent }}
 
-            <p>
+            <p class="form-field-block">
                 {{ form.description.label_tag }}
                 {{ form.description }}
             </p>
 
-            <p>
+            <p class="form-field-block">
                 {{ form.long_tag.label_tag }}
                 {{ form.long_tag }}
             </p>
 
-            <p>
+            <p class="form-field-block">
                 {{ form.obj_criticality.label_tag }}
                 {{ form.obj_criticality }}
             </p>
 
-            <p>
+            <p class="form-field-block">
                 {{ form.obj_type.label_tag }}
                 {{ form.obj_type }}
             </p>
 
-            <p>
+            <p class="form-field-block">
                 {{ form.obj_category.label_tag }}
                 {{ form.obj_category }}
             </p>
 
-            <p>
+            <p class="form-field-block">
                 {{ form.unit.label_tag }}
                 {{ form.unit }}
             </p>
 
-            <p>
+            <p class="form-field-block">
                 {{ form.train.label_tag }}
                 {{ form.train }}
             </p>
 
-            <p>
+            <p class="form-field-block">
                 {{ form.note.label_tag }}
                 {{ form.note }}
             </p>
 
-            <p>
+            <p class="form-field-block">
                 {{ form.mih_level.label_tag }}
                 {{ form.mih_level }}
             </p>

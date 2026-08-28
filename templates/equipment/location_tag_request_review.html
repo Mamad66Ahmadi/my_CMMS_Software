@@ -6,19 +6,29 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/shared/form-pages.css' %}">
 {% endblock %}
 
 {% block content %}
 
 <!-- ======== Back to Dashboard Button ======== -->
-<div class="d-flex justify-content-end mb-3"> {# d-flex for alignment, mb-3 for margin-bottom #}
-    <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary">
-        Back to Dashboard
-    </a>
-</div>
-
-
-<div class="container" style="max-width:750px; margin-top:30px;">
+<div class="equipment-form-page equipment-form-page--location-tag">
+<header class="equipment-form-page__header">
+    <div class="equipment-form-page__identity">
+        <div class="equipment-form-page__icon"><i class="bi bi-geo-alt"></i></div>
+        <div>
+            <div class="equipment-form-page__eyebrow">Location Tag Workflow</div>
+            <h1 class="equipment-form-page__title">Review Location Tag Request</h1>
+            <div class="equipment-form-page__subtitle">Validate the proposed location record before approval.</div>
+        </div>
+    </div>
+    <div class="equipment-form-page__actions">
+        <span class="status-badge status-draft"><i class="bi bi-clipboard-check"></i> Review</span>
+        <a href="{% url 'accounts:dashboard' %}" class="btn-secondary-custom">
+            <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+    </div>
+</header>
 
 {% if messages %}
     {% for message in messages %}
@@ -28,13 +38,9 @@
     {% endfor %}
 {% endif %}
 
-<div class="section-header">
-    Review Location Tag Request
-</div>
-
 <div class="form-card">
 
-<form method="post">
+<form method="post" class="equipment-form">
 {% csrf_token %}
 
 <p>
