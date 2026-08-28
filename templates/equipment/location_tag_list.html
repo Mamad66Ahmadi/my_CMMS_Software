@@ -6,25 +6,26 @@
 
 {% block content %}
 
+<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/shared/list-pages.css' %}">
 
-<div class="container">
-
-    <h5>
-        Filter Pane
-    </h5>
+<div class="container-fluid equipment-list-page location-tag-list-page">
 
     {% include "equipment/location_tag_list/_filters.html" %}
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 equipment-list-page__header">
         <h1 class="mb-0">
             Location Tags
-            <span style="font-weight: normal;">( {{ total_location_tags }} Objects )</span>
+            <small class="text-muted">
+                ({{ total_location_tags }} Records)
+            </small>
         </h1>
 
         <a href="{% url 'equipment:location_tag_export_csv' %}?{{ request.GET.urlencode }}"
-        class="btn btn-success">
-            Download CSV
+           class="btn btn-outline-secondary">
+            <i class="bi bi-filetype-csv me-1"></i>
+            Export CSV
         </a>
     </div>
 
@@ -32,7 +33,10 @@
         {% include "equipment/location_tag_list/_table.html" %}
         {% include "equipment/common/_pagination.html" %}
     {% else %}
-        <p>No location tags found.</p>
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-1"></i>
+            No location tags found matching the criteria.
+        </div>
     {% endif %}
 
 

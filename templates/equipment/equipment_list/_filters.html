@@ -1,30 +1,36 @@
-<div class="filter-panel equipment-filter-panel">
+<div class="filter-panel mb-3 equipment-filter-panel">
     <div class="filter-panel__header">
-        <div class="equipment-filter-heading">
-            <div class="equipment-filter-heading__icon">
-                <i class="bi bi-cpu"></i>
+        <div class="d-flex flex-column gap-3 w-100">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div class="filter-search-group flex-grow-1">
+                    <i class="bi bi-search filter-search-icon"></i>
+                    <input type="text"
+                           id="equipmentQuickSearch"
+                           class="filter-search-input"
+                           placeholder="Search equipment by functional location..."
+                           value="{{ filters.functional_location }}">
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" form="equipmentFilterForm" class="btn-filter-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                    <button type="button"
+                            class="btn-filter-secondary {% if filters.functional_location or filters.serial_number or filters.manufacturer or filters.model or filters.note or filters.is_active == 'false' %}active{% endif %}"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#equipmentFilterOffcanvas"
+                            aria-controls="equipmentFilterOffcanvas">
+                        <i class="bi bi-sliders2"></i> Filters
+                        {% if filters.serial_number or filters.manufacturer or filters.model or filters.note or filters.is_active == 'false' %}
+                            <span class="filter-badge">●</span>
+                        {% endif %}
+                    </button>
+                    {% if filters.functional_location or filters.serial_number or filters.manufacturer or filters.model or filters.note or filters.is_active == 'false' %}
+                        <a href="?sort={{ sort_by }}&order={{ sort_order }}" class="btn-filter-clear">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </a>
+                    {% endif %}
+                </div>
             </div>
-            <div>
-                <div class="equipment-filter-heading__title">Equipment Search</div>
-                <div class="equipment-filter-heading__subtitle">Filter the equipment register</div>
-            </div>
-        </div>
-        <div class="filter-actions">
-            <button type="submit" form="equipmentFilterForm" class="btn-filter-primary">
-                <i class="bi bi-search"></i> Search
-            </button>
-            <button type="button"
-                    class="btn-filter-secondary {% if filters.functional_location or filters.serial_number or filters.manufacturer or filters.model or filters.note %}active{% endif %}"
-                    data-bs-toggle="offcanvas"
-                    data-bs-target="#equipmentFilterOffcanvas"
-                    aria-controls="equipmentFilterOffcanvas">
-                <i class="bi bi-sliders2"></i> Filters
-            </button>
-            {% if filters.functional_location or filters.serial_number or filters.manufacturer or filters.model or filters.note %}
-                <a href="?sort={{ sort_by }}&order={{ sort_order }}" class="btn-filter-clear">
-                    <i class="bi bi-x-circle"></i> Clear
-                </a>
-            {% endif %}
         </div>
     </div>
 
@@ -42,6 +48,12 @@
         <div class="offcanvas-body d-flex flex-column p-0">
             <div class="filter-panel__body flex-grow-1">
                 <form method="get" action="" id="equipmentFilterForm">
+                    {% if sort_by %}
+                        <input type="hidden" name="sort" value="{{ sort_by }}">
+                    {% endif %}
+                    {% if sort_order %}
+                        <input type="hidden" name="order" value="{{ sort_order }}">
+                    {% endif %}
                     <div class="filter-sections">
                         <div class="filter-section">
                             <div class="filter-section__title">
@@ -108,3 +120,27 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const quickSearch = document.getElementById("equipmentQuickSearch");
+    const filterForm = document.getElementById("equipmentFilterForm");
+    const locationFilter = filterForm
+        ? filterForm.querySelector('[name="functional_location"]')
+        : null;
+
+    if (!quickSearch || !filterForm || !locationFilter) return;
+
+    quickSearch.addEventListener("input", function () {
+        locationFilter.value = quickSearch.value;
+    });
+
+    locationFilter.addEventListener("input", function () {
+        quickSearch.value = locationFilter.value;
+    });
+
+    filterForm.addEventListener("submit", function () {
+        locationFilter.value = quickSearch.value;
+    });
+});
+</script>

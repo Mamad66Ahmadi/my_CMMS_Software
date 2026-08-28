@@ -38,7 +38,8 @@
     font-weight: 500;
 }
 
-.equipment-filter-panel .filter-panel__header {
+.equipment-filter-panel .filter-panel__header,
+.location-tag-filter-panel .filter-panel__header {
     justify-content: space-between;
 }
 
@@ -90,7 +91,8 @@
     font-size: 12px;
 }
 
-.equipment-filter-panel .filter-panel__footer {
+.equipment-filter-panel .filter-panel__footer,
+.location-tag-filter-panel .filter-panel__footer {
     padding: 14px 16px;
 }
 
@@ -109,7 +111,8 @@
         gap: 12px;
     }
 
-    .equipment-filter-panel .filter-panel__header {
+    .equipment-filter-panel .filter-panel__header,
+    .location-tag-filter-panel .filter-panel__header {
         align-items: stretch;
         flex-direction: column;
     }

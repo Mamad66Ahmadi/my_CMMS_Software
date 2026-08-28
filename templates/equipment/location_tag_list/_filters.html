@@ -1,90 +1,171 @@
-<form method="get" action="">
-    <div class="filter-bar">
-
-        <div class="filter-group">
-            <label class="filter-label">Location Tag</label>
-            <input type="text" name="loc_tag" class="filter-input"
-                   placeholder="Search Tag..."
-                   value="{{ filters.loc_tag }}">
+<div class="filter-panel mb-3 equipment-filter-panel location-tag-filter-panel">
+    <div class="filter-panel__header">
+        <div class="d-flex flex-column gap-3 w-100">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div class="filter-search-group flex-grow-1">
+                    <i class="bi bi-search filter-search-icon"></i>
+                    <input type="text"
+                           id="locationTagQuickSearch"
+                           class="filter-search-input"
+                           placeholder="Search location tag..."
+                           value="{{ filters.loc_tag }}">
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" form="locationTagFilterForm" class="btn-filter-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                    <button type="button"
+                            class="btn-filter-secondary {% if filters.loc_tag or filters.parent or filters.unit or filters.train or filters.criticality or filters.obj_type or filters.obj_category or filters.is_active == 'false' %}active{% endif %}"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#locationTagFilterOffcanvas"
+                            aria-controls="locationTagFilterOffcanvas">
+                        <i class="bi bi-sliders2"></i> Filters
+                        {% if filters.parent or filters.unit or filters.train or filters.criticality or filters.obj_type or filters.obj_category or filters.is_active == 'false' %}
+                            <span class="filter-badge">●</span>
+                        {% endif %}
+                    </button>
+                    {% if filters.loc_tag or filters.parent or filters.unit or filters.train or filters.criticality or filters.obj_type or filters.obj_category or filters.is_active == 'false' %}
+                        <a href="?sort={{ sort_by }}&order={{ sort_order }}" class="btn-filter-clear">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Parent Tag</label>
-            <input type="text" name="parent" class="filter-input"
-                   placeholder="Search Parent..."
-                   value="{{ filters.parent }}">
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Unit</label>
-            <input type="text" name="unit" class="filter-input"
-                   placeholder="Search Unit..."
-                   value="{{ filters.unit }}">
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Train</label>
-            <input type="text" name="train" class="filter-input"
-                   placeholder="Search Train..."
-                   value="{{ filters.train }}">
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Criticality</label>
-            <input type="text" name="criticality" class="filter-input"
-                   placeholder="Search Criticality..."
-                   value="{{ filters.criticality }}">
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Type</label>
-            <input type="text" name="obj_type" class="filter-input"
-                   placeholder="Search Type..."
-                   value="{{ filters.obj_type }}">
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Object Category</label>
-            <input type="text" name="obj_category" class="filter-input"
-                   placeholder="Search Category..."
-                   value="{{ filters.obj_category }}">
-        </div>
-
-        <div class="filter-group toggle-center">
-            <label class="filter-label">Active Only</label>
-
-            <input type="hidden" name="is_active" value="false">
-
-            <label class="toggle-switch">
-                <input type="checkbox"
-                    name="is_active"
-                    value="true"
-                    {% if filters.is_active != "false" %}checked{% endif %}>
-                <span class="slider"></span>
-            </label>
-        </div>
-
-        <div class="filter-group">
-            <label class="filter-label">Rows Per Page (max = 200)</label>
-
-            <input type="number"
-                name="per_page"
-                class="filter-input"
-                min="1"
-                max="500"
-                value="{{ per_page }}"
-                placeholder="max = 200">
-        </div>
-
-        <div class="filter-actions">
-            <button type="submit" class="btn-search">Apply</button>
-
-            {% if filters.loc_tag or filters.parent or filters.unit or filters.train or filters.criticality or filters.obj_type or filters.obj_category %}
-                <a href="?sort={{ sort_by }}&order={{ sort_order }}" class="btn-clear">
-                    Clear All
-                </a>
-            {% endif %}
-        </div>
-
     </div>
-</form>
+
+    <div class="offcanvas offcanvas-end filter-offcanvas"
+         tabindex="-1"
+         id="locationTagFilterOffcanvas"
+         aria-labelledby="locationTagFilterOffcanvasLabel">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title" id="locationTagFilterOffcanvasLabel">
+                <i class="bi bi-geo-alt"></i> Location Tag Filters
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+
+        <div class="offcanvas-body d-flex flex-column p-0">
+            <div class="filter-panel__body flex-grow-1">
+                <form method="get" action="" id="locationTagFilterForm">
+                    {% if sort_by %}
+                        <input type="hidden" name="sort" value="{{ sort_by }}">
+                    {% endif %}
+                    {% if sort_order %}
+                        <input type="hidden" name="order" value="{{ sort_order }}">
+                    {% endif %}
+
+                    <div class="filter-sections">
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-geo-alt"></i> Location Hierarchy
+                            </div>
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Location Tag</label>
+                                    <input type="text" name="loc_tag" class="filter-input"
+                                           placeholder="Search tag..." value="{{ filters.loc_tag }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Parent Tag</label>
+                                    <input type="text" name="parent" class="filter-input"
+                                           placeholder="Search parent..." value="{{ filters.parent }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Unit</label>
+                                    <input type="text" name="unit" class="filter-input"
+                                           placeholder="Search unit..." value="{{ filters.unit }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Train</label>
+                                    <input type="text" name="train" class="filter-input"
+                                           placeholder="Search train..." value="{{ filters.train }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-diagram-3"></i> Classification
+                            </div>
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label class="filter-label">Criticality</label>
+                                    <input type="text" name="criticality" class="filter-input"
+                                           placeholder="Search criticality..." value="{{ filters.criticality }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Type</label>
+                                    <input type="text" name="obj_type" class="filter-input"
+                                           placeholder="Search type..." value="{{ filters.obj_type }}">
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Object Category</label>
+                                    <input type="text" name="obj_category" class="filter-input"
+                                           placeholder="Search category..." value="{{ filters.obj_category }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-section__title">
+                                <i class="bi bi-sliders"></i> Register Options
+                            </div>
+                            <div class="filter-grid">
+                                <div class="filter-field equipment-filter-toggle">
+                                    <label class="filter-label">Active Only</label>
+                                    <input type="hidden" name="is_active" value="false">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="is_active" value="true"
+                                               {% if filters.is_active != "false" %}checked{% endif %}>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="filter-field">
+                                    <label class="filter-label">Rows Per Page (max = 200)</label>
+                                    <input type="number" name="per_page" class="filter-input"
+                                           min="1" max="500" value="{{ per_page }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="filter-panel__footer border-top">
+                <button type="submit" form="locationTagFilterForm" class="btn-filter-primary w-100">
+                    <i class="bi bi-funnel-fill"></i> Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const quickSearch = document.getElementById("locationTagQuickSearch");
+    const filterForm = document.getElementById("locationTagFilterForm");
+    const tagFilter = filterForm ? filterForm.querySelector('[name="loc_tag"]') : null;
+
+    if (!quickSearch || !filterForm || !tagFilter) return;
+
+    quickSearch.addEventListener("input", function () {
+        tagFilter.value = quickSearch.value;
+    });
+
+    quickSearch.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            tagFilter.value = quickSearch.value;
+            filterForm.requestSubmit();
+        }
+    });
+
+    tagFilter.addEventListener("input", function () {
+        quickSearch.value = tagFilter.value;
+    });
+
+    filterForm.addEventListener("submit", function () {
+        tagFilter.value = quickSearch.value;
+    });
+});
+</script>
