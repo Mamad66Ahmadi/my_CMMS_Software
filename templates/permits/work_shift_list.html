@@ -6,17 +6,47 @@
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">{% endblock %}
 {% block content %}
 <div class="container-fluid work-shift-list-page">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div class="d-flex align-items-center gap-3">
-            <h1 class="mb-0">Work Shifts <small class="text-muted">({{ work_shifts.paginator.count }} Records)</small></h1>
-            <div class="text-muted">Operational view for <strong>{{ selected_date|date:"l, Y-m-d" }} ({{ selected_date|to_jalali:"%Y/%m/%d" }})</strong></div>
-        </div>
-        <div class="btn-group">
-            <a class="btn btn-outline-secondary" href="{{ previous_url }}">← Previous Day</a>
-            <a class="btn btn-outline-primary" href="{{ today_url }}">Today</a>
-            <a class="btn btn-outline-secondary" href="{{ next_url }}">Next Day →</a>
+    <div class="work-shift-page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+            <!-- Page Title & Context -->
+            <div>
+                <div class="d-flex align-items-center gap-3">
+                    <h1 class="mb-0 fw-semibold">Work Shifts</h1>
+                    <span class="badge bg-light text-dark border">
+                        {{ work_shifts.paginator.count }} Records
+                    </span>
+                </div>
+
+                <div class="work-shift-date"> <i class="bi bi-calendar3"></i> <span class="work-shift-date__gregorian"> {{ selected_date|date:"l, Y-m-d" }} </span> <span class="work-shift-date__separator">|</span> <span class="work-shift-date__jalali"> {{ selected_date|to_jalali:"%Y/%m/%d" }} </span> </div>
+            </div>
+
+            <!-- Date Navigation -->
+            <div class="btn-group shadow-sm" role="group" aria-label="Date navigation">
+                <a class="btn btn-outline-secondary"
+                href="{{ previous_url }}"
+                title="Previous day">
+                    <i class="bi bi-chevron-left me-1"></i>
+                    Previous Day
+                </a>
+
+                <a class="btn btn-primary"
+                href="{{ today_url }}">
+                    <i class="bi bi-calendar-check me-1"></i>
+                    Today
+                </a>
+
+                <a class="btn btn-outline-secondary"
+                href="{{ next_url }}"
+                title="Next day">
+                    Next Day
+                    <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </div>
+
         </div>
     </div>
+
 
     <div class="filter-panel mb-3">
         <div class="filter-panel__header">
@@ -197,7 +227,24 @@
 
     {% for shift_value, shift_label in shift_choices %}
         <section class="card mb-3 table-scroll-container">
-            <div class="card-header d-flex justify-content-between align-items-center"> <strong> {{ selected_date|date:"Y-m-d" }} ({{ shift_label }}) </strong> <span> {% for row in shift_count_rows %} {% if row.value == shift_value %}{{ row.count }}{% endif %} {% endfor %} shifts </span> </div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong title="{{ selected_date|to_jalali:'%Y/%m/%d' }}">
+                    {{ selected_date|date:"Y-m-d" }} ({{ shift_label }})
+                    <small class="text-muted">
+                        {% if shift_value == "SHIFT_1" %}
+                            — Shift window: 07:00–19:00
+                        {% else %}
+                            — Shift window: 19:00–07:00 the following day
+                        {% endif %}
+                    </small>
+                </strong>
+                <span>
+                    {% for row in shift_count_rows %}
+                        {% if row.value == shift_value %}{{ row.count }}{% endif %}
+                    {% endfor %}
+                    shifts
+                </span>
+            </div>
             <div class="table-responsive">
                 <table class="table align-middle mb-0 permit-table">
                     <thead><tr>
@@ -240,4 +287,7 @@
     {% include "shared/_pagination.html" with page_obj=work_shifts %}
 </div>
 {% include "permits/_permit_filter_scripts.html" %}
+
+
+
 {% endblock %}

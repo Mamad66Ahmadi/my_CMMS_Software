@@ -2863,3 +2863,50 @@ textarea.form-control,
     display: block;
     line-height: 1.2;
 }
+.work-shift-page-header {
+    padding: 0.25rem 0 0.75rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.work-shift-page-header h1 {
+    font-size: 1.65rem;
+    letter-spacing: -0.02em;
+}
+
+.work-shift-page-header .badge {
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.65rem;
+}
+
+.work-shift-page-header .btn {
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 0.85rem;
+}
+
+.work-shift-date {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 0.55rem;
+    font-size: 0.9rem;
+    color: var(--bs-secondary-color);
+}
+
+.work-shift-date > i {
+    font-size: 0.95rem;
+}
+
+.work-shift-date__gregorian {
+    font-weight: 500;
+    color: var(--bs-body-color);
+}
+
+.work-shift-date__separator {
+    opacity: 0.4;
+}
+
+.work-shift-date__jalali {
+    font-size: 0.85rem;
+}
