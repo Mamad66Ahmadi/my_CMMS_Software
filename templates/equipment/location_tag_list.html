@@ -3,12 +3,12 @@
 
 {% block title %} Location Tag List {% endblock %}
 
-
-{% block content %}
-
-<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
 <link rel="stylesheet" href="{% static 'css/shared/list-pages.css' %}">
+{% endblock %}
+
+{% block content %}
 
 <div class="container-fluid equipment-list-page location-tag-list-page">
 
@@ -31,7 +31,7 @@
 
     {% if location_tags %}
         {% include "equipment/location_tag_list/_table.html" %}
-        {% include "equipment/common/_pagination.html" %}
+        {% include "shared/_pagination.html" %}
     {% else %}
         <div class="alert alert-info">
             <i class="bi bi-info-circle me-1"></i>

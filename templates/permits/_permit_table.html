@@ -3,45 +3,45 @@
 <table>
     <thead>
         <tr>
-            {% include "permits/_permit_table_header.html" with column="permit_number" label="Permit Number" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="continuation_of" label="Continuation Of" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="permit_number" label="Permit Number" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="continuation_of" label="Continuation Of" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "permits/_permit_table_header.html" with column="workflow" label="Workflow" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="current_step" label="Step No." sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="current_step_title" label="Current Step" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="workflow_state" label="Workflow State" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="is_terminal" label="Terminal" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="workflow" label="Workflow" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="current_step" label="Step No." sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="current_step_title" label="Current Step" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="workflow_state" label="Workflow State" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="is_terminal" label="Terminal" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "permits/_permit_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "permits/_permit_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="hazard_code" label="Hazards" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="precaution_code" label="Precautions" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="hazard_code" label="Hazards" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="precaution_code" label="Precautions" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "permits/_permit_table_header.html" with column="vehicle_required" label="Vehicle" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="mechanical_isolation" label="Mech. Isolation" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="process_isolation" label="Process Isolation" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="area_authority_present_required" label="AA Required" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="fire_watch_present_required" label="Fire Watch" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="vehicle_required" label="Vehicle" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="mechanical_isolation" label="Mech. Isolation" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="process_isolation" label="Process Isolation" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="area_authority_present_required" label="AA Required" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="fire_watch_present_required" label="Fire Watch" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "permits/_permit_table_header.html" with column="work_supervisor" label="Work Supervisor" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="designated_area_authority" label="Area Authority" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="designated_area_supervisor" label="Area Supervisor" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="work_supervisor" label="Work Supervisor" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="designated_area_authority" label="Area Authority" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="designated_area_supervisor" label="Area Supervisor" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "permits/_permit_table_header.html" with column="valid_from" label="Valid From" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="valid_to" label="Valid To" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="activated_at" label="Activated At" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="closed_at" label="Closed At" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="valid_from" label="Valid From" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="valid_to" label="Valid To" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="activated_at" label="Activated At" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="closed_at" label="Closed At" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "permits/_permit_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=header_query_params %}
-            {% include "permits/_permit_table_header.html" with column="modified_by" label="Modified By" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="created_at" label="Created At" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="created_by" label="Created By" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="modified_at" label="Modified At" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="modified_by" label="Modified By" sort_by=sort_by query_params=header_query_params %}
         </tr>
     </thead>
 

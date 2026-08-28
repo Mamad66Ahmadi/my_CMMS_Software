@@ -1,6 +1,6 @@
-<div class="pagination">
+{# Shared pagination primitive. Pass page_obj and, when needed, query_params. #}
+<nav class="pagination" aria-label="Pagination">
     <span class="step-links">
-
         {% if page_obj.has_previous %}
             <a href="?page=1{% if query_params %}&{{ query_params }}{% endif %}">
                 First
@@ -10,7 +10,7 @@
             </a>
         {% endif %}
 
-        <span class="current">
+        <span class="current" aria-current="page">
             Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
         </span>
 
@@ -22,6 +22,5 @@
                 Last
             </a>
         {% endif %}
-
     </span>
-</div>
+</nav>

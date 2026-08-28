@@ -3,8 +3,11 @@
 
 {% block title %}PIS Qualified Users{% endblock %}
 
-{% block content %}
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
+{% endblock %}
+
+{% block content %}
 
 <div class="container-fluid">
 
@@ -34,15 +37,15 @@
             <table class="table align-middle table-hover mb-0">
                 <thead>
                     <tr>
-                        {% include "permits/_pis_table_header.html" with column="user__personnel_number" label="Personnel Num." sort_by=sort_by query_params=query_params %}
-                        {% include "permits/_pis_table_header.html" with column="user__first_name" label="Full Name" sort_by=sort_by query_params=query_params %}
-                        {% include "permits/_pis_table_header.html" with column="user__department__name" label="Department" sort_by=sort_by query_params=query_params %}
-                        {% include "permits/_pis_table_header.html" with column="user__is_active" label="Status" sort_by=sort_by query_params=query_params %}
-                        {% include "permits/_pis_table_header.html" with column="qualification__code" label="Qualification" sort_by=sort_by query_params=query_params %}
-                        {% include "permits/_pis_table_header.html" with column="granted_date" label="Granted Date" sort_by=sort_by query_params=query_params %}
-                        {% include "permits/_pis_table_header.html" with column="expiry_date" label="Expiry Date" sort_by=sort_by query_params=query_params %}
-                        {% include "permits/_pis_table_header.html" with column="granted_by__personnel_number" label="Granted By" sort_by=sort_by query_params=query_params %}
-                        {% include "permits/_pis_table_header.html" with column="note" label="Note" sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="user__personnel_number" label="Personnel Num." sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="user__first_name" label="Full Name" sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="user__department__name" label="Department" sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="user__is_active" label="Status" sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="qualification__code" label="Qualification" sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="granted_date" label="Granted Date" sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="expiry_date" label="Expiry Date" sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="granted_by__personnel_number" label="Granted By" sort_by=sort_by query_params=query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="note" label="Note" sort_by=sort_by query_params=query_params %}
                     </tr>
                 </thead>
 
@@ -101,7 +104,7 @@
             </table>
         </div>
 
-        {% include "equipment/common/_pagination.html" with page_obj=page_obj %}
+        {% include "shared/_pagination.html" with page_obj=page_obj %}
     {% else %}
         <div class="alert alert-info">
             No users found with PIS qualification.

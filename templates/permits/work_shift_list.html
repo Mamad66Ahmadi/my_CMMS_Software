@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load to_jalali %}
+
 {% load static %}
 {% block title %}Work Shifts{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">{% endblock %}
@@ -7,7 +9,7 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
             <h1 class="mb-0">Work Shifts <small class="text-muted">({{ work_shifts.paginator.count }} Records)</small></h1>
-            <div class="text-muted">Operational view for <strong>{{ selected_date|date:"l, Y-m-d" }}</strong></div>
+            <div class="text-muted">Operational view for <strong>{{ selected_date|date:"l, Y-m-d" }} ({{ selected_date|to_jalali:"%Y/%m/%d" }})</strong></div>
         </div>
         <div class="btn-group">
             <a class="btn btn-outline-secondary" href="{{ previous_url }}">← Previous Day</a>
@@ -195,32 +197,28 @@
 
     {% for shift_value, shift_label in shift_choices %}
         <section class="card mb-3 table-scroll-container">
-            <div class="card-header d-flex justify-content-between"><strong>{{ shift_label }}</strong><span>{% for row in shift_count_rows %}{% if row.value == shift_value %}{{ row.count }}{% endif %}{% endfor %} shifts</span></div>
+            <div class="card-header d-flex justify-content-between align-items-center"> <strong> {{ selected_date|date:"Y-m-d" }} ({{ shift_label }}) </strong> <span> {% for row in shift_count_rows %} {% if row.value == shift_value %}{{ row.count }}{% endif %} {% endfor %} shifts </span> </div>
             <div class="table-responsive">
                 <table class="table align-middle mb-0 permit-table">
                     <thead><tr>
-                        {% include "permits/_permit_table_header.html" with column="date" label="Date" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="shift" label="Shift" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="permit_number" label="Permit No" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="location" label="Location" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="work_leader" label="Work Leader" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="worker_count" label="Workers" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=header_query_params %}
-                        {% include "permits/_permit_table_header.html" with column="signed_signoffs" label="Signoff Progress" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="permit_number" label="Permit No" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="location" label="Location" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="work_leader" label="Work Leader" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="worker_count" label="Workers" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="signed_signoffs" label="Signoff Progress" sort_by=sort_by query_params=header_query_params %}
                         <th>Actions</th>
                     </tr></thead>
                     <tbody>
                     {% for work_shift in work_shifts %}
                         {% if work_shift.shift == shift_value %}
                         <tr>
-                            <td>{{ work_shift.date|date:"Y-m-d" }}</td>
-                            <td>{{ work_shift.get_shift_display }}</td>
                             <td class="fw-bold"><a class="permit-number-link" href="{% url 'permits:permit_detail' work_shift.permit.permit_number %}">{{ work_shift.permit.permit_number }}</a></td>
                             <td>{{ work_shift.permit.permit_type.name }}</td><td>{{ work_shift.permit.department|default:"—" }}</td><td>{{ work_shift.permit.location_tag|default:"—" }}</td>
                             <td>{% if work_shift.permit.location_tag and work_shift.permit.location_tag.unit %}{{ work_shift.permit.location_tag.unit.unit_code }}{% else %}—{% endif %}</td>
@@ -239,7 +237,7 @@
             </div>
         </section>
     {% endfor %}
-    {% include "equipment/common/_pagination.html" with page_obj=work_shifts %}
+    {% include "shared/_pagination.html" with page_obj=work_shifts %}
 </div>
 {% include "permits/_permit_filter_scripts.html" %}
 {% endblock %}

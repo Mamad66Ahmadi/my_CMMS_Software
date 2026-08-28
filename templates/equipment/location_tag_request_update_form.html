@@ -3,11 +3,12 @@
 
 {% block title %} Location Tag Modification {% endblock %}
 
-
-{% block content %}
-
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
 <link rel="stylesheet" href="{% static 'css/shared/form-pages.css' %}">
+{% endblock %}
+
+{% block content %}
 
 {% if form.non_field_errors %}
 <div style="color:red; margin-bottom:15px;">

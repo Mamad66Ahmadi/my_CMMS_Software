@@ -47,7 +47,7 @@
         <div class="table-scroll-container">
             {% include "work_orders/work_orders_head/_wo_table.html" %}
         </div>
-        {% include "equipment/common/_pagination.html" with page_obj=work_orders %}
+        {% include "shared/_pagination.html" with page_obj=work_orders %}
     {% else %}
         <div class="alert alert-info">
             No work orders found matching your criteria.

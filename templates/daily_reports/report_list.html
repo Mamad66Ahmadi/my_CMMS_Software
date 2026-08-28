@@ -38,7 +38,7 @@
         <div class="table-scroll-container">
             {% include "daily_reports/dr_list/_dr_table.html" %}
         </div>
-        {% include "equipment/common/_pagination.html" with page_obj=reports %}
+        {% include "shared/_pagination.html" with page_obj=reports %}
     {% else %}
         <p>No reports found.</p>
     {% endif %}

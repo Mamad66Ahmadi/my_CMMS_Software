@@ -37,7 +37,7 @@
             {% include "work_orders/fault_reports/_fr_table.html" %}
         </div>
 
-        {% include "equipment/common/_pagination.html" with page_obj=fault_reports %}
+        {% include "shared/_pagination.html" with page_obj=fault_reports %}
     {% else %}
         <p>No fault reports found.</p>
     {% endif %}

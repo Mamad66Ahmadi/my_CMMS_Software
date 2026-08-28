@@ -3,17 +3,17 @@
     <table>
         <thead>
             <tr>
-                {% include "equipment/common/_table_header.html" with column="id" label="ID" %}
-                {% include "equipment/common/_table_header.html" with column="functional_location" label="Functional Location" %}
-                {% include "equipment/common/_table_header.html" with column="serial_number" label="Serial Number" %}
-                {% include "equipment/common/_table_header.html" with column="manufacturer" label="Manufacturer" %}
-                {% include "equipment/common/_table_header.html" with column="model" label="Model" %}
-                {% include "equipment/common/_table_header.html" with column="note" label="Note" %}
-                {% include "equipment/common/_table_header.html" with column="is_active" label="Active" %}
-                {% include "equipment/common/_table_header.html" with column="created_at" label="Created At" %}
-                {% include "equipment/common/_table_header.html" with column="created_by" label="Created By" %}
-                {% include "equipment/common/_table_header.html" with column="modified_at" label="Modified At" %}
-                {% include "equipment/common/_table_header.html" with column="modified_by" label="Modified By" %}
+                {% include "shared/_sortable_table_header.html" with column="id" label="ID" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="functional_location" label="Functional Location" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="serial_number" label="Serial Number" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="manufacturer" label="Manufacturer" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="model" label="Model" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="note" label="Note" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="is_active" label="Active" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="created_at" label="Created At" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="created_by" label="Created By" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="modified_at" label="Modified At" sort_mode="order" %}
+                {% include "shared/_sortable_table_header.html" with column="modified_by" label="Modified By" sort_mode="order" %}
 
             </tr>
         </thead>

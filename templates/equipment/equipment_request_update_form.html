@@ -4,10 +4,12 @@
 
 {% block title %}Equipment Modification{% endblock %}
 
-{% block content %}
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
 <link rel="stylesheet" href="{% static 'css/shared/form-pages.css' %}">
+{% endblock %}
 
+{% block content %}
 <div class="equipment-form-page equipment-form-page--equipment">
     <header class="equipment-form-page__header">
         <div class="equipment-form-page__identity">
@@ -101,7 +103,7 @@
                 <tbody id="uploaded-documents-body">
                     <!-- This loops through documents ALREADY attached to the pending request -->
                     {% for doc in pending_request.document_requests.all %}
-                        {% include "equipment/partials/document_row.html" %}
+                        {% include "equipment/document_row.html" %}
                     {% empty %}
                         <!-- HTMX will append rows here -->
                     {% endfor %}

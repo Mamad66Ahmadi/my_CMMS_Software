@@ -3,9 +3,12 @@
 
 {% block title %}Permits{% endblock %}
 
-{% block content %}
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
 <link rel="stylesheet" href="{% static 'css/shared/list-pages.css' %}">
+{% endblock %}
+
+{% block content %}
 
 <div class="container-fluid permit-list-page">
 
@@ -97,7 +100,7 @@
             {% include "permits/_permit_table.html" %}
         </div>
 
-        {% include "equipment/common/_pagination.html" with page_obj=permits %}
+        {% include "shared/_pagination.html" with page_obj=permits %}
     {% else %}
         <div class="alert alert-info">
             <i class="bi bi-info-circle me-1"></i>

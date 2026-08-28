@@ -3,10 +3,12 @@
 
 {% block title %}New Equipment Request{% endblock %}
 
-{% block content %}
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
 <link rel="stylesheet" href="{% static 'css/shared/form-pages.css' %}">
+{% endblock %}
 
+{% block content %}
 <div class="equipment-form-page equipment-form-page--equipment">
     <header class="equipment-form-page__header">
         <div class="equipment-form-page__identity">
