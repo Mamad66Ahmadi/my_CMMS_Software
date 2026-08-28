@@ -5,9 +5,11 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/shared/detail-pages.css' %}">
 {% endblock %}
 
 {% block content %}
+<div class="location-tag-detail-page">
 <!-- Status Banner -->
 {% if not location_tag.is_active %}
 <div class="ifs-status-banner ifs-status-banner--inactive">

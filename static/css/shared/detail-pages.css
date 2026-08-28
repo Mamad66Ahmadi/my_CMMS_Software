@@ -1,0 +1,170 @@
+/* Shared detail-page presentation for permit and equipment records. */
+.permit-detail-page,
+.equipment-detail-page,
+.location-tag-detail-page {
+    width: min(100%, 1480px);
+    margin: 24px auto;
+    padding: 22px 26px 30px;
+    background: var(--c-bg-surface, #fff);
+    border: 1px solid var(--c-border, #dde6e3);
+    box-shadow: 0 8px 28px rgba(18, 58, 55, 0.12);
+}
+
+.equipment-detail-page,
+.location-tag-detail-page {
+    --ifs-primary: #43334c;
+    --ifs-primary-dark: #34283c;
+    --ifs-primary-light: #5a4a63;
+    --ifs-primary-50: #f3f1fa;
+    --ifs-accent: #43334c;
+    --ifs-accent-light: #5a4a63;
+}
+
+.equipment-detail-page .ifs-status-banner,
+.location-tag-detail-page .ifs-status-banner {
+    margin: -22px -26px 18px;
+}
+
+.equipment-detail-page .ifs-breadcrumb-bar,
+.location-tag-detail-page .ifs-breadcrumb-bar {
+    margin-bottom: 18px;
+    border-radius: 4px;
+}
+
+.equipment-detail-page .ifs-entity-header,
+.location-tag-detail-page .ifs-entity-header {
+    border: 0;
+    border-bottom: 2px solid var(--ifs-primary, var(--c-primary));
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0 0 14px;
+    margin-bottom: 14px;
+}
+
+.equipment-detail-page .ifs-tabs,
+.location-tag-detail-page .ifs-tabs {
+    padding: 0;
+    margin-bottom: 14px;
+}
+
+.equipment-detail-page .ifs-card,
+.location-tag-detail-page .ifs-card {
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(18, 58, 55, 0.07);
+}
+
+.equipment-detail-page .ifs-card__header,
+.location-tag-detail-page .ifs-card__header {
+    min-height: 34px;
+    padding: 8px 12px;
+    background: var(--ifs-primary-50, #edf4f2);
+    border-bottom-color: var(--ifs-border, #dde6e3);
+}
+
+.equipment-detail-page .ifs-card__title,
+.location-tag-detail-page .ifs-card__title {
+    color: var(--ifs-primary, var(--c-primary));
+    font-size: 11.5px;
+    letter-spacing: .035em;
+}
+
+.equipment-detail-page .ifs-card__body,
+.location-tag-detail-page .ifs-card__body {
+    padding: 14px;
+}
+
+.equipment-detail-card {
+    margin-top: 14px;
+}
+
+.equipment-detail-card .ifs-table-container {
+    overflow-x: auto;
+}
+
+.equipment-request-status {
+    display: inline-flex;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.equipment-request-status--pending {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.equipment-request-status--approved,
+.equipment-request-status--approved_with_change {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.equipment-pending-request {
+    margin-top: 14px !important;
+    padding: 10px 14px;
+}
+
+.equipment-detail-page .ifs-datalist,
+.location-tag-detail-page .ifs-datalist {
+    gap: 10px 18px;
+}
+
+.equipment-detail-page .ifs-datalist__item dt,
+.location-tag-detail-page .ifs-datalist__item dt {
+    font-size: 9px;
+    letter-spacing: .055em;
+}
+
+.equipment-detail-page .ifs-datalist__item dd,
+.location-tag-detail-page .ifs-datalist__item dd {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.equipment-detail-page .ifs-table th,
+.equipment-detail-page .ifs-table td,
+.location-tag-detail-page .ifs-table th,
+.location-tag-detail-page .ifs-table td {
+    padding: 7px 10px;
+}
+
+.equipment-detail-page .detail-action-panel {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.equipment-detail-page .detail-action-panel .ifs-btn--primary {
+    background: var(--ifs-accent);
+}
+
+@media (max-width: 992px) {
+    .permit-detail-page,
+    .equipment-detail-page,
+    .location-tag-detail-page {
+        width: 100%;
+        margin: 0 auto;
+        border-left: 0;
+        border-right: 0;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .permit-detail-page,
+    .equipment-detail-page,
+    .location-tag-detail-page {
+        padding: 16px 14px 22px;
+    }
+
+    .equipment-detail-page .ifs-status-banner,
+    .location-tag-detail-page .ifs-status-banner {
+        margin: -16px -14px 14px;
+    }
+
+    .equipment-detail-page .ifs-entity-header,
+    .location-tag-detail-page .ifs-entity-header {
+        flex-direction: column;
+    }
+}

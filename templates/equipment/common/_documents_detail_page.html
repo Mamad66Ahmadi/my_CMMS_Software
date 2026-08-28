@@ -1,38 +1,40 @@
-<!-- COLLAPSIBLE SECTION: DOCUMENTS -->
-<div class="section-header" onclick="toggleSection('documents_section')">
-    Documents
-    <span id="chevron_documents_section" class="chevron">&#9656;</span>
-</div>
-
-<div id="documents_section" class="section-content">
-    <div class="table-scroll-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Equipment</th>
-                    <th>Document</th>
-                    <th>File Name</th>
-                    <th>Description</th>
-
-                </tr>
-            </thead>
-            <tbody>
-                {% for doc in documents %}
-                <tr>
-                    <td>{{ doc.equipment }}</td>
-                    <td style="text-align:left;">
-                        <a href="{{ doc.file.url }}" target="_blank">{{ doc.file.name }}</a>
-                    </td>
-                    <td>{{ doc.file_name }}</td>
-                    <td>{{ doc.description }}</td>
-
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="3">No documents available.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<section class="ifs-card equipment-detail-card">
+    <header class="ifs-card__header">
+        <h2 class="ifs-card__title">
+            <i class="bi bi-file-earmark-text"></i> Documents
+        </h2>
+        <span class="ifs-card__count">{{ documents|length }} records</span>
+    </header>
+    <div class="ifs-card__body">
+        <div class="ifs-table-container">
+            <table class="ifs-table ifs-table--hover">
+                <thead>
+                    <tr>
+                        <th>Equipment</th>
+                        <th>Document</th>
+                        <th>File Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td>{{ doc.equipment }}</td>
+                        <td>
+                            <a href="{{ doc.file.url }}" target="_blank" class="ifs-link">
+                                {{ doc.file.name }}
+                            </a>
+                        </td>
+                        <td>{{ doc.file_name }}</td>
+                        <td>{{ doc.description }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">No documents available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+</section>

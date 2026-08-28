@@ -7,57 +7,71 @@
 {% block content %}
 
 <link rel="stylesheet" href="{% static 'css/equipment_styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/shared/detail-pages.css' %}">
 
-{% if not equipment.is_active %}
-<div style="background:#ffeaea; padding:15px; border-left:5px solid #c0392b; margin-bottom:20px; font-weight:600;">
-    ⚠️ This Equipment is INACTIVE.
-</div>
-{% endif %}
+<div class="equipment-detail-page">
+    {% if not equipment.is_active %}
+    <div class="ifs-status-banner ifs-status-banner--inactive">
+        <i class="bi bi-exclamation-triangle-fill ifs-status-banner__icon"></i>
+        <span class="ifs-status-banner__text">This Equipment is INACTIVE.</span>
+    </div>
+    {% endif %}
 
-<div class="container">
+    <nav class="ifs-breadcrumb-bar" aria-label="Breadcrumb">
+        <ol class="ifs-breadcrumb">
+            <li class="ifs-breadcrumb__item">
+                <a href="{% url 'equipment:equipment_list' %}">
+                    <i class="bi bi-arrow-left"></i>
+                    Equipment List
+                </a>
+            </li>
+            <li class="ifs-breadcrumb__item ifs-breadcrumb__item--current">
+                Equipment {{ equipment.id }}
+            </li>
+        </ol>
+    </nav>
 
-    <a href="{% url 'equipment:equipment_list' %}" class="back-button">← Equipment List</a>
+    <header class="ifs-entity-header">
+        <div class="ifs-entity-header__identity">
+            <div class="ifs-entity-header__type">
+                <i class="bi bi-cpu"></i> Equipment
+            </div>
+            <h1 class="ifs-entity-header__title">Equipment {{ equipment.id }}</h1>
+            <div class="ifs-entity-header__subtitle">
+                {{ equipment.functional_location|default:"No functional location assigned" }}
+                {% if equipment.serial_number %} · Serial {{ equipment.serial_number }}{% endif %}
+            </div>
+        </div>
+        <div class="ifs-entity-header__badges">
+            <span class="ifs-badge ifs-badge--{% if equipment.is_active %}success{% else %}danger{% endif %}">
+                <i class="bi bi-{% if equipment.is_active %}check-circle{% else %}x-circle{% endif %}"></i>
+                {% if equipment.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+        </div>
+    </header>
 
+    <div class="ifs-card-grid">
     {% include "equipment/equipment_detail/_basic_info.html" %}
+    </div>
+
     {% include "equipment/common/_documents_detail_page.html" %}
     {% include "equipment/common/_change_request_history.html" %}
 
-    <div style="margin-top: 40px; margin-bottom: 40px; text-align:right;">
-
-    {% if not equipment.is_active %}
-        <button class="btn btn-secondary" disabled
-                style="padding:10px 20px; font-weight:600;">
-            ⚠️ This Equipment is Inactive
-        </button>
-
-    <!-- {% elif has_pending_request %}
-        <button class="btn btn-secondary" disabled
-                style="padding:10px 20px; font-weight:600;">
-            ✏️ Modify This Tag (Pending Request Exists)
-        </button> -->
-    {% else %}
-        <a href="{% url 'equipment:equipment_update_request' equipment.id %}"
-        class="btn btn-primary"
-        style="padding:10px 20px; font-weight:600; background:#43334C; border:none;">
-            ✏️ Modify This Equipment
-        </a>
-    {% endif %}
+    <div class="detail-action-panel">
+        {% if not equipment.is_active %}
+            <button class="ifs-btn ifs-btn--secondary" disabled>
+                <i class="bi bi-slash-circle"></i>
+                This Equipment is Inactive
+            </button>
+        {% else %}
+            <a href="{% url 'equipment:equipment_update_request' equipment.id %}"
+               class="ifs-btn ifs-btn--primary">
+                <i class="bi bi-pencil-square"></i>
+                Modify This Equipment
+            </a>
+        {% endif %}
     </div>
 </div>
-
-<script>
-    function toggleSection(id) {
-        const content = document.getElementById(id);
-        const chevron = document.getElementById("chevron_" + id);
-
-        const isOpen = content.style.display === "block";
-
-        content.style.display = isOpen ? "none" : "block";
-        chevron.classList.toggle("open", !isOpen);
-    }
-</script>
-
-
 {% endblock %}
 
 

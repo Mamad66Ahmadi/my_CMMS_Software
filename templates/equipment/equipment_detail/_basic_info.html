@@ -1,71 +1,66 @@
-<!-- BASIC INFO TABLE (Always Visible) -->
-<h4 style="margin-top: 30px; color: rgb(3, 2, 67); border: 1px solid rgb(3, 2, 67); padding: 20px 12px; border-radius: 4px;">
-    Equipment Information
-</h4>
-
-<div class="table-scroll-container">
-    <table class="info-table">
-        <tbody>
-
-        <tr>
-            <th>Equipment ID</th>
-            <td>{{ equipment.id }}</td>
-
-            <th>Functional Location</th>
-            <td colspan="3">
-                <a href="#">
-                    {{ equipment.functional_location }}
-                </a>
-            </td>
-        </tr>
-
-        <tr>
-            <th>Serial Number</th>
-            <td>{{ equipment.serial_number|default:"—" }}</td>
-
-            <th>Manufacturer</th>
-            <td colspan="3">{{ equipment.manufacturer|default:"—" }}</td>
-        </tr>
-
-        <tr>
-            <th>Model</th>
-            <td>{{ equipment.model|default:"—" }}</td>
-
-            <th>Created By</th>
-            <td colspan="3">{{ equipment.created_by }}</td>
-        </tr>
-
-        <tr>
-            <th>Created At</th>
-            <td>{{ equipment.created_at|date:"Y-m-d H:i" }}</td>
-
-            <th>Modified By</th>
-            <td colspan="3">{{ equipment.modified_by|default:"—" }}</td>
-        </tr>
-
-        <tr>
-            <th>Status</th>
-            <td>
-                {% if equipment.is_active %}
-                    <span style="color:#1f7a1f; font-weight:600;">✅ Active</span>
-                {% else %}
-                    <span style="color:#c0392b; font-weight:600;">❌ Inactive</span>
-                {% endif %}
-            </td>
-
-            <th>Modified At</th>
-            <td colspan="3">
-                {% if equipment.modified_at %}
-                    {{ equipment.modified_at|date:"Y-m-d H:i" }}
-                {% else %} — {% endif %}
-            </td>
-        </tr>
-
-        <tr>
-            <th>Note</th>
-            <td colspan="5">{{ equipment.note|default:"—" }}</td>
-        </tr>
-
-        </tbody>
-    </table>
-</div>
+<section class="ifs-card ifs-card--primary ifs-card--full">
+    <header class="ifs-card__header">
+        <h2 class="ifs-card__title"><i class="bi bi-card-text"></i> Equipment Information</h2>
+    </header>
+    <div class="ifs-card__body">
+        <dl class="ifs-datalist ifs-datalist--2col">
+            <div class="ifs-datalist__item">
+                <dt>Equipment ID</dt>
+                <dd>{{ equipment.id }}</dd>
+            </div>
+            <div class="ifs-datalist__item">
+                <dt>Functional Location</dt>
+                <dd>
+                    {% if equipment.functional_location %}
+                        <a href="{% url 'equipment:location_tag_detail' equipment.functional_location.loc_tag %}" class="ifs-link">
+                            {{ equipment.functional_location }}
+                        </a>
+                    {% else %}
+                        —
+                    {% endif %}
+                </dd>
+            </div>
+            <div class="ifs-datalist__item">
+                <dt>Serial Number</dt>
+                <dd>{{ equipment.serial_number|default:"—" }}</dd>
+            </div>
+            <div class="ifs-datalist__item">
+                <dt>Manufacturer</dt>
+                <dd>{{ equipment.manufacturer|default:"—" }}</dd>
+            </div>
+            <div class="ifs-datalist__item">
+                <dt>Model</dt>
+                <dd>{{ equipment.model|default:"—" }}</dd>
+            </div>
+            <div class="ifs-datalist__item">
+                <dt>Status</dt>
+                <dd>
+                    <span class="ifs-status-dot ifs-status-dot--{% if equipment.is_active %}active{% else %}inactive{% endif %}"></span>
+                    {% if equipment.is_active %}Active{% else %}Inactive{% endif %}
+                </dd>
+            </div>
+            <div class="ifs-datalist__item">
+                <dt>Created</dt>
+                <dd>
+                    {{ equipment.created_at|date:"Y-m-d H:i" }}
+                    <span class="ifs-text--muted">by {{ equipment.created_by }}</span>
+                </dd>
+            </div>
+            <div class="ifs-datalist__item">
+                <dt>Modified</dt>
+                <dd>
+                    {% if equipment.modified_at %}
+                        {{ equipment.modified_at|date:"Y-m-d H:i" }}
+                        <span class="ifs-text--muted">by {{ equipment.modified_by }}</span>
+                    {% else %}
+                        —
+                    {% endif %}
+                </dd>
+            </div>
+            <div class="ifs-datalist__item ifs-datalist__item--full">
+                <dt>Note</dt>
+                <dd class="ifs-text--prewrap">{{ equipment.note|default:"—" }}</dd>
+            </div>
+        </dl>
+    </div>
+</section>
