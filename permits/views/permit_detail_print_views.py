@@ -16,6 +16,7 @@ from permits.models import (
     PermitWorkflowStep,
     PermitWorkShift,
     Precaution,
+    PermitAttachment,
 )
 
 
@@ -154,12 +155,21 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                     queryset=closeout_signoff_queryset,
                     to_attr="prefetched_closeout_signoffs",
                 ),
+                Prefetch(
+                    "attachments",
+                    queryset=PermitAttachment.objects.select_related(
+                        "uploaded_by",
+                        "modified_by",
+                    ),
+                    to_attr="prefetched_attachments",
+                ),
             )
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         permit = self.object
+        context["attachments"] = getattr(permit, "prefetched_attachments", [])
 
         # ----------------------------------------------------------
         # Hazard / precaution master data

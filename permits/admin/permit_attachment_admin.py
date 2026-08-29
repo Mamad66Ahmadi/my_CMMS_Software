@@ -4,6 +4,7 @@ from django.utils.html import format_html
 
 from permits.admin.base_admin import TimeStampedAdmin
 from permits.models import PermitAttachment
+from permits.services.attachment_service import PermitAttachmentService
 
 
 @admin.register(PermitAttachment)
@@ -59,13 +60,17 @@ class PermitAttachmentAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return bool(
             request.user.is_authenticated
-            and (obj is None or obj.actor_can_change(request.user))
+            and (obj is None or PermitAttachmentService.actor_can_change(
+                actor=request.user, attachment=obj
+            ))
         )
 
     def has_delete_permission(self, request, obj=None):
         return bool(
             request.user.is_authenticated
-            and (obj is None or obj.actor_can_delete(request.user))
+            and (obj is None or PermitAttachmentService.actor_can_delete(
+                actor=request.user, attachment=obj
+            ))
         )
 
     def get_actions(self, request):
@@ -77,13 +82,16 @@ class PermitAttachmentAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if not change:
-            if not PermitAttachment.actor_can_add_for_permit(request.user, obj.permit):
-                raise PermissionDenied(
-                    "You do not hold a workflow role scoped to this permit."
-                )
+            PermitAttachmentService.ensure_can_add(
+                actor=request.user, permit=obj.permit
+            )
             obj.uploaded_by = request.user
-        elif not obj.actor_can_change(request.user):
-            raise PermissionDenied("Only Superusers and Permit Office may edit attachments.")
+        elif not PermitAttachmentService.actor_can_change(
+            actor=request.user, attachment=obj
+        ):
+            raise PermissionDenied(
+                "Only Superusers and Permit Office may edit attachments."
+            )
         obj.modified_by = request.user
         obj.full_clean()
         super().save_model(request, obj, form, change)
@@ -119,19 +127,19 @@ class PermitAttachmentInline(admin.TabularInline):
         return bool(
             request.user.is_authenticated
             and obj is not None
-            and PermitAttachment.actor_can_add_for_permit(request.user, obj)
+            and PermitAttachmentService.actor_can_add(actor=request.user, permit=obj)
         )
 
     def has_change_permission(self, request, obj=None):
         return bool(
             request.user.is_authenticated
-            and PermitAttachment.actor_can_manage_all(request.user)
+            and PermitAttachmentService.actor_can_manage_all(actor=request.user)
         )
 
     def has_delete_permission(self, request, obj=None):
         if not request.user.is_authenticated:
             return False
-        if PermitAttachment.actor_can_manage_all(request.user):
+        if PermitAttachmentService.actor_can_manage_all(actor=request.user):
             return True
         # For an inline, ``obj`` is the parent Permit rather than an
         # individual PermitAttachment.  The formset save hook still checks

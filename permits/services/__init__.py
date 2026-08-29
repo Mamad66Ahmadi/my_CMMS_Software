@@ -1,4 +1,5 @@
 from .authorization_service import *
+from .attachment_service import *
 from .closeout_service import *
 from .condition_service import *
 from .fire_gas_esd_service import *

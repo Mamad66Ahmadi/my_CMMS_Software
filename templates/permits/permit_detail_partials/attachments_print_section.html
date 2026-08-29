@@ -1,0 +1,32 @@
+{% if attachments %}
+<div class="section">
+    <div class="section-title">Permit Attachments</div>
+    <table class="approvals">
+        <thead>
+            <tr>
+                <th>Attachment</th>
+                <th>Description</th>
+                <th>Uploaded by</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attachment in attachments %}
+                <tr>
+                    <td>
+                        <a href="{% url 'permits:permit_attachment_download' permit_number=permit.permit_number attachment_id=attachment.attachment_id %}">
+                            {{ attachment.title|default:attachment.filename }}
+                        </a>
+                        {% if attachment.title %}
+                            <div style="font-size: 7pt; color: #777;">{{ attachment.filename }}</div>
+                        {% endif %}
+                    </td>
+                    <td><bdi>{{ attachment.description|default:"—" }}</bdi></td>
+                    <td><bdi>{{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }}</bdi></td>
+                    <td>{{ attachment.uploaded_at|date:"Y-m-d H:i" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}

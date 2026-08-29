@@ -18,7 +18,16 @@ from permits.views import (
     PermitPrintView,
     WorkShiftListView,
     WorkShiftDetailView,
+    
 )
+
+from permits.views.permit_attachment_views import (
+    PermitAttachmentCreateView,
+    PermitAttachmentDeleteView,
+    PermitAttachmentUpdateView,
+    PermitAttachmentDownloadView,
+)
+
 
 from permits.views.permit_detail_views import (
     PermitWorkShiftCloseView,
@@ -67,6 +76,26 @@ urlpatterns = [
     path("<slug:permit_number>/work-shifts/<int:work_shift_id>/close/", PermitWorkShiftCloseView.as_view(), name="permit_work_shift_close",),
     path("<slug:permit_number>/work-shifts/create/", PermitWorkShiftCreateView.as_view(), name="permit_work_shift_create",),
     path("<str:permit_number>/print/", PermitPrintView.as_view(), name="permit_print"),
+    path(
+        "<str:permit_number>/attachments/upload/",
+        PermitAttachmentCreateView.as_view(),
+        name="permit_attachment_upload",
+    ),
+    path(
+        "<str:permit_number>/attachments/<uuid:attachment_id>/download/",
+        PermitAttachmentDownloadView.as_view(),
+        name="permit_attachment_download",
+    ),
+    path(
+        "<str:permit_number>/attachments/<uuid:attachment_id>/edit/",
+        PermitAttachmentUpdateView.as_view(),
+        name="permit_attachment_update",
+    ),
+    path(
+        "<str:permit_number>/attachments/<uuid:attachment_id>/delete/",
+        PermitAttachmentDeleteView.as_view(),
+        name="permit_attachment_delete",
+    ),
     path("<str:permit_number>/closeout/<int:closeout_signoff_id>/sign/", PermitCloseoutSignoffView.as_view(), name="permit_closeout_signoff",),
     path("<str:permit_number>/fire-gas-esd/<int:item_id>/isolate/", PermitFireGasESDIsolateView.as_view(), name="permit_fire_gas_esd_isolate",),
     path("<str:permit_number>/fire-gas-esd/<int:item_id>/deisolate/", PermitFireGasESDDeisolateView.as_view(), name="permit_fire_gas_esd_deisolate",),

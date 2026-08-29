@@ -8,6 +8,7 @@ from django.utils import timezone
 from permits.models import Permit, PermitHazard, PermitPrecaution
 from permits.models import PermitCloseoutSignoff
 from permits.models import PermitAttachment
+from permits.services.attachment_service import PermitAttachmentService
 from permits.admin.permit_fg_esd_admin import PermitFireGasESDInline
 from permits.admin.permit_attachment_admin import PermitAttachmentInline
 
@@ -344,14 +345,16 @@ class PermitAdmin(admin.ModelAdmin):
         # before invoking model validation/save.
         if formset.model is PermitAttachment:
             for instance in formset.deleted_objects:
-                if not instance.actor_can_delete(request.user):
+                if not PermitAttachmentService.actor_can_delete(
+                    actor=request.user, attachment=instance
+                ):
                     raise PermissionDenied(
                         "You may delete only attachments that you uploaded."
                     )
                 instance.delete()
             for instance in instances:
-                if not instance.pk and not PermitAttachment.actor_can_add_for_permit(
-                    request.user, instance.permit
+                if not instance.pk and not PermitAttachmentService.actor_can_add(
+                    actor=request.user, permit=instance.permit
                 ):
                     raise PermissionDenied(
                         "You do not hold a workflow role scoped to this permit."

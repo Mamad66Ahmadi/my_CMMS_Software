@@ -502,6 +502,9 @@
             <!-- Permit Close-out -->
             {% include "permits/permit_detail_partials/closeout_panel.html" with permit=permit %}
 
+            <!-- Permit Attachments -->
+            {% include "permits/permit_detail_partials/attachments_panel.html" with permit=permit attachments=attachments can_add_attachment=can_add_attachment %}
+
         </div>
 
         <!-- ================= RIGHT COLUMN ================= -->

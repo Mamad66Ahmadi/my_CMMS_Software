@@ -25,6 +25,7 @@ from permits.forms import (
 
 from permits.models import (
     Permit,
+    PermitAttachment,
     PermitHazard,
     PermitPrecaution,
     PermitWorkflowTransition,
@@ -74,6 +75,7 @@ from permits.services.closeout_service import (
 from permits.services.fire_gas_esd_service import (
     PermitFireGasESDService,
 )
+from permits.services.attachment_service import PermitAttachmentService
 
 
 def _render_detail_fragment(request, permit_number, template_name, extra_context=None):
@@ -274,6 +276,14 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     queryset=closeout_signoff_queryset,
                     to_attr="prefetched_closeout_signoffs",
                 ),
+                Prefetch(
+                    "attachments",
+                    queryset=PermitAttachment.objects.select_related(
+                        "uploaded_by",
+                        "modified_by",
+                    ),
+                    to_attr="prefetched_attachments",
+                ),
             )
         )
 
@@ -470,6 +480,30 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         )
 
         context["is_currently_valid"] = permit.is_active
+
+        attachments = list(getattr(permit, "prefetched_attachments", []))
+        for attachment in attachments:
+            attachment.can_download = PermitAttachmentService.actor_can_view(
+                actor=self.request.user,
+                attachment=attachment,
+            )
+            attachment.can_edit = PermitAttachmentService.actor_can_change(
+                actor=self.request.user,
+                attachment=attachment,
+            )
+            attachment.can_delete = PermitAttachmentService.actor_can_delete(
+                actor=self.request.user,
+                attachment=attachment,
+            )
+
+        context["attachments"] = attachments
+        context["can_add_attachment"] = PermitAttachmentService.actor_can_add(
+            actor=self.request.user,
+            permit=permit,
+        )
+        context["can_manage_all_attachments"] = (
+            PermitAttachmentService.actor_can_manage_all(actor=self.request.user)
+        )
 
         context["can_edit_permit"] = (
             WorkflowAuthorizationService.actor_can_edit_permit(
