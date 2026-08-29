@@ -1,12 +1,15 @@
 # permits/admin/permit_admin.py
 
 from django.contrib import admin
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.utils import timezone
 
 from permits.models import Permit, PermitHazard, PermitPrecaution
 from permits.models import PermitCloseoutSignoff
+from permits.models import PermitAttachment
 from permits.admin.permit_fg_esd_admin import PermitFireGasESDInline
+from permits.admin.permit_attachment_admin import PermitAttachmentInline
 
 
 
@@ -171,6 +174,7 @@ class PermitAdmin(admin.ModelAdmin):
         PermitPrecautionInline,
         PermitFireGasESDInline,
         PermitCloseoutSignoffInline,
+        PermitAttachmentInline,
     ]
 
     readonly_fields = (
@@ -334,6 +338,31 @@ class PermitAdmin(admin.ModelAdmin):
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
+
+        # Inline forms omit ``uploaded_by``.  Django calls this hook on the
+        # parent ModelAdmin, so populate and authorize attachments here
+        # before invoking model validation/save.
+        if formset.model is PermitAttachment:
+            for instance in formset.deleted_objects:
+                if not instance.actor_can_delete(request.user):
+                    raise PermissionDenied(
+                        "You may delete only attachments that you uploaded."
+                    )
+                instance.delete()
+            for instance in instances:
+                if not instance.pk and not PermitAttachment.actor_can_add_for_permit(
+                    request.user, instance.permit
+                ):
+                    raise PermissionDenied(
+                        "You do not hold a workflow role scoped to this permit."
+                    )
+                if not instance.uploaded_by_id:
+                    instance.uploaded_by = request.user
+                instance.modified_by = request.user
+                instance.full_clean()
+                instance.save()
+            formset.save_m2m()
+            return
 
         for obj in formset.deleted_objects:
             if hasattr(obj, "deactivate"):
