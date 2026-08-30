@@ -1,3 +1,0 @@
-﻿Report Number,Status,Location Tag,Parent Tag,Unit,Train,Equipment Serial,Priority,Symptom,Reported By,Reported Department,Executing Department,Reported At,Reviewed By,Reviewed At,Planner,Planner Reviewed At,Directive,Fault DescBreakdown
-FR-2600004,Approved,103-K-101-P4,103-K-101,,,,1,High Temperature,ahmadi,CBM,CBM,2026-06-04 11:53,ahmadi,,ahmadi,,repair the pump,fdsf sfsf
-FR-2600003,Submitted,103-K-101,103,,,,1,High Temperature,ahmadi,CBM,CBM,2026-06-04 11:10,,,,,check the compressor,it is noisy
