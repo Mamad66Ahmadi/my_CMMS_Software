@@ -1,7 +1,7 @@
 # permits/admin/permit_admin.py
 
 from django.contrib import admin
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -9,6 +9,7 @@ from permits.models import Permit, PermitHazard, PermitPrecaution
 from permits.models import PermitCloseoutSignoff
 from permits.models import PermitAttachment
 from permits.services.attachment_service import PermitAttachmentService
+from permits.services.quota_service import PermitQuotaService
 from permits.admin.permit_fg_esd_admin import PermitFireGasESDInline
 from permits.admin.permit_attachment_admin import PermitAttachmentInline
 
@@ -333,6 +334,10 @@ class PermitAdmin(admin.ModelAdmin):
         """
         with transaction.atomic():
             if not change:
+                try:
+                    PermitQuotaService.ensure_can_create_permit(actor=request.user)
+                except ValidationError as exc:
+                    raise PermissionDenied(str(exc))
                 obj.created_by = request.user
             obj.modified_by = request.user
             super().save_model(request, obj, form, change)
@@ -353,12 +358,19 @@ class PermitAdmin(admin.ModelAdmin):
                     )
                 instance.delete()
             for instance in instances:
-                if not instance.pk and not PermitAttachmentService.actor_can_add(
-                    actor=request.user, permit=instance.permit
-                ):
-                    raise PermissionDenied(
-                        "You do not hold a workflow role scoped to this permit."
-                    )
+                if not instance.pk:
+                    if not PermitAttachmentService.actor_can_add(
+                        actor=request.user, permit=instance.permit
+                    ):
+                        raise PermissionDenied(
+                            "You must be logged in to attach a file."
+                        )
+                    if instance.file:
+                        PermitQuotaService.ensure_can_add_attachment(
+                            actor=request.user,
+                            permit=instance.permit,
+                            upload=instance.file,
+                        )
                 if not instance.uploaded_by_id:
                     instance.uploaded_by = request.user
                 instance.modified_by = request.user

@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 
 from permits.models.permit_attachment_models import PermitAttachment
+from permits.services.quota_service import PermitQuotaService
 
 
 class PermitAttachmentService:
@@ -81,6 +82,9 @@ class PermitAttachmentService:
     @transaction.atomic
     def add(cls, *, actor, permit, file, title="", description=""):
         cls.ensure_can_add(actor=actor, permit=permit)
+        PermitQuotaService.ensure_can_add_attachment(
+            actor=actor, permit=permit, upload=file
+        )
         attachment = PermitAttachment(
             permit=permit,
             file=file,

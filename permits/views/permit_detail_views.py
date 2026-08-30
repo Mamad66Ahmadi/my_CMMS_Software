@@ -31,6 +31,7 @@ from permits.models import (
     PermitWorkflowTransition,
     PermitApproval,
 )
+from permits.services.quota_service import PermitQuotaService
 
 from permits.models.workflow_models import PermitWorkflowStep
 
@@ -754,6 +755,12 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
 
     @transaction.atomic
     def form_valid(self, form):
+        try:
+            PermitQuotaService.ensure_can_create_permit(actor=self.request.user)
+        except ValidationError as exc:
+            form.add_error(None, exc)
+            return self.form_invalid(form)
+
         self.object = form.save(commit=False)
 
         self.object.created_by = self.request.user
