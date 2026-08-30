@@ -135,42 +135,17 @@ class PermitAttachment(models.Model):
 
     @classmethod
     def actor_can_add_for_permit(cls, actor, permit):
-        if cls.actor_can_manage_all(actor):
-            return True
-        if not actor or not actor.is_authenticated or not permit:
-            return False
-
-        # A contributor may add at any workflow step, including closed.  A
-        # role is eligible when it is configured on a transition or as the
-        # step's editable role, and the normal assignment scope checks pass.
-        role_ids = set(
-            permit.workflow.transitions.filter(
-                role__is_active=True,
-            ).values_list("role_id", flat=True)
-        )
-        role_ids.update(
-            permit.workflow.steps.filter(
-                editable_role__isnull=False,
-                editable_role__is_active=True,
-            ).values_list("editable_role_id", flat=True)
-        )
-        if not role_ids:
-            return False
-
-        from permits.models.approval_models import PermitApprovalRoleChoices
-        from permits.services.authorization_service import WorkflowAuthorizationService
-
-        for role in PermitApprovalRoleChoices.objects.filter(pk__in=role_ids):
-            if WorkflowAuthorizationService.actor_has_role_for_permit(
-                actor=actor,
-                permit=permit,
-                role=role,
-            ):
-                return True
-        return False
+        return bool(actor and actor.is_authenticated and permit)
 
     def actor_can_change(self, actor):
-        return self.actor_can_manage_all(actor)
+        return bool(
+            actor
+            and actor.is_authenticated
+            and (
+                self.actor_can_manage_all(actor)
+                or self.uploaded_by_id == actor.pk
+            )
+        )
 
     def actor_can_delete(self, actor):
         return bool(

@@ -90,7 +90,7 @@ class PermitAttachmentAdmin(admin.ModelAdmin):
             actor=request.user, attachment=obj
         ):
             raise PermissionDenied(
-                "Only Superusers and Permit Office may edit attachments."
+                "You may edit only attachments that you uploaded."
             )
         obj.modified_by = request.user
         obj.full_clean()
