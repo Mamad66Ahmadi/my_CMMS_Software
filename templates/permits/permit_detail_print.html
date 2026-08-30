@@ -62,9 +62,58 @@
 
         @media print {
             .print-toolbar { display: none !important; }
-            body { background: #fff; }
-            .page { margin: 0; padding: 10mm 12mm; box-shadow: none; }
-            @page { size: A4 portrait; margin: 0; }
+            @page { size: A4 portrait; margin: 10mm 12mm 12mm; }
+            html, body {
+                width: auto;
+                min-width: 0;
+                background: #fff;
+            }
+            .page {
+                width: auto;
+                min-height: 0;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+            .section {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                margin-bottom: 7px;
+            }
+            .section-title {
+                break-after: avoid;
+                page-break-after: avoid;
+                margin-bottom: 4px;
+            }
+            thead { display: table-header-group; }
+            tr {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            .p-header,
+            .validity-row,
+            .p-footer {
+                break-inside: avoid;
+            }
+            p, .field-value, .text-block {
+                orphans: 3;
+                widows: 3;
+            }
+            .field-value.block,
+            .text-block {
+                line-height: 1.25;
+            }
+            table.approvals th,
+            table.approvals td,
+            table.fg-esd-table th,
+            table.fg-esd-table td {
+                padding: 3px 4px;
+            }
+            .print-padding-row { display: none; }
+            .print-page-break-before {
+                break-before: page;
+                page-break-before: always;
+            }
         }
 
         /* ── Header ── */
@@ -299,6 +348,29 @@
             padding: 6px 8px;
         }
 
+
+        .hp-grid {
+            columns: 2;
+            -webkit-columns: 2;
+            column-gap: 16px;
+        }
+        @media print {
+            .hp-grid { columns: 3; -webkit-columns: 3; }
+        }
+        .hp-item {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-size: 8.5pt;
+            line-height: 1.5;
+            margin-bottom: 3px;
+            break-inside: avoid;
+            -webkit-column-break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .hp-item > span:last-child {
+            min-width: 0;
+        }
     </style>
 </head>
 <body>
@@ -408,9 +480,9 @@
     {% if all_hazards %}
     <div class="section">
         <div class="section-title">Identified Hazards</div>
-        <div style="display:flex;flex-wrap:wrap;gap:3px 10px;">
+        <div class="hp-grid">
             {% for hazard in all_hazards %}
-            <div style="font-size:8.5pt;display:flex;align-items:baseline;gap:4px;
+            <div class="hp-item" style="font-size:8.5pt;display:flex;align-items:baseline;gap:4px;
                 {% if hazard.permit_assessment %}
                     {% if hazard.permit_assessment.is_active %}color:#1a1a1a;{% else %}color:#aaa;text-decoration:line-through;{% endif %}
                 {% else %}color:#bbb;{% endif %}
@@ -445,9 +517,9 @@
     {% if all_precautions %}
     <div class="section">
         <div class="section-title">Required Precautions</div>
-        <div style="display:flex;flex-wrap:wrap;gap:3px 10px;">
+        <div class="hp-grid">
             {% for precaution in all_precautions %}
-            <div style="font-size:8.5pt;display:flex;align-items:baseline;gap:4px;
+            <div class="hp-item" style="font-size:8.5pt;display:flex;align-items:baseline;gap:4px;
                 {% if precaution.permit_assessment %}
                     {% if precaution.permit_assessment.is_active %}color:#1a1a1a;{% else %}color:#aaa;text-decoration:line-through;{% endif %}
                 {% else %}color:#bbb;{% endif %}
@@ -509,7 +581,7 @@
 
     <!-- Fire, Gas & ESD Isolations -->
     {% if all_fire_gas_esd_items %}
-    <div class="section">
+    <div class="section print-page-break-before">
         <div class="section-title">Fire, Gas &amp; ESD Isolations</div>
 
         <table class="fg-esd-table">
@@ -679,7 +751,7 @@
                 </tr>
                 {% endfor %}
                 {% for _ in approvals|padding_range:5 %}
-                <tr>
+                <tr class="print-padding-row">
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
@@ -739,7 +811,7 @@
                 </tr>
                 {% endfor %}
                 {% for _ in work_shifts|padding_range:5 %}
-                <tr>
+                <tr class="print-padding-row">
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
