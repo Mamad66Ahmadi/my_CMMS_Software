@@ -109,7 +109,6 @@
             table.fg-esd-table td {
                 padding: 3px 4px;
             }
-            .print-padding-row { display: none; }
             .print-page-break-before {
                 break-before: page;
                 page-break-before: always;
@@ -127,6 +126,12 @@
         }
         .p-header__title { font-size: 16pt; font-weight: 700; color: #0d6e6e; }
         .p-header__meta { font-size: 8.5pt; color: #555; text-align: right; line-height: 1.6; }
+        .continuation-note {
+            margin-top: 4px;
+            font-size: 8.5pt;
+            color: #555;
+        }
+        .continuation-note strong { color: #0d6e6e; }
 
         .status-pill {
             display: inline-block;
@@ -385,16 +390,30 @@
     <!-- Header -->
     <div class="p-header">
         <div>
-            <div class="p-header__title">{{ permit.permit_number|default:"—" }}</div>
-            {% if permit.permit_type %}<div style="font-size:9pt;color:#555;margin-top:2px;">{{ permit.permit_type.name }}</div>{% endif %}
-
+            <div class="p-header__title">
+                {{ permit.permit_number|default:"—" }}
+                {% if permit.continuation_of %}
+                    <span style="font-size:8pt;font-weight:500;color:#777;">
+                        (Continuation of {{ permit.continuation_of.permit_number }})
+                    </span>
+                {% endif %}
+                {% with continuations=permit.continuations.all %}
+                    {% if continuations %}
+                        <span style="font-size:8pt;font-weight:500;color:#777;">
+                            (Continued by
+                            {% for continuation in continuations %}{{ continuation.permit_number }}{% if not forloop.last %}, {% endif %}{% endfor %})
+                        </span>
+                    {% endif %}
+                {% endwith %}
+            </div>
         </div>
         <div class="p-header__meta">
-            Printed: {{ "now"|date:"Y-m-d H:i" }}<br>
-            {% if permit.workflow %}Workflow: {{ permit.workflow.name }}{% if permit.workflow.version %} v{{ permit.workflow.version }}{% endif %}{% endif %}<br>
+            {% if permit.permit_type %}<div style="font-size:9pt;color:#555;margin-top:2px;">{{ permit.permit_type.name }}</div>{% endif %}
             {% if permit.work_order %}Work Order: {{ permit.work_order }}{% endif %}
         </div>
     </div>
+
+
 
     <!-- Validity -->
     <div class="validity-row">
@@ -810,7 +829,7 @@
                     </td>
                 </tr>
                 {% endfor %}
-                {% for _ in work_shifts|padding_range:5 %}
+                {% for _ in work_shifts|padding_range:7 %}
                 <tr class="print-padding-row">
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
