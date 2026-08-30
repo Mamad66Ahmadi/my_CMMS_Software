@@ -95,7 +95,18 @@
 
                 <td>
                     {% if permit.current_step %}
-                        <span class="status-badge {% if permit.current_step.is_terminal %}status-closed{% else %}status-active{% endif %}">
+                        <span class="status-badge
+                            {% if permit.current_step.state == 'draft' %}
+                                status-step-draft
+                            {% elif permit.current_step.state == 'under_review' %}
+                                status-step-under-review
+                            {% elif permit.current_step.state == 'active' %}
+                                status-step-active
+                            {% elif permit.current_step.state == 'closed' %}
+                                status-step-closed
+                            {% else %}
+                                status-default
+                            {% endif %}">
                             {{ permit.current_step.title }}
                         </span>
                     {% else %}

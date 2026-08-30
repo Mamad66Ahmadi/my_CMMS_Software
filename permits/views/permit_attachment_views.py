@@ -17,6 +17,13 @@ def _permit_url(permit):
     return reverse("permits:permit_detail", kwargs={"permit_number": permit.permit_number})
 
 
+def _show_attachment_error(request, exc):
+    if isinstance(exc, ValidationError):
+        messages.error(request, "; ".join(str(message) for message in exc.messages))
+    else:
+        messages.error(request, str(exc))
+
+
 class PermitAttachmentDownloadView(LoginRequiredMixin, View):
     """Stream an attachment to any authenticated user with a valid permit link."""
 
@@ -60,7 +67,7 @@ class PermitAttachmentCreateView(LoginRequiredMixin, View):
             )
             messages.success(request, "Attachment uploaded successfully.")
         except (PermissionDenied, ValidationError) as exc:
-            messages.error(request, str(exc))
+            _show_attachment_error(request, exc)
         if request.headers.get("HX-Request") == "true":
             return _render_detail_fragment(
                 request,
@@ -87,7 +94,7 @@ class PermitAttachmentUpdateView(LoginRequiredMixin, View):
             )
             messages.success(request, "Attachment updated successfully.")
         except (PermissionDenied, ValidationError) as exc:
-            messages.error(request, str(exc))
+            _show_attachment_error(request, exc)
         if request.headers.get("HX-Request") == "true":
             return _render_detail_fragment(
                 request,

@@ -25,14 +25,14 @@ class PermitQuotaService:
             raise ValidationError("Authentication is required.")
         if permit.attachments.count() >= MAX_ATTACHMENTS_PER_PERMIT:
             raise ValidationError(
-                f"This permit already has the maximum of {MAX_ATTACHMENTS_PER_PERMIT} attachments."
+                f"This permit has reached the maximum allowed limit of {MAX_ATTACHMENTS_PER_PERMIT} attachments."
             )
         today_uploads = PermitAttachment.objects.filter(
             uploaded_by=actor, uploaded_at__date=cls._today()
         )
         if today_uploads.count() >= MAX_UPLOADS_PER_USER_PER_DAY:
             raise ValidationError(
-                f"Daily upload limit reached ({MAX_UPLOADS_PER_USER_PER_DAY} files)."
+                f"Daily file upload limit reached. A maximum of {MAX_UPLOADS_PER_USER_PER_DAY} files may be uploaded per day."
             )
         incoming_size = getattr(upload, "size", 0) or 0
         uploaded_bytes = sum(

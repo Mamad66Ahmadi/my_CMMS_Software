@@ -1019,6 +1019,47 @@ th:not(.sorted) .sort-arrow {
     color: var(--c-status-neutral-text);
 }
 
+/* ------------------------------------------------------------------
+   WORKFLOW STEP STATE BADGES
+   Colors are driven by PermitWorkflowStep.State.
+------------------------------------------------------------------ */
+
+.status-step-draft {
+    background-color: var(--c-status-neutral-bg);
+    color: var(--c-status-neutral-text);
+}
+
+.status-step-draft::before {
+    background-color: var(--c-status-neutral-dot);
+}
+
+.status-step-under-review {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-step-under-review::before {
+    background-color: #f59e0b;
+}
+
+.status-step-active {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-step-active::before {
+    background-color: #16a34a;
+}
+
+.status-step-closed {
+    background-color: #e0f2fe;
+    color: #075985;
+}
+
+.status-step-closed::before {
+    background-color: #0ea5e9;
+}
+
 .status-default::before {
     background-color: var(--c-status-neutral-dot);
 }
