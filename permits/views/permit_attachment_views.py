@@ -10,6 +10,7 @@ from django.views import View
 
 from permits.models import Permit, PermitAttachment
 from permits.services.attachment_service import PermitAttachmentService
+from permits.views.permit_detail_views import _render_detail_fragment
 
 
 def _permit_url(permit):
@@ -60,6 +61,13 @@ class PermitAttachmentCreateView(LoginRequiredMixin, View):
             messages.success(request, "Attachment uploaded successfully.")
         except (PermissionDenied, ValidationError) as exc:
             messages.error(request, str(exc))
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                permit.permit_number,
+                "permits/permit_detail_partials/attachments_panel.html",
+                {"attachments_panel_open": True},
+            )
         return redirect(_permit_url(permit))
 
 
@@ -80,6 +88,13 @@ class PermitAttachmentUpdateView(LoginRequiredMixin, View):
             messages.success(request, "Attachment updated successfully.")
         except (PermissionDenied, ValidationError) as exc:
             messages.error(request, str(exc))
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                permit.permit_number,
+                "permits/permit_detail_partials/attachments_panel.html",
+                {"attachments_panel_open": True},
+            )
         return redirect(_permit_url(permit))
 
 
@@ -94,4 +109,11 @@ class PermitAttachmentDeleteView(LoginRequiredMixin, View):
             messages.success(request, "Attachment deleted successfully.")
         except PermissionDenied as exc:
             messages.error(request, str(exc))
+        if request.headers.get("HX-Request") == "true":
+            return _render_detail_fragment(
+                request,
+                permit.permit_number,
+                "permits/permit_detail_partials/attachments_panel.html",
+                {"attachments_panel_open": True},
+            )
         return redirect(_permit_url(permit))

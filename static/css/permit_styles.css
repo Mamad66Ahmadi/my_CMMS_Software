@@ -1574,6 +1574,29 @@ textarea.form-control,
     font-size: 14px;
 }
 
+summary.detail-panel__header {
+    cursor: pointer;
+    list-style: none;
+}
+
+summary.detail-panel__header::-webkit-details-marker {
+    display: none;
+}
+
+.detail-panel__header .chevron-icon {
+    margin-left: auto;
+    color: var(--c-text-muted);
+    transition: transform 0.2s ease;
+}
+
+.detail-panel__header .ms-auto + .chevron-icon {
+    margin-left: 0;
+}
+
+details[open] > .detail-panel__header .chevron-icon {
+    transform: rotate(180deg);
+}
+
 .detail-panel__body {
     padding: var(--space-5);
 }
