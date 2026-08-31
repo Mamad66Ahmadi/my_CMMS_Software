@@ -26,6 +26,13 @@ class WorkflowAuthorizationService:
         The required role comes from transition.role.
         """
 
+        if cls._actor_can_submit_initial_permit(
+            actor=actor,
+            permit=permit,
+            transition=transition,
+        ):
+            return
+
         cls.ensure_actor_has_role_for_permit(
             actor=actor,
             permit=permit,
@@ -64,6 +71,12 @@ class WorkflowAuthorizationService:
                 "This permit is at a terminal workflow step and cannot be edited."
             )
 
+        if (
+            current_step.is_start
+            and permit.created_by_id == actor.pk
+        ):
+            return
+
         if not current_step.is_editable_step:
             raise PermissionDenied(
                 "This permit cannot be edited at the current workflow step."
@@ -79,6 +92,42 @@ class WorkflowAuthorizationService:
             permit=permit,
             role=current_step.editable_role,
             action_label="edit this permit",
+        )
+
+    @classmethod
+    def _actor_can_submit_initial_permit(
+        cls,
+        *,
+        actor,
+        permit,
+        transition,
+    ) -> bool:
+        """
+        The permit creator may submit their own permit from the start step.
+
+        The workflow must still explicitly configure the transition with the
+        Permit-Creator role. This bypass applies only to the original creator
+        and only while the transition exits the workflow start step.
+        """
+        if not actor.is_authenticated or actor.is_superuser:
+            return False
+
+        if permit.created_by_id != actor.pk:
+            return False
+
+        if not transition.from_step.is_start:
+            return False
+
+        role = transition.role
+        if role is None:
+            return False
+
+        role_code = (role.code or "").strip().upper().replace("_", "-")
+        role_name = (role.name or "").strip().casefold()
+
+        return (
+            role_code == "PERMIT-CREATOR"
+            or role_name == "permit creator"
         )
 
     @classmethod
