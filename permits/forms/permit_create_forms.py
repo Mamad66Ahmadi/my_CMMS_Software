@@ -17,6 +17,7 @@ from permits.models.permit_fg_esd_models import FireGasESD, PermitFireGasESD
 from permits.services.fire_gas_esd_service import PermitFireGasESDService
 from work_orders.models.wo_models import WorkOrder
 from permits.models.workflow_models import Decision
+from permits.models.workflow_models import PermitWorkflowStep
 
 
 User = get_user_model()
@@ -565,6 +566,21 @@ class PermitCreateForm(forms.ModelForm):
                         "A permit cannot be a continuation of a permit with the same "
                         "permit number."
                     ),
+                )
+
+        if continuation_of:
+            eligible_states = {
+                PermitWorkflowStep.State.ACTIVE,
+                PermitWorkflowStep.State.CLOSED,
+            }
+            previous_step = continuation_of.current_step
+            if (
+                previous_step is None
+                or previous_step.state not in eligible_states
+            ):
+                self.add_error(
+                    "continuation_of",
+                    "Only a permit in Active or Closed status can be continued.",
                 )
 
         # Validate dynamic Unit / Zone inputs for selected FG/ESD items.

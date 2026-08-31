@@ -297,6 +297,23 @@ class Permit(models.Model):
                     }
                 )
 
+            previous_step = self.continuation_of.current_step
+            eligible_states = {
+                PermitWorkflowStep.State.ACTIVE,
+                PermitWorkflowStep.State.CLOSED,
+            }
+            if (
+                previous_step is None
+                or previous_step.state not in eligible_states
+            ):
+                raise ValidationError(
+                    {
+                        "continuation_of": (
+                            "Only a permit in Active or Closed status can be continued."
+                        )
+                    }
+                )
+
         if self.vehicle_required and not self.vehicle_description.strip():
             raise ValidationError(
                 {

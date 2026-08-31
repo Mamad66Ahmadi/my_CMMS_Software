@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from permits.models.approval_models import PermitApproval
@@ -148,6 +149,13 @@ class PermitWorkflowService:
                 }
             )
 
+            if permit.continuation_of_id:
+                cls._mark_previous_permit_continued(
+                    continuation_permit=permit,
+                    actor=actor,
+                    continued_at=now,
+                )
+
         entering_closed_state = (
             transition.to_step.state == PermitWorkflowStep.State.CLOSED
             and transition.from_step.state != PermitWorkflowStep.State.CLOSED
@@ -197,6 +205,97 @@ class PermitWorkflowService:
             permit=permit,
             approval=approval,
             transition=transition,
+        )
+
+    @classmethod
+    def _mark_previous_permit_continued(
+        cls,
+        *,
+        continuation_permit,
+        actor,
+        continued_at,
+    ):
+        """Move the previous permit to its configured Continued terminal step."""
+        from permits.models.approval_models import PermitApprovalRoleChoices
+        from permits.models.permit_models import Permit
+        from permits.models.workflow_models import PermitWorkflowStep
+
+        previous = (
+            Permit.objects.select_for_update()
+            .select_related("current_step", "workflow")
+            .get(pk=continuation_permit.continuation_of_id)
+        )
+
+        eligible_states = {
+            PermitWorkflowStep.State.ACTIVE,
+            PermitWorkflowStep.State.CLOSED,
+        }
+        if (
+            previous.current_step is None
+            or previous.current_step.state not in eligible_states
+        ):
+            raise WorkflowTransitionError(
+                "The previous permit must still be Active or Closed when the continuation permit becomes Active."
+            )
+
+        continued_step = (
+            PermitWorkflowStep.objects.filter(
+                workflow_id=previous.workflow_id,
+                is_terminal=True,
+            )
+            .filter(
+                Q(title__iexact="continued")
+                | Q(state__iexact="continued")
+            )
+            .first()
+        )
+        if continued_step is None:
+            raise WorkflowTransitionError(
+                "The previous permit workflow has no terminal Continued step configured."
+            )
+
+        if previous.current_step_id == continued_step.pk:
+            return
+
+        role = (
+            PermitApprovalRoleChoices.objects.filter(is_active=True)
+            .filter(
+                Q(code__iexact="PERMIT_OFFICE")
+                | Q(code__iexact="Permit Office")
+                | Q(name__iexact="Permit Office")
+            )
+            .first()
+        )
+        if role is None:
+            raise WorkflowTransitionError(
+                "The Permit Office approval role is not configured."
+            )
+
+        from_step = previous.current_step
+        previous.current_step = continued_step
+        continuation_remark = (
+            f"Permit became Continued because permit number "
+            f"{continuation_permit.permit_number} has been started."
+        )
+        previous.remarks = (
+            f"{previous.remarks}\n{continuation_remark}".strip()
+        )
+        previous.modified_by = actor
+        Permit.objects.filter(pk=previous.pk).update(
+            current_step_id=continued_step.pk,
+            remarks=previous.remarks,
+            modified_by_id=actor.pk,
+            modified_at=continued_at,
+        )
+
+        PermitApproval.objects.create(
+            permit=previous,
+            actor=actor,
+            role=role,
+            from_step=from_step,
+            to_step=continued_step,
+            decision=Decision.APPROVE,
+            comment=continuation_remark,
         )
 
     @staticmethod
