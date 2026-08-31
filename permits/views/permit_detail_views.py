@@ -720,6 +720,57 @@ def permit_autocomplete(request):
     return JsonResponse({"results": results})
 
 
+@login_required
+def validate_permit_reference(request):
+    """Live validation for permit number uniqueness and continuation status."""
+    kind = (request.GET.get("kind") or "").strip().lower()
+    permit_number = (request.GET.get("permit_number") or "").strip().upper()
+
+    if kind not in {"permit_number", "continuation"} or not permit_number:
+        return JsonResponse({"valid": False, "message": "Enter a permit number."})
+
+    permit = (
+        Permit.objects
+        .select_related("current_step")
+        .filter(permit_number=permit_number)
+        .first()
+    )
+
+    if kind == "permit_number":
+        return JsonResponse(
+            {
+                "valid": permit is None,
+                "message": (
+                    "Permit number is available."
+                    if permit is None
+                    else "This permit number is already in use."
+                ),
+            }
+        )
+
+    if not permit:
+        return JsonResponse(
+            {"valid": False, "message": "No permit was found with this number."}
+        )
+
+    eligible_states = {
+        PermitWorkflowStep.State.ACTIVE,
+        PermitWorkflowStep.State.CLOSED,
+    }
+    valid = permit.current_step and permit.current_step.state in eligible_states
+    return JsonResponse(
+        {
+            "valid": bool(valid),
+            "permit_id": permit.pk,
+            "message": (
+                f"Permit {permit.permit_number} can be continued."
+                if valid
+                else "Only a permit in Active or Closed status can be continued."
+            ),
+        }
+    )
+
+
 class PermitCreateView(LoginRequiredMixin, CreateView):
     model = Permit
     form_class = PermitCreateForm
@@ -889,6 +940,7 @@ def get_permit_data(request):
                 "location_tag",
                 "department",
                 "work_order",
+                "permit_type",
             )
             .prefetch_related(
                 Prefetch(
@@ -956,6 +1008,12 @@ def get_permit_data(request):
 
     return JsonResponse(
         {
+            "permit_type": permit.permit_type_id or "",
+            "permit_type_text": (
+                str(permit.permit_type)
+                if permit.permit_type
+                else ""
+            ),
             "scope_of_work": permit.scope_of_work or "",
             "remarks": permit.remarks or "",
             "department": permit.department_id or "",

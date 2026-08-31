@@ -8,6 +8,7 @@ from permits.views import (
     PermitFilterFavoriteSaveView,
     PermitFilterFavoriteDeleteView,
     permit_autocomplete,
+    validate_permit_reference,
     get_permit_data,
     PISQualificationListView,
     AddPISQualificationView,
@@ -60,6 +61,7 @@ urlpatterns = [
     # Permit AJAX / autocomplete helpers
     # -------------------------------------------------------------------------
     path("autocomplete/permits/", permit_autocomplete, name="permit_autocomplete",),
+    path("validate-permit-reference/", validate_permit_reference, name="validate_permit_reference",),
     path("get-permit-data/", get_permit_data, name="get_permit_data",),
     # -------------------------------------------------------------------------
     # PIS qualifications

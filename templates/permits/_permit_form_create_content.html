@@ -78,6 +78,7 @@
                                     Permit Number
                                 </label>
                                 {{ form.permit_number }}
+                                <div id="permit-number-live-validation" class="form-help" aria-live="polite"></div>
 
                                 {% if form.permit_number.errors %}
                                     <div class="field-errors">
@@ -122,6 +123,7 @@
 
                                     {{ form.continuation_of }}
                                 </div>
+                                <div id="continuation-live-validation" class="form-help" aria-live="polite"></div>
 
                                 {% if form.continuation_of.errors %}
                                     <div class="field-errors">

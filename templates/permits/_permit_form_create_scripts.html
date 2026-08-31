@@ -337,6 +337,9 @@ document.addEventListener("DOMContentLoaded", function () {
             hiddenInput.dispatchEvent(
                 new Event("change", { bubbles: true })
             );
+            document.getElementById("continuation-search-input").dispatchEvent(
+                new Event("change", { bubbles: true })
+            );
         }
     });
 
@@ -440,6 +443,7 @@ document.body.addEventListener("htmx:afterRequest", function (event) {
         }
     }
 
+    setFieldValue("permit_type", data.permit_type);
     setFieldValue("scope_of_work", data.scope_of_work);
     setFieldValue("remarks", data.remarks);
     setAutocompleteValue(
@@ -524,5 +528,55 @@ document.body.addEventListener("htmx:afterRequest", function (event) {
     if (typeof updateValiditySummary === "function") {
         updateValiditySummary();
     }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const validationUrl = "{% url 'permits:validate_permit_reference' %}";
+
+    function liveValidate(input, messageElement, kind) {
+        if (!input || !messageElement) return;
+        let timer;
+        function validateValue() {
+            clearTimeout(timer);
+            const value = input.value.trim();
+            messageElement.textContent = "";
+            messageElement.className = "form-help";
+            if (!value) return;
+
+            timer = setTimeout(function () {
+                const params = new URLSearchParams({
+                    kind: kind,
+                    permit_number: value,
+                });
+                fetch(validationUrl + "?" + params.toString(), {
+                    headers: {"X-Requested-With": "XMLHttpRequest"},
+                })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        messageElement.textContent = data.message || "";
+                        messageElement.className =
+                            "form-help " + (data.valid ? "text-success" : "text-danger");
+                    })
+                    .catch(function () {
+                        messageElement.textContent = "Unable to validate this permit number.";
+                        messageElement.className = "form-help text-danger";
+                    });
+            }, 350);
+        }
+
+        input.addEventListener("input", validateValue);
+        input.addEventListener("change", validateValue);
+    }
+
+    liveValidate(
+        document.getElementById("id_permit_number"),
+        document.getElementById("permit-number-live-validation"),
+        "permit_number"
+    );
+    liveValidate(
+        document.getElementById("continuation-search-input"),
+        document.getElementById("continuation-live-validation"),
+        "continuation"
+    );
 });
 </script>

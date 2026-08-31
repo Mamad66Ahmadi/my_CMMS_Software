@@ -363,6 +363,23 @@ class PermitCreateForm(forms.ModelForm):
                 continuation_of_id,
             )
 
+            if (
+                not self.is_bound
+                and continuation_of_id
+                and not self.initial.get("permit_type")
+            ):
+                continuation_permit = (
+                    Permit.objects
+                    .select_related("permit_type")
+                    .filter(pk=continuation_of_id)
+                    .first()
+                )
+                if continuation_permit:
+                    self.initial["permit_type"] = continuation_permit.permit_type_id
+                    self.fields["permit_type"].initial = (
+                        continuation_permit.permit_type_id
+                    )
+
             self.fields["work_order"].queryset = self._single_object_queryset(
                 WorkOrder,
                 work_order_id,
