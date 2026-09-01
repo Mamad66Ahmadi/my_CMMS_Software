@@ -123,6 +123,13 @@ class Permit(models.Model):
     # ------------------------------------------------------------------
     related_permits = models.ManyToManyField("self", symmetrical=True, blank=True,)
 
+    required_safety_permits = models.ManyToManyField(
+        "SafetyPermit",
+        through="PermitSafetyRequirement",
+        blank=True,
+        related_name="required_by_permits",
+    )
+
     # ------------------------------------------------------------------
     # Personnel (Operational Assignments)
     # ------------------------------------------------------------------
