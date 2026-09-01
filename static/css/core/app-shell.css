@@ -16,6 +16,10 @@ body {
     flex-direction: column;
 }
 
+.page-wrapper--full {
+    margin-left: 0;
+}
+
 body.sidebar-collapsed .page-wrapper {
     margin-left: var(--sidebar-collapsed-width, 56px);
 }

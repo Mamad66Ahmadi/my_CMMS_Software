@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/account_styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4 account-page">
+    <div class="account-page__header">
+        <div class="account-page__identity">
+            <div class="account-page__icon"><i class="bi bi-person-circle"></i></div>
+            <div>
+                <h1 class="account-page__title">My Profile</h1>
+                <p class="account-page__subtitle mb-0">Your account information and permit role assignments.</p>
+            </div>
+        </div>
+        <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-5">
+            <div class="account-card">
+                <div class="account-card__header"><i class="bi bi-person-circle me-2"></i>Account Information</div>
+                <div class="account-card__body">
+                    <dl class="row mb-0 account-datalist">
+                        <dt class="col-sm-5">Username</dt>
+                        <dd class="col-sm-7">{{ profile_user.username }}</dd>
+
+                        <dt class="col-sm-5">Full Name</dt>
+                        <dd class="col-sm-7">{{ profile_user.get_full_name|default:"—" }}</dd>
+
+                        <dt class="col-sm-5">Personnel Number</dt>
+                        <dd class="col-sm-7">{{ profile_user.personnel_number|default:"—" }}</dd>
+
+                        <dt class="col-sm-5">Department</dt>
+                        <dd class="col-sm-7">{{ profile_user.department|default:"—" }}</dd>
+
+                        <dt class="col-sm-5">User Role</dt>
+                        <dd class="col-sm-7">{{ profile_user.get_role_display }}</dd>
+
+                        <dt class="col-sm-5">Account Status</dt>
+                        <dd class="col-sm-7">
+                            {% if profile_user.is_active %}
+                                <span class="badge text-bg-success">Active</span>
+                            {% else %}
+                                <span class="badge text-bg-secondary">Inactive</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-7">
+            <div class="account-card">
+                <div class="account-card__header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-shield-check me-2"></i>Permit Role Assignments</span>
+                    <span class="badge text-bg-primary">{{ role_assignments|length }}</span>
+                </div>
+                <div class="p-0">
+                    {% if role_assignments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 account-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Role</th>
+                                        <th>Permit Type</th>
+                                        <th>Department</th>
+                                        <th>Unit Scope</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in role_assignments %}
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">{{ assignment.role.name }}</div>
+                                                <small class="text-muted">{{ assignment.role.code }}</small>
+                                            </td>
+                                            <td>{{ assignment.permit_type|default:"All permit types" }}</td>
+                                            <td>{{ assignment.department|default:"All departments" }}</td>
+                                            <td>
+                                                {% if assignment.all_units %}
+                                                    All units
+                                                {% elif assignment.units.all %}
+                                                    {% for unit in assignment.units.all %}
+                                                        {{ unit }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    All units
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if assignment.is_active %}
+                                                    <span class="badge text-bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge text-bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            No permit role assignments are associated with your account.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

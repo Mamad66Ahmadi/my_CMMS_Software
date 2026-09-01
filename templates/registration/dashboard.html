@@ -1,24 +1,35 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/account_styles.css' %}">
+{% endblock %}
+
 {% block title %} Dashboard: {{ request.user }} {% endblock %}
 
 
 {% block content %}
 
 
-<!-- ======== Asset Requests (Master Section) ======== -->
+<div class="account-page">
+<div class="account-page__header">
+    <div class="account-page__identity">
+        <div class="account-page__icon"><i class="bi bi-speedometer2"></i></div>
+        <div>
+            <h1 class="account-page__title">Dashboard</h1>
+            <p class="account-page__subtitle mb-0">Asset requests and account activity.</p>
+        </div>
+    </div>
+</div>
 
 {% if request.user.is_staff or request.user.is_superuser %}
-
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center"
-         style="background-color:#d9dde2;">
+<div class="account-card mb-4">
+    <div class="account-card__header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
             <span class="text-dark fw-semibold" style="font-size: 1.15rem;">
                 Asset Requests
             </span>
-            <span class="badge bg-primary ms-3">
+            <span class="badge bg-secondary ms-3">
                 {{ total_asset_requests|default:"0" }}
             </span>
         </div>
@@ -35,7 +46,7 @@
     </div>
 
     <div id="asset-requests-body" class="collapse">
-        <div class="card-body">
+        <div class="account-card__body">
 
             <!-- ===== Location Tag Requests ===== -->
             {%  include "registration/dashboard/location_tag_table.html" %}
@@ -50,6 +61,8 @@
 </div>
 
 {% endif %}
+
+</div>
 
 {% endblock content %}
 {% block extra_js %}

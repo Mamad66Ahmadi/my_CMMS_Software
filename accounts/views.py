@@ -49,6 +49,33 @@ class UserDashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class UserProfileView(LoginRequiredMixin, TemplateView):
+    """Display the signed-in user's account details and permit role assignments."""
+
+    template_name = "registration/profile.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from permits.models.approval_models import PermitApprovalRoleAssignment
+
+        user = (
+            User.objects
+            .select_related("department")
+            .get(pk=self.request.user.pk)
+        )
+        role_assignments = (
+            PermitApprovalRoleAssignment.objects
+            .filter(user=user)
+            .select_related("role", "permit_type", "department")
+            .prefetch_related("units")
+            .order_by("-is_active", "role__name", "permit_type__name")
+        )
+
+        context["profile_user"] = user
+        context["role_assignments"] = role_assignments
+        return context
+
+
 # --------------- Autocomplete user ------------
 @login_required
 def user_autocomplete(request):

@@ -17,10 +17,12 @@
 <body>
 
     {# RENDER SIDEBAR USING THE INCLUSION TAG #}
-    {% render_sidebar %}
+    {% if request.user.is_authenticated %}
+        {% render_sidebar %}
+    {% endif %}
 
     <!-- PAGE CONTENT WRAPPER -->
-    <div class="page-wrapper">
+    <div class="page-wrapper{% if not request.user.is_authenticated %} page-wrapper--full{% endif %}">
         
         {# This renders your application's actual top bar with dates/user info #}
         {% top_bar %} 

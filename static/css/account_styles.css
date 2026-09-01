@@ -1,0 +1,254 @@
+/* Account pages: permit-style layout with a distinct navy/steel-blue palette. */
+:root {
+    --account-primary: #1f4e79;
+    --account-primary-hover: #163a5c;
+    --account-accent: #2f75b5;
+    --account-accent-soft: #eaf2f8;
+    --account-page: #f7f8fb;
+    --account-surface: #ffffff;
+    --account-border: #d7e2ec;
+    --account-text: #252331;
+    --account-muted: #6f6a78;
+}
+
+.account-page {
+    width: min(100%, 1480px);
+    margin: 24px auto;
+    padding: 22px 26px 30px;
+    color: var(--account-text);
+    background: var(--account-surface);
+    border: 1px solid var(--account-border);
+    box-shadow: 0 8px 28px rgba(31, 78, 121, .12);
+}
+
+.account-page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 2px solid var(--account-primary);
+}
+
+.account-page__identity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.account-page__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--account-primary), var(--account-primary-hover));
+    border-radius: 5px;
+    font-size: 20px;
+}
+
+.account-page__title {
+    margin: 0;
+    color: var(--account-primary);
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.account-page__subtitle {
+    margin-top: 3px;
+    color: var(--account-muted);
+    font-size: 12px;
+}
+
+.account-page .account-card {
+    height: 100%;
+    background: var(--account-surface);
+    border: 1px solid var(--account-border);
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(31, 78, 121, .08);
+}
+
+.account-page > .card,
+.account-page .account-card .card {
+    border-color: var(--account-border);
+    box-shadow: 0 1px 4px rgba(31, 78, 121, .08);
+}
+
+.account-page .table {
+    --bs-table-hover-bg: #faf9fd;
+}
+
+.account-page .table thead th {
+    color: var(--account-primary);
+    background: var(--account-accent-soft);
+    border-bottom-color: var(--account-border);
+    font-size: 10px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.account-page .table a {
+    color: var(--account-accent);
+}
+
+.account-page .badge.text-bg-primary {
+    background-color: var(--account-primary) !important;
+}
+
+.account-page .badge.text-bg-success {
+    color: var(--account-primary) !important;
+    background-color: var(--account-accent-soft) !important;
+    border: 1px solid var(--account-border);
+}
+
+.account-page .account-card__header {
+    padding: 10px 14px;
+    color: var(--account-primary);
+    background: var(--account-accent-soft);
+    border-bottom: 1px solid var(--account-border);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.account-page .account-card__body {
+    padding: 16px;
+}
+
+.account-page .account-table {
+    color: var(--account-text);
+    font-size: 12px;
+}
+
+.account-page .account-table thead th {
+    color: var(--account-primary);
+    background: var(--account-accent-soft);
+    border-bottom-color: var(--account-border);
+    font-size: 10px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.account-page .account-table tbody tr:hover {
+    background: #faf9fd;
+}
+
+.account-page .account-table a {
+    color: var(--account-accent);
+}
+
+.account-page .account-datalist dt {
+    color: var(--account-muted);
+    font-size: 10px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.account-page .account-datalist dd {
+    font-size: 13px;
+}
+
+.account-page .btn-account-primary {
+    color: #fff;
+    background: var(--account-primary);
+    border-color: var(--account-primary);
+}
+
+.account-page .btn-account-primary:hover {
+    color: #fff;
+    background: var(--account-primary-hover);
+    border-color: var(--account-primary-hover);
+}
+
+.account-page .account-section {
+    margin-bottom: 18px;
+}
+
+@media (max-width: 992px) {
+    .account-page {
+        width: 100%;
+        margin: 0 auto;
+        border-right: 0;
+        border-left: 0;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .account-page {
+        padding: 16px 14px 22px;
+    }
+}
+
+/* Login is intentionally centered and keeps the same account palette. */
+.account-login-page {
+    min-height: calc(100vh - 40px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-login-card {
+    width: min(100%, 430px);
+    padding: 26px;
+    background: var(--account-surface);
+    border: 1px solid var(--account-border);
+    border-top: 4px solid var(--account-primary);
+    box-shadow: 0 8px 28px rgba(31, 78, 121, .12);
+}
+
+.account-login-card .login-title {
+    margin-bottom: 22px;
+    color: var(--account-primary);
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.account-login-card .form-group {
+    margin-bottom: 16px;
+}
+
+.account-login-card .form-label {
+    color: var(--account-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.account-login-card .form-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 10px;
+    border: 1px solid var(--account-border);
+    border-radius: 4px;
+}
+
+.account-login-card .form-input:focus {
+    border-color: var(--account-accent);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(47, 117, 181, .14);
+}
+
+.account-login-card .btn-login {
+    width: 100%;
+    padding: 10px;
+    color: #fff;
+    background: var(--account-primary);
+    border: 0;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.account-login-card .btn-login:hover {
+    background: var(--account-primary-hover);
+}
+
+.account-login-card .extra-links a {
+    color: var(--account-accent);
+}
