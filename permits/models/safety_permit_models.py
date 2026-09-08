@@ -1,4 +1,11 @@
 
+# FUTURE PHASE ONLY
+#
+# This module contains the planned structured/digital safety-permit models.
+# It is intentionally not imported by permits.models while safety permits are
+# managed as paper documents.  Keep it as the implementation reference for the
+# later digital safety-permit phase.
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models

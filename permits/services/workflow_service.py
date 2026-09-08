@@ -136,6 +136,8 @@ class PermitWorkflowService:
         )
 
         if entering_active_state:
+            permit.ensure_safety_permits_ready_for_activation()
+
             PermitActivationService.activate(
                 permit=permit,
                 activated_at=now,

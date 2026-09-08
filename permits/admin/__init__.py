@@ -12,3 +12,4 @@ from .permit_shift_signoff_admin import *
 from .permit_closeout_admin import *
 from .permit_fg_esd_admin import *
 from .permit_attachment_admin import *
+from .permit_paper_safety_admin import *
