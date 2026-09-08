@@ -99,8 +99,9 @@ class Migration(migrations.Migration):
                     models.CharField(
                         choices=[
                             ("PENDING", "Pending Permit Office Review"),
-                            ("APPROVED", "Approved"),
-                            ("REJECTED", "Rejected"),
+                            ("ACTIVE", "Active"),
+                            ("CANCELLED", "Cancelled"),
+                            ("TERMINATED", "Terminated"),
                         ],
                         db_index=True,
                         default="PENDING",
@@ -178,29 +179,14 @@ class Migration(migrations.Migration):
                     ),
                     models.CheckConstraint(
                         condition=(
-                            ~models.Q(status="APPROVED")
-                            | (
-                                ~models.Q(safety_permit_number="")
-                                & models.Q(reviewed_at__isnull=False)
-                                & models.Q(reviewed_by__isnull=False)
-                            )
+                            ~models.Q(status="ACTIVE")
+                            | ~models.Q(safety_permit_number="")
                         ),
-                        name="paper_safety_approved_complete_ck",
+                        name="paper_safety_active_complete_ck",
                     ),
                     models.CheckConstraint(
-                        condition=(
-                            (
-                                models.Q(status="PENDING")
-                                & models.Q(reviewed_at__isnull=True)
-                                & models.Q(reviewed_by__isnull=True)
-                            )
-                            | (
-                                ~models.Q(status="PENDING")
-                                & models.Q(reviewed_at__isnull=False)
-                                & models.Q(reviewed_by__isnull=False)
-                            )
-                        ),
-                        name="paper_safety_reviewed_complete_ck",
+                        condition=models.Q(status__in=["PENDING", "ACTIVE", "CANCELLED", "TERMINATED"]),
+                        name="paper_safety_status_values_ck",
                     ),
                 ],
             },

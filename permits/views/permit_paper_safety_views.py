@@ -45,7 +45,7 @@ class BasePermitPaperSafetyPermitFormSet(BaseInlineFormSet):
             if (
                 is_existing
                 and form.instance.status
-                == PermitPaperSafetyPermit.Status.APPROVED
+                == PermitPaperSafetyPermit.Status.ACTIVE
                 and (form.has_changed() or is_deleted)
             ):
                 raise ValidationError(

@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
 paper_permit_identifier_validator = RegexValidator(
@@ -29,9 +30,10 @@ class PermitPaperSafetyPermit(models.Model):
         RADIOGRAPHY = "RADIOGRAPHY", "Radiography"
 
     class Status(models.TextChoices):
-        PENDING = "PENDING", "Pending Permit Office Review"
-        APPROVED = "APPROVED", "Approved"
-        REJECTED = "REJECTED", "Rejected"
+        PENDING = "PENDING", "Pending"
+        ACTIVE = "ACTIVE", "Active"
+        CANCELLED = "CANCELLED", "Cancelled"
+        TERMINATED = "TERMINATED", "Terminated"
 
     permit = models.ForeignKey(
         "permits.Permit",
@@ -93,29 +95,9 @@ class PermitPaperSafetyPermit(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                    ~Q(status="APPROVED")
-                    | (
-                        ~Q(safety_permit_number="")
-                        & Q(reviewed_at__isnull=False)
-                        & Q(reviewed_by__isnull=False)
-                    )
+                    ~Q(status="ACTIVE") | ~Q(safety_permit_number="")
                 ),
-                name="paper_safety_approved_complete_ck",
-            ),
-            models.CheckConstraint(
-                condition=(
-                    (
-                        Q(status="PENDING")
-                        & Q(reviewed_at__isnull=True)
-                        & Q(reviewed_by__isnull=True)
-                    )
-                    | (
-                        ~Q(status="PENDING")
-                        & Q(reviewed_at__isnull=False)
-                        & Q(reviewed_by__isnull=False)
-                    )
-                ),
-                name="paper_safety_reviewed_complete_ck",
+                name="paper_safety_active_complete_ck",
             ),
         ]
         indexes = [
@@ -140,34 +122,99 @@ class PermitPaperSafetyPermit(models.Model):
         ).strip().upper()
         self.review_comment = (self.review_comment or "").strip()
 
-        if self.status == self.Status.APPROVED and not self.safety_permit_number:
+        if self.status == self.Status.ACTIVE and not self.safety_permit_number:
             raise ValidationError(
                 {
                     "safety_permit_number": (
-                        "A paper safety permit number is required before approval."
+                        "A paper safety permit number is required before activation."
                     )
                 }
             )
 
-        if self.status == self.Status.PENDING:
-            if self.reviewed_by_id or self.reviewed_at:
-                raise ValidationError(
-                    {
-                        "status": (
-                            "A pending paper safety permit cannot contain review details."
-                        )
-                    }
-                )
-        elif not self.reviewed_by_id or not self.reviewed_at:
+    def save(self, *args, status_actor=None, status_remarks="", **kwargs):
+        previous_status = None
+        if self.pk:
+            previous_status = type(self).objects.filter(pk=self.pk).values_list(
+                "status", flat=True
+            ).first()
+
+        if previous_status and previous_status != self.status and status_actor is None:
             raise ValidationError(
-                {
-                    "status": (
-                        "Approved or rejected paper safety permits require the "
-                        "Permit Office reviewer and review time."
-                    )
-                }
+                "Use change_status() and provide the user who changed the status."
             )
+
+        self.full_clean()
+        result = super().save(*args, **kwargs)
+
+        if previous_status and previous_status != self.status:
+            self.status_history.create(
+                from_status=previous_status,
+                to_status=self.status,
+                changed_by=status_actor,
+                remarks=(status_remarks or "").strip(),
+            )
+        elif previous_status is None:
+            self.status_history.create(
+                from_status="",
+                to_status=self.status,
+                changed_by=status_actor or self.created_by,
+                remarks=(status_remarks or "Created paper safety permit.").strip(),
+            )
+        return result
+
+    def change_status(self, *, status, changed_by, remarks=""):
+        if not changed_by or not getattr(changed_by, "is_authenticated", False):
+            raise ValidationError("A user is required to change the status.")
+        if status == self.status:
+            return self
+        if self.status == self.Status.TERMINATED:
+            raise ValidationError("A terminated paper safety permit cannot change status.")
+
+        self.status = status
+        self.modified_by = changed_by
+        self.reviewed_by = changed_by
+        self.reviewed_at = timezone.now()
+        self.review_comment = (remarks or "").strip()
+        self.save(status_actor=changed_by, status_remarks=remarks)
+        return self
+
+
+class PermitPaperSafetyPermitStatusHistory(models.Model):
+    """Immutable audit record for every paper safety-permit status change."""
+
+    permit_safety_permit = models.ForeignKey(
+        PermitPaperSafetyPermit,
+        on_delete=models.CASCADE,
+        related_name="status_history",
+    )
+    from_status = models.CharField(max_length=20, blank=True)
+    to_status = models.CharField(
+        max_length=20,
+        choices=PermitPaperSafetyPermit.Status.choices,
+    )
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="paper_safety_permit_status_changes",
+    )
+    changed_at = models.DateTimeField(default=timezone.now, db_index=True)
+    remarks = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-changed_at", "-pk"]
+        verbose_name = "Paper Safety Permit Status History"
+        verbose_name_plural = "Paper Safety Permit Status History"
+        indexes = [
+            models.Index(
+                fields=["permit_safety_permit", "-changed_at"],
+                name="paper_safety_status_hist_idx",
+            )
+        ]
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        if self.pk:
+            raise ValidationError("Status history records are immutable.")
+        self.remarks = (self.remarks or "").strip()
         return super().save(*args, **kwargs)

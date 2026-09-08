@@ -139,7 +139,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
         if obj and (
-            obj.status == PermitPaperSafetyPermit.Status.APPROVED
+            obj.status == PermitPaperSafetyPermit.Status.ACTIVE
             or obj.permit.activated_at
         ):
             readonly.extend(("safety_type", "safety_permit_number"))
@@ -159,7 +159,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         failures = []
 
         for record in queryset:
-            if record.status == PermitPaperSafetyPermit.Status.APPROVED:
+            if record.status == PermitPaperSafetyPermit.Status.ACTIVE:
                 skipped += 1
                 continue
 
@@ -205,7 +205,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         failures = []
 
         for record in queryset:
-            if record.status == PermitPaperSafetyPermit.Status.REJECTED:
+            if record.status == PermitPaperSafetyPermit.Status.CANCELLED:
                 skipped += 1
                 continue
 

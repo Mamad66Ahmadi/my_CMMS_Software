@@ -31,6 +31,7 @@ from permits.models import (
     PermitWorkflowTransition,
     PermitApproval,
     PermitPaperSafetyPermit,
+    PermitPaperSafetyPermitStatusHistory,
 )
 from permits.services.quota_service import PermitQuotaService
 
@@ -301,6 +302,17 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                             "modified_by",
                             "reviewed_by",
                         )
+                        .prefetch_related(
+                            Prefetch(
+                                "status_history",
+                                queryset=(
+                                    PermitPaperSafetyPermitStatusHistory.objects
+                                    .select_related("changed_by")
+                                    .order_by("-changed_at", "-pk")
+                                ),
+                                to_attr="prefetched_status_history",
+                            )
+                        )
                         .order_by("safety_type", "pk")
                     ),
                     to_attr="prefetched_paper_safety_permits",
@@ -545,6 +557,22 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         paper_safety_permits = list(
             getattr(permit, "prefetched_paper_safety_permits", [])
         )
+        status_labels = dict(PermitPaperSafetyPermit.Status.choices)
+        for safety_permit in paper_safety_permits:
+            for event in getattr(
+                safety_permit,
+                "prefetched_status_history",
+                [],
+            ):
+                event.from_status_label = (
+                    status_labels.get(event.from_status)
+                    if event.from_status
+                    else "Initial"
+                )
+                event.to_status_label = status_labels.get(
+                    event.to_status,
+                    event.to_status,
+                )
         context["paper_safety_permits"] = paper_safety_permits
         context["paper_safety_permits_ready"] = (
             permit.safety_permits_ready_for_activation
@@ -556,12 +584,12 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             item.status == PermitPaperSafetyPermit.Status.PENDING
             for item in paper_safety_permits
         )
-        context["paper_safety_permit_approved_count"] = sum(
-            item.status == PermitPaperSafetyPermit.Status.APPROVED
+        context["paper_safety_permit_active_count"] = sum(
+            item.status == PermitPaperSafetyPermit.Status.ACTIVE
             for item in paper_safety_permits
         )
-        context["paper_safety_permit_rejected_count"] = sum(
-            item.status == PermitPaperSafetyPermit.Status.REJECTED
+        context["paper_safety_permit_cancelled_count"] = sum(
+            item.status == PermitPaperSafetyPermit.Status.CANCELLED
             for item in paper_safety_permits
         )
         context["can_review_paper_safety_permits"] = bool(

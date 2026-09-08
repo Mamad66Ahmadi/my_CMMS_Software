@@ -32,7 +32,7 @@
                     {{ safety_form.id }}
 
                     <div class="row g-3 align-items-end">
-                        {% if permit.activated_at or safety_form.instance.status == "APPROVED" %}
+                        {% if permit.activated_at or safety_form.instance.status == "ACTIVE" %}
                             {{ safety_form.safety_type.as_hidden }}
                             {{ safety_form.safety_permit_number.as_hidden }}
 
@@ -81,15 +81,15 @@
                         <div class="col-md-2">
                             <label class="form-label">Status</label>
                             <div>
-                                {% if safety_form.instance.status == "APPROVED" %}
+                                {% if safety_form.instance.status == "ACTIVE" %}
                                     <span class="badge text-bg-success">
                                         <i class="bi bi-check-circle-fill me-1"></i>
-                                        Approved
+                                        Active
                                     </span>
-                                {% elif safety_form.instance.status == "REJECTED" %}
+                                {% elif safety_form.instance.status == "CANCELLED" %}
                                     <span class="badge text-bg-danger">
                                         <i class="bi bi-x-circle-fill me-1"></i>
-                                        Rejected
+                                        Cancelled
                                     </span>
                                 {% else %}
                                     <span class="badge text-bg-warning">
@@ -100,7 +100,7 @@
                             </div>
                         </div>
 
-                        {% if not permit.activated_at and safety_form.instance.status != "APPROVED" %}
+                        {% if not permit.activated_at and safety_form.instance.status != "ACTIVE" %}
                             <div class="col-md-1 text-md-end">
                                 <span class="d-none paper-safety-delete-field">
                                     {{ safety_form.DELETE }}

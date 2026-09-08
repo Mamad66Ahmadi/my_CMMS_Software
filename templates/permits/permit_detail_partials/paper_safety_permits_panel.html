@@ -47,15 +47,20 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if safety_permit.status == "APPROVED" %}
+                                    {% if safety_permit.status == "ACTIVE" %}
                                         <span class="badge text-bg-success">
                                             <i class="bi bi-check-circle-fill me-1"></i>
-                                            Approved
+                                            Active
                                         </span>
-                                    {% elif safety_permit.status == "REJECTED" %}
+                                    {% elif safety_permit.status == "CANCELLED" %}
                                         <span class="badge text-bg-danger">
                                             <i class="bi bi-x-circle-fill me-1"></i>
-                                            Rejected
+                                            Cancelled
+                                        </span>
+                                    {% elif safety_permit.status == "TERMINATED" %}
+                                        <span class="badge text-bg-secondary">
+                                            <i class="bi bi-stop-circle-fill me-1"></i>
+                                            Terminated
                                         </span>
                                     {% else %}
                                         <span class="badge text-bg-warning">
@@ -88,7 +93,7 @@
                                         </div>
                                     {% endif %}
 
-                                    {% if can_review_paper_safety_permits and safety_permit.status != "APPROVED" %}
+                                    {% if can_review_paper_safety_permits and safety_permit.status != "ACTIVE" and safety_permit.status != "TERMINATED" %}
                                         <form
                                             method="post"
                                             action="{% url 'permits:paper_safety_permit_review' permit_number=permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
@@ -138,6 +143,70 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <div class="border-top p-3">
+                <h6 class="mb-3">
+                    <i class="bi bi-clock-history me-1"></i>
+                    Read-only status audit
+                </h6>
+                {% for safety_permit in paper_safety_permits %}
+                    <div class="mb-3{% if not forloop.last %} pb-3 border-bottom{% endif %}">
+                        <div class="small fw-semibold mb-2">
+                            {{ safety_permit.get_safety_type_display }}
+                            {% if safety_permit.safety_permit_number %}
+                                <span class="font-monospace text-muted ms-1">
+                                    ({{ safety_permit.safety_permit_number }})
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% with history=safety_permit.prefetched_status_history %}
+                            {% if history %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Changed At</th>
+                                                <th>Changed By</th>
+                                                <th>Transition</th>
+                                                <th>Remarks</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for event in history %}
+                                                <tr>
+                                                    <td class="text-nowrap">
+                                                        {{ event.changed_at|date:"Y-m-d H:i" }}
+                                                        <span class="text-muted">({{ event.changed_at|to_jalali:"%Y/%m/%d" }})</span>
+                                                    </td>
+                                                    <td>
+                                                        {% if event.changed_by %}
+                                                            {{ event.changed_by.get_full_name|default:event.changed_by.username }}
+                                                        {% else %}
+                                                            <span class="text-muted">System</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <span class="text-muted">{{ event.from_status_label }}</span>
+                                                        <i class="bi bi-arrow-right mx-1"></i>
+                                                        <span class="fw-semibold">{{ event.to_status_label }}</span>
+                                                    </td>
+                                                    <td>{{ event.remarks|default:"—" }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="small text-muted">No status history recorded.</div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                {% endfor %}
+                <div class="small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Audit entries are immutable and cannot be edited from this page.
+                </div>
             </div>
         {% else %}
             <div class="p-3 text-muted">

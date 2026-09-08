@@ -18,6 +18,7 @@ from permits.models import (
     Precaution,
     PermitAttachment,
     PermitPaperSafetyPermit,
+    PermitPaperSafetyPermitStatusHistory,
 )
 
 
@@ -168,7 +169,22 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                     "paper_safety_permits",
                     queryset=(
                         PermitPaperSafetyPermit.objects
-                        .select_related("reviewed_by")
+                        .select_related(
+                            "created_by",
+                            "modified_by",
+                            "reviewed_by",
+                        )
+                        .prefetch_related(
+                            Prefetch(
+                                "status_history",
+                                queryset=(
+                                    PermitPaperSafetyPermitStatusHistory.objects
+                                    .select_related("changed_by")
+                                    .order_by("-changed_at", "-pk")
+                                ),
+                                to_attr="prefetched_status_history",
+                            )
+                        )
                         .order_by("safety_type", "pk")
                     ),
                     to_attr="prefetched_paper_safety_permits",
@@ -185,6 +201,22 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
             "prefetched_paper_safety_permits",
             [],
         )
+        status_labels = dict(PermitPaperSafetyPermit.Status.choices)
+        for safety_permit in context["paper_safety_permits"]:
+            for event in getattr(
+                safety_permit,
+                "prefetched_status_history",
+                [],
+            ):
+                event.from_status_label = (
+                    status_labels.get(event.from_status)
+                    if event.from_status
+                    else "Initial"
+                )
+                event.to_status_label = status_labels.get(
+                    event.to_status,
+                    event.to_status,
+                )
         context["paper_safety_permits_ready"] = (
             permit.safety_permits_ready_for_activation
         )

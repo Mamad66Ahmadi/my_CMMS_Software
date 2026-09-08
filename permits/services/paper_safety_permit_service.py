@@ -27,12 +27,11 @@ class PaperSafetyPermitReviewService:
         if safety_permit_number is not None:
             record.safety_permit_number = safety_permit_number
 
-        record.status = PermitPaperSafetyPermit.Status.APPROVED
-        record.reviewed_by = actor
-        record.reviewed_at = timezone.now()
-        record.review_comment = comment
-        record.modified_by = actor
-        record.save()
+        record.change_status(
+            status=PermitPaperSafetyPermit.Status.ACTIVE,
+            changed_by=actor,
+            remarks=comment,
+        )
         return record
 
     @classmethod
@@ -47,12 +46,11 @@ class PaperSafetyPermitReviewService:
                 {"review_comment": "A rejection comment is required."}
             )
 
-        record.status = PermitPaperSafetyPermit.Status.REJECTED
-        record.reviewed_by = actor
-        record.reviewed_at = timezone.now()
-        record.review_comment = comment
-        record.modified_by = actor
-        record.save()
+        record.change_status(
+            status=PermitPaperSafetyPermit.Status.CANCELLED,
+            changed_by=actor,
+            remarks=comment,
+        )
         return record
 
     @staticmethod
@@ -107,3 +105,16 @@ class PaperSafetyPermitReviewService:
         except (PermissionDenied, ValidationError):
             return False
         return True
+
+    @classmethod
+    @transaction.atomic
+    def change_status(cls, *, paper_safety_permit_id, actor, status, remarks=""):
+        record = cls._get_locked_record(paper_safety_permit_id)
+        cls._ensure_review_allowed(record=record, actor=actor)
+        if status not in PermitPaperSafetyPermit.Status.values:
+            raise ValidationError("Invalid paper safety-permit status.")
+        return record.change_status(
+            status=status,
+            changed_by=actor,
+            remarks=remarks,
+        )
