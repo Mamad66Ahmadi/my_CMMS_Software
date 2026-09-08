@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
 <link rel="stylesheet" href="{% static 'css/shared/detail-pages.css' %}">
 
-<div class="container-fluid px-4 py-4 permit-detail-page">
+<div class="container-fluid px-3 py-4 permit-detail-page">
 
     <!-- ============ Header ============ -->
     <div class="permit-header">
@@ -304,6 +304,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Required Paper Safety Permits -->
+            {% include "permits/permit_detail_partials/paper_safety_permits_panel.html" with permit=permit %}
 
             <!-- Hazards -->
             {% include "permits/permit_detail_partials/hazards_panel.html" with permit=permit %}

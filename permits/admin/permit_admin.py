@@ -12,6 +12,7 @@ from permits.services.attachment_service import PermitAttachmentService
 from permits.services.quota_service import PermitQuotaService
 from permits.admin.permit_fg_esd_admin import PermitFireGasESDInline
 from permits.admin.permit_attachment_admin import PermitAttachmentInline
+from permits.admin.permit_paper_safety_admin import PermitPaperSafetyPermitInline
 
 
 
@@ -175,6 +176,7 @@ class PermitAdmin(admin.ModelAdmin):
         PermitHazardInline,
         PermitPrecautionInline,
         PermitFireGasESDInline,
+        PermitPaperSafetyPermitInline,
         PermitCloseoutSignoffInline,
         PermitAttachmentInline,
     ]
@@ -386,10 +388,18 @@ class PermitAdmin(admin.ModelAdmin):
                 obj.delete()
 
         for instance in instances:
-            if hasattr(instance, "created_by") and not instance.pk:
+            # Accessing an unset, non-nullable ForeignKey descriptor such as
+            # ``created_by`` raises RelatedObjectDoesNotExist.  Check its raw
+            # id attribute instead so new inline records receive their audit
+            # user before model validation runs.
+            if (
+                hasattr(instance, "created_by_id")
+                and not instance.pk
+                and not instance.created_by_id
+            ):
                 instance.created_by = request.user
 
-            if hasattr(instance, "modified_by"):
+            if hasattr(instance, "modified_by_id"):
                 instance.modified_by = request.user
 
             if hasattr(instance, "is_active"):

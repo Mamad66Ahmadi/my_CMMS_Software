@@ -1,0 +1,149 @@
+{% load to_jalali %}
+
+<div class="detail-panel">
+    <div class="detail-panel__header d-flex align-items-center">
+        <i class="bi bi-file-earmark-lock2"></i>
+        <span>Paper Safety Permits</span>
+
+        {% if paper_safety_permit_total_count == 0 %}
+            <span class="badge bg-light text-dark border ms-auto">None required</span>
+        {% elif paper_safety_permits_ready %}
+            <span class="badge text-bg-success ms-auto">
+                <i class="bi bi-check-circle-fill me-1"></i>Ready
+            </span>
+        {% else %}
+            <span class="badge text-bg-warning ms-auto">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                Activation blocked
+            </span>
+        {% endif %}
+    </div>
+
+    <div class="detail-panel__body p-0">
+        {% if paper_safety_permits %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Permit Number</th>
+                            <th>Status</th>
+                            <th>Permit Office Review</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for safety_permit in paper_safety_permits %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {{ safety_permit.get_safety_type_display }}
+                                </td>
+                                <td>
+                                    {% if safety_permit.safety_permit_number %}
+                                        <span class="font-monospace">
+                                            {{ safety_permit.safety_permit_number }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Number pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if safety_permit.status == "APPROVED" %}
+                                        <span class="badge text-bg-success">
+                                            <i class="bi bi-check-circle-fill me-1"></i>
+                                            Approved
+                                        </span>
+                                    {% elif safety_permit.status == "REJECTED" %}
+                                        <span class="badge text-bg-danger">
+                                            <i class="bi bi-x-circle-fill me-1"></i>
+                                            Rejected
+                                        </span>
+                                    {% else %}
+                                        <span class="badge text-bg-warning">
+                                            <i class="bi bi-hourglass-split me-1"></i>
+                                            Pending
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if safety_permit.reviewed_by %}
+                                        <div class="small mb-2">
+                                            <strong>
+                                                {{ safety_permit.reviewed_by.get_full_name|default:safety_permit.reviewed_by.username }}
+                                            </strong>
+                                            {% if safety_permit.reviewed_at %}
+                                                <div class="text-muted">
+                                                    {{ safety_permit.reviewed_at|date:"Y-m-d H:i" }}
+                                                    ({{ safety_permit.reviewed_at|to_jalali:"%Y/%m/%d" }})
+                                                </div>
+                                            {% endif %}
+                                            {% if safety_permit.review_comment %}
+                                                <div class="mt-1">
+                                                    {{ safety_permit.review_comment }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-muted small mb-2">
+                                            Awaiting Permit Office review
+                                        </div>
+                                    {% endif %}
+
+                                    {% if can_review_paper_safety_permits and safety_permit.status != "APPROVED" %}
+                                        <form
+                                            method="post"
+                                            action="{% url 'permits:paper_safety_permit_review' permit_number=permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
+                                            class="d-grid gap-2"
+                                        >
+                                            {% csrf_token %}
+
+                                            {% if not safety_permit.safety_permit_number %}
+                                                <input
+                                                    type="text"
+                                                    name="safety_permit_number"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Enter permit number before approval"
+                                                    maxlength="30"
+                                                >
+                                            {% endif %}
+
+                                            <input
+                                                type="text"
+                                                name="review_comment"
+                                                class="form-control form-control-sm"
+                                                placeholder="Review comment; required for rejection"
+                                            >
+
+                                            <div class="d-flex gap-2">
+                                                <button
+                                                    type="submit"
+                                                    name="action"
+                                                    value="approve"
+                                                    class="btn btn-success btn-sm"
+                                                >
+                                                    <i class="bi bi-check-lg me-1"></i>Approve
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    name="action"
+                                                    value="reject"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                >
+                                                    <i class="bi bi-x-lg me-1"></i>Reject
+                                                </button>
+                                            </div>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-3 text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                This main permit does not require a supplementary paper safety permit.
+            </div>
+        {% endif %}
+    </div>
+</div>

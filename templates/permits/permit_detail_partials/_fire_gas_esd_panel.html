@@ -14,9 +14,18 @@
         {% if all_fire_gas_esd_items %}
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 fg-esd-table">
+                    <colgroup>
+                        <col class="fg-esd-table__system">
+                        <col class="fg-esd-table__zone">
+                        <col class="fg-esd-table__remarks">
+                        <col class="fg-esd-table__status">
+                        <col class="fg-esd-table__isolation">
+                        <col class="fg-esd-table__deisolation">
+                        <col class="fg-esd-table__actions">
+                    </colgroup>
                     <thead class="table-light">
                         <tr>
-                            <th style="min-width:260px">
+                            <th class="fg-esd-table__system-header">
                                 <bdi>System</bdi>
                             </th>
 
@@ -50,7 +59,7 @@
                                 </div>
                             </th>
 
-                            <th style="width:1%; white-space:nowrap">
+                            <th class="fg-esd-table__actions-header">
                                 <bdi>Actions</bdi>
                             </th>
                         </tr>
@@ -64,7 +73,7 @@
                                 >
 
                                     <!-- System -->
-                                    <td>
+                                    <td class="fg-esd-table__system-cell">
                                         <div class="d-flex align-items-center gap-2">
                                             {% if item %}
                                                 <span
@@ -238,7 +247,7 @@
                                     </td>
 
                                     <!-- Actions -->
-                                    <td>
+                                    <td class="fg-esd-table__actions-cell">
                                         {% if item %}
 
                                             {% if item.can_sign_isolation %}
@@ -248,13 +257,12 @@
                                                     hx-post="{% url 'permits:permit_fire_gas_esd_isolate' permit_number=permit.permit_number item_id=item.pk %}"
                                                     hx-target="#fg-esd-panel"
                                                     hx-swap="outerHTML"
-                                                    class="d-flex flex-column gap-1"
+                                                    class="d-flex flex-column gap-1 fg-esd-action-form"
                                                 >
                                                     {% csrf_token %}
 
                                                     <div
-                                                        class="input-group input-group-sm"
-                                                        style="max-width:220px"
+                                                        class="input-group input-group-sm fg-esd-action-input"
                                                     >
                                                         <span class="input-group-text">
                                                             <i class="bi bi-calendar-event"></i>
@@ -287,7 +295,7 @@
 
                                                     <button
                                                         type="submit"
-                                                        class="btn btn-sm btn-outline-success persian-text text-nowrap"
+                                                        class="btn btn-sm btn-outline-success persian-text text-nowrap fg-esd-action-button"
                                                     >
                                                         <i class="bi bi-pencil-square me-1"></i>
                                                         <bdi>Confirm Isolation</bdi>
@@ -301,13 +309,12 @@
                                                     hx-post="{% url 'permits:permit_fire_gas_esd_deisolate' permit_number=permit.permit_number item_id=item.pk %}"
                                                     hx-target="#fg-esd-panel"
                                                     hx-swap="outerHTML"
-                                                    class="d-flex flex-column gap-1"
+                                                    class="d-flex flex-column gap-1 fg-esd-action-form"
                                                 >
                                                     {% csrf_token %}
 
                                                     <div
-                                                        class="input-group input-group-sm"
-                                                        style="max-width:220px"
+                                                        class="input-group input-group-sm fg-esd-action-input"
                                                     >
                                                         <span class="input-group-text">
                                                             <i class="bi bi-calendar-event"></i>
@@ -340,7 +347,7 @@
 
                                                     <button
                                                         type="submit"
-                                                        class="btn btn-sm btn-outline-primary persian-text text-nowrap"
+                                                        class="btn btn-sm btn-outline-primary persian-text text-nowrap fg-esd-action-button"
                                                     >
                                                         <i class="bi bi-arrow-counterclockwise me-1"></i>
                                                         <bdi>Confirm Restoration</bdi>
@@ -377,11 +384,26 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
-        new bootstrap.Tooltip(el, {
-            html: true
+(function () {
+    function initializeFgEsdTooltips(root) {
+        if (!root || !window.bootstrap) return;
+
+        root.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((element) => {
+            bootstrap.Tooltip.getOrCreateInstance(element, {
+                html: true
+            });
         });
-    });
-});
+    }
+
+    initializeFgEsdTooltips(document);
+
+    if (!document.body.dataset.fgEsdTooltipsBound) {
+        document.body.dataset.fgEsdTooltipsBound = 'true';
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            if (event.target && event.target.id === 'fg-esd-panel') {
+                initializeFgEsdTooltips(event.target);
+            }
+        });
+    }
+})();
 </script>

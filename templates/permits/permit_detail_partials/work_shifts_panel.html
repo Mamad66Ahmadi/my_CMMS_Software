@@ -81,14 +81,23 @@
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0 work-shift-table">
 
+                            <colgroup>
+                                <col class="work-shift-table__date">
+                                <col class="work-shift-table__shift">
+                                <col class="work-shift-table__leader">
+                                <col class="work-shift-table__workers">
+                                <col class="work-shift-table__signoffs">
+                                <col class="work-shift-table__actions">
+                            </colgroup>
+
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 120px;" class="persian-text"><bdi>Date</bdi></th>
-                                    <th style="width: 110px;" class="persian-text"><bdi>Shift</bdi></th>
+                                    <th class="persian-text"><bdi>Date</bdi></th>
+                                    <th class="persian-text"><bdi>Shift</bdi></th>
                                     <th class="persian-text"><bdi>Work Leader</bdi></th>
-                                    <th style="width: 90px;" class="persian-text"><bdi>Workers</bdi></th>
+                                    <th class="persian-text"><bdi>Workers</bdi></th>
                                     <th class="persian-text"><bdi>Signoffs</bdi></th>
-                                    <th style="width: 190px;" class="persian-text"><bdi>Action</bdi></th>
+                                    <th class="persian-text"><bdi>Action</bdi></th>
                                 </tr>
                             </thead>
 
@@ -157,7 +166,7 @@
 
                                                 {% else %}
 
-                                                    <div class="d-flex flex-wrap gap-2">
+                                                    <div class="d-flex flex-wrap signoff-chip-list">
                                                         {% for signoff in work_shift.signoffs.all %}
 
                                                             {% if signoff.signed_at %}
@@ -182,7 +191,7 @@
                                                                     <i class="bi bi-hourglass-split signoff-chip__icon"></i>
                                                                     <span class="signoff-chip__body">
                                                                         <span class="signoff-chip__role"><bdi>{{ signoff.role.name }}</bdi></span>
-                                                                        <span class="signoff-chip__value"><bdi>Awaiting Signature</bdi></span>
+                                                                        <span class="signoff-chip__value"><bdi>Pending Sig.</bdi></span>
                                                                     </span>
                                                                 </span>
 
@@ -197,7 +206,7 @@
 
                                         <!-- Action -->
                                         <td>
-                                            <div class="d-flex flex-wrap gap-2">
+                                            <div class="d-flex flex-wrap shift-action-list">
 
                                                 {% if is_active_state %}
                                                     {% for signoff in work_shift.signoffs.all %}
@@ -465,6 +474,25 @@
         background-color: rgba(0, 0, 0, 0.02) !important;
     }
 
+    .work-shift-table__date {
+        width: 11%;
+    }
+    .work-shift-table__shift {
+        width: 4%;
+    }
+    .work-shift-table__leader {
+        width: 10%;
+    }
+    .work-shift-table__workers {
+        width: 5%;
+    }
+    .work-shift-table__signoffs {
+        width: 46%;
+    }
+    .work-shift-table__actions {
+        width: 24%;
+    }
+
     .work-shift-table > tbody > tr.shift-row--open {
         background-color: var(--wsp-success-bg-soft);
         border-left: 3px solid var(--wsp-success);
@@ -588,17 +616,36 @@
         font-weight: 500;
     }
 
+    .work-shift-table .signoff-chip-list {
+        gap: 0.3rem;
+    }
+    .work-shift-table .signoff-chip {
+        gap: 0.3rem;
+        padding: 0.2rem 0.42rem;
+        font-size: 0.68rem;
+        line-height: 1.05;
+    }
+    .work-shift-table .signoff-chip__icon {
+        font-size: 0.75rem;
+    }
+    .work-shift-table .signoff-chip__role {
+        font-size: 0.56rem;
+    }
+
 
     /* =========================================================
        6. Row action buttons (sign / close)
        ========================================================= */
+    .shift-action-list {
+        gap: 0.3rem;
+    }
     .btn-shift-action {
         display: inline-flex;
         align-items: center;
         border-radius: var(--wsp-radius-pill);
         font-weight: 600;
-        font-size: 0.78rem;
-        padding: 0.32rem 0.85rem;
+        font-size: 0.7rem;
+        padding: 0.22rem 0.58rem;
         border-width: 1px;
         transition: box-shadow 0.15s ease, transform 0.1s ease;
     }
