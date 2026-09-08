@@ -1,0 +1,76 @@
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const rowsContainer = document.getElementById("paper-safety-permit-rows");
+    const emptyFormTemplate = document.getElementById("paper-safety-permit-empty-form");
+    const addButton = document.getElementById("add-paper-safety-permit");
+    const totalForms = document.getElementById("id_paper_safety_permits-TOTAL_FORMS");
+    const emptyState = document.getElementById("paper-safety-permit-empty-state");
+
+    if (!rowsContainer || !emptyFormTemplate || !totalForms) return;
+
+    function styleFields(scope) {
+        scope.querySelectorAll('select[name$="-safety_type"]').forEach(function (field) {
+            field.classList.add("form-select");
+        });
+        scope.querySelectorAll('input[name$="-safety_permit_number"]').forEach(function (field) {
+            field.classList.add("form-control");
+            field.setAttribute("placeholder", "Optional until issued");
+        });
+    }
+
+    function updateEmptyState() {
+        const visibleRows = rowsContainer.querySelectorAll(
+            "[data-paper-safety-permit-row]:not([hidden])"
+        );
+        if (emptyState) {
+            emptyState.hidden = visibleRows.length > 0;
+        }
+    }
+
+    function bindRemoveButton(button) {
+        button.addEventListener("click", function () {
+            const row = button.closest("[data-paper-safety-permit-row]");
+            if (!row) return;
+
+            const deleteField = row.querySelector('input[name$="-DELETE"]');
+            if (deleteField) {
+                deleteField.checked = true;
+            }
+            row.hidden = true;
+            updateEmptyState();
+        });
+    }
+
+    rowsContainer
+        .querySelectorAll("[data-remove-paper-safety-permit]")
+        .forEach(bindRemoveButton);
+    styleFields(rowsContainer);
+    updateEmptyState();
+
+    if (addButton) {
+        addButton.addEventListener("click", function () {
+            const formIndex = Number.parseInt(totalForms.value, 10);
+            const html = emptyFormTemplate.innerHTML.replaceAll(
+                "__prefix__",
+                String(formIndex)
+            );
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = html.trim();
+            const row = wrapper.firstElementChild;
+
+            if (!row) return;
+
+            rowsContainer.appendChild(row);
+            totalForms.value = String(formIndex + 1);
+            styleFields(row);
+
+            const removeButton = row.querySelector(
+                "[data-remove-paper-safety-permit]"
+            );
+            if (removeButton) bindRemoveButton(removeButton);
+
+            updateEmptyState();
+        });
+    }
+});
+</script>

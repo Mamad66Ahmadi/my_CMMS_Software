@@ -30,6 +30,7 @@ from permits.models import (
     PermitPrecaution,
     PermitWorkflowTransition,
     PermitApproval,
+    PermitPaperSafetyPermit,
 )
 from permits.services.quota_service import PermitQuotaService
 
@@ -77,6 +78,12 @@ from permits.services.fire_gas_esd_service import (
     PermitFireGasESDService,
 )
 from permits.services.attachment_service import PermitAttachmentService
+from permits.services.paper_safety_permit_service import (
+    PaperSafetyPermitReviewService,
+)
+from permits.views.permit_paper_safety_views import (
+    PermitPaperSafetyPermitFormSetMixin,
+)
 
 
 def _render_detail_fragment(request, permit_number, template_name, extra_context=None):
@@ -285,6 +292,19 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     ),
                     to_attr="prefetched_attachments",
                 ),
+                Prefetch(
+                    "paper_safety_permits",
+                    queryset=(
+                        PermitPaperSafetyPermit.objects
+                        .select_related(
+                            "created_by",
+                            "modified_by",
+                            "reviewed_by",
+                        )
+                        .order_by("safety_type", "pk")
+                    ),
+                    to_attr="prefetched_paper_safety_permits",
+                ),
             )
         )
 
@@ -342,6 +362,15 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     permit=permit,
                     transition=transition,
                 )
+
+                entering_active_state = (
+                    transition.to_step.state
+                    == PermitWorkflowStep.State.ACTIVE
+                    and transition.from_step.state
+                    != PermitWorkflowStep.State.ACTIVE
+                )
+                if entering_active_state:
+                    permit.ensure_safety_permits_ready_for_activation()
 
             except (PermissionDenied, ValidationError):
                 continue
@@ -510,6 +539,36 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             WorkflowAuthorizationService.actor_can_edit_permit(
                 actor=self.request.user,
                 permit=permit,
+            )
+        )
+
+        paper_safety_permits = list(
+            getattr(permit, "prefetched_paper_safety_permits", [])
+        )
+        context["paper_safety_permits"] = paper_safety_permits
+        context["paper_safety_permits_ready"] = (
+            permit.safety_permits_ready_for_activation
+        )
+        context["paper_safety_permit_total_count"] = len(
+            paper_safety_permits
+        )
+        context["paper_safety_permit_pending_count"] = sum(
+            item.status == PermitPaperSafetyPermit.Status.PENDING
+            for item in paper_safety_permits
+        )
+        context["paper_safety_permit_approved_count"] = sum(
+            item.status == PermitPaperSafetyPermit.Status.APPROVED
+            for item in paper_safety_permits
+        )
+        context["paper_safety_permit_rejected_count"] = sum(
+            item.status == PermitPaperSafetyPermit.Status.REJECTED
+            for item in paper_safety_permits
+        )
+        context["can_review_paper_safety_permits"] = bool(
+            paper_safety_permits
+            and PaperSafetyPermitReviewService.actor_can_review(
+                record=paper_safety_permits[0],
+                actor=self.request.user,
             )
         )
 
@@ -771,7 +830,11 @@ def validate_permit_reference(request):
     )
 
 
-class PermitCreateView(LoginRequiredMixin, CreateView):
+class PermitCreateView(
+    PermitPaperSafetyPermitFormSetMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
     model = Permit
     form_class = PermitCreateForm
     template_name = "permits/permit_form.html"
@@ -817,10 +880,23 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
         self.object.created_by = self.request.user
         self.object.modified_by = self.request.user
 
+        paper_safety_formset = self.validate_paper_safety_formset(
+            permit=self.object,
+        )
+        if paper_safety_formset is False:
+            return self.form_invalid(form)
+
         self.object.save()
 
         form.save_assessments(user=self.request.user)
         form.save_fire_gas_esd_items(user=self.request.user)
+
+        if paper_safety_formset is not None:
+            self.save_paper_safety_formset(
+                formset=paper_safety_formset,
+                permit=self.object,
+                user=self.request.user,
+            )
 
         return redirect(self.get_success_url())
 
@@ -832,7 +908,11 @@ class PermitCreateView(LoginRequiredMixin, CreateView):
             },
         )
 
-class PermitUpdateView(LoginRequiredMixin, UpdateView):
+class PermitUpdateView(
+    PermitPaperSafetyPermitFormSetMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
     model = Permit
     form_class = PermitUpdateForm
     template_name = "permits/permit_form_update.html"
@@ -901,10 +981,24 @@ class PermitUpdateView(LoginRequiredMixin, UpdateView):
         self.object = form.save(commit=False)
 
         self.object.modified_by = self.request.user
+
+        paper_safety_formset = self.validate_paper_safety_formset(
+            permit=self.object,
+        )
+        if paper_safety_formset is False:
+            return self.form_invalid(form)
+
         self.object.save()
 
         form.save_assessments(user=self.request.user)
         form.save_fire_gas_esd_items(user=self.request.user)
+
+        if paper_safety_formset is not None:
+            self.save_paper_safety_formset(
+                formset=paper_safety_formset,
+                permit=self.object,
+                user=self.request.user,
+            )
 
         messages.success(
             self.request,

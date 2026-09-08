@@ -305,6 +305,9 @@
                 </div>
             </div>
 
+            <!-- Required Paper Safety Permits -->
+            {% include "permits/permit_detail_partials/paper_safety_permits_panel.html" with permit=permit %}
+
             <!-- Hazards -->
             {% include "permits/permit_detail_partials/hazards_panel.html" with permit=permit %}
 

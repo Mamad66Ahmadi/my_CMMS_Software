@@ -17,6 +17,7 @@ from permits.models import (
     PermitWorkShift,
     Precaution,
     PermitAttachment,
+    PermitPaperSafetyPermit,
 )
 
 
@@ -163,6 +164,15 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                     ),
                     to_attr="prefetched_attachments",
                 ),
+                Prefetch(
+                    "paper_safety_permits",
+                    queryset=(
+                        PermitPaperSafetyPermit.objects
+                        .select_related("reviewed_by")
+                        .order_by("safety_type", "pk")
+                    ),
+                    to_attr="prefetched_paper_safety_permits",
+                ),
             )
         )
 
@@ -170,6 +180,14 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         permit = self.object
         context["attachments"] = getattr(permit, "prefetched_attachments", [])
+        context["paper_safety_permits"] = getattr(
+            permit,
+            "prefetched_paper_safety_permits",
+            [],
+        )
+        context["paper_safety_permits_ready"] = (
+            permit.safety_permits_ready_for_activation
+        )
 
         # ----------------------------------------------------------
         # Hazard / precaution master data

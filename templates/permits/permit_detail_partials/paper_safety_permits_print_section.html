@@ -1,0 +1,50 @@
+{% load to_jalali %}
+
+{% if paper_safety_permits %}
+    <div class="section">
+        <div class="section-title">Paper Safety Permits</div>
+        <table class="approvals">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Permit Number</th>
+                    <th>Status</th>
+                    <th>Reviewed By</th>
+                    <th>Review Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for safety_permit in paper_safety_permits %}
+                    <tr>
+                        <td>{{ safety_permit.get_safety_type_display }}</td>
+                        <td>{{ safety_permit.safety_permit_number|default:"Number pending" }}</td>
+                        <td>{{ safety_permit.get_status_display }}</td>
+                        <td>
+                            {% if safety_permit.reviewed_by %}
+                                {{ safety_permit.reviewed_by.get_full_name|default:safety_permit.reviewed_by.username }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if safety_permit.reviewed_at %}
+                                {{ safety_permit.reviewed_at|date:"Y-m-d H:i" }}
+                                ({{ safety_permit.reviewed_at|to_jalali:"%Y/%m/%d" }})
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if safety_permit.review_comment %}
+                        <tr>
+                            <td colspan="5">
+                                <strong>Review comment:</strong>
+                                {{ safety_permit.review_comment }}
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}

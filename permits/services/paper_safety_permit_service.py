@@ -99,3 +99,11 @@ class PaperSafetyPermitReviewService:
         raise PermissionDenied(
             "Only an authorized Permit Office user may review a paper safety permit."
         )
+
+    @classmethod
+    def actor_can_review(cls, *, record, actor):
+        try:
+            cls._ensure_review_allowed(record=record, actor=actor)
+        except (PermissionDenied, ValidationError):
+            return False
+        return True
