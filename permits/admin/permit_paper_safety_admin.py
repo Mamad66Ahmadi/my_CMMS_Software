@@ -3,7 +3,10 @@ from django.contrib import admin, messages
 from django.contrib.admin.helpers import ActionForm
 from django.core.exceptions import PermissionDenied, ValidationError
 
-from permits.models import PermitPaperSafetyPermit
+from permits.models import (
+    PermitPaperSafetyPermit,
+    PermitPaperSafetyPermitStatusHistory,
+)
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
 )
@@ -251,3 +254,65 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         if remaining:
             message += f" | and {remaining} more failure(s)"
         self.message_user(request, message, level=messages.ERROR)
+
+
+@admin.register(PermitPaperSafetyPermitStatusHistory)
+class PermitPaperSafetyPermitStatusHistoryAdmin(admin.ModelAdmin):
+    """Read-only audit history for paper safety permit status changes."""
+
+    list_display = (
+        "permit_safety_permit",
+        "from_status_display",
+        "to_status_display",
+        "changed_by",
+        "changed_at",
+        "remarks",
+    )
+    list_filter = (
+        "to_status",
+        "changed_at",
+    )
+    search_fields = (
+        "permit_safety_permit__safety_permit_number",
+        "permit_safety_permit__permit__permit_number",
+        "permit_safety_permit__permit__scope_of_work",
+        "changed_by__username",
+        "remarks",
+    )
+    list_select_related = (
+        "permit_safety_permit",
+        "permit_safety_permit__permit",
+        "changed_by",
+    )
+    ordering = ("-changed_at", "-pk")
+    fields = (
+        "permit_safety_permit",
+        "from_status_display",
+        "to_status_display",
+        "changed_by",
+        "changed_at",
+        "remarks",
+    )
+    readonly_fields = fields
+
+    @admin.display(description="From status")
+    def from_status_display(self, obj):
+        return dict(PermitPaperSafetyPermit.Status.choices).get(
+            obj.from_status, obj.from_status or "—"
+        )
+
+    @admin.display(description="To status", ordering="to_status")
+    def to_status_display(self, obj):
+        return obj.get_to_status_display()
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -105,9 +105,11 @@ class WorkflowAuthorizationService:
         """
         The permit creator may submit their own permit from the start step.
 
-        The workflow must still explicitly configure the transition with the
-        Permit-Creator role. This bypass applies only to the original creator
-        and only while the transition exits the workflow start step.
+        Every transition configured for the workflow start step is available
+        to the permit owner. The transition's configured role is still kept
+        on the audit record, but it must not prevent the owner from submitting
+        their own newly-created permit. This bypass applies only to the
+        original creator and only while the transition exits the start step.
         """
         if not actor.is_authenticated or actor.is_superuser:
             return False
@@ -118,17 +120,7 @@ class WorkflowAuthorizationService:
         if not transition.from_step.is_start:
             return False
 
-        role = transition.role
-        if role is None:
-            return False
-
-        role_code = (role.code or "").strip().upper().replace("_", "-")
-        role_name = (role.name or "").strip().casefold()
-
-        return (
-            role_code == "PERMIT-CREATOR"
-            or role_name == "permit creator"
-        )
+        return True
 
     @classmethod
     def actor_can_edit_permit(cls, *, actor, permit) -> bool:
