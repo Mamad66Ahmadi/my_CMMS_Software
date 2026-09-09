@@ -1,217 +1,254 @@
 {% load to_jalali %}
 
-<div class="detail-panel">
+<div class="detail-panel" id="paper-safety-permits-panel">
+
+    <!-- =========================================================
+         Flash messages
+         ========================================================= -->
+    {% if messages %}
+        <div class="px-3 pt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mb-2 persian-text" role="alert">
+                    <bdi>{{ message }}</bdi>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- =========================================================
+         Header
+         ========================================================= -->
     <div class="detail-panel__header d-flex align-items-center">
         <i class="bi bi-file-earmark-lock2"></i>
         <span>Paper Safety Permits</span>
 
         {% if paper_safety_permit_total_count == 0 %}
-            <span class="badge bg-light text-dark border ms-auto">None required</span>
+            <span class="status-badge psp-badge psp-badge--neutral ms-auto">None required</span>
         {% elif paper_safety_permits_ready %}
-            <span class="badge text-bg-success ms-auto">
-                <i class="bi bi-check-circle-fill me-1"></i>Ready
-            </span>
+            <span class="status-badge psp-badge psp-badge--success ms-auto">Ready</span>
         {% else %}
-            <span class="badge text-bg-warning ms-auto">
-                <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                Activation blocked
-            </span>
+            <span class="status-badge psp-badge psp-badge--warning ms-auto">Activation blocked</span>
         {% endif %}
     </div>
 
+    <!-- =========================================================
+         Body
+         ========================================================= -->
     <div class="detail-panel__body p-0">
         {% if paper_safety_permits %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Permit Number</th>
-                            <th>Status</th>
-                            <th>Permit Office Review</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for safety_permit in paper_safety_permits %}
-                            <tr>
-                                <td class="fw-semibold">
-                                    {{ safety_permit.get_safety_type_display }}
-                                </td>
-                                <td>
-                                    {% if safety_permit.safety_permit_number %}
-                                        <span class="font-monospace">
-                                            {{ safety_permit.safety_permit_number }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-muted">Number pending</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if safety_permit.status == "ACTIVE" %}
-                                        <span class="badge text-bg-success">
-                                            <i class="bi bi-check-circle-fill me-1"></i>
-                                            Active
-                                        </span>
-                                    {% elif safety_permit.status == "CANCELLED" %}
-                                        <span class="badge text-bg-danger">
-                                            <i class="bi bi-x-circle-fill me-1"></i>
-                                            Cancelled
-                                        </span>
-                                    {% elif safety_permit.status == "TERMINATED" %}
-                                        <span class="badge text-bg-secondary">
-                                            <i class="bi bi-stop-circle-fill me-1"></i>
-                                            Terminated
-                                        </span>
-                                    {% else %}
-                                        <span class="badge text-bg-warning">
-                                            <i class="bi bi-hourglass-split me-1"></i>
-                                            Pending
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if safety_permit.reviewed_by %}
-                                        <div class="small mb-2">
-                                            <strong>
-                                                {{ safety_permit.reviewed_by.get_full_name|default:safety_permit.reviewed_by.username }}
-                                            </strong>
-                                            {% if safety_permit.reviewed_at %}
-                                                <div class="text-muted">
-                                                    {{ safety_permit.reviewed_at|date:"Y-m-d H:i" }}
-                                                    ({{ safety_permit.reviewed_at|to_jalali:"%Y/%m/%d" }})
-                                                </div>
-                                            {% endif %}
-                                            {% if safety_permit.review_comment %}
-                                                <div class="mt-1">
-                                                    {{ safety_permit.review_comment }}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% else %}
-                                        <div class="text-muted small mb-2">
-                                            Awaiting Permit Office review
-                                        </div>
-                                    {% endif %}
 
-                                    {% if can_review_paper_safety_permits and safety_permit.status != "ACTIVE" and safety_permit.status != "TERMINATED" %}
-                                        <form
-                                            method="post"
-                                            action="{% url 'permits:paper_safety_permit_review' permit_number=permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
-                                            class="d-grid gap-2"
-                                        >
-                                            {% csrf_token %}
-
-                                            {% if not safety_permit.safety_permit_number %}
-                                                <input
-                                                    type="text"
-                                                    name="safety_permit_number"
-                                                    class="form-control form-control-sm"
-                                                    placeholder="Enter permit number before approval"
-                                                    maxlength="30"
-                                                >
-                                            {% endif %}
-
-                                            <input
-                                                type="text"
-                                                name="review_comment"
-                                                class="form-control form-control-sm"
-                                                placeholder="Review comment; required for rejection"
-                                            >
-
-                                            <div class="d-flex gap-2">
-                                                <button
-                                                    type="submit"
-                                                    name="action"
-                                                    value="approve"
-                                                    class="btn btn-success btn-sm"
-                                                >
-                                                    <i class="bi bi-check-lg me-1"></i>Approve
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    name="action"
-                                                    value="reject"
-                                                    class="btn btn-outline-danger btn-sm"
-                                                >
-                                                    <i class="bi bi-x-lg me-1"></i>Reject
-                                                </button>
-                                            </div>
-                                        </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="border-top p-3">
-                <h6 class="mb-3">
-                    <i class="bi bi-clock-history me-1"></i>
-                    Read-only status audit
-                </h6>
-                {% for safety_permit in paper_safety_permits %}
-                    <div class="mb-3{% if not forloop.last %} pb-3 border-bottom{% endif %}">
-                        <div class="small fw-semibold mb-2">
-                            {{ safety_permit.get_safety_type_display }}
-                            {% if safety_permit.safety_permit_number %}
-                                <span class="font-monospace text-muted ms-1">
-                                    ({{ safety_permit.safety_permit_number }})
-                                </span>
-                            {% endif %}
-                        </div>
-                        {% with history=safety_permit.prefetched_status_history %}
-                            {% if history %}
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-bordered mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Changed At</th>
-                                                <th>Changed By</th>
-                                                <th>Transition</th>
-                                                <th>Remarks</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for event in history %}
-                                                <tr>
-                                                    <td class="text-nowrap">
-                                                        {{ event.changed_at|date:"Y-m-d H:i" }}
-                                                        <span class="text-muted">({{ event.changed_at|to_jalali:"%Y/%m/%d" }})</span>
-                                                    </td>
-                                                    <td>
-                                                        {% if event.changed_by %}
-                                                            {{ event.changed_by.get_full_name|default:event.changed_by.username }}
-                                                        {% else %}
-                                                            <span class="text-muted">System</span>
-                                                        {% endif %}
-                                                    </td>
-                                                    <td>
-                                                        <span class="text-muted">{{ event.from_status_label }}</span>
-                                                        <i class="bi bi-arrow-right mx-1"></i>
-                                                        <span class="fw-semibold">{{ event.to_status_label }}</span>
-                                                    </td>
-                                                    <td>{{ event.remarks|default:"—" }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            {% else %}
-                                <div class="small text-muted">No status history recorded.</div>
-                            {% endif %}
-                        {% endwith %}
-                    </div>
-                {% endfor %}
-                <div class="small text-muted">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Audit entries are immutable and cannot be edited from this page.
+            <!-- =====================================================
+                 Summary strip — always visible status overview
+                 ===================================================== -->
+            <div class="psp-summary">
+                <div class="psp-summary__item">
+                    <span class="psp-summary__count">{{ paper_safety_permit_total_count }}</span>
+                    <span class="psp-summary__label">Total</span>
+                </div>
+                <div class="psp-summary__divider"></div>
+                <div class="psp-summary__item psp-summary__item--active">
+                    <span class="psp-summary__count">{{ paper_safety_permit_active_count }}</span>
+                    <span class="psp-summary__label">Active</span>
+                </div>
+                <div class="psp-summary__divider"></div>
+                <div class="psp-summary__item psp-summary__item--pending">
+                    <span class="psp-summary__count">{{ paper_safety_permit_pending_count }}</span>
+                    <span class="psp-summary__label">Pending</span>
+                </div>
+                <div class="psp-summary__divider"></div>
+                <div class="psp-summary__item psp-summary__item--cancelled">
+                    <span class="psp-summary__count">{{ paper_safety_permit_cancelled_count }}</span>
+                    <span class="psp-summary__label">Cancelled</span>
                 </div>
             </div>
+
+            <!-- =====================================================
+                 Permit register — one row per paper safety permit
+                 ===================================================== -->
+            <div class="psp-register" id="paperSafetyHistoryAccordion">
+                {% for safety_permit in paper_safety_permits %}
+                    <div class="psp-item psp-item--{{ safety_permit.status|lower }}">
+
+                        <!-- Row: always-visible status summary -->
+                        <div class="psp-item__row">
+
+                            <span class="psp-item__mark" aria-hidden="true">
+                                {% if safety_permit.status == "ACTIVE" %}
+                                    <i class="bi bi-check-lg"></i>
+                                {% elif safety_permit.status == "CANCELLED" %}
+                                    <i class="bi bi-x-lg"></i>
+                                {% elif safety_permit.status == "TERMINATED" %}
+                                    <i class="bi bi-dash-lg"></i>
+                                {% else %}
+                                    <i class="bi bi-hourglass-split"></i>
+                                {% endif %}
+                            </span>
+
+                            <div class="psp-item__identity">
+                                <div class="psp-item__type persian-text">
+                                    <bdi>{{ safety_permit.get_safety_type_display }}</bdi>
+                                </div>
+                                <div class="psp-item__meta">
+                                    {% if safety_permit.safety_permit_number %}
+                                        <span class="psp-item__number">#{{ safety_permit.safety_permit_number }}</span>
+                                    {% else %}
+                                        <span class="psp-item__number psp-item__number--pending">Number pending</span>
+                                    {% endif %}
+                                    <span class="psp-item__meta-sep" aria-hidden="true">&middot;</span>
+                                    <span class="psp-item__reviewer persian-text">
+                                        <i class="bi bi-person-check"></i>
+                                        {% if safety_permit.reviewed_by %}
+                                            <bdi>{{ safety_permit.reviewed_by.get_full_name|default:safety_permit.reviewed_by.username }}</bdi>
+                                        {% else %}
+                                            <bdi>Awaiting review</bdi>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="psp-item__side">
+                                {% if safety_permit.status == "ACTIVE" %}
+                                    <span class="status-badge psp-badge psp-badge--success">Active</span>
+                                {% elif safety_permit.status == "CANCELLED" %}
+                                    <span class="status-badge psp-badge psp-badge--danger">Cancelled</span>
+                                {% elif safety_permit.status == "TERMINATED" %}
+                                    <span class="status-badge psp-badge psp-badge--neutral">Terminated</span>
+                                {% else %}
+                                    <span class="status-badge psp-badge psp-badge--warning">Pending</span>
+                                {% endif %}
+
+                                <button
+                                    class="psp-item__toggle collapsed"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#history-collapse-{{ safety_permit.pk }}"
+                                    aria-expanded="false"
+                                    aria-controls="history-collapse-{{ safety_permit.pk }}"
+                                >
+                                    <span class="psp-item__toggle-label">
+                                        {{ safety_permit.prefetched_status_history|length }} event{{ safety_permit.prefetched_status_history|length|pluralize }}
+                                    </span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Collapsible: review form + audit trail (closed by default) -->
+                        <div
+                            id="history-collapse-{{ safety_permit.pk }}"
+                            class="collapse"
+                            data-bs-parent="#paperSafetyHistoryAccordion"
+                        >
+                            <div class="psp-item__detail">
+
+                                {% if can_review_paper_safety_permits and safety_permit.status != "ACTIVE" and safety_permit.status != "TERMINATED" %}
+                                    <form
+                                        method="post"
+                                        action="{% url 'permits:paper_safety_permit_review' permit_number=permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
+                                        hx-post="{% url 'permits:paper_safety_permit_review' permit_number=permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
+                                        hx-target="#paper-safety-permits-panel"
+                                        hx-swap="outerHTML"
+                                        class="psp-review-form"
+                                    >
+                                        {% csrf_token %}
+
+                                        <div class="psp-review-form__title">
+                                            <i class="bi bi-clipboard-check"></i>
+                                            Permit Office review
+                                        </div>
+
+                                        {% if not safety_permit.safety_permit_number %}
+                                            <input
+                                                type="text"
+                                                name="safety_permit_number"
+                                                class="form-control form-control-sm"
+                                                placeholder="Enter permit number before approval"
+                                                maxlength="30"
+                                            >
+                                        {% endif %}
+
+                                        <input
+                                            type="text"
+                                            name="review_comment"
+                                            class="form-control form-control-sm persian-text"
+                                            placeholder="Review comment; required for rejection"
+                                        >
+
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" name="action" value="approve" class="btn btn-success btn-sm">
+                                                <i class="bi bi-check-lg me-1"></i>Approve
+                                            </button>
+                                            <button type="submit" name="action" value="reject" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-x-lg me-1"></i>Reject
+                                            </button>
+                                        </div>
+                                    </form>
+                                {% endif %}
+
+                                {% with history=safety_permit.prefetched_status_history %}
+                                    {% if history %}
+                                        <div class="psp-timeline">
+                                            {% for event in history %}
+                                                <div class="psp-timeline__entry">
+                                                    <span class="psp-timeline__dot" aria-hidden="true"></span>
+
+                                                    <div class="psp-timeline__content">
+                                                        <div class="psp-timeline__head">
+                                                            <span class="psp-timeline__transition">
+                                                                <span class="psp-timeline__from">{{ event.from_status_label }}</span>
+                                                                <i class="bi bi-arrow-right"></i>
+                                                                <span class="psp-timeline__to">{{ event.to_status_label }}</span>
+                                                            </span>
+                                                            <time class="psp-timeline__time" datetime="{{ event.changed_at|date:'c' }}">
+                                                                {{ event.changed_at|date:"Y-m-d H:i" }}
+                                                                <span class="psp-timeline__time-sep">&middot;</span>
+                                                                {{ event.changed_at|to_jalali:"%Y/%m/%d" }}
+                                                            </time>
+                                                        </div>
+
+                                                        <div class="psp-timeline__actor persian-text">
+                                                            <i class="bi bi-person"></i>
+                                                            {% if event.changed_by %}
+                                                                <bdi>{{ event.changed_by.get_full_name|default:event.changed_by.username }}</bdi>
+                                                            {% else %}
+                                                                <bdi>System</bdi>
+                                                            {% endif %}
+                                                        </div>
+
+                                                        {% if event.remarks %}
+                                                            <div class="psp-timeline__remarks persian-text">
+                                                                <bdi>{{ event.remarks }}</bdi>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="psp-empty-history">
+                                            <i class="bi bi-info-circle"></i>
+                                            No status history recorded.
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="psp-footnote">
+                <i class="bi bi-shield-check"></i>
+                Audit entries are immutable.
+            </div>
+
         {% else %}
-            <div class="p-3 text-muted">
-                <i class="bi bi-info-circle me-1"></i>
-                This main permit does not require a supplementary paper safety permit.
+            <div class="psp-empty">
+                <i class="bi bi-file-earmark-check"></i>
+                <div class="psp-empty__text persian-text">
+                    <bdi>This main permit does not require a supplementary paper safety permit.</bdi>
+                </div>
             </div>
         {% endif %}
     </div>

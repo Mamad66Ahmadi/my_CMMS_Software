@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from permits.models import Permit, PermitPaperSafetyPermit
@@ -181,6 +181,22 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
                 exc.messages[0] if hasattr(exc, "messages") else str(exc),
             )
 
+        if request.headers.get("HX-Request"):
+            permits = list(record.permit.paper_safety_permits.prefetch_related("status_history"))
+            labels = dict(PermitPaperSafetyPermit.Status.choices)
+            for item in permits:
+                item.prefetched_status_history = list(item.status_history.all())
+                for event in item.prefetched_status_history:
+                    event.from_status_label = labels.get(event.from_status, "Initial") if event.from_status else "Initial"
+                    event.to_status_label = labels.get(event.to_status, event.to_status)
+            return render(request, "permits/permit_detail_partials/paper_safety_permits_panel.html", {
+                "permit": record.permit,
+                "paper_safety_permits": permits,
+                "paper_safety_permit_total_count": len(permits),
+                "paper_safety_permits_ready": record.permit.safety_permits_ready_for_activation,
+                "can_review_paper_safety_permits": PaperSafetyPermitReviewService.actor_can_review(record=record, actor=request.user),
+                "messages": messages.get_messages(request),
+            })
         return redirect(
             "permits:permit_detail",
             permit_number=record.permit.permit_number,
