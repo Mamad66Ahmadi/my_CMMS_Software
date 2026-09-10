@@ -4,7 +4,10 @@ from django.db.models import Q
 from django.utils import timezone
 
 from permits.models.approval_models import PermitApprovalRoleChoices
-from permits.models.permit_paper_safety_models import PermitPaperSafetyPermit
+from permits.models.permit_paper_safety_models import (
+    PermitPaperSafetyPermit,
+    PaperSafetyPermitWorkflowStep,
+)
 from permits.services.authorization_service import WorkflowAuthorizationService
 
 
@@ -27,8 +30,8 @@ class PaperSafetyPermitReviewService:
         if safety_permit_number is not None:
             record.safety_permit_number = safety_permit_number
 
-        record.change_status(
-            status=PermitPaperSafetyPermit.Status.ACTIVE,
+        record.change_step(
+            step=cls._get_step("Activated"),
             changed_by=actor,
             remarks=comment,
         )
@@ -46,8 +49,8 @@ class PaperSafetyPermitReviewService:
                 {"review_comment": "A rejection comment is required."}
             )
 
-        record.change_status(
-            status=PermitPaperSafetyPermit.Status.CANCELLED,
+        record.change_step(
+            step=cls._get_step("Cancelled"),
             changed_by=actor,
             remarks=comment,
         )
@@ -66,6 +69,18 @@ class PaperSafetyPermitReviewService:
             )
             .get(pk=paper_safety_permit_id)
         )
+
+    @staticmethod
+    def _get_step(name):
+        try:
+            return PaperSafetyPermitWorkflowStep.objects.get(
+                name=name,
+                is_active=True,
+            )
+        except PaperSafetyPermitWorkflowStep.DoesNotExist as exc:
+            raise ValidationError(
+                f'The active safety-permit step "{name}" is not configured.'
+            ) from exc
 
     @classmethod
     def _ensure_review_allowed(cls, *, record, actor):
@@ -118,3 +133,11 @@ class PaperSafetyPermitReviewService:
             changed_by=actor,
             remarks=remarks,
         )
+
+    @classmethod
+    @transaction.atomic
+    def assign_step(cls, *, paper_safety_permit_id, actor, step_id, remarks=""):
+        record = cls._get_locked_record(paper_safety_permit_id)
+        cls._ensure_review_allowed(record=record, actor=actor)
+        step = PaperSafetyPermitWorkflowStep.objects.get(pk=step_id, is_active=True)
+        return record.change_step(step=step, changed_by=actor, remarks=remarks)

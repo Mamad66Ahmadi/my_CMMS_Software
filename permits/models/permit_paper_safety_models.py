@@ -5,11 +5,58 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
+from equipment.models.equipment_models import TimeStampedModel
+
 
 paper_permit_identifier_validator = RegexValidator(
     regex=r"^[A-Z0-9][A-Z0-9._-]*$",
     message="Use uppercase letters, numbers, periods, underscores, or hyphens only.",
 )
+
+
+class PaperSafetyPermitType(TimeStampedModel):
+    """Configurable paper safety-permit type shown to permit creators."""
+
+    code = models.CharField(max_length=30, unique=True)
+    name = models.CharField(max_length=100)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "name", "pk"]
+        verbose_name = "Paper Safety Permit Type"
+        verbose_name_plural = "Paper Safety Permit Types"
+
+    def __str__(self):
+        return self.name
+
+
+class PaperSafetyPermitWorkflowStep(TimeStampedModel):
+    """Safety-permit step mapped to a hardcoded operational status."""
+
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Active"
+        DEACTIVE = "DEACTIVE", "Deactive"
+
+    name = models.CharField(max_length=100)
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.DEACTIVE,
+    )
+    step_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["step_order", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name"], name="uq_paper_safety_workflow_step_name"
+            )
+        ]
+        verbose_name = "Paper Safety Permit Workflow Step"
+        verbose_name_plural = "Paper Safety Permit Workflow Steps"
+
+    def __str__(self):
+        return f"{self.step_order}. {self.name} ({self.get_status_display()})"
 
 
 class PermitPaperSafetyPermit(models.Model):
@@ -21,28 +68,19 @@ class PermitPaperSafetyPermit(models.Model):
     paper permit is being prepared, but approval requires a number.
     """
 
-    class SafetyType(models.TextChoices):
-        ISOLATION = "ISOLATION", "Isolation"
-        CONFINED_SPACE = "CONFINED_SPACE", "Confined Space"
-        DIVING = "DIVING", "Diving"
-        EXCAVATION = "EXCAVATION", "Excavation"
-        EQUIPMENT_TEST = "EQUIPMENT_TEST", "Equipment Test"
-        RADIOGRAPHY = "RADIOGRAPHY", "Radiography"
-
     class Status(models.TextChoices):
-        PENDING = "PENDING", "Pending"
         ACTIVE = "ACTIVE", "Active"
-        CANCELLED = "CANCELLED", "Cancelled"
-        TERMINATED = "TERMINATED", "Terminated"
+        DEACTIVE = "DEACTIVE", "Deactive"
 
     permit = models.ForeignKey(
         "permits.Permit",
         on_delete=models.CASCADE,
         related_name="paper_safety_permits",
     )
-    safety_type = models.CharField(
-        max_length=30,
-        choices=SafetyType.choices,
+    safety_type = models.ForeignKey(
+        PaperSafetyPermitType,
+        on_delete=models.PROTECT,
+        related_name="paper_safety_permits",
         db_index=True,
     )
     safety_permit_number = models.CharField(
@@ -52,11 +90,19 @@ class PermitPaperSafetyPermit(models.Model):
         help_text="May be left blank until the paper safety permit is issued.",
     )
     status = models.CharField(
-        max_length=20,
+        max_length=10,
         choices=Status.choices,
-        default=Status.PENDING,
+        default=Status.DEACTIVE,
         db_index=True,
         editable=False,
+    )
+    current_step = models.ForeignKey(
+        PaperSafetyPermitWorkflowStep,
+        null=True,
+        blank=True,
+        editable=False,
+        on_delete=models.PROTECT,
+        related_name="paper_safety_permits",
     )
     review_comment = models.TextField(blank=True, editable=False)
     reviewed_at = models.DateTimeField(null=True, blank=True, editable=False)
@@ -113,7 +159,17 @@ class PermitPaperSafetyPermit(models.Model):
 
     def __str__(self):
         number = self.safety_permit_number or "number pending"
-        return f"{self.get_safety_type_display()} - {number}"
+        return f"{self.safety_type} - {number}"
+
+    def get_safety_type_display(self):
+        return str(self.safety_type)
+
+    def get_status_display(self):
+        return dict(self.Status.choices).get(self.status, self.status)
+
+    @staticmethod
+    def status_labels():
+        return dict(PermitPaperSafetyPermit.Status.choices)
 
     def clean(self):
         super().clean()
@@ -133,6 +189,14 @@ class PermitPaperSafetyPermit(models.Model):
 
     def save(self, *args, status_actor=None, status_remarks="", **kwargs):
         previous_status = None
+        if not self.pk and not self.current_step_id:
+            default_step = PaperSafetyPermitWorkflowStep.objects.filter(
+                name="Pending",
+                is_active=True,
+            ).first()
+            if default_step:
+                self.current_step = default_step
+                self.status = default_step.status
         if self.pk:
             previous_status = type(self).objects.filter(pk=self.pk).values_list(
                 "status", flat=True
@@ -167,9 +231,8 @@ class PermitPaperSafetyPermit(models.Model):
             raise ValidationError("A user is required to change the status.")
         if status == self.status:
             return self
-        if self.status == self.Status.TERMINATED:
-            raise ValidationError("A terminated paper safety permit cannot change status.")
-
+        if status not in self.Status.values:
+            raise ValidationError("Invalid paper safety-permit status.")
         self.status = status
         self.modified_by = changed_by
         self.reviewed_by = changed_by
@@ -177,6 +240,27 @@ class PermitPaperSafetyPermit(models.Model):
         self.review_comment = (remarks or "").strip()
         self.save(status_actor=changed_by, status_remarks=remarks)
         return self
+
+    def change_step(self, *, step, changed_by, remarks=""):
+        """Assign a workflow step and copy its active/deactive status."""
+        if not isinstance(step, PaperSafetyPermitWorkflowStep):
+            raise ValidationError("A valid safety-permit workflow step is required.")
+        if not step.is_active:
+            raise ValidationError("An inactive safety-permit workflow step cannot be assigned.")
+
+        self.current_step = step
+        if step.status == self.status:
+            self.modified_by = changed_by
+            self.reviewed_by = changed_by
+            self.reviewed_at = timezone.now()
+            self.review_comment = (remarks or "").strip()
+            self.save()
+            return self
+        return self.change_status(
+            status=step.status,
+            changed_by=changed_by,
+            remarks=remarks,
+        )
 
 
 class PermitPaperSafetyPermitStatusHistory(models.Model):
@@ -190,7 +274,6 @@ class PermitPaperSafetyPermitStatusHistory(models.Model):
     from_status = models.CharField(max_length=20, blank=True)
     to_status = models.CharField(
         max_length=20,
-        choices=PermitPaperSafetyPermit.Status.choices,
     )
     changed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

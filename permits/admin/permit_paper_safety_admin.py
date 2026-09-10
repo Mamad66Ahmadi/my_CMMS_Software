@@ -6,6 +6,8 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from permits.models import (
     PermitPaperSafetyPermit,
     PermitPaperSafetyPermitStatusHistory,
+    PaperSafetyPermitType,
+    PaperSafetyPermitWorkflowStep,
 )
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
@@ -208,7 +210,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         failures = []
 
         for record in queryset:
-            if record.status == PermitPaperSafetyPermit.Status.CANCELLED:
+            if record.status == PermitPaperSafetyPermit.Status.DEACTIVE:
                 skipped += 1
                 continue
 
@@ -297,13 +299,15 @@ class PermitPaperSafetyPermitStatusHistoryAdmin(admin.ModelAdmin):
 
     @admin.display(description="From status")
     def from_status_display(self, obj):
-        return dict(PermitPaperSafetyPermit.Status.choices).get(
+        return PermitPaperSafetyPermit.status_labels().get(
             obj.from_status, obj.from_status or "—"
         )
 
     @admin.display(description="To status", ordering="to_status")
     def to_status_display(self, obj):
-        return obj.get_to_status_display()
+        return PermitPaperSafetyPermit.status_labels().get(
+            obj.to_status, obj.to_status
+        )
 
     def has_add_permission(self, request):
         return False
@@ -316,3 +320,31 @@ class PermitPaperSafetyPermitStatusHistoryAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(PaperSafetyPermitType)
+class PaperSafetyPermitTypeAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "is_active", "sort_order")
+    list_filter = ("is_active",)
+    search_fields = ("name", "code")
+    ordering = ("sort_order", "name")
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj.modified_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(PaperSafetyPermitWorkflowStep)
+class PaperSafetyPermitWorkflowStepAdmin(admin.ModelAdmin):
+    list_display = ("step_order", "name", "status", "is_active")
+    list_filter = ("is_active", "status")
+    search_fields = ("name",)
+    ordering = ("step_order", "pk")
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by_id:
+            obj.created_by = request.user
+        obj.modified_by = request.user
+        super().save_model(request, obj, form, change)

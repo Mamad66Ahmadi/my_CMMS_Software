@@ -389,7 +389,7 @@ class Permit(models.Model):
         if incomplete.exists():
             labels = ", ".join(
                 incomplete.order_by("safety_type", "pk").values_list(
-                    "safety_type",
+                    "safety_type__name",
                     flat=True,
                 )
             )

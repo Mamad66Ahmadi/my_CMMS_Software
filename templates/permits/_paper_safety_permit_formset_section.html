@@ -86,15 +86,15 @@
                                         <i class="bi bi-check-circle-fill me-1"></i>
                                         Active
                                     </span>
-                                {% elif safety_form.instance.status == "CANCELLED" %}
+                                {% elif safety_form.instance.status == "DEACTIVE" %}
                                     <span class="badge text-bg-danger">
                                         <i class="bi bi-x-circle-fill me-1"></i>
-                                        Cancelled
+                                        Deactive
                                     </span>
                                 {% else %}
                                     <span class="badge text-bg-warning">
                                         <i class="bi bi-hourglass-split me-1"></i>
-                                        Pending
+                                        Deactive
                                     </span>
                                 {% endif %}
                             </div>

@@ -201,7 +201,7 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
             "prefetched_paper_safety_permits",
             [],
         )
-        status_labels = dict(PermitPaperSafetyPermit.Status.choices)
+        status_labels = PermitPaperSafetyPermit.status_labels()
         for safety_permit in context["paper_safety_permits"]:
             for event in getattr(
                 safety_permit,

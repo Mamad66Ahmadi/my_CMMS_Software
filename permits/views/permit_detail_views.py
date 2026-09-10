@@ -557,7 +557,7 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         paper_safety_permits = list(
             getattr(permit, "prefetched_paper_safety_permits", [])
         )
-        status_labels = dict(PermitPaperSafetyPermit.Status.choices)
+        status_labels = PermitPaperSafetyPermit.status_labels()
         for safety_permit in paper_safety_permits:
             for event in getattr(
                 safety_permit,
@@ -580,16 +580,12 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         context["paper_safety_permit_total_count"] = len(
             paper_safety_permits
         )
-        context["paper_safety_permit_pending_count"] = sum(
-            item.status == PermitPaperSafetyPermit.Status.PENDING
+        context["paper_safety_permit_deactive_count"] = sum(
+            item.status == PermitPaperSafetyPermit.Status.DEACTIVE
             for item in paper_safety_permits
         )
         context["paper_safety_permit_active_count"] = sum(
             item.status == PermitPaperSafetyPermit.Status.ACTIVE
-            for item in paper_safety_permits
-        )
-        context["paper_safety_permit_cancelled_count"] = sum(
-            item.status == PermitPaperSafetyPermit.Status.CANCELLED
             for item in paper_safety_permits
         )
         context["can_review_paper_safety_permits"] = bool(

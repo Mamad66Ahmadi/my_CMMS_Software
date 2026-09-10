@@ -1,11 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
-from permits.models import Permit, PermitPaperSafetyPermit
+from permits.models import Permit, PermitPaperSafetyPermit, PaperSafetyPermitType
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
 )
@@ -16,6 +17,20 @@ PAPER_SAFETY_FORMSET_PREFIX = "paper_safety_permits"
 
 class BasePermitPaperSafetyPermitFormSet(BaseInlineFormSet):
     """Protect approved records and all records after main-permit activation."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Inactive types remain selectable for existing records, but cannot be
+        # selected for newly added requirements.
+        for form in self.forms:
+            field = form.fields.get("safety_type")
+            if field is None:
+                continue
+            current_id = form.instance.safety_type_id
+            queryset = field.queryset.filter(is_active=True)
+            if current_id:
+                queryset = field.queryset.filter(Q(is_active=True) | Q(pk=current_id))
+            field.queryset = queryset
 
     def clean(self):
         super().clean()
@@ -99,8 +114,8 @@ class PermitPaperSafetyPermitFormSetMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["paper_safety_permit_formset"] = self.get_paper_safety_formset()
-        context["paper_safety_permit_types"] = (
-            PermitPaperSafetyPermit.SafetyType.choices
+        context["paper_safety_permit_types"] = PaperSafetyPermitType.objects.filter(
+            is_active=True
         )
         return context
 
@@ -183,7 +198,7 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
 
         if request.headers.get("HX-Request"):
             permits = list(record.permit.paper_safety_permits.prefetch_related("status_history"))
-            labels = dict(PermitPaperSafetyPermit.Status.choices)
+            labels = PermitPaperSafetyPermit.status_labels()
             for item in permits:
                 item.prefetched_status_history = list(item.status_history.all())
                 for event in item.prefetched_status_history:
@@ -193,6 +208,8 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
                 "permit": record.permit,
                 "paper_safety_permits": permits,
                 "paper_safety_permit_total_count": len(permits),
+                "paper_safety_permit_active_count": sum(item.status == PermitPaperSafetyPermit.Status.ACTIVE for item in permits),
+                "paper_safety_permit_deactive_count": sum(item.status == PermitPaperSafetyPermit.Status.DEACTIVE for item in permits),
                 "paper_safety_permits_ready": record.permit.safety_permits_ready_for_activation,
                 "can_review_paper_safety_permits": PaperSafetyPermitReviewService.actor_can_review(record=record, actor=request.user),
                 "messages": messages.get_messages(request),
