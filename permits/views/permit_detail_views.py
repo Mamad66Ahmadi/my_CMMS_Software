@@ -32,6 +32,7 @@ from permits.models import (
     PermitApproval,
     PermitPaperSafetyPermit,
     PermitPaperSafetyPermitStatusHistory,
+    PaperSafetyPermitWorkflowStep,
 )
 from permits.services.quota_service import PermitQuotaService
 
@@ -298,6 +299,8 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                     queryset=(
                         PermitPaperSafetyPermit.objects
                         .select_related(
+                            "safety_type",
+                            "current_step",
                             "created_by",
                             "modified_by",
                             "reviewed_by",
@@ -581,11 +584,11 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             paper_safety_permits
         )
         context["paper_safety_permit_deactive_count"] = sum(
-            item.status == PermitPaperSafetyPermit.Status.DEACTIVE
+            item.status == PaperSafetyPermitWorkflowStep.Status.DEACTIVE
             for item in paper_safety_permits
         )
         context["paper_safety_permit_active_count"] = sum(
-            item.status == PermitPaperSafetyPermit.Status.ACTIVE
+            item.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE
             for item in paper_safety_permits
         )
         context["can_review_paper_safety_permits"] = bool(

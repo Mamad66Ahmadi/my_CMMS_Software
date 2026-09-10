@@ -66,6 +66,7 @@ class PaperSafetyPermitReviewService:
                 "permit__department",
                 "permit__location_tag",
                 "permit__location_tag__unit",
+                "current_step",
             )
             .get(pk=paper_safety_permit_id)
         )
@@ -120,19 +121,6 @@ class PaperSafetyPermitReviewService:
         except (PermissionDenied, ValidationError):
             return False
         return True
-
-    @classmethod
-    @transaction.atomic
-    def change_status(cls, *, paper_safety_permit_id, actor, status, remarks=""):
-        record = cls._get_locked_record(paper_safety_permit_id)
-        cls._ensure_review_allowed(record=record, actor=actor)
-        if status not in PermitPaperSafetyPermit.Status.values:
-            raise ValidationError("Invalid paper safety-permit status.")
-        return record.change_status(
-            status=status,
-            changed_by=actor,
-            remarks=remarks,
-        )
 
     @classmethod
     @transaction.atomic

@@ -68,10 +68,6 @@ class PermitPaperSafetyPermit(models.Model):
     paper permit is being prepared, but approval requires a number.
     """
 
-    class Status(models.TextChoices):
-        ACTIVE = "ACTIVE", "Active"
-        DEACTIVE = "DEACTIVE", "Deactive"
-
     permit = models.ForeignKey(
         "permits.Permit",
         on_delete=models.CASCADE,
@@ -89,17 +85,8 @@ class PermitPaperSafetyPermit(models.Model):
         validators=[paper_permit_identifier_validator],
         help_text="May be left blank until the paper safety permit is issued.",
     )
-    status = models.CharField(
-        max_length=10,
-        choices=Status.choices,
-        default=Status.DEACTIVE,
-        db_index=True,
-        editable=False,
-    )
     current_step = models.ForeignKey(
         PaperSafetyPermitWorkflowStep,
-        null=True,
-        blank=True,
         editable=False,
         on_delete=models.PROTECT,
         related_name="paper_safety_permits",
@@ -139,17 +126,11 @@ class PermitPaperSafetyPermit(models.Model):
                 condition=~Q(safety_permit_number=""),
                 name="uq_paper_safety_type_number",
             ),
-            models.CheckConstraint(
-                condition=(
-                    ~Q(status="ACTIVE") | ~Q(safety_permit_number="")
-                ),
-                name="paper_safety_active_complete_ck",
-            ),
         ]
         indexes = [
             models.Index(
-                fields=["permit", "status"],
-                name="paper_safety_permit_status_idx",
+                fields=["permit", "current_step"],
+                name="paper_safety_permit_step_idx",
             ),
             models.Index(
                 fields=["permit", "safety_type"],
@@ -164,12 +145,17 @@ class PermitPaperSafetyPermit(models.Model):
     def get_safety_type_display(self):
         return str(self.safety_type)
 
+    @property
+    def status(self):
+        """Operational status is defined exclusively by the current step."""
+        return self.current_step.status
+
     def get_status_display(self):
-        return dict(self.Status.choices).get(self.status, self.status)
+        return self.current_step.get_status_display()
 
     @staticmethod
     def status_labels():
-        return dict(PermitPaperSafetyPermit.Status.choices)
+        return dict(PaperSafetyPermitWorkflowStep.Status.choices)
 
     def clean(self):
         super().clean()
@@ -178,7 +164,11 @@ class PermitPaperSafetyPermit(models.Model):
         ).strip().upper()
         self.review_comment = (self.review_comment or "").strip()
 
-        if self.status == self.Status.ACTIVE and not self.safety_permit_number:
+        if (
+            self.current_step_id
+            and self.current_step.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE
+            and not self.safety_permit_number
+        ):
             raise ValidationError(
                 {
                     "safety_permit_number": (
@@ -187,80 +177,69 @@ class PermitPaperSafetyPermit(models.Model):
                 }
             )
 
-    def save(self, *args, status_actor=None, status_remarks="", **kwargs):
-        previous_status = None
+    def save(self, *args, step_actor=None, step_remarks="", **kwargs):
+        previous_step = None
         if not self.pk and not self.current_step_id:
             default_step = PaperSafetyPermitWorkflowStep.objects.filter(
                 name="Pending",
                 is_active=True,
             ).first()
-            if default_step:
-                self.current_step = default_step
-                self.status = default_step.status
+            if not default_step:
+                raise ValidationError(
+                    'The active safety-permit step "Pending" is not configured.'
+                )
+            self.current_step = default_step
         if self.pk:
-            previous_status = type(self).objects.filter(pk=self.pk).values_list(
-                "status", flat=True
-            ).first()
+            previous_step = (
+                type(self).objects.select_related("current_step").get(pk=self.pk).current_step
+            )
 
-        if previous_status and previous_status != self.status and status_actor is None:
+        if previous_step and previous_step.pk != self.current_step_id and step_actor is None:
             raise ValidationError(
-                "Use change_status() and provide the user who changed the status."
+                "Use change_step() and provide the user who changed the step."
             )
 
         self.full_clean()
         result = super().save(*args, **kwargs)
 
-        if previous_status and previous_status != self.status:
-            self.status_history.create(
-                from_status=previous_status,
-                to_status=self.status,
-                changed_by=status_actor,
-                remarks=(status_remarks or "").strip(),
+        if previous_step and previous_step.pk != self.current_step_id:
+            detail = f"Step changed from {previous_step.name} to {self.current_step.name}."
+            remarks = " ".join(
+                value for value in (detail, (step_remarks or "").strip()) if value
             )
-        elif previous_status is None:
+            self.status_history.create(
+                from_status=previous_step.status,
+                to_status=self.status,
+                changed_by=step_actor,
+                remarks=remarks,
+            )
+        elif previous_step is None:
             self.status_history.create(
                 from_status="",
                 to_status=self.status,
-                changed_by=status_actor or self.created_by,
-                remarks=(status_remarks or "Created paper safety permit.").strip(),
+                changed_by=step_actor or self.created_by,
+                remarks=(step_remarks or "Created paper safety permit.").strip(),
             )
         return result
-
-    def change_status(self, *, status, changed_by, remarks=""):
-        if not changed_by or not getattr(changed_by, "is_authenticated", False):
-            raise ValidationError("A user is required to change the status.")
-        if status == self.status:
-            return self
-        if status not in self.Status.values:
-            raise ValidationError("Invalid paper safety-permit status.")
-        self.status = status
-        self.modified_by = changed_by
-        self.reviewed_by = changed_by
-        self.reviewed_at = timezone.now()
-        self.review_comment = (remarks or "").strip()
-        self.save(status_actor=changed_by, status_remarks=remarks)
-        return self
 
     def change_step(self, *, step, changed_by, remarks=""):
         """Assign a workflow step and copy its active/deactive status."""
         if not isinstance(step, PaperSafetyPermitWorkflowStep):
             raise ValidationError("A valid safety-permit workflow step is required.")
+        if not changed_by or not getattr(changed_by, "is_authenticated", False):
+            raise ValidationError("A user is required to change the workflow step.")
         if not step.is_active:
             raise ValidationError("An inactive safety-permit workflow step cannot be assigned.")
 
-        self.current_step = step
-        if step.status == self.status:
-            self.modified_by = changed_by
-            self.reviewed_by = changed_by
-            self.reviewed_at = timezone.now()
-            self.review_comment = (remarks or "").strip()
-            self.save()
+        if self.current_step_id == step.pk:
             return self
-        return self.change_status(
-            status=step.status,
-            changed_by=changed_by,
-            remarks=remarks,
-        )
+        self.current_step = step
+        self.modified_by = changed_by
+        self.reviewed_by = changed_by
+        self.reviewed_at = timezone.now()
+        self.review_comment = (remarks or "").strip()
+        self.save(step_actor=changed_by, step_remarks=remarks)
+        return self
 
 
 class PermitPaperSafetyPermitStatusHistory(models.Model):

@@ -16,8 +16,22 @@ class PaperSafetyPermitConfigurationTests(SimpleTestCase):
 
     def test_operational_statuses_are_hardcoded(self):
         expected = [("ACTIVE", "Active"), ("DEACTIVE", "Deactive")]
-        self.assertEqual(list(PermitPaperSafetyPermit.Status.choices), expected)
         self.assertEqual(list(PaperSafetyPermitWorkflowStep.Status.choices), expected)
+        self.assertNotIn(
+            "status",
+            [field.name for field in PermitPaperSafetyPermit._meta.fields],
+        )
+
+    def test_permit_status_is_derived_from_current_step(self):
+        step = PaperSafetyPermitWorkflowStep(
+            name="Activated",
+            status=PaperSafetyPermitWorkflowStep.Status.ACTIVE,
+        )
+        permit_safety = PermitPaperSafetyPermit(current_step=step)
+        self.assertEqual(
+            permit_safety.status,
+            PaperSafetyPermitWorkflowStep.Status.ACTIVE,
+        )
 
 
 class PaperSafetyPermitSeedTests(TestCase):

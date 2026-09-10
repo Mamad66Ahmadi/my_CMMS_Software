@@ -82,12 +82,13 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         "safety_permit_number_display",
         "safety_type",
         "permit",
+        "current_step",
         "status",
         "reviewed_by",
         "reviewed_at",
     )
     list_filter = (
-        "status",
+        "current_step__status",
         "safety_type",
         "reviewed_at",
     )
@@ -99,11 +100,12 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     autocomplete_fields = ("permit",)
     list_select_related = (
         "permit",
+        "current_step",
         "reviewed_by",
         "created_by",
         "modified_by",
     )
-    ordering = ("status", "safety_type", "permit__permit_number", "pk")
+    ordering = ("current_step__status", "safety_type", "permit__permit_number", "pk")
     fields = (
         "permit",
         "safety_type",
@@ -144,7 +146,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
         if obj and (
-            obj.status == PermitPaperSafetyPermit.Status.ACTIVE
+            obj.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE
             or obj.permit.activated_at
         ):
             readonly.extend(("safety_type", "safety_permit_number"))
@@ -164,7 +166,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         failures = []
 
         for record in queryset:
-            if record.status == PermitPaperSafetyPermit.Status.ACTIVE:
+            if record.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE:
                 skipped += 1
                 continue
 
@@ -210,7 +212,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         failures = []
 
         for record in queryset:
-            if record.status == PermitPaperSafetyPermit.Status.DEACTIVE:
+            if record.current_step.name == "Cancelled":
                 skipped += 1
                 continue
 

@@ -382,10 +382,14 @@ class Permit(models.Model):
         Paper safety permits are optional.  Once one is added, it must have a
         number and Permit Office approval before the main permit can activate.
         """
-        return not self.paper_safety_permits.exclude(status="ACTIVE").exists()
+        return not self.paper_safety_permits.exclude(
+            current_step__status="ACTIVE"
+        ).exists()
 
     def ensure_safety_permits_ready_for_activation(self):
-        incomplete = self.paper_safety_permits.exclude(status="ACTIVE")
+        incomplete = self.paper_safety_permits.exclude(
+            current_step__status="ACTIVE"
+        )
         if incomplete.exists():
             labels = ", ".join(
                 incomplete.order_by("safety_type", "pk").values_list(

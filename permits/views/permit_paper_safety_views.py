@@ -6,7 +6,12 @@ from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
-from permits.models import Permit, PermitPaperSafetyPermit, PaperSafetyPermitType
+from permits.models import (
+    Permit,
+    PermitPaperSafetyPermit,
+    PaperSafetyPermitType,
+    PaperSafetyPermitWorkflowStep,
+)
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
 )
@@ -60,7 +65,7 @@ class BasePermitPaperSafetyPermitFormSet(BaseInlineFormSet):
             if (
                 is_existing
                 and form.instance.status
-                == PermitPaperSafetyPermit.Status.ACTIVE
+                == PaperSafetyPermitWorkflowStep.Status.ACTIVE
                 and (form.has_changed() or is_deleted)
             ):
                 raise ValidationError(
@@ -151,7 +156,7 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
 
     def post(self, request, permit_number, paper_safety_permit_id):
         record = get_object_or_404(
-            PermitPaperSafetyPermit.objects.select_related("permit"),
+            PermitPaperSafetyPermit.objects.select_related("permit", "current_step"),
             pk=paper_safety_permit_id,
             permit__permit_number=permit_number,
         )
@@ -197,7 +202,11 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
             )
 
         if request.headers.get("HX-Request"):
-            permits = list(record.permit.paper_safety_permits.prefetch_related("status_history"))
+            permits = list(
+                record.permit.paper_safety_permits.select_related(
+                    "safety_type", "current_step"
+                ).prefetch_related("status_history")
+            )
             labels = PermitPaperSafetyPermit.status_labels()
             for item in permits:
                 item.prefetched_status_history = list(item.status_history.all())
@@ -208,8 +217,8 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
                 "permit": record.permit,
                 "paper_safety_permits": permits,
                 "paper_safety_permit_total_count": len(permits),
-                "paper_safety_permit_active_count": sum(item.status == PermitPaperSafetyPermit.Status.ACTIVE for item in permits),
-                "paper_safety_permit_deactive_count": sum(item.status == PermitPaperSafetyPermit.Status.DEACTIVE for item in permits),
+                "paper_safety_permit_active_count": sum(item.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE for item in permits),
+                "paper_safety_permit_deactive_count": sum(item.status == PaperSafetyPermitWorkflowStep.Status.DEACTIVE for item in permits),
                 "paper_safety_permits_ready": record.permit.safety_permits_ready_for_activation,
                 "can_review_paper_safety_permits": PaperSafetyPermitReviewService.actor_can_review(record=record, actor=request.user),
                 "messages": messages.get_messages(request),

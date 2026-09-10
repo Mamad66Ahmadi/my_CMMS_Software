@@ -170,6 +170,8 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                     queryset=(
                         PermitPaperSafetyPermit.objects
                         .select_related(
+                            "safety_type",
+                            "current_step",
                             "created_by",
                             "modified_by",
                             "reviewed_by",
