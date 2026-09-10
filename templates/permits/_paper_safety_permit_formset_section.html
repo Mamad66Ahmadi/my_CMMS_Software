@@ -12,9 +12,9 @@
             <div class="safety-permits-intro__content">
                 <p class="safety-permits-intro__title">Supplementary Safety Documentation</p>
                 <p class="safety-permits-intro__text">
-                    Register all additional paper safety permits required for this work order.
-                    Permit numbers may be left blank until issued by the Permit Office.
-                    All registered permits must receive approval before the main permit can be activated.
+                    Register additional paper safety permits required for this work order. Numbers may
+                    stay blank until issued by the Permit Office, and every record must be approved
+                    before the main permit can be activated.
                 </p>
             </div>
         </div>
@@ -59,6 +59,24 @@
                                 </span>
                             {% endif %}
                         </div>
+
+                        {% if not permit.activated_at and safety_form.instance.status != "ACTIVE" %}
+                            <div class="safety-permit-card__actions">
+                                <span class="d-none paper-safety-delete-field">
+                                    {{ safety_form.DELETE }}
+                                </span>
+                                <button
+                                    type="button"
+                                    class="safety-permit-remove-btn"
+                                    data-remove-paper-safety-permit
+                                    title="Remove this safety permit"
+                                    aria-label="Remove this safety permit"
+                                >
+                                    <span class="safety-permit-remove-btn__icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Remove</span>
+                                </button>
+                            </div>
+                        {% endif %}
                     </div>
 
                     <div class="safety-permit-card__body">
@@ -121,23 +139,6 @@
                             </div>
                         {% endif %}
                     </div>
-
-                    {% if not permit.activated_at and safety_form.instance.status != "ACTIVE" %}
-                        <div class="safety-permit-card__actions">
-                            <span class="d-none paper-safety-delete-field">
-                                {{ safety_form.DELETE }}
-                            </span>
-                            <button
-                                type="button"
-                                class="safety-permit-remove-btn"
-                                data-remove-paper-safety-permit
-                                title="Remove this safety permit"
-                            >
-                                <i class="bi bi-trash"></i>
-                                Remove
-                            </button>
-                        </div>
-                    {% endif %}
 
                     {% if safety_form.non_field_errors %}
                         <div class="safety-permit-card__form-error">
@@ -202,6 +203,22 @@
                             Pending Approval
                         </span>
                     </div>
+
+                    <div class="safety-permit-card__actions">
+                        <span class="d-none paper-safety-delete-field">
+                            {{ paper_safety_permit_formset.empty_form.DELETE }}
+                        </span>
+                        <button
+                            type="button"
+                            class="safety-permit-remove-btn"
+                            data-remove-paper-safety-permit
+                            title="Remove this safety permit"
+                            aria-label="Remove this safety permit"
+                        >
+                            <span class="safety-permit-remove-btn__icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Remove</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="safety-permit-card__body">
@@ -226,20 +243,6 @@
                     </div>
                 </div>
 
-                <div class="safety-permit-card__actions">
-                    <span class="d-none paper-safety-delete-field">
-                        {{ paper_safety_permit_formset.empty_form.DELETE }}
-                    </span>
-                    <button
-                        type="button"
-                        class="safety-permit-remove-btn"
-                        data-remove-paper-safety-permit
-                        title="Remove this safety permit"
-                    >
-                        <i class="bi bi-trash"></i>
-                        Remove
-                    </button>
-                </div>
             </div>
         </template>
     </div>

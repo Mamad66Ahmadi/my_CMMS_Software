@@ -32,12 +32,34 @@ document.addEventListener("DOMContentLoaded", function () {
             const row = button.closest("[data-paper-safety-permit-row]");
             if (!row) return;
 
+            const typeField = row.querySelector('select[name$="-safety_type"]');
+            const numberField = row.querySelector('input[name$="-safety_permit_number"]');
+            const typeLabel = typeField && typeField.selectedIndex >= 0
+                ? typeField.options[typeField.selectedIndex].text.trim()
+                : "";
+            const numberLabel = numberField ? numberField.value.trim() : "";
+
+            let description = "this safety permit";
+            if (typeLabel && numberLabel) {
+                description = typeLabel + " (" + numberLabel + ")";
+            } else if (typeLabel) {
+                description = typeLabel;
+            } else if (numberLabel) {
+                description = "permit number " + numberLabel;
+            }
+
+            const confirmed = window.confirm(
+                "Remove " + description + "?\n\nThis safety permit will be deleted when you save the form."
+            );
+            if (!confirmed) return;
+
             const deleteField = row.querySelector('input[name$="-DELETE"]');
             if (deleteField) {
                 deleteField.checked = true;
             }
             row.hidden = true;
             updateEmptyState();
+            updateCardNumbers();
         });
     }
 
