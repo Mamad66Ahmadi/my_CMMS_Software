@@ -1,23 +1,29 @@
 <section class="detail-panel" id="paper-safety-permits-section">
-    <div class="detail-panel__header d-flex align-items-center">
+    <div class="detail-panel__header">
         <i class="bi bi-file-earmark-lock2"></i>
         <span>Required Paper Safety Permits</span>
-        <span class="badge bg-light text-dark border ms-auto">
-            Optional
-        </span>
     </div>
 
     <div class="detail-panel__body">
-        <p class="text-muted small mb-3">
-            Add every supplementary paper safety permit required for this job.
-            The number may remain blank until Permit Office issues it. Every
-            added record must be approved before the main permit can activate.
-        </p>
+        <div class="safety-permits-intro">
+            <div class="safety-permits-intro__icon">
+                <i class="bi bi-info-circle"></i>
+            </div>
+            <div class="safety-permits-intro__content">
+                <p class="safety-permits-intro__title">Supplementary Safety Documentation</p>
+                <p class="safety-permits-intro__text">
+                    Register all additional paper safety permits required for this work order.
+                    Permit numbers may be left blank until issued by the Permit Office.
+                    All registered permits must receive approval before the main permit can be activated.
+                </p>
+            </div>
+        </div>
 
         {{ paper_safety_permit_formset.management_form }}
 
         {% if paper_safety_permit_formset.non_form_errors %}
-            <div class="alert alert-danger py-2">
+            <div class="safety-permits-error">
+                <i class="bi bi-exclamation-triangle-fill"></i>
                 {{ paper_safety_permit_formset.non_form_errors }}
             </div>
         {% endif %}
@@ -25,178 +31,214 @@
         <div id="paper-safety-permit-rows">
             {% for safety_form in paper_safety_permit_formset.forms %}
                 <div
-                    class="border rounded-3 p-3 mb-3 paper-safety-permit-row"
+                    class="safety-permit-card"
                     data-paper-safety-permit-row
                     {% if safety_form.DELETE.value %}hidden{% endif %}
                 >
                     {{ safety_form.id }}
 
-                    <div class="row g-3 align-items-end">
+                    <div class="safety-permit-card__header">
+                        <span class="safety-permit-card__number">{{ forloop.counter }}</span>
+                        <span class="safety-permit-card__label">Safety Permit</span>
+                        
+                        <div class="safety-permit-card__status">
+                            {% if safety_form.instance.status == "ACTIVE" %}
+                                <span class="status-chip status-chip--success">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Active
+                                </span>
+                            {% elif safety_form.instance.status == "DEACTIVE" %}
+                                <span class="status-chip status-chip--danger">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                    Deactivated
+                                </span>
+                            {% else %}
+                                <span class="status-chip status-chip--warning">
+                                    <i class="bi bi-hourglass-split"></i>
+                                    Pending Approval
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="safety-permit-card__body">
                         {% if permit.activated_at or safety_form.instance.status == "ACTIVE" %}
                             {{ safety_form.safety_type.as_hidden }}
                             {{ safety_form.safety_permit_number.as_hidden }}
 
-                            <div class="col-md-5">
-                                <label class="form-label">Safety Permit Type</label>
-                                <div class="form-control bg-light">
+                            <div class="safety-permit-field">
+                                <label class="safety-permit-field__label">
+                                    <i class="bi bi-tag"></i>
+                                    Safety Permit Type
+                                </label>
+                                <div class="safety-permit-field__display">
                                     {{ safety_form.instance.get_safety_type_display }}
                                 </div>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label">Safety Permit Number</label>
-                                <div class="form-control bg-light">
-                                    {{ safety_form.instance.safety_permit_number|default:"Number pending" }}
+                            <div class="safety-permit-field">
+                                <label class="safety-permit-field__label">
+                                    <i class="bi bi-hash"></i>
+                                    Permit Number
+                                </label>
+                                <div class="safety-permit-field__display">
+                                    {% if safety_form.instance.safety_permit_number %}
+                                        {{ safety_form.instance.safety_permit_number }}
+                                    {% else %}
+                                        <span class="safety-permit-field__pending">Number not yet issued</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% else %}
-                            <div class="col-md-5 form-field-block">
-                                <label for="{{ safety_form.safety_type.id_for_label }}">
+                            <div class="safety-permit-field">
+                                <label for="{{ safety_form.safety_type.id_for_label }}" class="safety-permit-field__label">
+                                    <i class="bi bi-tag"></i>
                                     Safety Permit Type
                                 </label>
                                 {{ safety_form.safety_type }}
                                 {% if safety_form.safety_type.errors %}
-                                    <div class="field-errors">
+                                    <div class="safety-permit-field__error">
                                         {{ safety_form.safety_type.errors }}
                                     </div>
                                 {% endif %}
                             </div>
 
-                            <div class="col-md-4 form-field-block">
-                                <label for="{{ safety_form.safety_permit_number.id_for_label }}">
-                                    Safety Permit Number
+                            <div class="safety-permit-field">
+                                <label for="{{ safety_form.safety_permit_number.id_for_label }}" class="safety-permit-field__label">
+                                    <i class="bi bi-hash"></i>
+                                    Permit Number
                                 </label>
                                 {{ safety_form.safety_permit_number }}
-                                <div class="form-help text-muted">
-                                    Leave blank when the number has not been issued yet.
+                                <div class="safety-permit-field__help">
+                                    <i class="bi bi-info-circle"></i>
+                                    Leave blank if not yet issued by Permit Office
                                 </div>
                                 {% if safety_form.safety_permit_number.errors %}
-                                    <div class="field-errors">
+                                    <div class="safety-permit-field__error">
                                         {{ safety_form.safety_permit_number.errors }}
                                     </div>
                                 {% endif %}
                             </div>
                         {% endif %}
-
-                        <div class="col-md-2">
-                            <label class="form-label">Status</label>
-                            <div>
-                                {% if safety_form.instance.status == "ACTIVE" %}
-                                    <span class="badge text-bg-success">
-                                        <i class="bi bi-check-circle-fill me-1"></i>
-                                        Active
-                                    </span>
-                                {% elif safety_form.instance.status == "DEACTIVE" %}
-                                    <span class="badge text-bg-danger">
-                                        <i class="bi bi-x-circle-fill me-1"></i>
-                                        Deactive
-                                    </span>
-                                {% else %}
-                                    <span class="badge text-bg-warning">
-                                        <i class="bi bi-hourglass-split me-1"></i>
-                                        Deactive
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        {% if not permit.activated_at and safety_form.instance.status != "ACTIVE" %}
-                            <div class="col-md-1 text-md-end">
-                                <span class="d-none paper-safety-delete-field">
-                                    {{ safety_form.DELETE }}
-                                </span>
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-danger btn-sm"
-                                    data-remove-paper-safety-permit
-                                    title="Remove this safety permit"
-                                >
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        {% endif %}
                     </div>
 
+                    {% if not permit.activated_at and safety_form.instance.status != "ACTIVE" %}
+                        <div class="safety-permit-card__actions">
+                            <span class="d-none paper-safety-delete-field">
+                                {{ safety_form.DELETE }}
+                            </span>
+                            <button
+                                type="button"
+                                class="safety-permit-remove-btn"
+                                data-remove-paper-safety-permit
+                                title="Remove this safety permit"
+                            >
+                                <i class="bi bi-trash"></i>
+                                Remove
+                            </button>
+                        </div>
+                    {% endif %}
+
                     {% if safety_form.non_field_errors %}
-                        <div class="field-errors mt-2">
+                        <div class="safety-permit-card__form-error">
+                            <i class="bi bi-exclamation-circle"></i>
                             {{ safety_form.non_field_errors }}
                         </div>
                     {% endif %}
 
                     {% if safety_form.instance.review_comment %}
-                        <div class="alert alert-light border py-2 mt-3 mb-0 small">
-                            <strong>Permit Office comment:</strong>
-                            {{ safety_form.instance.review_comment }}
+                        <div class="safety-permit-card__review">
+                            <div class="safety-permit-card__review-icon">
+                                <i class="bi bi-chat-left-text"></i>
+                            </div>
+                            <div class="safety-permit-card__review-content">
+                                <strong class="safety-permit-card__review-label">Permit Office Comment:</strong>
+                                <p class="safety-permit-card__review-text">{{ safety_form.instance.review_comment }}</p>
+                            </div>
                         </div>
                     {% endif %}
                 </div>
             {% endfor %}
         </div>
 
-        <div id="paper-safety-permit-empty-state" class="text-muted small mb-3">
-            No paper safety permit has been added. The main permit can proceed
-            without supplementary safety permits.
+        <div id="paper-safety-permit-empty-state" class="safety-permits-empty">
+            <div class="safety-permits-empty__icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <div class="safety-permits-empty__content">
+                <p class="safety-permits-empty__title">No Safety Permits Added</p>
+                <p class="safety-permits-empty__text">
+                    The main permit can proceed without supplementary safety permits.
+                    Add safety permits if required for this work order.
+                </p>
+            </div>
         </div>
 
         {% if not permit.activated_at %}
             <button
                 type="button"
-                class="btn btn-outline-primary btn-sm"
+                class="safety-permits-add-btn"
                 id="add-paper-safety-permit"
             >
-                <i class="bi bi-plus-circle me-1"></i>
+                <i class="bi bi-plus-circle"></i>
                 Add Safety Permit
             </button>
         {% endif %}
 
         <template id="paper-safety-permit-empty-form">
             <div
-                class="border rounded-3 p-3 mb-3 paper-safety-permit-row"
+                class="safety-permit-card"
                 data-paper-safety-permit-row
             >
                 {{ paper_safety_permit_formset.empty_form.id }}
 
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-5 form-field-block">
-                        <label for="{{ paper_safety_permit_formset.empty_form.safety_type.id_for_label }}">
+                <div class="safety-permit-card__header">
+                    <span class="safety-permit-card__number">__prefix__</span>
+                    <span class="safety-permit-card__label">Safety Permit</span>
+                    
+                    <div class="safety-permit-card__status">
+                        <span class="status-chip status-chip--warning">
+                            <i class="bi bi-hourglass-split"></i>
+                            Pending Approval
+                        </span>
+                    </div>
+                </div>
+
+                <div class="safety-permit-card__body">
+                    <div class="safety-permit-field">
+                        <label for="{{ paper_safety_permit_formset.empty_form.safety_type.id_for_label }}" class="safety-permit-field__label">
+                            <i class="bi bi-tag"></i>
                             Safety Permit Type
                         </label>
                         {{ paper_safety_permit_formset.empty_form.safety_type }}
                     </div>
 
-                    <div class="col-md-4 form-field-block">
-                        <label for="{{ paper_safety_permit_formset.empty_form.safety_permit_number.id_for_label }}">
-                            Safety Permit Number
+                    <div class="safety-permit-field">
+                        <label for="{{ paper_safety_permit_formset.empty_form.safety_permit_number.id_for_label }}" class="safety-permit-field__label">
+                            <i class="bi bi-hash"></i>
+                            Permit Number
                         </label>
                         {{ paper_safety_permit_formset.empty_form.safety_permit_number }}
-                        <div class="form-help text-muted">
-                            Leave blank when the number has not been issued yet.
+                        <div class="safety-permit-field__help">
+                            <i class="bi bi-info-circle"></i>
+                            Leave blank if not yet issued by Permit Office
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-md-2">
-                        <label class="form-label">Status</label>
-                        <div>
-                            <span class="badge text-bg-warning">
-                                <i class="bi bi-hourglass-split me-1"></i>
-                                Pending
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="col-md-1 text-md-end">
-                        <span class="d-none paper-safety-delete-field">
-                            {{ paper_safety_permit_formset.empty_form.DELETE }}
-                        </span>
-                        <button
-                            type="button"
-                            class="btn btn-outline-danger btn-sm"
-                            data-remove-paper-safety-permit
-                            title="Remove this safety permit"
-                        >
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
+                <div class="safety-permit-card__actions">
+                    <span class="d-none paper-safety-delete-field">
+                        {{ paper_safety_permit_formset.empty_form.DELETE }}
+                    </span>
+                    <button
+                        type="button"
+                        class="safety-permit-remove-btn"
+                        data-remove-paper-safety-permit
+                        title="Remove this safety permit"
+                    >
+                        <i class="bi bi-trash"></i>
+                        Remove
+                    </button>
                 </div>
             </div>
         </template>

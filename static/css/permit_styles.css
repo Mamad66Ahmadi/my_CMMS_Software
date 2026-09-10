@@ -3442,3 +3442,476 @@ details[open] > .detail-panel__header .chevron-icon {
         padding-left: 16px;
     }
 }
+
+
+/* ==================================================================
+   REQUIRED PAPER SAFETY PERMITS SECTION
+   Formal, organized design for supplementary safety documentation
+   ================================================================== */
+
+/* Introduction Banner */
+.safety-permits-intro {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: linear-gradient(135deg, #f0fdf9 0%, #f7faf9 100%);
+    border: 1px solid #b3e0d8;
+    border-left: 4px solid var(--c-accent);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-5);
+}
+
+.safety-permits-intro__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    background: var(--c-accent);
+    color: var(--c-text-inverse);
+    border-radius: var(--radius-md);
+    font-size: 20px;
+}
+
+.safety-permits-intro__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.safety-permits-intro__title {
+    margin: 0 0 var(--space-1);
+    color: var(--c-primary);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.safety-permits-intro__text {
+    margin: 0;
+    color: var(--c-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Error Display */
+.safety-permits-error {
+    display: flex;
+    align-items: start;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--c-status-danger-bg);
+    border: 1px solid #f87171;
+    border-left: 4px solid var(--c-status-danger-dot);
+    border-radius: var(--radius-md);
+    color: var(--c-status-danger-text);
+    font-size: 13px;
+    margin-bottom: var(--space-4);
+}
+
+.safety-permits-error i {
+    font-size: 16px;
+    margin-top: 1px;
+}
+
+/* Safety Permit Card */
+.safety-permit-card {
+    background: var(--c-bg-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-4);
+    overflow: hidden;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.safety-permit-card:hover {
+    border-color: var(--c-border-strong);
+    box-shadow: var(--shadow-md);
+}
+
+/* Card Header */
+.safety-permit-card__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: linear-gradient(135deg, var(--c-bg-subtle) 0%, var(--c-bg-subtle-2) 100%);
+    border-bottom: 1px solid var(--c-border);
+}
+
+.safety-permit-card__number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background: var(--c-primary);
+    color: var(--c-text-inverse);
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.safety-permit-card__label {
+    flex: 1;
+    color: var(--c-text-primary);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.safety-permit-card__status {
+    margin-left: auto;
+}
+
+/* Status Chips */
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.status-chip--success {
+    background: var(--c-status-success-bg);
+    color: var(--c-status-success-text);
+    border: 1px solid #86efac;
+}
+
+.status-chip--warning {
+    background: var(--c-status-warning-bg);
+    color: var(--c-status-warning-text);
+    border: 1px solid #fcd34d;
+}
+
+.status-chip--danger {
+    background: var(--c-status-danger-bg);
+    color: var(--c-status-danger-text);
+    border: 1px solid #fca5a5;
+}
+
+.status-chip i {
+    font-size: 12px;
+}
+
+/* Card Body */
+.safety-permit-card__body {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+@media (max-width: 768px) {
+    .safety-permit-card__body {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Field Styling */
+.safety-permit-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.safety-permit-field__label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin: 0;
+    color: var(--c-text-secondary);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.safety-permit-field__label i {
+    font-size: 11px;
+    color: var(--c-accent);
+}
+
+.safety-permit-field input,
+.safety-permit-field select {
+    width: 100%;
+    padding: 9px 12px;
+    color: var(--c-text-primary);
+    background: var(--c-bg-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 13px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.safety-permit-field input:focus,
+.safety-permit-field select:focus {
+    outline: none;
+    border-color: var(--c-accent);
+    box-shadow: 0 0 0 3px var(--c-accent-light);
+}
+
+.safety-permit-field__display {
+    padding: 10px 12px;
+    background: var(--c-bg-subtle);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    color: var(--c-text-primary);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.safety-permit-field__pending {
+    color: var(--c-text-muted);
+    font-style: italic;
+}
+
+.safety-permit-field__help {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--c-text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.safety-permit-field__help i {
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.safety-permit-field__error {
+    color: var(--c-status-danger-text);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Card Actions */
+.safety-permit-card__actions {
+    padding: var(--space-3) var(--space-4);
+    background: var(--c-bg-subtle);
+    border-top: 1px solid var(--c-border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.safety-permit-remove-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--c-bg-surface);
+    color: var(--c-status-danger-text);
+    border: 1px solid #fca5a5;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.safety-permit-remove-btn:hover {
+    background: var(--c-status-danger-bg);
+    border-color: var(--c-status-danger-dot);
+}
+
+.safety-permit-remove-btn i {
+    font-size: 13px;
+}
+
+/* Form Error in Card */
+.safety-permit-card__form-error {
+    display: flex;
+    align-items: start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    margin: 0 var(--space-4) var(--space-3);
+    background: var(--c-status-danger-bg);
+    border: 1px solid #fca5a5;
+    border-radius: var(--radius-sm);
+    color: var(--c-status-danger-text);
+    font-size: 12px;
+}
+
+.safety-permit-card__form-error i {
+    font-size: 14px;
+    margin-top: 1px;
+}
+
+/* Review Comment */
+.safety-permit-card__review {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid var(--c-status-warning-dot);
+    border-radius: var(--radius-sm);
+}
+
+.safety-permit-card__review-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background: var(--c-status-warning-dot);
+    color: white;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+}
+
+.safety-permit-card__review-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.safety-permit-card__review-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--c-status-warning-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.safety-permit-card__review-text {
+    margin: 0;
+    color: var(--c-text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Empty State */
+.safety-permits-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-6) var(--space-4);
+    background: var(--c-bg-subtle);
+    border: 2px dashed var(--c-border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    margin-bottom: var(--space-4);
+}
+
+.safety-permits-empty__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: var(--c-bg-surface);
+    border: 2px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    color: var(--c-text-muted);
+    font-size: 24px;
+}
+
+.safety-permits-empty__content {
+    max-width: 480px;
+}
+
+.safety-permits-empty__title {
+    margin: 0 0 var(--space-1);
+    color: var(--c-text-primary);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.safety-permits-empty__text {
+    margin: 0;
+    color: var(--c-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Add Button */
+.safety-permits-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 10px 18px;
+    background: var(--c-primary);
+    color: var(--c-text-inverse);
+    border: 1px solid var(--c-primary);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.safety-permits-add-btn:hover {
+    background: var(--c-primary-hover);
+    border-color: var(--c-primary-hover);
+}
+
+.safety-permits-add-btn:active {
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.safety-permits-add-btn i {
+    font-size: 15px;
+}
+
+/* Hidden state for removed permits */
+.paper-safety-permit-row[hidden] {
+    display: none;
+}
+
+
+/* Responsive adjustments for safety permits */
+@media (max-width: 992px) {
+    .safety-permits-intro {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .safety-permits-intro__icon {
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .safety-permit-card__header {
+        flex-wrap: wrap;
+    }
+    
+    .safety-permit-card__status {
+        width: 100%;
+        margin-left: 0;
+        margin-top: var(--space-2);
+    }
+    
+    .status-chip {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .safety-permit-card__body {
+        gap: var(--space-3);
+    }
+    
+    .safety-permit-remove-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
