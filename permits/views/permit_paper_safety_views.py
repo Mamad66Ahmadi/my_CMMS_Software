@@ -199,6 +199,16 @@ class PermitPaperSafetyPermitFormSetMixin:
             )
 
         context["paper_safety_permit_formset"] = formset
+        context["allow_shared_safety_remove"] = True
+        if formset.instance and formset.instance.pk:
+            context["accepted_continuation_safety_permits"] = list(
+                formset.instance.paper_safety_permits
+                .exclude(permit=formset.instance)
+                .select_related("safety_type", "location_tag", "current_step")
+                .distinct()
+            )
+        else:
+            context.setdefault("accepted_continuation_safety_permits", [])
         context["paper_safety_permit_types"] = PaperSafetyPermitType.objects.filter(
             is_active=True
         )
@@ -241,6 +251,23 @@ class PermitPaperSafetyPermitFormSetMixin:
         )
         for safety_permit in PermitPaperSafetyPermit.objects.filter(pk__in=allowed_ids):
             safety_permit.permits.add(permit)
+
+    def sync_shared_safety_permits(self, *, permit, user):
+        """Unlink shared continuation safety permits removed during update."""
+        if not permit.pk or self.request.method != "POST":
+            return
+
+        submitted_ids = self.continuation_safety_permit_ids()
+        shared_qs = permit.paper_safety_permits.exclude(permit=permit)
+        existing_ids = set(shared_qs.values_list("pk", flat=True))
+        removed_ids = existing_ids - submitted_ids
+        if not removed_ids:
+            return
+
+        for safety_permit in PermitPaperSafetyPermit.objects.filter(pk__in=removed_ids):
+            safety_permit.permits.remove(permit)
+            safety_permit.modified_by = user
+            safety_permit.save(update_fields=["modified_by", "modified_at"])
 
     @staticmethod
     def save_paper_safety_formset(*, formset, permit, user):

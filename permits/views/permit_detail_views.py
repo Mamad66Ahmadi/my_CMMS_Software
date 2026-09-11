@@ -1059,6 +1059,11 @@ class PermitUpdateView(
                 user=self.request.user,
             )
 
+        self.sync_shared_safety_permits(
+            permit=self.object,
+            user=self.request.user,
+        )
+
         messages.success(
             self.request,
             "Permit updated successfully.",

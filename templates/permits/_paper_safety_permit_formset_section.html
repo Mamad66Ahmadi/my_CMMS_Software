@@ -41,7 +41,9 @@
                     </span>
                     <span class="d-flex align-items-center gap-2">
                         <span class="badge text-bg-secondary">{{ safety_permit.status }} · Shared</span>
-                        <button type="button" class="btn btn-sm btn-outline-danger" data-remove-server-linked-safety="{{ safety_permit.pk }}">Remove</button>
+                        {% if allow_shared_safety_remove %}
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-remove-server-linked-safety="{{ safety_permit.pk }}">Remove</button>
+                        {% endif %}
                     </span>
                 </div>
             {% endfor %}
