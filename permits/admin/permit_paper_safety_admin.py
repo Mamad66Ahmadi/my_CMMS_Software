@@ -82,6 +82,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     list_display = (
         "safety_permit_number_display",
         "safety_type",
+        "location_tag",
         "linked_permits_display",
         "current_step",
         "blocks_main_permit",
@@ -103,6 +104,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     autocomplete_fields = ("permit", "permits", "location_tag")
     list_select_related = (
         "permit",
+        "location_tag",
         "current_step",
         "reviewed_by",
         "created_by",
@@ -337,11 +339,11 @@ class PermitPaperSafetyPermitStatusHistoryAdmin(admin.ModelAdmin):
 
 @admin.register(PaperSafetyPermitType)
 class PaperSafetyPermitTypeAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "validity_shifts", "is_active", "sort_order")
+    list_display = ("name", "code", "validity_shifts", "display_color", "is_active", "sort_order")
     list_filter = ("is_active",)
     search_fields = ("name", "code")
     ordering = ("sort_order", "name")
-    fields = ("code", "name", "validity_shifts", "sort_order", "is_active")
+    fields = ("code", "name", "validity_shifts", "display_color", "sort_order", "is_active")
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by_id:

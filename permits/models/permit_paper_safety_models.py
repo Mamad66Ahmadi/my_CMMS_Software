@@ -14,6 +14,10 @@ paper_permit_identifier_validator = RegexValidator(
     regex=r"^[A-Z0-9][A-Z0-9._-]*$",
     message="Use uppercase letters, numbers, periods, underscores, or hyphens only.",
 )
+hex_color_validator = RegexValidator(
+    regex=r"^#[0-9A-Fa-f]{6}$",
+    message="Enter a valid hexadecimal color, for example #64748B.",
+)
 
 
 class PaperSafetyPermitType(TimeStampedModel):
@@ -27,6 +31,13 @@ class PaperSafetyPermitType(TimeStampedModel):
         validators=[MinValueValidator(1)],
         verbose_name="Active shifts",
         help_text="Number of work shifts this safety permit remains active after approval.",
+    )
+    display_color = models.CharField(
+        max_length=7,
+        default="#64748B",
+        validators=[hex_color_validator],
+        verbose_name="Display color",
+        help_text="Color used for this safety-permit type in the permit panel.",
     )
 
     class Meta:

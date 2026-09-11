@@ -68,7 +68,7 @@
                         <!-- Row: always-visible status summary -->
                         <div class="psp-item__row">
 
-                            <span class="psp-item__mark" aria-hidden="true">
+                            <span class="psp-item__mark" aria-hidden="true" style="--psp-type-color: {{ safety_permit.safety_type.display_color|default:'#64748B' }};">
                                 {% if safety_permit.blocks_main_permit %}
                                     <i class="bi bi-exclamation-triangle-fill"></i>
                                 {% elif safety_permit.current_step.name == "Cancelled" %}
@@ -79,27 +79,18 @@
                             </span>
 
                             <div class="psp-item__identity">
-                                <div class="psp-item__type persian-text">
+                                <div class="psp-item__type psp-item__value persian-text">
                                     <bdi>{{ safety_permit.get_safety_type_display }}</bdi>
                                 </div>
                                 <div class="psp-item__meta">
                                     {% if safety_permit.safety_permit_number %}
-                                        <span class="psp-item__number">#{{ safety_permit.safety_permit_number }}</span>
+                                        <span class="psp-item__number psp-item__value">#{{ safety_permit.safety_permit_number }}</span>
                                     {% else %}
-                                        <span class="psp-item__number psp-item__number--pending">Number pending</span>
+                                        <span class="psp-item__number psp-item__number--pending psp-item__value">Number pending</span>
                                     {% endif %}
-                                    <span class="psp-item__meta-sep" aria-hidden="true">&middot;</span>
-                                    <span class="psp-item__reviewer persian-text">
-                                        <i class="bi bi-person-check"></i>
-                                        {% if safety_permit.reviewed_by %}
-                                            <bdi>{{ safety_permit.reviewed_by.get_full_name|default:safety_permit.reviewed_by.username }}</bdi>
-                                        {% else %}
-                                            <bdi>Awaiting review</bdi>
-                                        {% endif %}
-                                    </span>
                                     {% if safety_permit.location_tag %}
                                         <span class="psp-item__meta-sep" aria-hidden="true">&middot;</span>
-                                        <span class="psp-item__location"><i class="bi bi-geo-alt"></i> {{ safety_permit.location_tag }}</span>
+                                        <span class="psp-item__location psp-item__value"><i class="bi bi-geo-alt"></i> {{ safety_permit.location_tag }}</span>
                                     {% endif %}
                                 </div>
                             </div>
