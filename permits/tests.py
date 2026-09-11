@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 
 from accounts.models import User
 from equipment.models.equipment_models import LocationTag, TimeStampedModel
@@ -237,3 +238,27 @@ class PaperSafetyPermitWorkflowTests(TestCase):
         paper_safety_permit.refresh_from_db()
         self.assertEqual(paper_safety_permit.status, "Activated")
         self.assertEqual(paper_safety_permit.safety_permit_number, "ACTION-001")
+
+    def test_authorized_user_can_add_safety_permit_from_detail_panel(self):
+        self.actor.is_superuser = True
+        self.actor.save(update_fields=["is_superuser"])
+        self.client.force_login(self.actor)
+
+        response = self.client.post(
+            reverse(
+                "permits:paper_safety_permit_add",
+                kwargs={"permit_number": self.permit.permit_number},
+            ),
+            {
+                "safety_type": self.safety_type.pk,
+                "safety_permit_number": "DETAIL-001",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        added = self.permit.paper_safety_permits.get(
+            safety_permit_number="DETAIL-001"
+        )
+        self.assertEqual(added.status, "Pending")
+        self.assertEqual(added.status_history.get().remarks, "")

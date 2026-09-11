@@ -249,5 +249,65 @@
                 </div>
             </div>
         {% endif %}
+
+        {% if can_add_paper_safety_permits %}
+            <div class="p-3 border-top">
+                <button
+                    type="button"
+                    class="btn btn-outline-primary btn-sm"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#paper-safety-permit-add-form"
+                    aria-expanded="false"
+                    aria-controls="paper-safety-permit-add-form"
+                >
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Add safety permit
+                </button>
+
+                <div class="collapse mt-3" id="paper-safety-permit-add-form">
+                    <form
+                        method="post"
+                        action="{% url 'permits:paper_safety_permit_add' permit_number=permit.permit_number %}"
+                        hx-post="{% url 'permits:paper_safety_permit_add' permit_number=permit.permit_number %}"
+                        hx-target="#paper-safety-permits-panel"
+                        hx-swap="outerHTML"
+                        class="psp-review-form mb-0"
+                    >
+                        {% csrf_token %}
+
+                        <div class="psp-review-form__title">
+                            <i class="bi bi-file-earmark-plus"></i>
+                            New paper safety permit
+                        </div>
+
+                        <select
+                            name="safety_type"
+                            class="form-select form-select-sm"
+                            required
+                        >
+                            <option value="">Select safety-permit type</option>
+                            {% for safety_type in paper_safety_permit_types %}
+                                <option value="{{ safety_type.pk }}">{{ safety_type.name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <input
+                            type="text"
+                            name="safety_permit_number"
+                            class="form-control form-control-sm"
+                            placeholder="Permit number (optional)"
+                            maxlength="30"
+                        >
+
+                        <div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus-lg me-1"></i>
+                                Add safety permit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>

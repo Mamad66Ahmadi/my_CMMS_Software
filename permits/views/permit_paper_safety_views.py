@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,9 +16,59 @@ from permits.models import (
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
 )
+from permits.services.authorization_service import WorkflowAuthorizationService
 
 
 PAPER_SAFETY_FORMSET_PREFIX = "paper_safety_permits"
+
+
+def build_paper_safety_panel_context(*, permit, actor, message_storage):
+    permits = list(
+        permit.paper_safety_permits.select_related(
+            "safety_type", "current_step"
+        ).prefetch_related("status_history")
+    )
+    for item in permits:
+        item.prefetched_status_history = list(item.status_history.all())
+        for event in item.prefetched_status_history:
+            event.from_status_label = event.from_status or "Initial"
+            event.to_status_label = event.to_status
+
+    can_edit = WorkflowAuthorizationService.actor_can_edit_permit(
+        actor=actor,
+        permit=permit,
+    )
+    return {
+        "permit": permit,
+        "paper_safety_permits": permits,
+        "paper_safety_permit_total_count": len(permits),
+        "paper_safety_permit_blocking_count": sum(
+            item.blocks_main_permit for item in permits
+        ),
+        "paper_safety_permit_non_blocking_count": sum(
+            not item.blocks_main_permit for item in permits
+        ),
+        "paper_safety_permits_ready": (
+            permit.safety_permits_ready_for_activation
+        ),
+        "paper_safety_workflow_steps": (
+            PaperSafetyPermitWorkflowStep.objects.filter(is_active=True)
+            .order_by("step_order", "pk")
+        ),
+        "paper_safety_permit_types": (
+            PaperSafetyPermitType.objects.filter(is_active=True)
+            .order_by("sort_order", "name", "pk")
+        ),
+        "can_review_paper_safety_permits": bool(
+            permits
+            and PaperSafetyPermitReviewService.actor_can_review(
+                record=permits[0],
+                actor=actor,
+            )
+        ),
+        "can_add_paper_safety_permits": can_edit and not permit.activated_at,
+        "messages": message_storage,
+    }
 
 
 class BasePermitPaperSafetyPermitFormSet(BaseInlineFormSet):
@@ -192,30 +243,91 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
             )
 
         if request.headers.get("HX-Request"):
-            permits = list(
-                record.permit.paper_safety_permits.select_related(
-                    "safety_type", "current_step"
-                ).prefetch_related("status_history")
+            return render(
+                request,
+                "permits/permit_detail_partials/paper_safety_permits_panel.html",
+                build_paper_safety_panel_context(
+                    permit=record.permit,
+                    actor=request.user,
+                    message_storage=messages.get_messages(request),
+                ),
             )
-            for item in permits:
-                item.prefetched_status_history = list(item.status_history.all())
-                for event in item.prefetched_status_history:
-                    event.from_status_label = event.from_status or "Initial"
-                    event.to_status_label = event.to_status
-            return render(request, "permits/permit_detail_partials/paper_safety_permits_panel.html", {
-                "permit": record.permit,
-                "paper_safety_permits": permits,
-                "paper_safety_permit_total_count": len(permits),
-                "paper_safety_permit_blocking_count": sum(item.blocks_main_permit for item in permits),
-                "paper_safety_permit_non_blocking_count": sum(not item.blocks_main_permit for item in permits),
-                "paper_safety_permits_ready": record.permit.safety_permits_ready_for_activation,
-                "paper_safety_workflow_steps": PaperSafetyPermitWorkflowStep.objects.filter(
-                    is_active=True
-                ).order_by("step_order", "pk"),
-                "can_review_paper_safety_permits": PaperSafetyPermitReviewService.actor_can_review(record=record, actor=request.user),
-                "messages": messages.get_messages(request),
-            })
         return redirect(
             "permits:permit_detail",
             permit_number=record.permit.permit_number,
+        )
+
+
+class PaperSafetyPermitCreateView(LoginRequiredMixin, View):
+    """Add a required paper safety permit from the permit detail panel."""
+
+    @transaction.atomic
+    def post(self, request, permit_number):
+        permit = get_object_or_404(
+            Permit.objects.select_for_update().select_related(
+                "current_step",
+                "current_step__editable_role",
+                "permit_type",
+                "department",
+                "location_tag",
+                "location_tag__unit",
+                "created_by",
+            ),
+            permit_number=permit_number,
+        )
+
+        try:
+            WorkflowAuthorizationService.ensure_actor_can_edit_permit(
+                actor=request.user,
+                permit=permit,
+            )
+            if permit.activated_at:
+                raise ValidationError(
+                    "Paper safety permits cannot be added after the main permit is activated."
+                )
+
+            try:
+                safety_type = PaperSafetyPermitType.objects.get(
+                    pk=request.POST.get("safety_type"),
+                    is_active=True,
+                )
+            except PaperSafetyPermitType.DoesNotExist as exc:
+                raise ValidationError(
+                    "Select an available paper safety-permit type."
+                ) from exc
+
+            PermitPaperSafetyPermit.objects.create(
+                permit=permit,
+                safety_type=safety_type,
+                safety_permit_number=request.POST.get(
+                    "safety_permit_number", ""
+                ),
+                created_by=request.user,
+                modified_by=request.user,
+            )
+            messages.success(request, "Paper safety permit added.")
+        except PermissionDenied:
+            messages.error(
+                request,
+                "You are not authorized to add a paper safety permit.",
+            )
+        except ValidationError as exc:
+            messages.error(
+                request,
+                exc.messages[0] if hasattr(exc, "messages") else str(exc),
+            )
+
+        if request.headers.get("HX-Request"):
+            return render(
+                request,
+                "permits/permit_detail_partials/paper_safety_permits_panel.html",
+                build_paper_safety_panel_context(
+                    permit=permit,
+                    actor=request.user,
+                    message_storage=messages.get_messages(request),
+                ),
+            )
+        return redirect(
+            "permits:permit_detail",
+            permit_number=permit.permit_number,
         )

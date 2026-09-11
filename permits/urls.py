@@ -19,6 +19,7 @@ from permits.views import (
     PermitPrintView,
     WorkShiftListView,
     WorkShiftDetailView,
+    PaperSafetyPermitCreateView,
     PaperSafetyPermitReviewView,
     
 )
@@ -74,6 +75,11 @@ urlpatterns = [
     # -------------------------------------------------------------------------
     path("create/", PermitCreateView.as_view(), name="permit_create"),
     path("<str:permit_number>/workflow/action/", PermitWorkflowTransitionView.as_view(), name="permit_workflow_action",),
+    path(
+        "<str:permit_number>/paper-safety-permits/add/",
+        PaperSafetyPermitCreateView.as_view(),
+        name="paper_safety_permit_add",
+    ),
     path(
         "<str:permit_number>/paper-safety-permits/<int:paper_safety_permit_id>/review/",
         PaperSafetyPermitReviewView.as_view(),
