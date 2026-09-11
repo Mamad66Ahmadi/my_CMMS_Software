@@ -32,7 +32,6 @@ from permits.models import (
     PermitApproval,
     PermitPaperSafetyPermit,
     PermitPaperSafetyPermitStatusHistory,
-    PaperSafetyPermitWorkflowStep,
 )
 from permits.services.quota_service import PermitQuotaService
 
@@ -560,7 +559,6 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         paper_safety_permits = list(
             getattr(permit, "prefetched_paper_safety_permits", [])
         )
-        status_labels = PermitPaperSafetyPermit.status_labels()
         for safety_permit in paper_safety_permits:
             for event in getattr(
                 safety_permit,
@@ -568,14 +566,11 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
                 [],
             ):
                 event.from_status_label = (
-                    status_labels.get(event.from_status)
+                    event.from_status
                     if event.from_status
                     else "Initial"
                 )
-                event.to_status_label = status_labels.get(
-                    event.to_status,
-                    event.to_status,
-                )
+                event.to_status_label = event.to_status
         context["paper_safety_permits"] = paper_safety_permits
         context["paper_safety_permits_ready"] = (
             permit.safety_permits_ready_for_activation
@@ -583,12 +578,12 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         context["paper_safety_permit_total_count"] = len(
             paper_safety_permits
         )
-        context["paper_safety_permit_deactive_count"] = sum(
-            item.status == PaperSafetyPermitWorkflowStep.Status.DEACTIVE
+        context["paper_safety_permit_blocking_count"] = sum(
+            item.blocks_main_permit
             for item in paper_safety_permits
         )
-        context["paper_safety_permit_active_count"] = sum(
-            item.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE
+        context["paper_safety_permit_non_blocking_count"] = sum(
+            not item.blocks_main_permit
             for item in paper_safety_permits
         )
         context["can_review_paper_safety_permits"] = bool(

@@ -379,16 +379,16 @@ class Permit(models.Model):
     @property
     def safety_permits_ready_for_activation(self):
         """
-        Paper safety permits are optional.  Once one is added, it must have a
-        number and Permit Office approval before the main permit can activate.
+        Paper safety permits are optional. Once one is added, its current
+        workflow step decides whether it blocks main-permit activation.
         """
-        return not self.paper_safety_permits.exclude(
-            current_step__status="ACTIVE"
+        return not self.paper_safety_permits.filter(
+            current_step__blocks_main_permit=True
         ).exists()
 
     def ensure_safety_permits_ready_for_activation(self):
-        incomplete = self.paper_safety_permits.exclude(
-            current_step__status="ACTIVE"
+        incomplete = self.paper_safety_permits.filter(
+            current_step__blocks_main_permit=True
         )
         if incomplete.exists():
             labels = ", ".join(
@@ -398,7 +398,7 @@ class Permit(models.Model):
                 )
             )
             raise ValidationError(
-                "The main permit cannot become Active until every added "
-                f"paper safety permit is Active: {labels}."
+                "The main permit cannot become Active while required paper "
+                f"safety permits are in blocking workflow steps: {labels}."
             )
 

@@ -47,34 +47,32 @@
                     <span class="psp-summary__label">Total</span>
                 </div>
                 <div class="psp-summary__divider"></div>
-                <div class="psp-summary__item psp-summary__item--active">
-                    <span class="psp-summary__count">{{ paper_safety_permit_active_count }}</span>
-                    <span class="psp-summary__label">Active</span>
+                <div class="psp-summary__item psp-summary__item--non-blocking">
+                    <span class="psp-summary__count">{{ paper_safety_permit_non_blocking_count }}</span>
+                    <span class="psp-summary__label">Non-blocking</span>
                 </div>
                 <div class="psp-summary__divider"></div>
-                <div class="psp-summary__item psp-summary__item--pending">
-                    <span class="psp-summary__count">{{ paper_safety_permit_deactive_count }}</span>
-                    <span class="psp-summary__label">Deactive</span>
+                <div class="psp-summary__item psp-summary__item--blocking">
+                    <span class="psp-summary__count">{{ paper_safety_permit_blocking_count }}</span>
+                    <span class="psp-summary__label">Blocking</span>
                 </div>
             </div>
 
             <!-- =====================================================
-                 Permit register — one row per paper safety permit
+                Permit register — one row per paper safety permit
                  ===================================================== -->
             <div class="psp-register" id="paperSafetyHistoryAccordion">
                 {% for safety_permit in paper_safety_permits %}
-                    <div class="psp-item psp-item--{{ safety_permit.status|lower }}">
+                    <div class="psp-item {% if safety_permit.blocks_main_permit %}psp-item--blocking{% else %}psp-item--non-blocking{% endif %}">
 
                         <!-- Row: always-visible status summary -->
                         <div class="psp-item__row">
 
                             <span class="psp-item__mark" aria-hidden="true">
-                                {% if safety_permit.status == "ACTIVE" %}
-                                    <i class="bi bi-check-lg"></i>
-                                {% elif safety_permit.status == "DEACTIVE" %}
-                                    <i class="bi bi-x-lg"></i>
+                                {% if safety_permit.blocks_main_permit %}
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
                                 {% else %}
-                                    <i class="bi bi-hourglass-split"></i>
+                                    <i class="bi bi-check-lg"></i>
                                 {% endif %}
                             </span>
 
@@ -101,12 +99,10 @@
                             </div>
 
                             <div class="psp-item__side">
-                                {% if safety_permit.status == "ACTIVE" %}
-                                    <span class="status-badge psp-badge psp-badge--success">Active</span>
-                                {% elif safety_permit.status == "DEACTIVE" %}
-                                    <span class="status-badge psp-badge psp-badge--danger">Deactive</span>
+                                {% if safety_permit.blocks_main_permit %}
+                                    <span class="status-badge psp-badge psp-badge--danger">{{ safety_permit.current_step.name }} — Blocking</span>
                                 {% else %}
-                                    <span class="status-badge psp-badge psp-badge--warning">Deactive</span>
+                                    <span class="status-badge psp-badge psp-badge--success">{{ safety_permit.current_step.name }} — Non-blocking</span>
                                 {% endif %}
 
                                 <button
@@ -133,7 +129,7 @@
                         >
                             <div class="psp-item__detail">
 
-                                {% if can_review_paper_safety_permits and safety_permit.status != "ACTIVE" and safety_permit.current_step.name != "Terminated" %}
+                                {% if can_review_paper_safety_permits and safety_permit.current_step.name != "Activated" and safety_permit.current_step.name != "Terminated" %}
                                     <form
                                         method="post"
                                         action="{% url 'permits:paper_safety_permit_review' permit_number=permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
@@ -219,7 +215,7 @@
                                     {% else %}
                                         <div class="psp-empty-history">
                                             <i class="bi bi-info-circle"></i>
-                                            No status history recorded.
+                                            No workflow history recorded.
                                         </div>
                                     {% endif %}
                                 {% endwith %}

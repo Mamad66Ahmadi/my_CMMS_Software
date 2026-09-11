@@ -203,7 +203,6 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
             "prefetched_paper_safety_permits",
             [],
         )
-        status_labels = PermitPaperSafetyPermit.status_labels()
         for safety_permit in context["paper_safety_permits"]:
             for event in getattr(
                 safety_permit,
@@ -211,14 +210,11 @@ class PermitPrintView(LoginRequiredMixin, DetailView):
                 [],
             ):
                 event.from_status_label = (
-                    status_labels.get(event.from_status)
+                    event.from_status
                     if event.from_status
                     else "Initial"
                 )
-                event.to_status_label = status_labels.get(
-                    event.to_status,
-                    event.to_status,
-                )
+                event.to_status_label = event.to_status
         context["paper_safety_permits_ready"] = (
             permit.safety_permits_ready_for_activation
         )

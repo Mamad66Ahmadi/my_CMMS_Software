@@ -10,7 +10,6 @@ from permits.models import (
     Permit,
     PermitPaperSafetyPermit,
     PaperSafetyPermitType,
-    PaperSafetyPermitWorkflowStep,
 )
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
@@ -64,8 +63,7 @@ class BasePermitPaperSafetyPermitFormSet(BaseInlineFormSet):
 
             if (
                 is_existing
-                and form.instance.status
-                == PaperSafetyPermitWorkflowStep.Status.ACTIVE
+                and form.instance.current_step.name == "Activated"
                 and (form.has_changed() or is_deleted)
             ):
                 raise ValidationError(
@@ -207,18 +205,17 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
                     "safety_type", "current_step"
                 ).prefetch_related("status_history")
             )
-            labels = PermitPaperSafetyPermit.status_labels()
             for item in permits:
                 item.prefetched_status_history = list(item.status_history.all())
                 for event in item.prefetched_status_history:
-                    event.from_status_label = labels.get(event.from_status, "Initial") if event.from_status else "Initial"
-                    event.to_status_label = labels.get(event.to_status, event.to_status)
+                    event.from_status_label = event.from_status or "Initial"
+                    event.to_status_label = event.to_status
             return render(request, "permits/permit_detail_partials/paper_safety_permits_panel.html", {
                 "permit": record.permit,
                 "paper_safety_permits": permits,
                 "paper_safety_permit_total_count": len(permits),
-                "paper_safety_permit_active_count": sum(item.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE for item in permits),
-                "paper_safety_permit_deactive_count": sum(item.status == PaperSafetyPermitWorkflowStep.Status.DEACTIVE for item in permits),
+                "paper_safety_permit_blocking_count": sum(item.blocks_main_permit for item in permits),
+                "paper_safety_permit_non_blocking_count": sum(not item.blocks_main_permit for item in permits),
                 "paper_safety_permits_ready": record.permit.safety_permits_ready_for_activation,
                 "can_review_paper_safety_permits": PaperSafetyPermitReviewService.actor_can_review(record=record, actor=request.user),
                 "messages": messages.get_messages(request),

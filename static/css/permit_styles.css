@@ -3090,15 +3090,11 @@ details[open] > .detail-panel__header .chevron-icon {
     color: var(--c-text-secondary);
 }
 
-.psp-summary__item--active .psp-summary__count {
+.psp-summary__item--non-blocking .psp-summary__count {
     color: var(--c-status-success-text);
 }
 
-.psp-summary__item--pending .psp-summary__count {
-    color: var(--c-status-warning-text);
-}
-
-.psp-summary__item--cancelled .psp-summary__count {
+.psp-summary__item--blocking .psp-summary__count {
     color: var(--c-status-danger-text);
 }
 
@@ -3136,17 +3132,12 @@ details[open] > .detail-panel__header .chevron-icon {
     color: var(--c-status-neutral-text);
 }
 
-.psp-item--active .psp-item__mark {
+.psp-item--non-blocking .psp-item__mark {
     background: var(--c-status-success-bg);
     color: var(--c-status-success-text);
 }
 
-.psp-item--pending .psp-item__mark {
-    background: var(--c-status-warning-bg);
-    color: var(--c-status-warning-text);
-}
-
-.psp-item--cancelled .psp-item__mark {
+.psp-item--blocking .psp-item__mark {
     background: var(--c-status-danger-bg);
     color: var(--c-status-danger-text);
 }

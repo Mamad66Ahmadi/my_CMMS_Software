@@ -83,12 +83,13 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         "safety_type",
         "permit",
         "current_step",
-        "status",
+        "blocks_main_permit",
         "reviewed_by",
         "reviewed_at",
     )
     list_filter = (
-        "current_step__status",
+        "current_step__blocks_main_permit",
+        "current_step",
         "safety_type",
         "reviewed_at",
     )
@@ -105,12 +106,13 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         "created_by",
         "modified_by",
     )
-    ordering = ("current_step__status", "safety_type", "permit__permit_number", "pk")
+    ordering = ("current_step__step_order", "safety_type", "permit__permit_number", "pk")
     fields = (
         "permit",
         "safety_type",
         "safety_permit_number",
-        "status",
+        "current_step",
+        "blocks_main_permit",
         "reviewed_by",
         "reviewed_at",
         "review_comment",
@@ -121,7 +123,8 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     )
     readonly_fields = (
         "permit",
-        "status",
+        "current_step",
+        "blocks_main_permit",
         "reviewed_by",
         "reviewed_at",
         "review_comment",
@@ -146,7 +149,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         readonly = list(super().get_readonly_fields(request, obj))
         if obj and (
-            obj.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE
+            obj.current_step.name == "Activated"
             or obj.permit.activated_at
         ):
             readonly.extend(("safety_type", "safety_permit_number"))
@@ -166,7 +169,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
         failures = []
 
         for record in queryset:
-            if record.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE:
+            if record.current_step.name == "Activated":
                 skipped += 1
                 continue
 
@@ -262,7 +265,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
 
 @admin.register(PermitPaperSafetyPermitStatusHistory)
 class PermitPaperSafetyPermitStatusHistoryAdmin(admin.ModelAdmin):
-    """Read-only audit history for paper safety permit status changes."""
+    """Read-only audit history for paper safety permit step changes."""
 
     list_display = (
         "permit_safety_permit",
@@ -299,17 +302,13 @@ class PermitPaperSafetyPermitStatusHistoryAdmin(admin.ModelAdmin):
     )
     readonly_fields = fields
 
-    @admin.display(description="From status")
+    @admin.display(description="From step")
     def from_status_display(self, obj):
-        return PermitPaperSafetyPermit.status_labels().get(
-            obj.from_status, obj.from_status or "—"
-        )
+        return obj.from_status or "—"
 
-    @admin.display(description="To status", ordering="to_status")
+    @admin.display(description="To step", ordering="to_status")
     def to_status_display(self, obj):
-        return PermitPaperSafetyPermit.status_labels().get(
-            obj.to_status, obj.to_status
-        )
+        return obj.to_status
 
     def has_add_permission(self, request):
         return False
@@ -340,8 +339,9 @@ class PaperSafetyPermitTypeAdmin(admin.ModelAdmin):
 
 @admin.register(PaperSafetyPermitWorkflowStep)
 class PaperSafetyPermitWorkflowStepAdmin(admin.ModelAdmin):
-    list_display = ("step_order", "name", "status", "is_active")
-    list_filter = ("is_active", "status")
+    list_display = ("step_order", "name", "blocks_main_permit", "is_active")
+    list_filter = ("blocks_main_permit", "is_active")
+    fields = ("name", "step_order", "blocks_main_permit", "is_active")
     search_fields = ("name",)
     ordering = ("step_order", "pk")
 

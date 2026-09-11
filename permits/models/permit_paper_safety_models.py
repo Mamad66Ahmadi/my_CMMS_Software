@@ -31,17 +31,15 @@ class PaperSafetyPermitType(TimeStampedModel):
 
 
 class PaperSafetyPermitWorkflowStep(TimeStampedModel):
-    """Safety-permit step mapped to a hardcoded operational status."""
-
-    class Status(models.TextChoices):
-        ACTIVE = "ACTIVE", "Active"
-        DEACTIVE = "DEACTIVE", "Deactive"
+    """Configurable workflow state for a paper safety permit."""
 
     name = models.CharField(max_length=100)
-    status = models.CharField(
-        max_length=10,
-        choices=Status.choices,
-        default=Status.DEACTIVE,
+    blocks_main_permit = models.BooleanField(
+        default=True,
+        help_text=(
+            "Whether a safety permit at this step prevents the main permit "
+            "from proceeding."
+        ),
     )
     step_order = models.PositiveIntegerField(default=0)
 
@@ -56,7 +54,7 @@ class PaperSafetyPermitWorkflowStep(TimeStampedModel):
         verbose_name_plural = "Paper Safety Permit Workflow Steps"
 
     def __str__(self):
-        return f"{self.step_order}. {self.name} ({self.get_status_display()})"
+        return f"{self.step_order}. {self.name}"
 
 
 class PermitPaperSafetyPermit(models.Model):
@@ -147,15 +145,15 @@ class PermitPaperSafetyPermit(models.Model):
 
     @property
     def status(self):
-        """Operational status is defined exclusively by the current step."""
-        return self.current_step.status
+        """The displayed and operational state is the current workflow step name."""
+        return self.current_step.name
 
     def get_status_display(self):
-        return self.current_step.get_status_display()
+        return self.current_step.name
 
-    @staticmethod
-    def status_labels():
-        return dict(PaperSafetyPermitWorkflowStep.Status.choices)
+    @property
+    def blocks_main_permit(self):
+        return self.current_step.blocks_main_permit
 
     def clean(self):
         super().clean()
@@ -166,7 +164,7 @@ class PermitPaperSafetyPermit(models.Model):
 
         if (
             self.current_step_id
-            and self.current_step.status == PaperSafetyPermitWorkflowStep.Status.ACTIVE
+            and self.current_step.name == "Activated"
             and not self.safety_permit_number
         ):
             raise ValidationError(
@@ -208,22 +206,22 @@ class PermitPaperSafetyPermit(models.Model):
                 value for value in (detail, (step_remarks or "").strip()) if value
             )
             self.status_history.create(
-                from_status=previous_step.status,
-                to_status=self.status,
+                from_status=previous_step.name,
+                to_status=self.current_step.name,
                 changed_by=step_actor,
                 remarks=remarks,
             )
         elif previous_step is None:
             self.status_history.create(
                 from_status="",
-                to_status=self.status,
+                to_status=self.current_step.name,
                 changed_by=step_actor or self.created_by,
                 remarks=(step_remarks or "Created paper safety permit.").strip(),
             )
         return result
 
     def change_step(self, *, step, changed_by, remarks=""):
-        """Assign a workflow step and copy its active/deactive status."""
+        """Assign an enabled workflow step and record the transition."""
         if not isinstance(step, PaperSafetyPermitWorkflowStep):
             raise ValidationError("A valid safety-permit workflow step is required.")
         if not changed_by or not getattr(changed_by, "is_authenticated", False):
@@ -243,16 +241,16 @@ class PermitPaperSafetyPermit(models.Model):
 
 
 class PermitPaperSafetyPermitStatusHistory(models.Model):
-    """Immutable audit record for every paper safety-permit status change."""
+    """Immutable audit record for every paper safety-permit step change."""
 
     permit_safety_permit = models.ForeignKey(
         PermitPaperSafetyPermit,
         on_delete=models.CASCADE,
         related_name="status_history",
     )
-    from_status = models.CharField(max_length=20, blank=True)
+    from_status = models.CharField(max_length=100, blank=True)
     to_status = models.CharField(
-        max_length=20,
+        max_length=100,
     )
     changed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

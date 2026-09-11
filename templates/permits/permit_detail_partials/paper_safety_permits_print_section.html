@@ -8,7 +8,8 @@
                 <tr>
                     <th>Type</th>
                     <th>Permit Number</th>
-                    <th>Status</th>
+                    <th>Workflow Step</th>
+                    <th>Main Permit Effect</th>
                     <th>Reviewed By</th>
                     <th>Review Date</th>
                 </tr>
@@ -19,6 +20,13 @@
                         <td>{{ safety_permit.get_safety_type_display }}</td>
                         <td>{{ safety_permit.safety_permit_number|default:"Number pending" }}</td>
                         <td>{{ safety_permit.get_status_display }}</td>
+                        <td>
+                            {% if safety_permit.blocks_main_permit %}
+                                <strong>Blocking</strong>
+                            {% else %}
+                                Non-blocking
+                            {% endif %}
+                        </td>
                         <td>
                             {% if safety_permit.reviewed_by %}
                                 {{ safety_permit.reviewed_by.get_full_name|default:safety_permit.reviewed_by.username }}
@@ -37,7 +45,7 @@
                     </tr>
                     {% if safety_permit.review_comment %}
                         <tr>
-                            <td colspan="5">
+                            <td colspan="6">
                                 <strong>Review comment:</strong>
                                 {{ safety_permit.review_comment }}
                             </td>
@@ -47,7 +55,7 @@
             </tbody>
         </table>
 
-        <div class="subsection-title">Read-only status audit</div>
+        <div class="subsection-title">Read-only workflow audit</div>
         <table class="approvals">
             <thead>
                 <tr>
