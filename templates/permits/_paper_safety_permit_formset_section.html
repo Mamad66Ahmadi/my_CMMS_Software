@@ -19,6 +19,34 @@
             </div>
         </div>
 
+        <div id="continuation-safety-suggestions" class="alert alert-info mt-3" hidden>
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <strong><i class="bi bi-copy"></i> Safety permits from the continuation</strong>
+                    <div class="small mt-1">Accept a suggestion to use the existing safety permit on this new permit. Its number, location, and workflow status remain shared and read-only.</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="accept-all-continuation-safety">Accept all</button>
+            </div>
+            <div id="continuation-safety-suggestion-list" class="list-group mt-2"></div>
+        </div>
+
+        <div id="continuation-linked-safety-permits">
+            {% for safety_permit in accepted_continuation_safety_permits %}
+                <input type="hidden" name="continuation_safety_permit_ids" value="{{ safety_permit.pk }}">
+                <div class="alert alert-secondary d-flex justify-content-between align-items-center gap-3 mt-2 mb-0" data-server-linked-safety-permit="{{ safety_permit.pk }}">
+                    <span>
+                        <strong>{{ safety_permit.safety_type }}</strong>
+                        <span class="text-muted">{{ safety_permit.safety_permit_number|default:"Number pending" }}</span>
+                        {% if safety_permit.location_tag %} — {{ safety_permit.location_tag }}{% endif %}
+                    </span>
+                    <span class="d-flex align-items-center gap-2">
+                        <span class="badge text-bg-secondary">{{ safety_permit.status }} · Shared</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-remove-server-linked-safety="{{ safety_permit.pk }}">Remove</button>
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+
         {{ paper_safety_permit_formset.management_form }}
 
         {% if paper_safety_permit_formset.non_form_errors %}
@@ -154,10 +182,15 @@
                             <div class="safety-permit-field">
                                 <label for="{{ safety_form.location_tag.id_for_label }}" class="safety-permit-field__label"><i class="bi bi-geo-alt"></i> Location tag</label>
                                 <div class="position-relative">
-                                    <input type="text" class="form-control safety-location-search" autocomplete="off" placeholder="Search for a location tag..." data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}">
+                                    <input type="text" class="form-control safety-location-search" autocomplete="off" placeholder="Search for a location tag..." value="{{ safety_form.location_tag_display|default:'' }}" data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}">
                                     <div class="list-group mt-1 shadow position-absolute w-100 safety-location-results"></div>
                                     {{ safety_form.location_tag.as_hidden }}
                                 </div>
+                                {% if safety_form.location_tag.errors %}
+                                    <div class="safety-permit-field__error">
+                                        Location tag is required. Please select a location from the search results.
+                                    </div>
+                                {% endif %}
                             </div>
                         {% endif %}
                     </div>
@@ -266,11 +299,11 @@
 
                     <div class="safety-permit-field">
                         <label class="safety-permit-field__label"><i class="bi bi-geo-alt"></i> Location tag</label>
-                        <div class="position-relative">
-                            <input type="text" class="form-control safety-location-search" autocomplete="off" placeholder="Search for a location tag..." data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}">
-                            <div class="list-group mt-1 shadow position-absolute w-100 safety-location-results"></div>
-                            {{ paper_safety_permit_formset.empty_form.location_tag.as_hidden }}
-                        </div>
+                            <div class="position-relative">
+                                <input type="text" class="form-control safety-location-search" autocomplete="off" placeholder="Search for a location tag..." data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}">
+                                <div class="list-group mt-1 shadow position-absolute w-100 safety-location-results"></div>
+                                {{ paper_safety_permit_formset.empty_form.location_tag.as_hidden }}
+                            </div>
                     </div>
                 </div>
 

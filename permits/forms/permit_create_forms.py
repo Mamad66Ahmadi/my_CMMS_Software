@@ -34,7 +34,7 @@ class PermitCreateForm(forms.ModelForm):
 
     location_tag = forms.ModelChoiceField(
         queryset=LocationTag.objects.none(),
-        required=False,
+        required=True,
         widget=forms.HiddenInput(),
     )
 

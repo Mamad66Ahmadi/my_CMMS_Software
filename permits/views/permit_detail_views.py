@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -902,6 +902,23 @@ class PermitCreateView(
             except LocationTag.DoesNotExist:
                 context["location"] = None
 
+        context["accepted_continuation_safety_permits"] = []
+        continuation_id = self.request.POST.get("continuation_of")
+        selected_ids = {
+            int(value)
+            for value in self.request.POST.getlist("continuation_safety_permit_ids")
+            if str(value).isdigit()
+        }
+        if continuation_id and selected_ids and str(continuation_id).isdigit():
+            context["accepted_continuation_safety_permits"] = list(
+                PermitPaperSafetyPermit.objects.filter(
+                    Q(permits=continuation_id) | Q(permit_id=continuation_id),
+                    pk__in=selected_ids,
+                )
+                .select_related("safety_type", "location_tag", "current_step")
+                .distinct()
+            )
+
         return context
 
     @transaction.atomic
@@ -934,6 +951,11 @@ class PermitCreateView(
                 permit=self.object,
                 user=self.request.user,
             )
+
+        self.link_continuation_safety_permits(
+            permit=self.object,
+            user=self.request.user,
+        )
 
         return redirect(self.get_success_url())
 
@@ -1075,6 +1097,19 @@ def get_permit_data(request):
             )
             .prefetch_related(
                 Prefetch(
+                    "paper_safety_permits",
+                    queryset=(
+                        PermitPaperSafetyPermit.objects
+                        .select_related(
+                            "safety_type",
+                            "location_tag",
+                            "current_step",
+                        )
+                        .order_by("safety_type__sort_order", "safety_type__name", "pk")
+                    ),
+                    to_attr="continuation_paper_safety_permits",
+                ),
+                Prefetch(
                     "hazard_assessments",
                     queryset=(
                         PermitHazard.objects
@@ -1137,6 +1172,19 @@ def get_permit_data(request):
         for item in permit.continuation_fire_gas_esd_items
     ]
 
+    paper_safety_permits = [
+        {
+            "id": item.pk,
+            "safety_type": item.safety_type_id,
+            "safety_type_text": str(item.safety_type),
+            "safety_permit_number": item.safety_permit_number or "",
+            "location_tag": item.location_tag_id or "",
+            "location_tag_text": str(item.location_tag) if item.location_tag else "",
+            "status": item.status,
+        }
+        for item in permit.continuation_paper_safety_permits
+    ]
+
     return JsonResponse(
         {
             "permit_type": permit.permit_type_id or "",
@@ -1194,6 +1242,7 @@ def get_permit_data(request):
             "hazards": active_hazards,
             "precautions": active_precautions,
             "fire_gas_esd_items": fire_gas_esd_items,
+            "paper_safety_permits": paper_safety_permits,
         }
     )
 

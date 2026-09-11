@@ -525,6 +525,10 @@ document.body.addEventListener("htmx:afterRequest", function (event) {
     } else {
         console.error("populateContinuationFgEsdItems is not defined — check that fire_gas_esd_section.html loaded before this script ran.");
     }
+
+    if (typeof window.addContinuationSafetySuggestions === "function") {
+        window.addContinuationSafetySuggestions(data.paper_safety_permits || []);
+    }
     if (typeof updateValiditySummary === "function") {
         updateValiditySummary();
     }

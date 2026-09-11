@@ -181,7 +181,24 @@ class PermitPaperSafetyPermitFormSetMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["paper_safety_permit_formset"] = self.get_paper_safety_formset()
+        formset = self.get_paper_safety_formset()
+        location_ids = {
+            str(form["location_tag"].value())
+            for form in formset.forms
+            if form.fields.get("location_tag") and form["location_tag"].value()
+        }
+        location_labels = {
+            str(location.pk): str(location)
+            for location in LocationTag.objects.filter(pk__in=location_ids)
+        }
+        for form in formset.forms:
+            location_value = form["location_tag"].value()
+            form.location_tag_display = location_labels.get(
+                str(location_value),
+                str(form.instance.location_tag) if form.instance.location_tag else "",
+            )
+
+        context["paper_safety_permit_formset"] = formset
         context["paper_safety_permit_types"] = PaperSafetyPermitType.objects.filter(
             is_active=True
         )
@@ -195,6 +212,35 @@ class PermitPaperSafetyPermitFormSetMixin:
         if formset.is_valid():
             return formset
         return False
+
+    def continuation_safety_permit_ids(self):
+        """Return the existing safety permits selected for sharing on create."""
+        values = self.request.POST.getlist("continuation_safety_permit_ids")
+        return {int(value) for value in values if str(value).isdigit()}
+
+    def link_continuation_safety_permits(self, *, permit, user):
+        """Share selected existing safety-permit records with the new permit."""
+        selected_ids = self.continuation_safety_permit_ids()
+        continuation = permit.continuation_of
+        if not selected_ids or not continuation:
+            return
+
+        allowed_ids = set(
+            PermitPaperSafetyPermit.objects.filter(
+                Q(permits=continuation) | Q(permit=continuation),
+                pk__in=selected_ids,
+            ).values_list("pk", flat=True)
+        )
+        if allowed_ids != selected_ids:
+            raise ValidationError(
+                "One or more selected continuation safety permits is invalid."
+            )
+
+        PermitPaperSafetyPermit.objects.filter(pk__in=allowed_ids).update(
+            modified_by=user,
+        )
+        for safety_permit in PermitPaperSafetyPermit.objects.filter(pk__in=allowed_ids):
+            safety_permit.permits.add(permit)
 
     @staticmethod
     def save_paper_safety_formset(*, formset, permit, user):

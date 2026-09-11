@@ -162,6 +162,7 @@
                                         type="text"
                                         id="location-search-input"
                                         class="form-control"
+                                        required
                                         placeholder="Search location..."
                                         value="{% if permit.location_tag %}{{ permit.location_tag }}{% endif %}"
                                         data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}"
@@ -178,7 +179,7 @@
 
                                 {% if form.location_tag.errors %}
                                     <div class="field-errors">
-                                        {{ form.location_tag.errors }}
+                                        Location / Tag is required. Please select a location from the search results.
                                     </div>
                                 {% endif %}
                             </div>

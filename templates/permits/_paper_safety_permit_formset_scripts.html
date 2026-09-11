@@ -5,8 +5,23 @@ function initPaperSafetyPermitFormset() {
     const addButton = document.getElementById("add-paper-safety-permit");
     const totalForms = document.getElementById("id_paper_safety_permits-TOTAL_FORMS");
     const emptyState = document.getElementById("paper-safety-permit-empty-state");
+    const linkedContainer = document.getElementById("continuation-linked-safety-permits");
 
     if (!rowsContainer || !emptyFormTemplate || !totalForms) return;
+
+    if (linkedContainer) {
+        linkedContainer.querySelectorAll("[data-remove-server-linked-safety]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const card = button.closest("[data-server-linked-safety-permit]");
+                const id = button.dataset.removeServerLinkedSafety;
+                const hidden = linkedContainer.querySelector(
+                    'input[name="continuation_safety_permit_ids"][value="' + id + '"]'
+                );
+                if (hidden) hidden.remove();
+                if (card) card.remove();
+            });
+        });
+    }
 
     function styleFields(scope) {
         scope.querySelectorAll('select[name$="-safety_type"]').forEach(function (field) {
@@ -117,30 +132,122 @@ function initPaperSafetyPermitFormset() {
         });
     }
 
+    function addRowFromSuggestion(suggestion) {
+        const formIndex = Number.parseInt(totalForms.value, 10);
+        const html = emptyFormTemplate.innerHTML.replaceAll(
+            "__prefix__",
+            String(formIndex)
+        );
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = html.trim();
+        const row = wrapper.firstElementChild;
+        if (!row) return null;
+
+        rowsContainer.appendChild(row);
+        totalForms.value = String(formIndex + 1);
+        styleFields(row);
+
+        const typeField = row.querySelector('select[name$="-safety_type"]');
+        if (typeField && suggestion.safety_type) {
+            typeField.value = String(suggestion.safety_type);
+        }
+
+        const locationField = row.querySelector('input[type="hidden"][name$="-location_tag"]');
+        const locationInput = row.querySelector(".safety-location-search");
+        if (locationField) locationField.value = suggestion.location_tag || "";
+        if (locationInput) locationInput.value = suggestion.location_tag_text || "";
+
+        const removeButton = row.querySelector("[data-remove-paper-safety-permit]");
+        if (removeButton) bindRemoveButton(removeButton);
+        updateEmptyState();
+        updateCardNumbers();
+        return row;
+    }
+
+    window.addContinuationSafetySuggestions = function (suggestions) {
+        const panel = document.getElementById("continuation-safety-suggestions");
+        const list = document.getElementById("continuation-safety-suggestion-list");
+        const acceptAll = document.getElementById("accept-all-continuation-safety");
+        const linkedContainer = document.getElementById("continuation-linked-safety-permits");
+        if (!panel || !list || !linkedContainer) return;
+
+        list.innerHTML = "";
+        linkedContainer.innerHTML = "";
+        const pending = (suggestions || []).map(function (item) {
+            return Object.assign({ accepted: false }, item);
+        });
+
+        function linkExistingPermit(item) {
+            const hidden = document.createElement("input");
+            hidden.type = "hidden";
+            hidden.name = "continuation_safety_permit_ids";
+            hidden.value = item.id;
+            linkedContainer.appendChild(hidden);
+
+            const card = document.createElement("div");
+            card.className = "alert alert-secondary d-flex justify-content-between align-items-center gap-3 mt-2 mb-0";
+            const location = item.location_tag_text ? " — " + item.location_tag_text : "";
+            const details = document.createElement("span");
+            details.innerHTML = "<strong>" + item.safety_type_text + "</strong>" +
+                " <span class='text-muted'>" + (item.safety_permit_number || "Number pending") + "</span>" + location;
+            const actions = document.createElement("span");
+            actions.className = "d-flex align-items-center gap-2";
+            const status = document.createElement("span");
+            status.className = "badge text-bg-secondary";
+            status.textContent = (item.status || "") + " · Shared";
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "btn btn-sm btn-outline-danger";
+            remove.textContent = "Remove";
+            remove.addEventListener("click", function () {
+                hidden.remove();
+                card.remove();
+                item.accepted = false;
+                render();
+            });
+            actions.appendChild(status);
+            actions.appendChild(remove);
+            card.appendChild(details);
+            card.appendChild(actions);
+            linkedContainer.appendChild(card);
+        }
+
+        function render() {
+            list.innerHTML = "";
+            pending.filter(item => !item.accepted).forEach(function (item) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center";
+                const location = item.location_tag_text ? " — " + item.location_tag_text : "";
+                button.innerHTML = "<span><strong>" + item.safety_type_text + "</strong>" + location +
+                    (item.safety_permit_number ? " <span class='text-muted'>(previous no. " + item.safety_permit_number + ")</span>" : "") +
+                    "</span><span class='btn btn-sm btn-primary'>Accept</span>";
+                button.addEventListener("click", function () {
+                    linkExistingPermit(item);
+                    item.accepted = true;
+                    render();
+                });
+                list.appendChild(button);
+            });
+            panel.hidden = pending.every(item => item.accepted) || pending.length === 0;
+            if (acceptAll) acceptAll.hidden = panel.hidden;
+        }
+
+        if (acceptAll) {
+            acceptAll.onclick = function () {
+                pending.filter(item => !item.accepted).forEach(function (item) {
+                    linkExistingPermit(item);
+                    item.accepted = true;
+                });
+                render();
+            };
+        }
+        render();
+    };
+
     if (addButton) {
         addButton.addEventListener("click", function () {
-            const formIndex = Number.parseInt(totalForms.value, 10);
-            const html = emptyFormTemplate.innerHTML.replaceAll(
-                "__prefix__",
-                String(formIndex)
-            );
-            const wrapper = document.createElement("div");
-            wrapper.innerHTML = html.trim();
-            const row = wrapper.firstElementChild;
-
-            if (!row) return;
-
-            rowsContainer.appendChild(row);
-            totalForms.value = String(formIndex + 1);
-            styleFields(row);
-
-            const removeButton = row.querySelector(
-                "[data-remove-paper-safety-permit]"
-            );
-            if (removeButton) bindRemoveButton(removeButton);
-
-            updateEmptyState();
-            updateCardNumbers();
+            addRowFromSuggestion({});
         });
     }
 }
