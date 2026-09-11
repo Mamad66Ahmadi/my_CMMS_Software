@@ -183,6 +183,7 @@ class PermitWorkShiftService:
 
         Business rules:
             - Permit must be ACTIVE.
+            - No required paper safety permit may be in a blocking step.
             - Only one open shift may exist per permit.
             - Maximum 14 shifts per permit.
             - Same permit/date/shift combination cannot exist twice.
@@ -226,6 +227,12 @@ class PermitWorkShiftService:
             role=cls._get_permit_office_role(),
             action_label="create a permit work shift",
         )
+
+        # -------------------------------------------------------------
+        # Required paper safety permits
+        # -------------------------------------------------------------
+
+        cls._ensure_safety_permits_do_not_block_work_shift(permit)
 
         # -------------------------------------------------------------
         # Automatically close an expired open shift
@@ -346,6 +353,13 @@ class PermitWorkShiftService:
                 for config in role_configurations
             ]
         )
+
+        # A shift may consume the configured validity window of an activated
+        # paper safety permit.
+        for safety_permit in permit.paper_safety_permits.select_related(
+            "current_step", "safety_type"
+        ).all():
+            safety_permit.expire_if_needed()
 
         return WorkShiftResult(
             work_shift=work_shift
@@ -720,6 +734,20 @@ class PermitWorkShiftService:
         if permit.current_step.state != PermitWorkflowStep.State.ACTIVE:
             raise PermitWorkShiftError(
                 "Work shifts can only be managed while the permit is ACTIVE."
+            )
+
+    @staticmethod
+    def _ensure_safety_permits_do_not_block_work_shift(permit):
+        """Require every attached paper safety permit to be non-blocking."""
+        for safety_permit in permit.paper_safety_permits.select_related(
+            "current_step", "safety_type"
+        ).all():
+            safety_permit.expire_if_needed()
+        if permit.paper_safety_permits.filter(
+            current_step__blocks_main_permit=True
+        ).exists():
+            raise PermitWorkShiftError(
+                "You should first get the approval of your safety permits."
             )
 
     # =================================================================

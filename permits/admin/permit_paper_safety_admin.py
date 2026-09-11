@@ -325,10 +325,11 @@ class PermitPaperSafetyPermitStatusHistoryAdmin(admin.ModelAdmin):
 
 @admin.register(PaperSafetyPermitType)
 class PaperSafetyPermitTypeAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "is_active", "sort_order")
+    list_display = ("name", "code", "validity_shifts", "is_active", "sort_order")
     list_filter = ("is_active",)
     search_fields = ("name", "code")
     ordering = ("sort_order", "name")
+    fields = ("code", "name", "validity_shifts", "sort_order", "is_active")
 
     def save_model(self, request, obj, form, change):
         if not obj.created_by_id:

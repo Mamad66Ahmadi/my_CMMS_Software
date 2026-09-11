@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -20,6 +21,12 @@ class PaperSafetyPermitType(TimeStampedModel):
     code = models.CharField(max_length=30, unique=True)
     name = models.CharField(max_length=100)
     sort_order = models.PositiveIntegerField(default=0)
+    validity_shifts = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        verbose_name="Active shifts",
+        help_text="Number of work shifts this safety permit remains active after approval.",
+    )
 
     class Meta:
         ordering = ["sort_order", "name", "pk"]
@@ -146,14 +153,57 @@ class PermitPaperSafetyPermit(models.Model):
     @property
     def status(self):
         """The displayed and operational state is the current workflow step name."""
+        if self._shift_limit_reached:
+            return "Expired"
         return self.current_step.name
 
     def get_status_display(self):
-        return self.current_step.name
+        return self.status
 
     @property
     def blocks_main_permit(self):
         return self.current_step.blocks_main_permit
+
+    @property
+    def _shift_limit_reached(self):
+        if not self.current_step_id or self.current_step.name != "Activated":
+            return False
+        limit = self.safety_type.validity_shifts if self.safety_type_id else None
+        if not limit or not self.permit_id:
+            return False
+        activated_at = (
+            self.status_history.filter(to_status="Activated")
+            .order_by("changed_at")
+            .values_list("changed_at", flat=True)
+            .first()
+        )
+        if not activated_at:
+            return False
+        return self.permit.work_shifts.filter(created_at__gte=activated_at).count() >= limit
+
+    def expire_if_needed(self):
+        """Move an activated permit to the configured Expired step when its shift limit is reached."""
+        if not self._shift_limit_reached:
+            return False
+        expired_step = PaperSafetyPermitWorkflowStep.objects.filter(
+            name="Expired", is_active=True
+        ).first()
+        if not expired_step:
+            return False
+        previous_name = self.current_step.name
+        now = timezone.now()
+        self.current_step = expired_step
+        self.reviewed_at = now
+        self.review_comment = "Automatically expired after the configured number of work shifts."
+        super().save(update_fields=["current_step", "reviewed_at", "review_comment"])
+        self.status_history.create(
+            from_status=previous_name,
+            to_status=expired_step.name,
+            changed_by=None,
+            changed_at=now,
+            remarks=self.review_comment,
+        )
+        return True
 
     def clean(self):
         super().clean()

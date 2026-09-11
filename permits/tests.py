@@ -19,6 +19,10 @@ from permits.models import (
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
 )
+from permits.services.work_shift_service import (
+    PermitWorkShiftError,
+    PermitWorkShiftService,
+)
 
 
 class PaperSafetyPermitConfigurationTests(SimpleTestCase):
@@ -262,3 +266,30 @@ class PaperSafetyPermitWorkflowTests(TestCase):
         )
         self.assertEqual(added.status, "Pending")
         self.assertEqual(added.status_history.get().remarks, "")
+
+    def test_work_shift_creation_requires_all_safety_permits_non_blocking(self):
+        cancelled_permit = self.create_safety_permit()
+        cancelled_permit.change_step(
+            step=PaperSafetyPermitWorkflowStep.objects.get(name="Cancelled"),
+            changed_by=self.actor,
+            remarks="Not required.",
+        )
+        pending_permit = self.create_safety_permit()
+
+        with self.assertRaisesMessage(
+            PermitWorkShiftError,
+            "You should first get the approval of your safety permits.",
+        ):
+            PermitWorkShiftService._ensure_safety_permits_do_not_block_work_shift(
+                self.permit
+            )
+
+        pending_permit.safety_permit_number = "SHIFT-SAFETY-001"
+        pending_permit.change_step(
+            step=PaperSafetyPermitWorkflowStep.objects.get(name="Activated"),
+            changed_by=self.actor,
+        )
+
+        PermitWorkShiftService._ensure_safety_permits_do_not_block_work_shift(
+            self.permit
+        )
