@@ -15,6 +15,9 @@ from permits.models import (
     PermitWorkflow,
     PermitWorkflowStep,
 )
+from permits.services.paper_safety_permit_service import (
+    PaperSafetyPermitReviewService,
+)
 
 
 class PaperSafetyPermitConfigurationTests(SimpleTestCase):
@@ -163,6 +166,7 @@ class PaperSafetyPermitWorkflowTests(TestCase):
         initial_event = cancelled_permit.status_history.get()
         self.assertEqual(initial_event.from_status, "")
         self.assertEqual(initial_event.to_status, "Pending")
+        self.assertEqual(initial_event.remarks, "")
         self.assertFalse(self.permit.safety_permits_ready_for_activation)
 
         cancelled_permit.change_step(
@@ -176,7 +180,7 @@ class PaperSafetyPermitWorkflowTests(TestCase):
         self.assertFalse(cancelled_permit.blocks_main_permit)
         self.assertEqual(transition.from_status, "Pending")
         self.assertEqual(transition.to_status, "Cancelled")
-        self.assertIn("Step changed from Pending to Cancelled.", transition.remarks)
+        self.assertEqual(transition.remarks, "Not required for this job.")
         self.assertTrue(self.permit.safety_permits_ready_for_activation)
 
         activated_permit = self.create_safety_permit("SAFETY-002")
@@ -191,3 +195,45 @@ class PaperSafetyPermitWorkflowTests(TestCase):
         self.assertEqual(cancelled_permit.status, "Cancelled")
         self.assertEqual(activated_permit.status, "Activated")
         self.assertTrue(self.permit.safety_permits_ready_for_activation)
+
+    def test_generic_step_action_requires_comment_only_for_cancelled(self):
+        self.actor.is_superuser = True
+        self.actor.save(update_fields=["is_superuser"])
+        paper_safety_permit = self.create_safety_permit()
+        cancelled = PaperSafetyPermitWorkflowStep.objects.get(name="Cancelled")
+        expired = PaperSafetyPermitWorkflowStep.objects.get(name="Expired")
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            "A comment is required when cancelling a paper safety permit.",
+        ):
+            PaperSafetyPermitReviewService.assign_step(
+                paper_safety_permit_id=paper_safety_permit.pk,
+                actor=self.actor,
+                step_id=cancelled.pk,
+            )
+
+        PaperSafetyPermitReviewService.assign_step(
+            paper_safety_permit_id=paper_safety_permit.pk,
+            actor=self.actor,
+            step_id=expired.pk,
+        )
+        paper_safety_permit.refresh_from_db()
+        self.assertEqual(paper_safety_permit.status, "Expired")
+        self.assertEqual(paper_safety_permit.status_history.first().remarks, "")
+
+    def test_generic_activated_action_accepts_permit_number(self):
+        self.actor.is_superuser = True
+        self.actor.save(update_fields=["is_superuser"])
+        paper_safety_permit = self.create_safety_permit()
+        activated = PaperSafetyPermitWorkflowStep.objects.get(name="Activated")
+
+        PaperSafetyPermitReviewService.assign_step(
+            paper_safety_permit_id=paper_safety_permit.pk,
+            actor=self.actor,
+            step_id=activated.pk,
+            safety_permit_number="ACTION-001",
+        )
+        paper_safety_permit.refresh_from_db()
+        self.assertEqual(paper_safety_permit.status, "Activated")
+        self.assertEqual(paper_safety_permit.safety_permit_number, "ACTION-001")

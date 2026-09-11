@@ -10,6 +10,7 @@ from permits.models import (
     Permit,
     PermitPaperSafetyPermit,
     PaperSafetyPermitType,
+    PaperSafetyPermitWorkflowStep,
 )
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
@@ -150,7 +151,7 @@ class PermitPaperSafetyPermitFormSetMixin:
 
 
 class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
-    """Approve or reject one paper safety permit from the normal permit UI."""
+    """Change one paper safety permit's workflow step from the permit UI."""
 
     def post(self, request, permit_number, paper_safety_permit_id):
         record = get_object_or_404(
@@ -161,32 +162,23 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
 
         action = (request.POST.get("action") or "").strip().lower()
         comment = (request.POST.get("review_comment") or "").strip()
+        submitted_number = request.POST.get("safety_permit_number")
 
         try:
-            if action == "approve":
-                submitted_number = request.POST.get("safety_permit_number")
-                PaperSafetyPermitReviewService.approve(
+            if action == "change_step":
+                updated_record = PaperSafetyPermitReviewService.assign_step(
                     paper_safety_permit_id=record.pk,
                     actor=request.user,
+                    step_id=request.POST.get("step_id"),
                     safety_permit_number=submitted_number,
-                    comment=comment,
+                    remarks=comment,
                 )
                 messages.success(
                     request,
-                    "Paper safety permit approved.",
-                )
-            elif action == "reject":
-                PaperSafetyPermitReviewService.reject(
-                    paper_safety_permit_id=record.pk,
-                    actor=request.user,
-                    comment=comment,
-                )
-                messages.success(
-                    request,
-                    "Paper safety permit rejected.",
+                    f"Paper safety permit moved to {updated_record.current_step.name}.",
                 )
             else:
-                raise ValidationError("Invalid paper safety-permit review action.")
+                raise ValidationError("Invalid paper safety-permit workflow action.")
 
         except PermissionDenied:
             messages.error(
@@ -217,6 +209,9 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
                 "paper_safety_permit_blocking_count": sum(item.blocks_main_permit for item in permits),
                 "paper_safety_permit_non_blocking_count": sum(not item.blocks_main_permit for item in permits),
                 "paper_safety_permits_ready": record.permit.safety_permits_ready_for_activation,
+                "paper_safety_workflow_steps": PaperSafetyPermitWorkflowStep.objects.filter(
+                    is_active=True
+                ).order_by("step_order", "pk"),
                 "can_review_paper_safety_permits": PaperSafetyPermitReviewService.actor_can_review(record=record, actor=request.user),
                 "messages": messages.get_messages(request),
             })

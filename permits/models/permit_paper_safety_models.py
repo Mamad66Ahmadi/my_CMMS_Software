@@ -201,22 +201,18 @@ class PermitPaperSafetyPermit(models.Model):
         result = super().save(*args, **kwargs)
 
         if previous_step and previous_step.pk != self.current_step_id:
-            detail = f"Step changed from {previous_step.name} to {self.current_step.name}."
-            remarks = " ".join(
-                value for value in (detail, (step_remarks or "").strip()) if value
-            )
             self.status_history.create(
                 from_status=previous_step.name,
                 to_status=self.current_step.name,
                 changed_by=step_actor,
-                remarks=remarks,
+                remarks=(step_remarks or "").strip(),
             )
         elif previous_step is None:
             self.status_history.create(
                 from_status="",
                 to_status=self.current_step.name,
                 changed_by=step_actor or self.created_by,
-                remarks=(step_remarks or "Created paper safety permit.").strip(),
+                remarks=(step_remarks or "").strip(),
             )
         return result
 

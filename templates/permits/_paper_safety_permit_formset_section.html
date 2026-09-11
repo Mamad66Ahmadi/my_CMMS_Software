@@ -46,17 +46,22 @@
                                 {% if safety_form.instance.blocks_main_permit %}
                                 <span class="status-chip status-chip--danger">
                                     <i class="bi bi-exclamation-triangle-fill"></i>
-                                    {{ safety_form.instance.current_step.name }} — Blocks main permit
+                                    {{ safety_form.instance.current_step.name }}
+                                </span>
+                                {% elif safety_form.instance.current_step.name == "Cancelled" %}
+                                <span class="status-chip status-chip--neutral">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                    {{ safety_form.instance.current_step.name }}
                                 </span>
                                 {% else %}
                                 <span class="status-chip status-chip--success">
                                     <i class="bi bi-check-circle-fill"></i>
-                                    {{ safety_form.instance.current_step.name }} — Does not block
+                                    {{ safety_form.instance.current_step.name }}
                                 </span>
                                 {% endif %}
                             {% else %}
-                                <span class="status-chip status-chip--warning">
-                                    <i class="bi bi-hourglass-split"></i>
+                                <span class="status-chip status-chip--danger">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
                                     Pending
                                 </span>
                             {% endif %}
@@ -200,9 +205,9 @@
                     <span class="safety-permit-card__label">Safety Permit</span>
                     
                     <div class="safety-permit-card__status">
-                        <span class="status-chip status-chip--warning">
-                            <i class="bi bi-hourglass-split"></i>
-                            Pending Approval
+                        <span class="status-chip status-chip--danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Pending
                         </span>
                     </div>
 

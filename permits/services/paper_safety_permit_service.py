@@ -124,8 +124,34 @@ class PaperSafetyPermitReviewService:
 
     @classmethod
     @transaction.atomic
-    def assign_step(cls, *, paper_safety_permit_id, actor, step_id, remarks=""):
+    def assign_step(
+        cls,
+        *,
+        paper_safety_permit_id,
+        actor,
+        step_id,
+        remarks="",
+        safety_permit_number=None,
+    ):
         record = cls._get_locked_record(paper_safety_permit_id)
         cls._ensure_review_allowed(record=record, actor=actor)
-        step = PaperSafetyPermitWorkflowStep.objects.get(pk=step_id, is_active=True)
+        try:
+            step = PaperSafetyPermitWorkflowStep.objects.get(
+                pk=step_id,
+                is_active=True,
+            )
+        except PaperSafetyPermitWorkflowStep.DoesNotExist as exc:
+            raise ValidationError(
+                "The selected safety-permit workflow step is not available."
+            ) from exc
+
+        remarks = (remarks or "").strip()
+        if step.name == "Cancelled" and not remarks:
+            raise ValidationError(
+                {"review_comment": "A comment is required when cancelling a paper safety permit."}
+            )
+
+        if safety_permit_number is not None:
+            record.safety_permit_number = safety_permit_number
+
         return record.change_step(step=step, changed_by=actor, remarks=remarks)

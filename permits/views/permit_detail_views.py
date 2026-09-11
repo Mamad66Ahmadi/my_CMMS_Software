@@ -32,6 +32,7 @@ from permits.models import (
     PermitApproval,
     PermitPaperSafetyPermit,
     PermitPaperSafetyPermitStatusHistory,
+    PaperSafetyPermitWorkflowStep,
 )
 from permits.services.quota_service import PermitQuotaService
 
@@ -585,6 +586,10 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
         context["paper_safety_permit_non_blocking_count"] = sum(
             not item.blocks_main_permit
             for item in paper_safety_permits
+        )
+        context["paper_safety_workflow_steps"] = (
+            PaperSafetyPermitWorkflowStep.objects.filter(is_active=True)
+            .order_by("step_order", "pk")
         )
         context["can_review_paper_safety_permits"] = bool(
             paper_safety_permits
