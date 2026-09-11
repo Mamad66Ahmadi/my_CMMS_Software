@@ -13,6 +13,7 @@ from permits.models import (
     PaperSafetyPermitType,
     PaperSafetyPermitWorkflowStep,
 )
+from equipment.models.equipment_models import LocationTag
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
 )
@@ -59,6 +60,7 @@ def build_paper_safety_panel_context(*, permit, actor, message_storage):
             PaperSafetyPermitType.objects.filter(is_active=True)
             .order_by("sort_order", "name", "pk")
         ),
+        "paper_safety_location_tags": LocationTag.objects.order_by("loc_tag"),
         "can_review_paper_safety_permits": bool(
             permits
             and PaperSafetyPermitReviewService.actor_can_review(
@@ -87,6 +89,11 @@ class BasePermitPaperSafetyPermitFormSet(BaseInlineFormSet):
             if current_id:
                 queryset = field.queryset.filter(Q(is_active=True) | Q(pk=current_id))
             field.queryset = queryset
+            location_field = form.fields.get("location_tag")
+            if location_field is not None:
+                location_field.required = not bool(form.instance.pk)
+                if form.instance.pk:
+                    location_field.disabled = True
 
     def clean(self):
         super().clean()
@@ -113,6 +120,11 @@ class BasePermitPaperSafetyPermitFormSet(BaseInlineFormSet):
                     "Paper safety permits cannot be changed after the main permit is activated."
                 )
 
+            if is_existing and "location_tag" in form.changed_data:
+                raise ValidationError(
+                    "A paper safety permit location cannot be changed after submission."
+                )
+
             if (
                 is_existing
                 and form.instance.current_step.name == "Activated"
@@ -131,6 +143,7 @@ PermitPaperSafetyPermitFormSet = inlineformset_factory(
     fields=(
         "safety_type",
         "safety_permit_number",
+        "location_tag",
     ),
     extra=1,
     can_delete=True,
@@ -193,10 +206,13 @@ class PermitPaperSafetyPermitFormSetMixin:
 
         for instance in instances:
             instance.permit = permit
+            if not instance.location_tag_id:
+                raise ValidationError("A location tag is required for every new safety permit.")
             if not instance.pk:
                 instance.created_by = user
             instance.modified_by = user
             instance.save()
+            instance.permits.add(permit)
 
         formset.save_m2m()
 
@@ -296,15 +312,19 @@ class PaperSafetyPermitCreateView(LoginRequiredMixin, View):
                     "Select an available paper safety-permit type."
                 ) from exc
 
+            if not request.POST.get("location_tag"):
+                raise ValidationError("A location tag is required for every new safety permit.")
+
             PermitPaperSafetyPermit.objects.create(
                 permit=permit,
+                location_tag_id=request.POST.get("location_tag"),
                 safety_type=safety_type,
                 safety_permit_number=request.POST.get(
                     "safety_permit_number", ""
                 ),
                 created_by=request.user,
                 modified_by=request.user,
-            )
+            ).permits.add(permit)
             messages.success(request, "Paper safety permit added.")
         except PermissionDenied:
             messages.error(

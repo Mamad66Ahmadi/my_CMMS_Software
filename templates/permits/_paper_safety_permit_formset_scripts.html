@@ -1,5 +1,5 @@
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+function initPaperSafetyPermitFormset() {
     const rowsContainer = document.getElementById("paper-safety-permit-rows");
     const emptyFormTemplate = document.getElementById("paper-safety-permit-empty-form");
     const addButton = document.getElementById("add-paper-safety-permit");
@@ -15,6 +15,47 @@ document.addEventListener("DOMContentLoaded", function () {
         scope.querySelectorAll('input[name$="-safety_permit_number"]').forEach(function (field) {
             field.classList.add("form-control");
             field.setAttribute("placeholder", "Optional until issued");
+        });
+        scope.querySelectorAll('.safety-location-search').forEach(function (input) {
+            if (input.dataset.bound) return;
+            input.dataset.bound = "1";
+            const hidden = input.parentElement.querySelector('input[type="hidden"][name$="-location_tag"]');
+            const results = input.parentElement.querySelector('.safety-location-results');
+            let activeIndex = -1;
+            const setActive = function (index) {
+                const options = Array.from(results.querySelectorAll('.autocomplete-option'));
+                if (!options.length) return;
+                activeIndex = Math.max(0, Math.min(index, options.length - 1));
+                options.forEach((option, i) => option.classList.toggle('active', i === activeIndex));
+                options[activeIndex].scrollIntoView({ block: 'nearest' });
+            };
+            input.addEventListener('input', function () {
+                const q = input.value.trim();
+                if (!q) { hidden.value = ""; results.innerHTML = ""; results.classList.remove("is-visible"); return; }
+                fetch(input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(q))
+                    .then(r => r.json()).then(data => {
+                        results.innerHTML = "";
+                        (data.results || []).forEach(item => {
+                            const option = document.createElement('button');
+                            option.type = 'button'; option.className = 'list-group-item list-group-item-action autocomplete-option';
+                            option.textContent = item.text;
+                            option.addEventListener('mouseenter', function () { setActive(Array.from(results.querySelectorAll('.autocomplete-option')).indexOf(option)); });
+                            option.addEventListener('click', function () { input.value = item.text; hidden.value = item.id; results.innerHTML = ""; results.classList.remove("is-visible"); });
+                            results.appendChild(option);
+                        });
+                        activeIndex = -1;
+                        if (results.children.length) setActive(0);
+                        results.classList.toggle("is-visible", results.children.length > 0);
+                    });
+            });
+            input.addEventListener('keydown', function (event) {
+                const options = results.querySelectorAll('.autocomplete-option');
+                if (!options.length) return;
+                if (event.key === 'ArrowDown') { event.preventDefault(); setActive(activeIndex + 1); }
+                else if (event.key === 'ArrowUp') { event.preventDefault(); setActive(activeIndex - 1); }
+                else if (event.key === 'Enter' && activeIndex >= 0) { event.preventDefault(); options[activeIndex].click(); }
+                else if (event.key === 'Escape') { results.innerHTML = ""; results.classList.remove("is-visible"); }
+            });
         });
     }
 
@@ -102,5 +143,11 @@ document.addEventListener("DOMContentLoaded", function () {
             updateCardNumbers();
         });
     }
-});
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPaperSafetyPermitFormset);
+} else {
+    initPaperSafetyPermitFormset();
+}
 </script>

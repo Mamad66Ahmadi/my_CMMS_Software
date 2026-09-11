@@ -35,6 +35,7 @@ from permits.models import (
     PaperSafetyPermitType,
     PaperSafetyPermitWorkflowStep,
 )
+from equipment.models.equipment_models import LocationTag
 from permits.services.quota_service import PermitQuotaService
 
 from permits.models.workflow_models import PermitWorkflowStep
@@ -596,6 +597,7 @@ class PermitDetailView(LoginRequiredMixin, DetailView):
             PaperSafetyPermitType.objects.filter(is_active=True)
             .order_by("sort_order", "name", "pk")
         )
+        context["paper_safety_location_tags"] = LocationTag.objects.order_by("loc_tag")
         context["can_add_paper_safety_permits"] = (
             context["can_edit_permit"] and not permit.activated_at
         )

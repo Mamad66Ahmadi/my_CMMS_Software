@@ -12,7 +12,7 @@
             <div class="safety-permits-intro__content">
                 <p class="safety-permits-intro__title">Supplementary Safety Documentation</p>
                 <p class="safety-permits-intro__text">
-                    Register additional paper safety permits required for this work order. Numbers may
+                    Register additional safety permits required for this main permit. Numbers may
                     stay blank until issued by the Permit Office, and every record must be approved
                     before the main permit can be activated.
                 </p>
@@ -114,6 +114,12 @@
                                     {% endif %}
                                 </div>
                             </div>
+
+                            <div class="safety-permit-field">
+                                <label class="safety-permit-field__label"><i class="bi bi-geo-alt"></i> Location tag</label>
+                                <div class="safety-permit-field__display">{{ safety_form.instance.location_tag|default:"Same as main permit" }}</div>
+                            </div>
+
                         {% else %}
                             <div class="safety-permit-field">
                                 <label for="{{ safety_form.safety_type.id_for_label }}" class="safety-permit-field__label">
@@ -143,6 +149,15 @@
                                         {{ safety_form.safety_permit_number.errors }}
                                     </div>
                                 {% endif %}
+                            </div>
+
+                            <div class="safety-permit-field">
+                                <label for="{{ safety_form.location_tag.id_for_label }}" class="safety-permit-field__label"><i class="bi bi-geo-alt"></i> Location tag</label>
+                                <div class="position-relative">
+                                    <input type="text" class="form-control safety-location-search" autocomplete="off" placeholder="Search for a location tag..." data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}">
+                                    <div class="list-group mt-1 shadow position-absolute w-100 safety-location-results"></div>
+                                    {{ safety_form.location_tag.as_hidden }}
+                                </div>
                             </div>
                         {% endif %}
                     </div>
@@ -246,6 +261,15 @@
                         <div class="safety-permit-field__help">
                             <i class="bi bi-info-circle"></i>
                             Leave blank if not yet issued by Permit Office
+                        </div>
+                    </div>
+
+                    <div class="safety-permit-field">
+                        <label class="safety-permit-field__label"><i class="bi bi-geo-alt"></i> Location tag</label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control safety-location-search" autocomplete="off" placeholder="Search for a location tag..." data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}">
+                            <div class="list-group mt-1 shadow position-absolute w-100 safety-location-results"></div>
+                            {{ paper_safety_permit_formset.empty_form.location_tag.as_hidden }}
                         </div>
                     </div>
                 </div>

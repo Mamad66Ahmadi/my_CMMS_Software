@@ -1221,7 +1221,8 @@ textarea.form-control,
     box-shadow: 0 0 0 3px var(--c-accent-light);
 }
 
-.location-results {
+.location-results,
+.safety-location-results {
     display: none;
     z-index: 1000;
     background: var(--c-bg-surface);
@@ -1230,7 +1231,8 @@ textarea.form-control,
     overflow: hidden;
 }
 
-.location-results.is-visible {
+.location-results.is-visible,
+.safety-location-results.is-visible {
     display: block;
 }
 
@@ -1278,7 +1280,8 @@ textarea.form-control,
 }
 
 /* Location-tag autocomplete used specifically in the permit form */
-.location-results {
+.location-results,
+.safety-location-results {
     z-index: 1050;
     border: 1px solid var(--c-border-strong);
     border-radius: 0 0 var(--radius-sm) var(--radius-sm);
@@ -1288,13 +1291,76 @@ textarea.form-control,
     background: var(--c-bg-surface);
 }
 
-.location-results .list-group-item {
+.location-results .list-group-item,
+.safety-location-results .list-group-item {
     font-size: 13px;
     border-color: var(--c-border);
 }
 
-.location-results .list-group-item-action:hover {
+.location-results .list-group-item-action:hover,
+.safety-location-results .list-group-item-action:hover {
     background: var(--c-bg-subtle);
+}
+
+/* Keep location autocomplete menus above neighboring form panes. */
+.detail-panel:has(.location-results),
+.detail-panel:has(.autocomplete-results),
+#paper-safety-permits-section {
+    position: relative;
+    z-index: 50;
+    overflow: visible !important;
+}
+
+#paper-safety-permits-panel {
+    position: relative;
+    z-index: 9999 !important;
+    overflow: visible !important;
+}
+
+#paper-safety-permits-panel .psp-review-form,
+#paper-safety-permits-panel .psp-add-fields,
+#paper-safety-permits-panel .psp-add-fields > .position-relative {
+    position: relative;
+    z-index: 10000;
+    overflow: visible !important;
+}
+
+.permit-detail-page .permit-layout__main:has(#paper-safety-permits-panel),
+.permit-detail-page .permit-layout__side:has(#paper-safety-permits-panel) {
+    position: relative;
+    z-index: 100;
+    overflow: visible !important;
+}
+
+#paper-safety-permits-section .detail-panel__body,
+#paper-safety-permits-section .safety-permit-card,
+#paper-safety-permits-section .safety-permit-card__body {
+    overflow: visible !important;
+}
+
+.safety-location-results,
+.detail-panel .location-results,
+.detail-panel .autocomplete-results {
+    z-index: 2000 !important;
+}
+
+.psp-add-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .5rem;
+    align-items: start;
+}
+
+.psp-add-fields .safety-location-results {
+    display: block;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .psp-add-fields {
+        grid-template-columns: 1fr;
+    }
 }
 
 
@@ -2433,9 +2499,13 @@ details[open] > .detail-panel__header .chevron-icon {
 }
 
 .location-results .autocomplete-option.active,
+.safety-location-results .autocomplete-option.active,
 .location-results .autocomplete-option:hover,
+.safety-location-results .autocomplete-option:hover,
 .location-results .autocomplete-option:focus,
-.location-results .autocomplete-option:focus-visible {
+.safety-location-results .autocomplete-option:focus,
+.location-results .autocomplete-option:focus-visible,
+.safety-location-results .autocomplete-option:focus-visible {
     background: var(--c-primary, #0d6efd) !important;
     color: #fff !important;
     border-color: var(--c-primary, #0d6efd) !important;
@@ -3605,7 +3675,7 @@ details[open] > .detail-panel__header .chevron-icon {
 /* Card Body */
 .safety-permit-card__body {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-2) var(--space-3);
     padding: var(--space-3);
 }
@@ -3613,6 +3683,12 @@ details[open] > .detail-panel__header .chevron-icon {
 @media (max-width: 768px) {
     .safety-permit-card__body {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+    .safety-permit-card__body {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 

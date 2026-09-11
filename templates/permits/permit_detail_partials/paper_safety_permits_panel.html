@@ -97,6 +97,10 @@
                                             <bdi>Awaiting review</bdi>
                                         {% endif %}
                                     </span>
+                                    {% if safety_permit.location_tag %}
+                                        <span class="psp-item__meta-sep" aria-hidden="true">&middot;</span>
+                                        <span class="psp-item__location"><i class="bi bi-geo-alt"></i> {{ safety_permit.location_tag }}</span>
+                                    {% endif %}
                                 </div>
                             </div>
 
@@ -280,24 +284,22 @@
                             New paper safety permit
                         </div>
 
-                        <select
-                            name="safety_type"
-                            class="form-select form-select-sm"
-                            required
-                        >
-                            <option value="">Select safety-permit type</option>
-                            {% for safety_type in paper_safety_permit_types %}
-                                <option value="{{ safety_type.pk }}">{{ safety_type.name }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="psp-add-fields">
+                            <select name="safety_type" class="form-select form-select-sm" required>
+                                <option value="">Select safety-permit type</option>
+                                {% for safety_type in paper_safety_permit_types %}
+                                    <option value="{{ safety_type.pk }}">{{ safety_type.name }}</option>
+                                {% endfor %}
+                            </select>
 
-                        <input
-                            type="text"
-                            name="safety_permit_number"
-                            class="form-control form-control-sm"
-                            placeholder="Permit number (optional)"
-                            maxlength="30"
-                        >
+                            <input type="text" name="safety_permit_number" class="form-control form-control-sm" placeholder="Permit number (optional)" maxlength="30">
+
+                            <div class="position-relative">
+                                <input type="text" name="location_tag_search" class="form-control form-control-sm safety-location-search" autocomplete="off" placeholder="Search location tag..." required data-autocomplete-url="{% url 'equipment:locationtag_autocomplete' %}">
+                                <div class="list-group shadow position-absolute w-100 safety-location-results"></div>
+                                <input type="hidden" name="location_tag" class="safety-location-id">
+                            </div>
+                        </div>
 
                         <div>
                             <button type="submit" class="btn btn-primary btn-sm">
@@ -311,3 +313,58 @@
         {% endif %}
     </div>
 </div>
+<script>
+(function () {
+    const panel = document.getElementById("paper-safety-permits-panel");
+    if (!panel) return;
+    const input = panel.querySelector(".safety-location-search");
+    if (!input || input.dataset.bound) return;
+    input.dataset.bound = "1";
+    const hidden = panel.querySelector(".safety-location-id");
+    const results = panel.querySelector(".safety-location-results");
+    let activeIndex = -1;
+    const setActive = function (index) {
+        const options = Array.from(results.querySelectorAll(".autocomplete-option"));
+        if (!options.length) return;
+        activeIndex = Math.max(0, Math.min(index, options.length - 1));
+        options.forEach((option, i) => option.classList.toggle("active", i === activeIndex));
+        options[activeIndex].scrollIntoView({ block: "nearest" });
+    };
+    input.addEventListener("input", function () {
+        hidden.value = "";
+        const query = input.value.trim();
+        results.innerHTML = "";
+        results.classList.remove("is-visible");
+        if (!query) return;
+        fetch(input.dataset.autocompleteUrl + "?q=" + encodeURIComponent(query))
+            .then(response => response.json())
+            .then(data => (data.results || []).forEach(item => {
+                const option = document.createElement("button");
+                option.type = "button";
+                option.className = "list-group-item list-group-item-action autocomplete-option";
+                option.textContent = item.text;
+                option.addEventListener("mouseenter", function () {
+                    setActive(Array.from(results.querySelectorAll(".autocomplete-option")).indexOf(option));
+                });
+                option.addEventListener("click", function () {
+                    input.value = item.text;
+                    hidden.value = item.id;
+                    results.innerHTML = "";
+                    results.classList.remove("is-visible");
+                });
+                results.appendChild(option);
+            }));
+        activeIndex = -1;
+        if (results.children.length) setActive(0);
+        results.classList.add("is-visible");
+    });
+    input.addEventListener("keydown", function (event) {
+        const options = results.querySelectorAll(".autocomplete-option");
+        if (!options.length) return;
+        if (event.key === "ArrowDown") { event.preventDefault(); setActive(activeIndex + 1); }
+        else if (event.key === "ArrowUp") { event.preventDefault(); setActive(activeIndex - 1); }
+        else if (event.key === "Enter" && activeIndex >= 0) { event.preventDefault(); options[activeIndex].click(); }
+        else if (event.key === "Escape") { results.innerHTML = ""; results.classList.remove("is-visible"); }
+    });
+})();
+</script>

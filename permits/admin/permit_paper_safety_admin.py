@@ -25,6 +25,7 @@ class PermitPaperSafetyPermitInline(admin.TabularInline):
     fields = (
         "safety_type",
         "safety_permit_number",
+        "location_tag",
         "status",
         "reviewed_by",
         "reviewed_at",
@@ -81,7 +82,7 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     list_display = (
         "safety_permit_number_display",
         "safety_type",
-        "permit",
+        "linked_permits_display",
         "current_step",
         "blocks_main_permit",
         "reviewed_by",
@@ -96,9 +97,10 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     search_fields = (
         "safety_permit_number",
         "permit__permit_number",
+        "permits__permit_number",
         "permit__scope_of_work",
     )
-    autocomplete_fields = ("permit",)
+    autocomplete_fields = ("permit", "permits", "location_tag")
     list_select_related = (
         "permit",
         "current_step",
@@ -109,7 +111,9 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     ordering = ("current_step__step_order", "safety_type", "permit__permit_number", "pk")
     fields = (
         "permit",
+        "permits",
         "safety_type",
+        "location_tag",
         "safety_permit_number",
         "current_step",
         "blocks_main_permit",
@@ -138,6 +142,11 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
     def safety_permit_number_display(self, obj):
         return obj.safety_permit_number or "Number pending"
 
+    @admin.display(description="Main permits")
+    def linked_permits_display(self, obj):
+        permits = obj.permits.all()
+        return ", ".join(p.permit_number for p in permits) or "—"
+
     def has_add_permission(self, request):
         # Required paper permits are created within their main permit.
         return False
@@ -160,6 +169,9 @@ class PermitPaperSafetyPermitAdmin(admin.ModelAdmin):
             obj.created_by = request.user
         obj.modified_by = request.user
         super().save_model(request, obj, form, change)
+
+        if obj.permit_id:
+            obj.permits.add(obj.permit_id)
 
     @admin.action(description="Approve selected paper safety permits")
     def approve_selected_paper_safety_permits(self, request, queryset):

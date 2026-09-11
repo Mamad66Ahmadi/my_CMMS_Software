@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from equipment.models.equipment_models import TimeStampedModel
+from equipment.models.equipment_models import LocationTag
 
 
 paper_permit_identifier_validator = RegexValidator(
@@ -73,10 +74,29 @@ class PermitPaperSafetyPermit(models.Model):
     paper permit is being prepared, but approval requires a number.
     """
 
+    # Kept as the original/primary permit for backwards compatibility. New
+    # records can additionally be linked to any number of main permits through
+    # ``permits`` below.
     permit = models.ForeignKey(
         "permits.Permit",
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
+        related_name="primary_paper_safety_permits",
+    )
+    permits = models.ManyToManyField(
+        "permits.Permit",
         related_name="paper_safety_permits",
+        blank=True,
+        verbose_name="Main permits",
+    )
+    location_tag = models.ForeignKey(
+        LocationTag,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="paper_safety_permits",
+        help_text="Location where this safety permit applies; may differ from the main permit.",
     )
     safety_type = models.ForeignKey(
         PaperSafetyPermitType,
@@ -133,7 +153,7 @@ class PermitPaperSafetyPermit(models.Model):
             ),
         ]
         indexes = [
-            models.Index(
+        models.Index(
                 fields=["permit", "current_step"],
                 name="paper_safety_permit_step_idx",
             ),
