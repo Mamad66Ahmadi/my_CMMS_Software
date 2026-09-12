@@ -417,30 +417,45 @@ class PaperSafetyPermitCreateView(LoginRequiredMixin, View):
                     "Paper safety permits cannot be added after the main permit is activated."
                 )
 
-            try:
-                safety_type = PaperSafetyPermitType.objects.get(
-                    pk=request.POST.get("safety_type"),
-                    is_active=True,
-                )
-            except PaperSafetyPermitType.DoesNotExist as exc:
-                raise ValidationError(
-                    "Select an available paper safety-permit type."
-                ) from exc
+            existing_id = request.POST.get("existing_safety_permit_id")
+            if existing_id:
+                try:
+                    safety_permit = PermitPaperSafetyPermit.objects.get(pk=existing_id)
+                except PermitPaperSafetyPermit.DoesNotExist as exc:
+                    raise ValidationError("Select a valid existing paper safety permit.") from exc
 
-            if not request.POST.get("location_tag"):
-                raise ValidationError("A location tag is required for every new safety permit.")
+                if safety_permit.permits.filter(pk=permit.pk).exists():
+                    raise ValidationError("That paper safety permit is already linked to this permit.")
 
-            PermitPaperSafetyPermit.objects.create(
-                permit=permit,
-                location_tag_id=request.POST.get("location_tag"),
-                safety_type=safety_type,
-                safety_permit_number=request.POST.get(
-                    "safety_permit_number", ""
-                ),
-                created_by=request.user,
-                modified_by=request.user,
-            ).permits.add(permit)
-            messages.success(request, "Paper safety permit added.")
+                safety_permit.permits.add(permit)
+                safety_permit.modified_by = request.user
+                safety_permit.save(update_fields=["modified_by", "modified_at"])
+                messages.success(request, "Existing paper safety permit linked.")
+            else:
+                try:
+                    safety_type = PaperSafetyPermitType.objects.get(
+                        pk=request.POST.get("safety_type"),
+                        is_active=True,
+                    )
+                except PaperSafetyPermitType.DoesNotExist as exc:
+                    raise ValidationError(
+                        "Select an available paper safety-permit type."
+                    ) from exc
+
+                if not request.POST.get("location_tag"):
+                    raise ValidationError("A location tag is required for every new safety permit.")
+
+                PermitPaperSafetyPermit.objects.create(
+                    permit=permit,
+                    location_tag_id=request.POST.get("location_tag"),
+                    safety_type=safety_type,
+                    safety_permit_number=request.POST.get(
+                        "safety_permit_number", ""
+                    ),
+                    created_by=request.user,
+                    modified_by=request.user,
+                ).permits.add(permit)
+                messages.success(request, "Paper safety permit added.")
         except PermissionDenied:
             messages.error(
                 request,

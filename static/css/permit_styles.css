@@ -1325,6 +1325,18 @@ textarea.form-control,
     overflow: visible !important;
 }
 
+#paper-safety-permits-panel #existing-detail-safety-picker,
+#paper-safety-permits-panel #existing-detail-safety-picker-fields,
+#paper-safety-permits-panel #existing-detail-safety-picker-fields .position-relative {
+    position: relative;
+    z-index: 30000;
+    overflow: visible !important;
+}
+
+#paper-safety-permits-panel #existing-detail-safety-results {
+    z-index: 30001 !important;
+}
+
 .permit-detail-page .permit-layout__main:has(#paper-safety-permits-panel),
 .permit-detail-page .permit-layout__side:has(#paper-safety-permits-panel) {
     position: relative;

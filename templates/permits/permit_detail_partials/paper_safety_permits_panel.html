@@ -260,6 +260,32 @@
                 </button>
 
                 <div class="collapse mt-3" id="paper-safety-permit-add-form">
+                    <div class="border rounded p-3 mb-3" id="existing-detail-safety-picker">
+                        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                            <strong><i class="bi bi-link-45deg me-1"></i>Add a previously defined safety permit</strong>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="toggle-existing-detail-safety-picker">Choose existing permit</button>
+                        </div>
+                        <div id="existing-detail-safety-picker-fields" hidden>
+                            <div class="row g-2">
+                                <div class="col-md-5">
+                                    <label class="form-label" for="existing-detail-safety-type">Permit type</label>
+                                    <select id="existing-detail-safety-type" class="form-select">
+                                        <option value="">Select permit type</option>
+                                        {% for item in paper_safety_permit_types %}
+                                            <option value="{{ item.pk }}">{{ item.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-7 position-relative">
+                                    <label class="form-label" for="existing-detail-safety-number">Safety permit number</label>
+                                    <input type="text" id="existing-detail-safety-number" class="form-control" autocomplete="off" placeholder="Search by permit number..." disabled>
+                                    <div id="existing-detail-safety-results" class="list-group mt-1 shadow position-absolute w-100 location-results" style="z-index: 1050;"></div>
+                                </div>
+                            </div>
+                            <div class="form-text mt-2">Select a result to share it with this main permit. The safety permit remains managed from its original record.</div>
+                        </div>
+                    </div>
+
                     <form
                         method="post"
                         action="{% url 'permits:paper_safety_permit_add' permit_number=permit.permit_number %}"
@@ -269,6 +295,7 @@
                         class="psp-review-form mb-0"
                     >
                         {% csrf_token %}
+                        <input type="hidden" name="existing_safety_permit_id" id="existing-detail-safety-id">
 
                         <div class="psp-review-form__title">
                             <i class="bi bi-file-earmark-plus"></i>
@@ -295,7 +322,7 @@
                         <div>
                             <button type="submit" class="btn btn-primary btn-sm">
                                 <i class="bi bi-plus-lg me-1"></i>
-                                Add safety permit
+                                Save Safety Permit
                             </button>
                         </div>
                     </form>
@@ -309,6 +336,99 @@
     const panel = document.getElementById("paper-safety-permits-panel");
     if (!panel) return;
     const input = panel.querySelector(".safety-location-search");
+    const pickerToggle = panel.querySelector("#toggle-existing-detail-safety-picker");
+    const pickerFields = panel.querySelector("#existing-detail-safety-picker-fields");
+    const pickerType = panel.querySelector("#existing-detail-safety-type");
+    const pickerNumber = panel.querySelector("#existing-detail-safety-number");
+    const pickerResults = panel.querySelector("#existing-detail-safety-results");
+    const pickerId = panel.querySelector("#existing-detail-safety-id");
+    const newSafetyType = panel.querySelector('select[name="safety_type"]');
+    const newSafetyNumber = panel.querySelector('input[name="safety_permit_number"]');
+    const newLocationSearch = panel.querySelector('input[name="location_tag_search"]');
+
+    const setNewPermitFieldsEnabled = function (enabled) {
+        [newSafetyType, newSafetyNumber, newLocationSearch].forEach(function (field) {
+            if (!field) return;
+            field.disabled = !enabled;
+            if (field === newSafetyType || field === newLocationSearch) field.required = enabled;
+        });
+    };
+
+    if (pickerToggle && pickerFields && pickerType && pickerNumber && pickerResults && pickerId) {
+        let activeIndex = -1;
+        const clearResults = function () {
+            pickerResults.innerHTML = "";
+            pickerResults.classList.remove("is-visible");
+            activeIndex = -1;
+        };
+        const setActive = function (index) {
+            const options = Array.from(pickerResults.querySelectorAll(".autocomplete-option"));
+            if (!options.length) return;
+            activeIndex = Math.max(0, Math.min(index, options.length - 1));
+            options.forEach((option, optionIndex) => option.classList.toggle("active", optionIndex === activeIndex));
+            options[activeIndex].scrollIntoView({ block: "nearest" });
+        };
+        pickerToggle.addEventListener("click", function () {
+            pickerFields.hidden = !pickerFields.hidden;
+            if (!pickerFields.hidden) pickerType.focus();
+        });
+        pickerType.addEventListener("change", function () {
+            pickerNumber.disabled = !pickerType.value;
+            pickerNumber.value = "";
+            pickerId.value = "";
+            setNewPermitFieldsEnabled(true);
+            clearResults();
+        });
+        let pickerTimer;
+        pickerNumber.addEventListener("input", function () {
+            pickerId.value = "";
+            clearTimeout(pickerTimer);
+            clearResults();
+            const query = pickerNumber.value.trim();
+            if (!pickerType.value || query.length < 2) return;
+            setNewPermitFieldsEnabled(true);
+            pickerTimer = setTimeout(function () {
+                const url = new URL("{% url 'permits:paper_safety_permit_autocomplete' %}", window.location.origin);
+                url.searchParams.set("q", query);
+                url.searchParams.set("safety_type", pickerType.value);
+                url.searchParams.set("permit_number", "{{ permit.permit_number|escapejs }}");
+                fetch(url.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                    .then(response => response.json())
+                    .then(data => {
+                        (data.results || []).forEach(item => {
+                            const option = document.createElement("button");
+                            option.type = "button";
+                            option.className = "list-group-item list-group-item-action autocomplete-option";
+                            option.innerHTML = "<strong>" + item.safety_permit_number + "</strong> <span class='text-muted'>— " + item.safety_type_text + (item.location_tag_text ? " — " + item.location_tag_text : "") + "</span>";
+                            option.addEventListener("mouseenter", () => setActive(Array.from(pickerResults.querySelectorAll(".autocomplete-option")).indexOf(option)));
+                            option.addEventListener("click", function () {
+                                pickerId.value = item.id;
+                                pickerNumber.value = item.safety_permit_number;
+                                setNewPermitFieldsEnabled(false);
+                                clearResults();
+                            });
+                            pickerResults.appendChild(option);
+                        });
+                        pickerResults.classList.toggle("is-visible", pickerResults.children.length > 0);
+                        if (pickerResults.children.length) setActive(0);
+                    })
+                    .catch(clearResults);
+            }, 250);
+        });
+    }
+
+    if (newSafetyType || newSafetyNumber || newLocationSearch) {
+        [newSafetyType, newSafetyNumber, newLocationSearch].forEach(function (field) {
+            if (!field) return;
+            field.addEventListener("input", function () {
+                if (pickerId && pickerId.value) {
+                    pickerId.value = "";
+                    setNewPermitFieldsEnabled(true);
+                }
+            });
+        });
+    }
+
     if (!input || input.dataset.bound) return;
     input.dataset.bound = "1";
     const hidden = panel.querySelector(".safety-location-id");
