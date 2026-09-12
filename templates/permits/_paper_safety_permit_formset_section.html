@@ -19,6 +19,34 @@
             </div>
         </div>
 
+        {% if not permit.activated_at %}
+            <div class="border rounded p-3 mt-3" id="existing-safety-permit-picker">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                    <strong><i class="bi bi-link-45deg me-1"></i>Add a previously defined safety permit</strong>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="toggle-existing-safety-picker">Choose existing permit</button>
+                </div>
+                <div id="existing-safety-picker-fields" hidden>
+                    <div class="row g-2">
+                        <div class="col-md-5">
+                            <label class="form-label" for="existing-safety-type">Permit type</label>
+                            <select id="existing-safety-type" class="form-select">
+                                <option value="">Select permit type</option>
+                                {% for item in paper_safety_permit_types %}
+                                    <option value="{{ item.pk }}">{{ item.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-7 position-relative">
+                            <label class="form-label" for="existing-safety-number">Safety permit number</label>
+                            <input type="text" id="existing-safety-number" class="form-control" autocomplete="off" placeholder="Search by permit number..." disabled>
+                            <div id="existing-safety-results" class="list-group mt-1 shadow position-absolute w-100 location-results" style="z-index: 1050;"></div>
+                        </div>
+                    </div>
+                    <div class="form-text mt-2">Select a result to share it with this main permit. The safety permit remains managed from its original record.</div>
+                </div>
+            </div>
+        {% endif %}
+
         <div id="continuation-safety-suggestions" class="alert alert-info mt-3" hidden>
             <div class="d-flex justify-content-between align-items-start gap-3">
                 <div>

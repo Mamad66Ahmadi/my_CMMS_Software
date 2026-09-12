@@ -7,6 +7,12 @@ function initPaperSafetyPermitFormset() {
     const emptyState = document.getElementById("paper-safety-permit-empty-state");
     const linkedContainer = document.getElementById("continuation-linked-safety-permits");
 
+    const pickerToggle = document.getElementById("toggle-existing-safety-picker");
+    const pickerFields = document.getElementById("existing-safety-picker-fields");
+    const pickerType = document.getElementById("existing-safety-type");
+    const pickerNumber = document.getElementById("existing-safety-number");
+    const pickerResults = document.getElementById("existing-safety-results");
+
     if (!rowsContainer || !emptyFormTemplate || !totalForms) return;
 
     if (linkedContainer) {
@@ -20,6 +26,107 @@ function initPaperSafetyPermitFormset() {
                 if (hidden) hidden.remove();
                 if (card) card.remove();
             });
+        });
+    }
+
+    if (pickerToggle && pickerFields && pickerType && pickerNumber && pickerResults) {
+        let pickerActiveIndex = -1;
+
+        pickerToggle.addEventListener("click", function () {
+            pickerFields.hidden = !pickerFields.hidden;
+            if (!pickerFields.hidden) pickerType.focus();
+        });
+
+        function clearPickerResults() {
+            pickerResults.innerHTML = "";
+            pickerResults.classList.remove("is-visible");
+            pickerActiveIndex = -1;
+        }
+
+        function setPickerActive(index) {
+            const options = Array.from(pickerResults.querySelectorAll(".autocomplete-option"));
+            if (!options.length) return;
+            pickerActiveIndex = Math.max(0, Math.min(index, options.length - 1));
+            options.forEach(function (option, optionIndex) {
+                option.classList.toggle("active", optionIndex === pickerActiveIndex);
+            });
+            options[pickerActiveIndex].scrollIntoView({ block: "nearest" });
+        }
+
+        function renderPickerResults(items) {
+            pickerResults.innerHTML = "";
+            pickerActiveIndex = -1;
+            (items || []).forEach(function (item) {
+                const option = document.createElement("button");
+                option.type = "button";
+                option.className = "list-group-item list-group-item-action autocomplete-option";
+                option.innerHTML = "<strong>" + item.safety_permit_number + "</strong> <span class='text-muted'>— " + item.safety_type_text + (item.location_tag_text ? " — " + item.location_tag_text : "") + "</span>";
+                option.addEventListener("mouseenter", function () {
+                    setPickerActive(Array.from(pickerResults.querySelectorAll(".autocomplete-option")).indexOf(option));
+                });
+                option.addEventListener("click", function () {
+                    const alreadyLinked = linkedContainer && linkedContainer.querySelector('input[name="continuation_safety_permit_ids"][value="' + item.id + '"]');
+                    if (!alreadyLinked && linkedContainer) {
+                        const hidden = document.createElement("input");
+                        hidden.type = "hidden";
+                        hidden.name = "continuation_safety_permit_ids";
+                        hidden.value = item.id;
+                        linkedContainer.appendChild(hidden);
+
+                        const card = document.createElement("div");
+                        card.className = "alert alert-secondary d-flex justify-content-between align-items-center gap-3 mt-2 mb-0";
+                        card.dataset.serverLinkedSafetyPermit = item.id;
+                        card.innerHTML = "<span><strong>" + item.safety_type_text + "</strong> <span class='text-muted'>" + item.safety_permit_number + "</span>" + (item.location_tag_text ? " — " + item.location_tag_text : "") + "</span><span class='d-flex align-items-center gap-2'><span class='badge text-bg-secondary'>" + (item.status || "Shared") + " · Shared</span><button type='button' class='btn btn-sm btn-outline-danger' data-remove-server-linked-safety='" + item.id + "'>Remove</button></span>";
+                        const remove = card.querySelector("[data-remove-server-linked-safety]");
+                        remove.addEventListener("click", function () { hidden.remove(); card.remove(); });
+                        linkedContainer.appendChild(card);
+                    }
+                    pickerNumber.value = "";
+                    clearPickerResults();
+                });
+                pickerResults.appendChild(option);
+            });
+            pickerResults.classList.toggle("is-visible", pickerResults.children.length > 0);
+            if (pickerResults.children.length) setPickerActive(0);
+        }
+
+        let pickerTimer;
+        pickerType.addEventListener("change", function () {
+            pickerNumber.disabled = !pickerType.value;
+            pickerNumber.value = "";
+            clearPickerResults();
+            if (pickerNumber.disabled) pickerType.focus();
+        });
+        pickerNumber.addEventListener("input", function () {
+            clearTimeout(pickerTimer);
+            const query = pickerNumber.value.trim();
+            if (!pickerType.value || query.length < 2) return;
+            pickerTimer = setTimeout(function () {
+                const url = new URL("{% url 'permits:paper_safety_permit_autocomplete' %}", window.location.origin);
+                url.searchParams.set("q", query);
+                url.searchParams.set("safety_type", pickerType.value);
+                {% if permit.permit_number %}url.searchParams.set("permit_number", "{{ permit.permit_number|escapejs }}");{% endif %}
+                fetch(url.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) { renderPickerResults(data.results || []); })
+                    .catch(clearPickerResults);
+            }, 250);
+        });
+        pickerNumber.addEventListener("keydown", function (event) {
+            const options = pickerResults.querySelectorAll(".autocomplete-option");
+            if (!options.length) return;
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setPickerActive(pickerActiveIndex + 1);
+            } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                setPickerActive(pickerActiveIndex - 1);
+            } else if (event.key === "Enter" && pickerActiveIndex >= 0) {
+                event.preventDefault();
+                options[pickerActiveIndex].click();
+            } else if (event.key === "Escape") {
+                clearPickerResults();
+            }
         });
     }
 

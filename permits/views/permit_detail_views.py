@@ -902,17 +902,14 @@ class PermitCreateView(
             except LocationTag.DoesNotExist:
                 context["location"] = None
 
-        context["accepted_continuation_safety_permits"] = []
-        continuation_id = self.request.POST.get("continuation_of")
         selected_ids = {
             int(value)
             for value in self.request.POST.getlist("continuation_safety_permit_ids")
             if str(value).isdigit()
         }
-        if continuation_id and selected_ids and str(continuation_id).isdigit():
+        if selected_ids:
             context["accepted_continuation_safety_permits"] = list(
                 PermitPaperSafetyPermit.objects.filter(
-                    Q(permits=continuation_id) | Q(permit_id=continuation_id),
                     pk__in=selected_ids,
                 )
                 .select_related("safety_type", "location_tag", "current_step")

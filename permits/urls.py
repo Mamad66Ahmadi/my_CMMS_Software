@@ -23,6 +23,7 @@ from permits.views import (
     PaperSafetyPermitReviewView,
     PaperSafetyPermitList,
     PaperSafetyPermitDetailView,
+    paper_safety_permit_autocomplete,
     
 )
 
@@ -67,6 +68,7 @@ urlpatterns = [
     # Permit AJAX / autocomplete helpers
     # -------------------------------------------------------------------------
     path("autocomplete/permits/", permit_autocomplete, name="permit_autocomplete",),
+    path("autocomplete/paper-safety-permits/", paper_safety_permit_autocomplete, name="paper_safety_permit_autocomplete",),
     path("validate-permit-reference/", validate_permit_reference, name="validate_permit_reference",),
     path("get-permit-data/", get_permit_data, name="get_permit_data",),
     # -------------------------------------------------------------------------

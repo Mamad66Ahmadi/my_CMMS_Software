@@ -5,6 +5,8 @@ from django.db import transaction
 from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.views import View
 
 from permits.models import (
@@ -21,6 +23,38 @@ from permits.services.authorization_service import WorkflowAuthorizationService
 
 
 PAPER_SAFETY_FORMSET_PREFIX = "paper_safety_permits"
+
+
+@login_required
+def paper_safety_permit_autocomplete(request):
+    """Find existing paper safety permits that can be shared with a permit."""
+    query = (request.GET.get("q") or "").strip()
+    safety_type = (request.GET.get("safety_type") or "").strip()
+    permit_number = (request.GET.get("permit_number") or "").strip()
+
+    if len(query) < 2 or not safety_type:
+        return JsonResponse({"results": []})
+
+    queryset = (
+        PermitPaperSafetyPermit.objects
+        .select_related("safety_type", "location_tag", "current_step")
+        .filter(safety_type_id=safety_type, safety_permit_number__icontains=query)
+        .exclude(safety_permit_number="")
+    )
+    if permit_number:
+        queryset = queryset.exclude(permits__permit_number=permit_number)
+
+    results = []
+    for item in queryset.order_by("safety_permit_number", "pk")[:20]:
+        results.append({
+            "id": item.pk,
+            "safety_type": item.safety_type_id,
+            "safety_type_text": str(item.safety_type),
+            "safety_permit_number": item.safety_permit_number,
+            "location_tag_text": str(item.location_tag) if item.location_tag else "",
+            "status": item.current_step.name if item.current_step else "Pending",
+        })
+    return JsonResponse({"results": results})
 
 
 def build_paper_safety_panel_context(*, permit, actor, message_storage):
@@ -200,10 +234,17 @@ class PermitPaperSafetyPermitFormSetMixin:
 
         context["paper_safety_permit_formset"] = formset
         context["allow_shared_safety_remove"] = True
+        selected_ids = self.continuation_safety_permit_ids()
         if formset.instance and formset.instance.pk:
-            context["accepted_continuation_safety_permits"] = list(
+            shared_ids = set(
                 formset.instance.paper_safety_permits
                 .exclude(permit=formset.instance)
+                .values_list("pk", flat=True)
+            )
+            selected_ids |= shared_ids
+        if selected_ids:
+            context["accepted_continuation_safety_permits"] = list(
+                PermitPaperSafetyPermit.objects.filter(pk__in=selected_ids)
                 .select_related("safety_type", "location_tag", "current_step")
                 .distinct()
             )
@@ -229,22 +270,23 @@ class PermitPaperSafetyPermitFormSetMixin:
         return {int(value) for value in values if str(value).isdigit()}
 
     def link_continuation_safety_permits(self, *, permit, user):
-        """Share selected existing safety-permit records with the new permit."""
+        """Share selected existing safety-permit records with the permit."""
         selected_ids = self.continuation_safety_permit_ids()
-        continuation = permit.continuation_of
-        if not selected_ids or not continuation:
+        if not selected_ids:
             return
 
-        allowed_ids = set(
-            PermitPaperSafetyPermit.objects.filter(
-                Q(permits=continuation) | Q(permit=continuation),
-                pk__in=selected_ids,
-            ).values_list("pk", flat=True)
-        )
+        continuation = permit.continuation_of
+        queryset = PermitPaperSafetyPermit.objects.filter(pk__in=selected_ids)
+        if continuation:
+            queryset = queryset.filter(Q(permits=continuation) | Q(permit=continuation))
+        allowed_ids = set(queryset.values_list("pk", flat=True))
         if allowed_ids != selected_ids:
-            raise ValidationError(
+            message = (
                 "One or more selected continuation safety permits is invalid."
+                if continuation
+                else "One or more selected safety permits is invalid."
             )
+            raise ValidationError(message)
 
         PermitPaperSafetyPermit.objects.filter(pk__in=allowed_ids).update(
             modified_by=user,
