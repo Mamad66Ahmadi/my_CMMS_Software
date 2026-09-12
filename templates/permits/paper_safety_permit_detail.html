@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Safety Permit {{ safety_permit.safety_permit_number|default:"—" }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/shared/detail-pages.css' %}">
+
+<div class="container-fluid px-3 py-4 permit-detail-page">
+    <div class="permit-header">
+        <div class="permit-header__left">
+            <div class="permit-icon-box"><i class="bi bi-shield-check"></i></div>
+            <div class="permit-title-group">
+                <h1>{{ safety_permit.safety_permit_number|default:"Number pending" }}</h1>
+                <div class="permit-subtitle">
+                    <i class="bi bi-file-earmark-lock2"></i>
+                    {{ safety_permit.safety_type }}
+                    {% if safety_permit.location_tag %}&nbsp;·&nbsp;{{ safety_permit.location_tag }}{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="permit-header__right">
+            <span class="status-badge {% if safety_permit.status == 'Activated' %}status-active{% elif safety_permit.status == 'Expired' or safety_permit.current_step.name == 'Closed' %}status-closed{% else %}status-default{% endif %}">
+                {{ safety_permit.status }}
+            </span>
+            <a href="{% url 'permits:paper_safety_permit_list' %}" class="btn-permit-action"><i class="bi bi-arrow-left"></i> Back to List</a>
+        </div>
+    </div>
+
+    <div class="validity-strip">
+        <div class="validity-item"><i class="bi bi-calendar-plus"></i><span class="label">Created:</span><span class="value">{{ safety_permit.created_at|date:"Y-m-d H:i" }}</span></div>
+        <div class="validity-item"><i class="bi bi-calendar-check"></i><span class="label">Reviewed:</span><span class="value">{{ safety_permit.reviewed_at|date:"Y-m-d H:i"|default:"—" }}</span></div>
+        <div class="validity-item"><i class="bi bi-person-check"></i><span class="label">Blocks Main Permit:</span><span class="value">{% if safety_permit.blocks_main_permit %}Yes{% else %}No{% endif %}</span></div>
+    </div>
+
+    <div class="permit-layout">
+        <div class="permit-layout__main">
+            <div class="detail-panel">
+                <div class="detail-panel__header"><i class="bi bi-diagram-3"></i> Workflow Information</div>
+                <div class="detail-panel__body"><div class="field-grid">
+                    <div class="field-item"><span class="field-label">Safety Type</span><span class="field-value">{{ safety_permit.safety_type }}</span></div>
+                    <div class="field-item"><span class="field-label">Type Code</span><span class="field-value">{{ safety_permit.safety_type.code }}</span></div>
+                    <div class="field-item"><span class="field-label">Current Step</span><span class="field-value">{{ safety_permit.current_step.name }}</span></div>
+                    <div class="field-item"><span class="field-label">Step Order</span><span class="field-value">{{ safety_permit.current_step.step_order }}</span></div>
+                    <div class="field-item"><span class="field-label">Blocks Main Permit</span><span class="field-value">{% if safety_permit.blocks_main_permit %}Yes{% else %}No{% endif %}</span></div>
+                    <div class="field-item"><span class="field-label">Validity Shifts</span><span class="field-value">{{ safety_permit.safety_type.validity_shifts }}</span></div>
+                    {% if safety_permit.review_comment %}<div class="field-item" style="grid-column: 1 / -1;"><span class="field-label">Review Comment</span><span class="field-value text-block align-start-cell">{{ safety_permit.review_comment }}</span></div>{% endif %}
+                </div></div>
+            </div>
+
+            <div class="detail-panel">
+                <div class="detail-panel__header"><i class="bi bi-link-45deg"></i> Linked Main Permits</div>
+                <div class="detail-panel__body"><div class="field-grid">
+                    <div class="field-item"><span class="field-label">Primary Permit</span><span class="field-value">{% if primary_permit %}<a href="{% url 'permits:permit_detail' primary_permit.permit_number %}">{{ primary_permit.permit_number }}</a>{% else %}—{% endif %}</span></div>
+                    <div class="field-item" style="grid-column: 1 / -1;"><span class="field-label">All Linked Permits</span><span class="field-value">{% for permit in safety_permit.permits.all %}<a href="{% url 'permits:permit_detail' permit.permit_number %}">{{ permit.permit_number }}</a>{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</span></div>
+                </div></div>
+            </div>
+
+            <div class="detail-panel">
+                <div class="detail-panel__header"><i class="bi bi-clock-history"></i> Workflow History</div>
+                <div class="detail-panel__body">
+                    {% if status_history %}<div class="table-scroll-container"><table><thead><tr><th>From</th><th>To</th><th>Changed By</th><th>Changed At</th><th>Remarks</th></tr></thead><tbody>{% for event in status_history %}<tr><td>{{ event.from_status|default:"Initial" }}</td><td><span class="status-badge status-default">{{ event.to_status }}</span></td><td>{{ event.changed_by.username|default:"System" }}</td><td>{{ event.changed_at|date:"Y-m-d H:i" }}</td><td class="align-start-cell">{{ event.remarks|default:"—" }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted mb-0">No workflow history recorded.</p>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="permit-layout__side">
+            <div class="detail-panel"><div class="detail-panel__header"><i class="bi bi-geo-alt"></i> Location</div><div class="detail-panel__body"><div class="field-grid field-grid--single"><div class="field-item"><span class="field-label">Location Tag</span><span class="field-value">{{ safety_permit.location_tag|default:"—" }}</span></div><div class="field-item"><span class="field-label">Unit</span><span class="field-value">{{ safety_permit.location_tag.unit.unit_code|default:"—" }}</span></div><div class="field-item"><span class="field-label">Parent Tag</span><span class="field-value">{{ safety_permit.location_tag.parent|default:"—" }}</span></div></div></div></div>
+            <div class="detail-panel"><div class="detail-panel__header"><i class="bi bi-person-lines-fill"></i> Audit</div><div class="detail-panel__body"><div class="field-grid field-grid--single"><div class="field-item"><span class="field-label">Created By</span><span class="field-value">{{ safety_permit.created_by.username }}</span></div><div class="field-item"><span class="field-label">Modified By</span><span class="field-value">{{ safety_permit.modified_by.username|default:"—" }}</span></div><div class="field-item"><span class="field-label">Reviewed By</span><span class="field-value">{{ safety_permit.reviewed_by.username|default:"—" }}</span></div><div class="field-item"><span class="field-label">Modified At</span><span class="field-value">{{ safety_permit.modified_at|date:"Y-m-d H:i" }}</span></div></div></div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

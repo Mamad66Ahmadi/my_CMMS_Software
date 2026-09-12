@@ -21,6 +21,8 @@ from permits.views import (
     WorkShiftDetailView,
     PaperSafetyPermitCreateView,
     PaperSafetyPermitReviewView,
+    PaperSafetyPermitList,
+    PaperSafetyPermitDetailView,
     
 )
 
@@ -51,6 +53,8 @@ urlpatterns = [
     # Permit list / filters / export
     # -------------------------------------------------------------------------
     path("list/", PermitList.as_view(), name="permit_list",),
+    path("paper-safety-permits/", PaperSafetyPermitList.as_view(), name="paper_safety_permit_list"),
+    path("paper-safety-permits/<int:pk>/", PaperSafetyPermitDetailView.as_view(), name="paper_safety_permit_detail"),
     path("work-shifts/", WorkShiftListView.as_view(), name="work_shift_list"),
     path("work-shifts/<int:pk>/", WorkShiftDetailView.as_view(), name="work_shift_detail"),
     path("list/export/csv/", PermitExportCSV.as_view(), name="permit_export_csv",),

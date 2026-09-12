@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Safety Permits{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/permit_styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/shared/list-pages.css' %}">
+{% endblock %}
+{% block content %}
+<div class="container-fluid permit-list-page">
+    <div class="filter-panel mb-3">
+        <div class="filter-panel__header">
+            <form method="get" class="d-flex flex-column gap-3 w-100" id="safetyFilterForm">
+                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                    <div class="filter-search-group flex-grow-1">
+                        <i class="bi bi-search filter-search-icon"></i>
+                        <input type="text" name="q" class="filter-search-input" placeholder="Search safety permit no., type, step, location, main permit..." value="{{ filters.q }}">
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn-filter-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                        <button class="btn-filter-secondary {% if has_advanced_filters %}active{% endif %}" type="button" data-bs-toggle="offcanvas" data-bs-target="#safetyFilterOffcanvas"><i class="bi bi-sliders2"></i> Filters</button>
+                        {% if query_params or filters.q %}<a class="btn-filter-clear" href="{% url 'permits:paper_safety_permit_list' %}?clear=1"><i class="bi bi-x-circle"></i> Clear</a>{% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="offcanvas offcanvas-end filter-offcanvas" tabindex="-1" id="safetyFilterOffcanvas">
+            <div class="offcanvas-header border-bottom"><h5 class="offcanvas-title"><i class="bi bi-funnel-fill"></i> Safety Permit Filters</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button></div>
+            <div class="offcanvas-body"><form method="get" class="filter-sections">
+                <div class="filter-section"><div class="filter-section__title"><i class="bi bi-shield-check"></i> Safety Permit</div><div class="filter-grid">
+                    <div class="filter-field"><label class="filter-label">Safety Permit Number</label><input class="filter-input" name="safety_permit_number" value="{{ filters.safety_permit_number }}"></div>
+                    <div class="filter-field"><label class="filter-label">Safety Type</label><select class="filter-select" name="safety_type"><option value="">All types</option>{% for item in safety_permit_types %}<option value="{{ item.name }}" {% if filters.safety_type == item.name %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+                    <div class="filter-field"><label class="filter-label">Workflow Step</label><select class="filter-select" name="current_step"><option value="">All steps</option>{% for item in safety_workflow_steps %}<option value="{{ item.name }}" {% if filters.current_step == item.name %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+                    <div class="filter-field"><label class="filter-label">Location Tag</label><input class="filter-input" name="location_tag" value="{{ filters.location_tag }}"></div>
+                    <div class="filter-field"><label class="filter-label">Main Permit Number</label><input class="filter-input" name="permit_number" value="{{ filters.permit_number }}"></div>
+                    <div class="filter-field"><label class="filter-label">Created By</label><input class="filter-input" name="created_by" value="{{ filters.created_by }}"></div>
+                    <div class="filter-field"><label class="filter-label">Modified By</label><input class="filter-input" name="modified_by" value="{{ filters.modified_by }}"></div>
+                    <div class="filter-field"><label class="filter-label">Reviewed By</label><input class="filter-input" name="reviewed_by" value="{{ filters.reviewed_by }}"></div>
+                    <div class="filter-field"><label class="filter-label">Created From</label><input type="date" class="filter-input" name="created_from" value="{{ filters.created_from }}"></div>
+                    <div class="filter-field"><label class="filter-label">Created To</label><input type="date" class="filter-input" name="created_to" value="{{ filters.created_to }}"></div>
+                    <div class="filter-field"><label class="filter-label">Reviewed From</label><input type="date" class="filter-input" name="reviewed_from" value="{{ filters.reviewed_from }}"></div>
+                    <div class="filter-field"><label class="filter-label">Reviewed To</label><input type="date" class="filter-input" name="reviewed_to" value="{{ filters.reviewed_to }}"></div>
+                </div></div>
+                <button class="btn-filter-primary w-100" type="submit"><i class="bi bi-funnel-fill"></i> Apply Filters</button>
+            </form></div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-4"><h1 class="mb-0">Safety Permits <small class="text-muted">({{ safety_permits.paginator.count }} Records)</small></h1><a href="{% url 'permits:permit_list' %}" class="btn btn-outline-secondary"><i class="bi bi-list-ul me-1"></i> Main Permits</a></div>
+    {% if safety_permits.object_list %}<div class="table-scroll-container"><table><thead><tr>
+        {% include "shared/_sortable_table_header.html" with column="safety_permit_number" label="Safety Permit No." sort_by=sort_by query_params=header_query_params %}
+        {% include "shared/_sortable_table_header.html" with column="safety_type" label="Safety Type" sort_by=sort_by query_params=header_query_params %}
+        {% include "shared/_sortable_table_header.html" with column="current_step" label="Workflow Step" sort_by=sort_by query_params=header_query_params %}
+        {% include "shared/_sortable_table_header.html" with column="location_tag" label="Location" sort_by=sort_by query_params=header_query_params %}
+        {% include "shared/_sortable_table_header.html" with column="permit_number" label="Main Permit(s)" sort_by=sort_by query_params=header_query_params %}
+        <th>Review Comment</th>
+        {% include "shared/_sortable_table_header.html" with column="created_at" label="Created" sort_by=sort_by query_params=header_query_params %}
+        {% include "shared/_sortable_table_header.html" with column="reviewed_at" label="Reviewed" sort_by=sort_by query_params=header_query_params %}
+        {% include "shared/_sortable_table_header.html" with column="modified_at" label="Modified" sort_by=sort_by query_params=header_query_params %}
+    </tr></thead><tbody>{% for item in safety_permits %}<tr>
+        <td class="fw-bold"><a class="permit-number-link" href="{% url 'permits:paper_safety_permit_detail' item.pk %}">{{ item.safety_permit_number|default:"-" }}</a></td><td>{{ item.safety_type }}</td><td><span class="status-badge status-default">{{ item.status }}</span></td><td>{{ item.location_tag|default:"-" }}</td>
+        <td>{% for permit in item.permits.all %}<a class="permit-number-link" href="{% url 'permits:permit_detail' permit.permit_number %}">{{ permit.permit_number }}</a>{% if not forloop.last %}, {% endif %}{% empty %}{% if item.permit %}<a class="permit-number-link" href="{% url 'permits:permit_detail' item.permit.permit_number %}">{{ item.permit.permit_number }}</a>{% else %}-{% endif %}{% endfor %}</td>
+        <td class="align-start-cell">{{ item.review_comment|default:"-"|truncatechars:80 }}</td><td>{{ item.created_at|date:"Y-m-d H:i" }}</td><td>{{ item.reviewed_at|date:"Y-m-d H:i"|default:"-" }}</td><td>{{ item.modified_at|date:"Y-m-d H:i" }}</td>
+    </tr>{% endfor %}</tbody></table></div>{% include "shared/_pagination.html" with page_obj=safety_permits query_params=query_params %}{% else %}<div class="alert alert-info"><i class="bi bi-info-circle me-1"></i> No safety permits found matching the criteria.</div>{% endif %}
+</div>
+{% endblock %}
