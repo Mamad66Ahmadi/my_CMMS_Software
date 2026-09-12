@@ -55,44 +55,5 @@
             </tbody>
         </table>
 
-        <div class="subsection-title">Read-only workflow audit</div>
-        <table class="approvals">
-            <thead>
-                <tr>
-                    <th>Safety Permit</th>
-                    <th>Changed At</th>
-                    <th>Changed By</th>
-                    <th>Transition</th>
-                    <th>Remarks</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for safety_permit in paper_safety_permits %}
-                    {% for event in safety_permit.prefetched_status_history %}
-                        <tr>
-                            <td>
-                                {{ safety_permit.get_safety_type_display }}
-                                {% if safety_permit.safety_permit_number %}
-                                    ({{ safety_permit.safety_permit_number }})
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ event.changed_at|date:"Y-m-d H:i" }}
-                                ({{ event.changed_at|to_jalali:"%Y/%m/%d" }})
-                            </td>
-                            <td>
-                                {% if event.changed_by %}
-                                    {{ event.changed_by.get_full_name|default:event.changed_by.username }}
-                                {% else %}
-                                    System
-                                {% endif %}
-                            </td>
-                            <td>{{ event.from_status_label }} → {{ event.to_status_label }}</td>
-                            <td>{{ event.remarks|default:"—" }}</td>
-                        </tr>
-                    {% endfor %}
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
 {% endif %}

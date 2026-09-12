@@ -495,7 +495,6 @@
         </div>
     </div>
 
-    {% include "permits/permit_detail_partials/paper_safety_permits_print_section.html" with permit=permit paper_safety_permits=paper_safety_permits %}
 
     <!-- Hazards -->
     {% if all_hazards %}
@@ -571,6 +570,7 @@
     </div>
     {% endif %}
 
+    {% include "permits/permit_detail_partials/paper_safety_permits_print_section.html" with permit=permit paper_safety_permits=paper_safety_permits %}
 
     <!-- Equipment Preparation -->
     <div class="section">

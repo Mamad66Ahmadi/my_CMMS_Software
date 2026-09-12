@@ -10,195 +10,208 @@
     <div class="detail-panel work-shift-panel mt-4" id="closeout-panel">
 
         <!-- =========================================================
-             Header
+             Header (Collapsible Toggle - Open by default)
              ========================================================= -->
-        <div class="detail-panel__header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div 
+            class="detail-panel__header d-flex justify-content-between align-items-center flex-wrap gap-2"
+            role="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#closeout-collapse"
+            aria-expanded="true"
+            aria-controls="closeout-collapse"
+            style="cursor: pointer; user-select: none;"
+        >
 
             <div>
                 <i class="bi bi-clipboard-check"></i>
                 Permit Close-out
             </div>
 
-            {% if can_view_closeout %}
+            <div class="d-flex align-items-center gap-2">
+                {% if can_view_closeout %}
 
-                {% if closeout_signoffs %}
+                    {% if closeout_signoffs %}
 
-                    {% with total=closeout_signoffs|length %}
-                        <span class="badge rounded-pill text-bg-primary px-3 py-2">
-                            <i class="bi bi-list-check me-1"></i>
-                            {{ total }} Requirement{{ total|pluralize }}
+                        {% with total=closeout_signoffs|length %}
+                            <span class="badge rounded-pill text-bg-primary px-3 py-2">
+                                <i class="bi bi-list-check me-1"></i>
+                                {{ total }} Requirement{{ total|pluralize }}
+                            </span>
+                        {% endwith %}
+
+                    {% else %}
+
+                        <span class="badge rounded-pill text-bg-secondary px-3 py-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            No close-out requirements
                         </span>
-                    {% endwith %}
+
+                    {% endif %}
 
                 {% else %}
 
-                    <span class="badge rounded-pill text-bg-secondary px-3 py-2">
-                        <i class="bi bi-info-circle me-1"></i>
-                        No close-out requirements
+                    <span class="badge rounded-pill text-bg-secondary persian-text px-3 py-2">
+                        <i class="bi bi-lock-fill me-1"></i>
+                        <bdi>Unauthorized</bdi>
                     </span>
 
                 {% endif %}
 
-            {% else %}
-
-                <span class="badge rounded-pill text-bg-secondary persian-text px-3 py-2">
-                    <i class="bi bi-lock-fill me-1"></i>
-                    <bdi>Unauthorized</bdi>
-                </span>
-
-            {% endif %}
+                <i class="bi bi-chevron-down toggle-icon"></i>
+            </div>
 
         </div>
 
 
         <!-- =========================================================
-             Body
+             Body (Open by default with 'show')
              ========================================================= -->
-        <div class="detail-panel__body">
+        <div class="collapse show" id="closeout-collapse">
+            <div class="detail-panel__body">
 
-            {% if can_view_closeout %}
+                {% if can_view_closeout %}
 
-                {% if closeout_signoffs %}
+                    {% if closeout_signoffs %}
 
-                    <!-- ============================================
-                         Close-out Table
-                         ============================================ -->
-                    <div class="table-responsive">
+                        <!-- ============================================
+                             Close-out Table
+                             ============================================ -->
+                        <div class="table-responsive">
 
-                        <table class="table table-hover align-middle mb-0 work-shift-table closeout-table">
+                            <table class="table table-hover align-middle mb-0 work-shift-table closeout-table">
 
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="closeout-requirement-column persian-text">
-                                        <bdi>Close-out Requirement</bdi>
-                                    </th>
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="closeout-requirement-column persian-text">
+                                            <bdi>Close-out Requirement</bdi>
+                                        </th>
 
-                                    <th class="closeout-signoff-column persian-text">
-                                        <bdi>Sign-off</bdi>
-                                    </th>
+                                        <th class="closeout-signoff-column persian-text">
+                                            <bdi>Sign-off</bdi>
+                                        </th>
 
-                                    <th class="closeout-action-column persian-text">
-                                        <bdi>Action</bdi>
-                                    </th>
-                                </tr>
-                            </thead>
+                                        <th class="closeout-action-column persian-text">
+                                            <bdi>Action</bdi>
+                                        </th>
+                                    </tr>
+                                </thead>
 
-                            <tbody>
+                                <tbody>
 
-                                {% for signoff in closeout_signoffs %}
+                                    {% for signoff in closeout_signoffs %}
 
-                                    <tr class="
-                                        closeout-row
-                                        {% if signoff.signed_at %}
-                                            closeout-row--signed
-                                        {% else %}
-                                            closeout-row--pending
-                                        {% endif %}
-                                    ">
+                                        <tr class="
+                                            closeout-row
+                                            {% if signoff.signed_at %}
+                                                closeout-row--signed
+                                            {% else %}
+                                                closeout-row--pending
+                                            {% endif %}
+                                        ">
 
-                                        <!-- =================================================
-                                             CLOSE-OUT REQUIREMENT
-                                             ================================================= -->
-                                        <td class="closeout-requirement-cell">
+                                            <!-- =================================================
+                                                 CLOSE-OUT REQUIREMENT
+                                                 ================================================= -->
+                                            <td class="closeout-requirement-cell">
 
-                                            <div class="closeout-requirement">
+                                                <div class="closeout-requirement">
 
-                                                <div class="closeout-requirement__name persian-text">
-                                                    <bdi>
-                                                        {{ signoff.closeout_item.name }}
-                                                    </bdi>
-                                                </div>
-
-                                                {% if signoff.closeout_item.description %}
-                                                    <div class="closeout-requirement__description persian-text">
+                                                    <div class="closeout-requirement__name persian-text">
                                                         <bdi>
-                                                            {{ signoff.closeout_item.description }}
+                                                            {{ signoff.closeout_item.name }}
                                                         </bdi>
                                                     </div>
-                                                {% endif %}
 
-                                            </div>
-
-                                        </td>
-
-
-                                        <!-- =================================================
-                                             SIGN-OFF
-                                             ================================================= -->
-                                        <td class="closeout-signoff-cell text-center">
-
-                                            <div class="closeout-signoff d-flex flex-column align-items-center gap-1">
-
-                                                {% if signoff.signed_at %}
-                                                    <!-- Signed State -->
-                                                    <div class="closeout-signoff__status">
-                                                        <span class="signoff-chip signoff-chip--signed persian-text">
-                                                            <i class="bi bi-check-circle-fill signoff-chip__icon"></i>
-                                                            <span class="signoff-chip__body">
-                                                                <span class="signoff-chip__role"><bdi>Signed</bdi></span>
-                                                                <span class="signoff-chip__value">
-                                                                    <bdi>{{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}</bdi>
-                                                                </span>
-                                                            </span>
-                                                        </span>
-                                                    </div>
-
-                                                    <div class="closeout-signoff__time text-muted small">
-                                                        <i class="bi bi-clock me-1"></i>
-                                                        <span class="persian-text">
+                                                    {% if signoff.closeout_item.description %}
+                                                        <div class="closeout-requirement__description persian-text">
                                                             <bdi>
-                                                                {{ signoff.signed_at|date:"Y-m-d H:i" }}
-                                                                <span class="jalali-time">({{ signoff.signed_at|to_jalali:"%Y/%m/%d" }})</span>
+                                                                {{ signoff.closeout_item.description }}
                                                             </bdi>
-                                                        </span>
-                                                    </div>
+                                                        </div>
+                                                    {% endif %}
 
-                                                {% else %}
-                                                    <!-- Pending State -->
-                                                    <div class="closeout-signoff__status">
-                                                        <span class="signoff-chip signoff-chip--pending persian-text">
-                                                            <i class="bi bi-hourglass-split signoff-chip__icon"></i>
-                                                            <span class="signoff-chip__body">
-                                                                <span class="signoff-chip__role"><bdi>Awaiting Signature</bdi></span>
-                                                                <span class="signoff-chip__value">
-                                                                    <bdi>{{ signoff.closeout_item.role.name }}</bdi>
+                                                </div>
+
+                                            </td>
+
+
+                                            <!-- =================================================
+                                                 SIGN-OFF
+                                                 ================================================= -->
+                                            <td class="closeout-signoff-cell text-center">
+
+                                                <div class="closeout-signoff d-flex flex-column align-items-center gap-1">
+
+                                                    {% if signoff.signed_at %}
+                                                        <!-- Signed State -->
+                                                        <div class="closeout-signoff__status">
+                                                            <span class="signoff-chip signoff-chip--signed persian-text">
+                                                                <i class="bi bi-check-circle-fill signoff-chip__icon"></i>
+                                                                <span class="signoff-chip__body">
+                                                                    <span class="signoff-chip__role"><bdi>Signed</bdi></span>
+                                                                    <span class="signoff-chip__value">
+                                                                        <bdi>{{ signoff.signed_by.get_full_name|default:signoff.signed_by.username }}</bdi>
+                                                                    </span>
                                                                 </span>
                                                             </span>
-                                                        </span>
-                                                    </div>
-                                                {% endif %}
+                                                        </div>
 
-                                            </div>
+                                                        <div class="closeout-signoff__time text-muted small">
+                                                            <i class="bi bi-clock me-1"></i>
+                                                            <span class="persian-text">
+                                                                <bdi>
+                                                                    {{ signoff.signed_at|date:"Y-m-d H:i" }}
+                                                                    <span class="jalali-time">({{ signoff.signed_at|to_jalali:"%Y/%m/%d" }})</span>
+                                                                </bdi>
+                                                            </span>
+                                                        </div>
 
-                                        </td>
+                                                    {% else %}
+                                                        <!-- Pending State -->
+                                                        <div class="closeout-signoff__status">
+                                                            <span class="signoff-chip signoff-chip--pending persian-text">
+                                                                <i class="bi bi-hourglass-split signoff-chip__icon"></i>
+                                                                <span class="signoff-chip__body">
+                                                                    <span class="signoff-chip__role"><bdi>Awaiting Signature</bdi></span>
+                                                                    <span class="signoff-chip__value">
+                                                                        <bdi>{{ signoff.closeout_item.role.name }}</bdi>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                    {% endif %}
+
+                                                </div>
+
+                                            </td>
 
 
-                                        <!-- =================================================
-                                             ACTION
-                                             ================================================= -->
-                                        <td>
-                                            <div class="d-flex flex-wrap gap-2">
+                                            <!-- =================================================
+                                                 ACTION
+                                                 ================================================= -->
+                                            <td>
+                                                <div class="d-flex flex-wrap gap-2">
 
-                                                {% if is_active_state and not signoff.signed_at %}
-                                                    {% if signoff.closeout_item.role.code in can_sign_closeout_role_codes %}
-                                                        <form
-                                                            method="post"
-                                                            action="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number closeout_signoff_id=signoff.pk %}"
-                                                            hx-post="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number closeout_signoff_id=signoff.pk %}"
-                                                            hx-target="#closeout-panel-wrapper"
-                                                            hx-swap="outerHTML"
-                                                        >
-                                                            {% csrf_token %}
-                                                            <input
-                                                                type="hidden"
-                                                                name="confirm"
-                                                                value="on"
+                                                    {% if is_active_state and not signoff.signed_at %}
+                                                        {% if signoff.closeout_item.role.code in can_sign_closeout_role_codes %}
+                                                            <form
+                                                                method="post"
+                                                                action="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number closeout_signoff_id=signoff.pk %}"
+                                                                hx-post="{% url 'permits:permit_closeout_signoff' permit_number=permit.permit_number closeout_signoff_id=signoff.pk %}"
+                                                                hx-target="#closeout-panel-wrapper"
+                                                                hx-swap="outerHTML"
                                                             >
+                                                                {% csrf_token %}
+                                                                <input
+                                                                    type="hidden"
+                                                                    name="confirm"
+                                                                    value="on"
+                                                                >
 
-                                                            <button
-                                                                type="submit"
-                                                                class="btn btn-sm btn-shift-action btn-shift-action--sign persian-text"
-                                                            >
+                                                                <button
+                                                                    type="submit"
+                                                                    class="btn btn-sm btn-shift-action btn-shift-action--sign persian-text"
+                                                                >
                                                                 <i class="bi bi-pencil-square me-1"></i>
                                                                 <bdi>Sign — {{ signoff.closeout_item.role.name }}</bdi>
                                                             </button>
@@ -234,7 +247,6 @@
                             <bdi>No close-out requirements have been configured.</bdi>
                         </h6>
 
-
                     </div>
 
                 {% endif %}
@@ -256,6 +268,7 @@
 
             {% endif %}
 
+            </div>
         </div>
 
     </div>

@@ -3,7 +3,7 @@
 <details class="detail-panel attachments-panel"{% if attachments_panel_open %} open{% endif %}>
     <summary class="detail-panel__header" style="cursor: pointer; list-style: none;">
         <i class="bi bi-paperclip"></i> Permit Attachments
-        <span class="ms-auto text-muted small"> ▼ {{ attachments|length }}</span>
+        <span class="ms-auto text-muted small">{{ attachments|length }}</span>
         <i class="bi bi-chevron-down chevron-icon"></i>
     </summary>
     <div class="detail-panel__body">

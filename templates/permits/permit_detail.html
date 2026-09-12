@@ -305,8 +305,94 @@
                 </div>
             </div>
 
-            <!-- Required Paper Safety Permits -->
-            {% include "permits/permit_detail_partials/paper_safety_permits_panel.html" with permit=permit %}
+
+            <!-- Tools, Materials & Vehicle -->
+            <div class="detail-panel">
+                <div 
+                    class="detail-panel__header d-flex align-items-center justify-content-between"
+                    role="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#tools-materials-collapse"
+                    aria-expanded="true"
+                    aria-controls="tools-materials-collapse"
+                    style="cursor: pointer; user-select: none;"
+                >
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-tools"></i>
+                        <span>Tools, Materials &amp; Vehicle</span>
+                    </div>
+                    <i class="bi bi-chevron-down toggle-icon"></i>
+                </div>
+
+                <!-- 'collapse show' keeps it open by default -->
+                <div class="collapse show" id="tools-materials-collapse">
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
+
+                            <div class="field-item">
+                                <span class="field-label">Electrical Tools</span>
+                                <span class="field-value text-block">
+                                    {{ permit.electrical_tools|default:"—" }}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Mechanical Tools</span>
+                                <span class="field-value text-block">
+                                    {{ permit.mechanical_tools|default:"—" }}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Other Tools</span>
+                                <span class="field-value text-block">
+                                    {{ permit.other_tools|default:"—" }}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Hazardous Materials</span>
+                                <span class="field-value text-block">
+                                    {{ permit.hazardous_materials|default:"—" }}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Non-Explosion Proof Equipment</span>
+                                <span class="field-value text-block">
+                                    {{ permit.non_explosion_proof_equipment|default:"—" }}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Vehicle Required</span>
+                                <span class="field-value">
+                                    {% if permit.vehicle_required %}
+                                        <span class="text-danger fw-bold">
+                                            <i class="bi bi-check-circle-fill"></i> Yes
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">
+                                            <i class="bi bi-x-circle"></i> No
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            {% if permit.vehicle_required %}
+                                <div class="field-item" style="grid-column: 1 / -1;">
+                                    <span class="field-label">Vehicle Description</span>
+                                    <span class="field-value text-block">
+                                        {{ permit.vehicle_description|default:"—" }}
+                                    </span>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <!-- Hazards -->
             {% include "permits/permit_detail_partials/hazards_panel.html" with permit=permit %}
@@ -316,184 +402,132 @@
             {% include "permits/permit_detail_partials/precautions_panel.html" with permit=permit %}
 
 
-            <!-- Tools, Materials & Vehicle -->
-            <div class="detail-panel">
-                <div class="detail-panel__header">
-                    <i class="bi bi-tools"></i> Tools, Materials &amp; Vehicle
-                </div>
+            <!-- Required Paper Safety Permits -->
+            {% include "permits/permit_detail_partials/paper_safety_permits_panel.html" with permit=permit %}
 
-                <div class="detail-panel__body">
-                    <div class="field-grid">
 
-                        <div class="field-item">
-                            <span class="field-label">Electrical Tools</span>
-                            <span class="field-value text-block">
-                                {{ permit.electrical_tools|default:"—" }}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Mechanical Tools</span>
-                            <span class="field-value text-block">
-                                {{ permit.mechanical_tools|default:"—" }}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Other Tools</span>
-                            <span class="field-value text-block">
-                                {{ permit.other_tools|default:"—" }}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Hazardous Materials</span>
-                            <span class="field-value text-block">
-                                {{ permit.hazardous_materials|default:"—" }}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Non-Explosion Proof Equipment</span>
-                            <span class="field-value text-block">
-                                {{ permit.non_explosion_proof_equipment|default:"—" }}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Vehicle Required</span>
-                            <span class="field-value">
-                                {% if permit.vehicle_required %}
-                                    <span class="text-danger fw-bold">
-                                        <i class="bi bi-check-circle-fill"></i> Yes
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted">
-                                        <i class="bi bi-x-circle"></i> No
-                                    </span>
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        {% if permit.vehicle_required %}
-                            <div class="field-item" style="grid-column: 1 / -1;">
-                                <span class="field-label">Vehicle Description</span>
-                                <span class="field-value text-block">
-                                    {{ permit.vehicle_description|default:"—" }}
-                                </span>
-                            </div>
-                        {% endif %}
-
-                    </div>
-                </div>
-            </div>
 
             <!-- Equipment Preparation -->
             <div class="detail-panel">
-                <div class="detail-panel__header">
-                    <i class="bi bi-shield-exclamation"></i> Equipment Preparation
+                <div 
+                    class="detail-panel__header d-flex justify-content-between align-items-center"
+                    role="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#equipment-preparation-collapse"
+                    aria-expanded="true"
+                    aria-controls="equipment-preparation-collapse"
+                    style="cursor: pointer; user-select: none;"
+                >
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-exclamation"></i>
+                        <span>Equipment Preparation</span>
+                    </div>
+                    <i class="bi bi-chevron-down toggle-icon"></i>
                 </div>
 
-                <div class="detail-panel__body">
-                    <div class="field-grid">
+                <div class="collapse show" id="equipment-preparation-collapse">
+                    <div class="detail-panel__body">
+                        <div class="field-grid">
 
-                        <div class="field-item">
-                            <span class="field-label">Mechanical Isolation</span>
-                            <span class="field-value">
-                                {% if permit.mechanical_isolation %}
-                                    {{ permit.get_mechanical_isolation_display }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Equipment Depressurized</span>
-                            <span class="field-value">
-                                {% if permit.equipment_depressurized %}
-                                    {{ permit.get_equipment_depressurized_display }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Equipment Drained</span>
-                            <span class="field-value">
-                                {% if permit.equipment_drained %}
-                                    {{ permit.get_equipment_drained_display }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Equipment Purged</span>
-                            <span class="field-value">
-                                {% if permit.equipment_purged %}
-                                    {{ permit.get_equipment_purged_display }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Process Isolation</span>
-                            <span class="field-value">
-                                {% if permit.process_isolation %}
-                                    {{ permit.get_process_isolation_display }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Area Authority Present Required</span>
-                            <span class="field-value">
-                                {% if permit.area_authority_present_required %}
-                                    <span class="text-danger fw-bold">
-                                        <i class="bi bi-check-circle-fill"></i> Yes
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted">
-                                        <i class="bi bi-x-circle"></i> No
-                                    </span>
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        <div class="field-item">
-                            <span class="field-label">Fire Watch Required</span>
-                            <span class="field-value">
-                                {% if permit.fire_watch_present_required %}
-                                    <span class="text-danger fw-bold">
-                                        <i class="bi bi-check-circle-fill"></i> Yes
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted">
-                                        <i class="bi bi-x-circle"></i> No
-                                    </span>
-                                {% endif %}
-                            </span>
-                        </div>
-
-                        {% if permit.equipment_preparation_notes %}
-                            <div class="field-item" style="grid-column: 1 / -1;">
-                                <span class="field-label">Equipment Preparation Notes</span>
-                                <span class="field-value text-block align-start-cell persian-text">
-                                    <bdi>{{ permit.equipment_preparation_notes }}</bdi>
+                            <div class="field-item">
+                                <span class="field-label">Mechanical Isolation</span>
+                                <span class="field-value">
+                                    {% if permit.mechanical_isolation %}
+                                        {{ permit.get_mechanical_isolation_display }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
                                 </span>
                             </div>
-                        {% endif %}
 
+                            <div class="field-item">
+                                <span class="field-label">Equipment Depressurized</span>
+                                <span class="field-value">
+                                    {% if permit.equipment_depressurized %}
+                                        {{ permit.get_equipment_depressurized_display }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Equipment Drained</span>
+                                <span class="field-value">
+                                    {% if permit.equipment_drained %}
+                                        {{ permit.get_equipment_drained_display }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Equipment Purged</span>
+                                <span class="field-value">
+                                    {% if permit.equipment_purged %}
+                                        {{ permit.get_equipment_purged_display }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Process Isolation</span>
+                                <span class="field-value">
+                                    {% if permit.process_isolation %}
+                                        {{ permit.get_process_isolation_display }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Area Authority Present Required</span>
+                                <span class="field-value">
+                                    {% if permit.area_authority_present_required %}
+                                        <span class="text-danger fw-bold">
+                                            <i class="bi bi-check-circle-fill"></i> Yes
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">
+                                            <i class="bi bi-x-circle"></i> No
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <div class="field-item">
+                                <span class="field-label">Fire Watch Required</span>
+                                <span class="field-value">
+                                    {% if permit.fire_watch_present_required %}
+                                        <span class="text-danger fw-bold">
+                                            <i class="bi bi-check-circle-fill"></i> Yes
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">
+                                            <i class="bi bi-x-circle"></i> No
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            {% if permit.equipment_preparation_notes %}
+                                <div class="field-item" style="grid-column: 1 / -1;">
+                                    <span class="field-label">Equipment Preparation Notes</span>
+                                    <span class="field-value text-block align-start-cell persian-text">
+                                        <bdi>{{ permit.equipment_preparation_notes }}</bdi>
+                                    </span>
+                                </div>
+                            {% endif %}
+
+                        </div>
                     </div>
                 </div>
             </div>
+
 
             <!-- Fire and Gas and ESD  -->
             {% include "permits/permit_detail_partials/_fire_gas_esd_panel.html" with permit=permit %}
