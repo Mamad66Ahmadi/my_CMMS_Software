@@ -147,48 +147,37 @@
                                     {% if can_review_paper_safety_permits %}
                                         <form
                                             method="post"
-                                            action="{% url 'permits:paper_safety_permit_review' permit_number=permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
-                                            hx-post="{% url 'permits:paper_safety_permit_review' permit_number=permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
-                                            hx-target="#paper-safety-permits-panel"
-                                            hx-swap="outerHTML"
-                                            class="psp-review-form"
+                                            action="{% url 'permits:paper_safety_permit_review' permit_number=safety_permit.permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
+                                            class="safety-review-form"
                                         >
                                             {% csrf_token %}
 
-                                            <div class="psp-review-form__title">
-                                                <i class="bi bi-diagram-3"></i>
-                                                Change workflow step
+                                            <div class="safety-review-form__fields">
+                                                {% if not safety_permit.safety_permit_number %}
+                                                    <label class="safety-review-form__field">
+                                                        <span>Paper permit number <small>(required for Activated)</small></span>
+                                                        <input type="text" name="safety_permit_number" class="form-control form-control-sm" maxlength="30" placeholder="Enter permit number">
+                                                    </label>
+                                                {% endif %}
+                                                <label class="safety-review-form__field safety-review-form__field--wide">
+                                                    <span>Review comment <small>(required only for Cancelled)</small></span>
+                                                    <input type="text" name="review_comment" class="form-control form-control-sm persian-text" placeholder="Add a formal review comment">
+                                                </label>
                                             </div>
-
-                                            {% if not safety_permit.safety_permit_number %}
-                                                <input
-                                                    type="text"
-                                                    name="safety_permit_number"
-                                                    class="form-control form-control-sm"
-                                                    placeholder="Permit number; required for Activated"
-                                                    maxlength="30"
-                                                >
-                                            {% endif %}
-
-                                            <input
-                                                type="text"
-                                                name="review_comment"
-                                                class="form-control form-control-sm persian-text"
-                                                placeholder="Comment; required only for Cancelled"
-                                            >
-
                                             <input type="hidden" name="action" value="change_step">
+                                            <input type="hidden" name="return_to_safety_detail" value="1">
 
-                                            <div class="d-flex flex-wrap gap-2">
+                                            <div class="safety-review-form__actions">
                                                 {% for step in paper_safety_workflow_steps %}
                                                     {% if step.pk != safety_permit.current_step_id %}
                                                         <button
                                                             type="submit"
                                                             name="step_id"
                                                             value="{{ step.pk }}"
-                                                            class="btn btn-sm {% if step.name == 'Cancelled' %}btn-outline-secondary{% elif step.blocks_main_permit %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
-                                                            onclick="this.form.elements.review_comment.required = {% if step.name == 'Cancelled' %}true{% else %}false{% endif %};"
+                                                            class="safety-step-button {% if step.name == 'Cancelled' %}safety-step-button--cancel{% elif step.blocks_main_permit %}safety-step-button--blocking{% else %}safety-step-button--safe{% endif %}"
+                                                            onclick="this.form.elements.review_comment.required = {% if step.name == 'Cancelled' %}true{% else %}false{% endif %}; return confirm('Change status to \'{{ step.name|escapejs }}\'?\n\nThis action will be recorded in the workflow history.');"
                                                         >
+                                                            <i class="bi {% if step.name == 'Cancelled' %}bi-x-circle{% elif step.blocks_main_permit %}bi-exclamation-triangle{% else %}bi-check-circle{% endif %}"></i>
                                                             {{ step.name }}
                                                         </button>
                                                     {% endif %}

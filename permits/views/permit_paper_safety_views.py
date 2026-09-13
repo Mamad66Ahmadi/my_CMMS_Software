@@ -383,6 +383,11 @@ class PaperSafetyPermitReviewView(LoginRequiredMixin, View):
                     message_storage=messages.get_messages(request),
                 ),
             )
+        if request.POST.get("return_to_safety_detail") == "1":
+            return redirect(
+                "permits:paper_safety_permit_detail",
+                pk=record.pk,
+            )
         return redirect(
             "permits:permit_detail",
             permit_number=record.permit.permit_number,

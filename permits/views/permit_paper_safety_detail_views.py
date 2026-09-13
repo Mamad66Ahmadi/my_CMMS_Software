@@ -2,6 +2,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView
 
 from permits.models import PermitPaperSafetyPermit
+from permits.models import PaperSafetyPermitWorkflowStep
+from permits.services.paper_safety_permit_service import PaperSafetyPermitReviewService
 
 
 class PaperSafetyPermitDetailView(LoginRequiredMixin, DetailView):
@@ -35,4 +37,14 @@ class PaperSafetyPermitDetailView(LoginRequiredMixin, DetailView):
             "changed_by"
         ).order_by("-changed_at", "-pk")
         context["primary_permit"] = self.object.permit
+        context["paper_safety_workflow_steps"] = (
+            PaperSafetyPermitWorkflowStep.objects.filter(is_active=True)
+            .order_by("step_order", "pk")
+        )
+        context["can_review_paper_safety_permits"] = (
+            PaperSafetyPermitReviewService.actor_can_review(
+                record=self.object,
+                actor=self.request.user,
+            )
+        )
         return context
