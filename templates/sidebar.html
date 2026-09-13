@@ -1,26 +1,46 @@
 {# sidebar.html #}
-<nav class="sidebar" id="sidebar">
+<nav class="sidebar" id="sidebar" aria-label="Primary navigation">
     <div class="sidebar-header">
         <div class="brand">
             <i class="bi bi-gear-wide-connected brand-icon"></i>
-            <span class="brand-text">CMMS</span>
+            <div class="brand-copy">
+                <span class="brand-text">CMMS</span>
+                <span class="brand-subtitle">Permit Control</span>
+            </div>
         </div>
-        <span id="sidebarToggle" class="sidebar-toggle-icon" title="Collapse / Expand">&#8249;</span>
+        <button id="sidebarToggle" class="sidebar-toggle-icon" type="button" title="Collapse navigation" aria-label="Collapse navigation" aria-expanded="true">
+            <span class="sidebar-toggle-mark" aria-hidden="true"></span>
+        </button>
     </div>
 
-    <div class="sidebar-section-label">OPERATIONS</div>
+    <div class="sidebar-section-label">Operations</div>
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
 
+        <!-- Permits -->
+        <div class="sidebar-item sidebar-group--primary">
+            <button class="sidebar-nav-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#permitsCollapse" aria-expanded="false" aria-controls="permitsCollapse">
+                <i class="bi bi-shield-check"></i>
+                <span>Permits</span>
+                <i class="bi bi-chevron-right chevron" aria-hidden="true"></i>
+            </button>
+            <div id="permitsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                <a href="{% url 'permits:permit_list'%}" class="sidebar-sub-link"><i class="bi bi-card-checklist dot"></i> Main Permits</a>
+                <a href="{% url 'permits:work_shift_list' %}" class="sidebar-sub-link"><i class="bi bi-calendar2-week dot"></i> Work Shifts</a>
+                <a href="{% url 'permits:paper_safety_permit_list' %}" class="sidebar-sub-link"><i class="bi bi-file-earmark-check dot"></i> Safety Permits</a>
+                <a href="{% url 'permits:pis_holders' %}" class="sidebar-sub-link"><i class="bi bi-person-check dot"></i> PIS Qualified Users</a>
+            </div>
+        </div>
+
         <!-- Dashboard -->
         <div class="sidebar-item">
-            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#dashboardCollapse">
+            <button class="sidebar-nav-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardCollapse" aria-expanded="false" aria-controls="dashboardCollapse">
                 <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
                 {% if pending_requests_count > 0 and request.user.is_staff %}
-                    <span class="badge-pill">{{ pending_requests_count }}</span>
+                    <span class="badge-pill" aria-label="{{ pending_requests_count }} pending requests">{{ pending_requests_count }}</span>
                 {% endif %}
-                <i class="bi bi-chevron-right chevron"></i>
+                <i class="bi bi-chevron-right chevron" aria-hidden="true"></i>
             </button>
             <div id="dashboardCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
                 <a href="{% url 'accounts:dashboard' %}" class="sidebar-sub-link">
@@ -31,10 +51,10 @@
 
         <!-- Work Orders -->
         <div class="sidebar-item">
-            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#workordersCollapse">
+            <button class="sidebar-nav-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#workordersCollapse" aria-expanded="false" aria-controls="workordersCollapse">
                 <i class="bi bi-wrench-adjustable"></i>
                 <span>Work Orders</span>
-                <i class="bi bi-chevron-right chevron"></i>
+                <i class="bi bi-chevron-right chevron" aria-hidden="true"></i>
             </button>
             <div id="workordersCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
                 <a href="{% url 'work_orders:fault_report_add' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> New Fault Report</a>
@@ -45,10 +65,10 @@
 
         <!-- Daily Reports -->
         <div class="sidebar-item">
-            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#reportsCollapse">
+            <button class="sidebar-nav-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#reportsCollapse" aria-expanded="false" aria-controls="reportsCollapse">
                 <i class="bi bi-journal-text"></i>
                 <span>Daily Reports</span>
-                <i class="bi bi-chevron-right chevron"></i>
+                <i class="bi bi-chevron-right chevron" aria-hidden="true"></i>
             </button>
             <div id="reportsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
                 <a href="{% url 'daily_reports:report_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> View Logs</a>
@@ -56,30 +76,15 @@
             </div>
         </div>
 
-        <!-- Permits -->
-        <div class="sidebar-item">
-            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#permitsCollapse">
-                <i class="bi bi-shield-check"></i>
-                <span>Permits</span>
-                <i class="bi bi-chevron-right chevron"></i>
-            </button>
-            <div id="permitsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <a href="{% url 'permits:permit_list'%}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Main Permits</a>
-                <a href="{% url 'permits:work_shift_list' %}" class="sidebar-sub-link"><i class="bi bi-calendar2-week dot"></i> Work Shifts</a>
-                <a href="{% url 'permits:paper_safety_permit_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Safety Permits</a>
-                <a href="{% url 'permits:pis_holders' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> PIS Qualified Users</a>
-            </div>
-        </div>
-
         <!-- ASSETS SECTION -->
-        <div class="sidebar-section-label mt-2">ASSET MANAGEMENT</div>
+        <div class="sidebar-section-label mt-2">Asset management</div>
 
         <!-- Location Tag -->
         <div class="sidebar-item">
-            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#locationTagCollapse">
+            <button class="sidebar-nav-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#locationTagCollapse" aria-expanded="false" aria-controls="locationTagCollapse">
                 <i class="bi bi-geo-alt"></i>
                 <span>Location Tag</span>
-                <i class="bi bi-chevron-right chevron"></i>
+                <i class="bi bi-chevron-right chevron" aria-hidden="true"></i>
             </button>
             <div id="locationTagCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
                 <a href="{% url 'equipment:location_tag_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Search</a>
@@ -89,10 +94,10 @@
 
         <!-- Equipment -->
         <div class="sidebar-item">
-            <button class="sidebar-nav-btn collapsed" data-bs-toggle="collapse" data-bs-target="#equipmentCollapse">
+            <button class="sidebar-nav-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#equipmentCollapse" aria-expanded="false" aria-controls="equipmentCollapse">
                 <i class="bi bi-cpu"></i>
                 <span>Equipment</span>
-                <i class="bi bi-chevron-right chevron"></i>
+                <i class="bi bi-chevron-right chevron" aria-hidden="true"></i>
             </button>
             <div id="equipmentCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
                 <a href="{% url 'equipment:equipment_list' %}" class="sidebar-sub-link"><i class="bi bi-circle-fill dot"></i> Search</a>
@@ -102,7 +107,7 @@
 
         <!-- Documents -->
         <div class="sidebar-item">
-            <button class="sidebar-nav-btn collapsed" onclick="window.location.href='#'">
+            <button class="sidebar-nav-btn collapsed" type="button" onclick="window.location.href='#'">
                 <i class="bi bi-folder2-open"></i>
                 <span>Documents</span>
             </button>

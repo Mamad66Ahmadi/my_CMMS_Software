@@ -10,7 +10,10 @@
         function applyState(collapsed) {
             sidebar.classList.toggle("collapsed", collapsed);
             document.body.classList.toggle("sidebar-collapsed", collapsed);
-            toggleBtn.innerHTML = collapsed ? "&#8250;" : "&#8249;";
+            toggleBtn.classList.toggle("is-collapsed", collapsed);
+            toggleBtn.setAttribute("aria-expanded", String(!collapsed));
+            toggleBtn.setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
+            toggleBtn.title = collapsed ? "Expand navigation" : "Collapse navigation";
         }
 
         applyState(localStorage.getItem("sidebarCollapsed") === "true");

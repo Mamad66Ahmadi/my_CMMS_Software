@@ -231,6 +231,7 @@
                                                     </span>
                                                 </td>
 
+                                                <!-- Actor / Username Column -->
                                                 <td class="py-2 small">
                                                     <span class="persian-text">
                                                         <bdi>
@@ -243,9 +244,13 @@
                                                     {{ approval.role.name }}
                                                 </td>
 
-                                                <td class="py-2 pe-3 text-end text-muted small text-nowrap"
+                                                <!-- Stacked Date & Time Column -->
+                                                <td class="py-2 align-middle text-center small text-muted"
                                                     title="{{ approval.created_at|to_jalali:'%Y/%m/%d %H:%M' }}">
-                                                    {{ approval.created_at|date:"Y-m-d H:i" }}
+                                                    <div class="d-flex flex-column lh-sm">
+                                                        <span class="align-middle text-center small text-muted">{{ approval.created_at|date:"Y-m-d" }}</span>
+                                                        <span class="align-middle text-center small text-muted">{{ approval.created_at|date:"H:i" }}</span>
+                                                    </div>
                                                 </td>
                                             </tr>
 
@@ -310,11 +315,16 @@
                                                         <span class="badge bg-light text-dark">—</span>
                                                     {% endif %}
                                                 </td>
-                                                <td class="pe-3 py-2 text-end text-muted small">
-                                                    {{ cont.created_at|date:"Y-m-d" }}
+                                                <!-- Modified cell for Jalali hover -->
+                                                <td class="pe-3 py-2 text-end text-muted small"
+                                                    title="{{ cont.created_at|to_jalali:'%Y/%m/%d %H:%M' }}">
+                                                    {{ cont.created_at|to_jalali:'%Y/%m/%d' }}
                                                 </td>
                                             </tr>
                                         {% endfor %}
+
+
+
                                     </tbody>
                                 </table>
                             </div>
