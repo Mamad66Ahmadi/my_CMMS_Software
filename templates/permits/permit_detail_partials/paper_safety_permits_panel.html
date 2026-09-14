@@ -252,45 +252,45 @@
 
             {% if can_add_paper_safety_permits %}
                 <div class="p-3 border-top">
-                    <button
-                        type="button"
-                        class="btn btn-outline-primary btn-sm"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#paper-safety-permit-add-form"
-                        aria-expanded="false"
-                        aria-controls="paper-safety-permit-add-form"
-                    >
-                        <i class="bi bi-plus-circle me-1"></i>
-                        Add safety permit
-                    </button>
+                    <div class="btn-group psp-split-button" role="group" aria-label="Add safety permit options">
+                        <button
+                            type="button"
+                            class="btn btn-sm psp-split-button__main"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#paper-safety-permit-add-form"
+                            data-psp-add-mode="new"
+                            aria-expanded="false"
+                            aria-controls="paper-safety-permit-add-form"
+                        >
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Add safety permit
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm dropdown-toggle dropdown-toggle-split psp-split-button__toggle"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                        >
+                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                            <span class="visually-hidden">Select how to add a safety permit</span>
+                        </button>
+                        <ul class="dropdown-menu p-2 shadow-sm psp-split-menu">
+                            <li>
+                                <button class="dropdown-item rounded p-2" type="button" data-psp-add-mode="new">
+                                    <span class="d-block fw-semibold">New paper safety permit</span>
+                                    <small class="d-block text-body-secondary">Create and attach a new permit record.</small>
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item rounded p-2" type="button" data-psp-add-mode="existing">
+                                    <span class="d-block fw-semibold">Choose existing permit</span>
+                                    <small class="d-block text-body-secondary">Share a previously defined permit with this main permit.</small>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
 
                     <div class="collapse mt-3" id="paper-safety-permit-add-form">
-                        <div class="border rounded p-3 mb-3" id="existing-detail-safety-picker">
-                            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                                <strong><i class="bi bi-link-45deg me-1"></i>Add a previously defined safety permit</strong>
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="toggle-existing-detail-safety-picker">Choose existing permit</button>
-                            </div>
-                            <div id="existing-detail-safety-picker-fields" hidden>
-                                <div class="row g-2">
-                                    <div class="col-md-5">
-                                        <label class="form-label" for="existing-detail-safety-type">Permit type</label>
-                                        <select id="existing-detail-safety-type" class="form-select">
-                                            <option value="">Select permit type</option>
-                                            {% for item in paper_safety_permit_types %}
-                                                <option value="{{ item.pk }}">{{ item.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="col-md-7 position-relative">
-                                        <label class="form-label" for="existing-detail-safety-number">Safety permit number</label>
-                                        <input type="text" id="existing-detail-safety-number" class="form-control" autocomplete="off" placeholder="Search by permit number..." disabled>
-                                        <div id="existing-detail-safety-results" class="list-group mt-1 shadow position-absolute w-100 location-results" style="z-index: 1050;"></div>
-                                    </div>
-                                </div>
-                                <div class="form-text mt-2">Select a result to share it with this main permit. The safety permit remains managed from its original record.</div>
-                            </div>
-                        </div>
-
                         <form
                             method="post"
                             action="{% url 'permits:paper_safety_permit_add' permit_number=permit.permit_number %}"
@@ -303,11 +303,33 @@
                             <input type="hidden" name="existing_safety_permit_id" id="existing-detail-safety-id">
 
                             <div class="psp-review-form__title">
-                                <i class="bi bi-file-earmark-plus"></i>
-                                New paper safety permit
+                                <i class="bi bi-file-earmark-plus" data-psp-add-title-icon></i>
+                                <span data-psp-add-title>New paper safety permit</span>
                             </div>
 
-                            <div class="psp-add-fields">
+                            <div id="existing-detail-safety-picker" hidden>
+                                <div id="existing-detail-safety-picker-fields">
+                                    <div class="psp-add-fields psp-add-fields--existing">
+                                        <label class="psp-review-form__field">
+                                            <select id="existing-detail-safety-type" class="form-select form-select-sm">
+                                                <option value="">Select permit type</option>
+                                                {% for item in paper_safety_permit_types %}
+                                                    <option value="{{ item.pk }}">{{ item.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </label>
+                                        <label class="psp-review-form__field position-relative">
+                                            <input type="text" id="existing-detail-safety-number" class="form-control form-control-sm" autocomplete="off" placeholder="Search by permit number..." disabled>
+                                            <div id="existing-detail-safety-results" class="list-group mt-1 shadow position-absolute w-100 location-results" style="z-index: 1050;"></div>
+                                        </label>
+                                    </div>
+                                    <div class="form-text mt-2">
+                                        Select a result to share it with this main permit. The safety permit remains managed from its original record.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="psp-add-fields" data-psp-new-fields>
                                 <select name="safety_type" class="form-select form-select-sm" required>
                                     <option value="">Select safety-permit type</option>
                                     {% for safety_type in paper_safety_permit_types %}
@@ -325,9 +347,9 @@
                             </div>
 
                             <div>
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-plus-lg me-1"></i>
-                                    Save Safety Permit
+                                <button type="submit" class="btn btn-primary btn-sm" data-psp-add-submit>
+                                    <i class="bi bi-plus-lg me-1" data-psp-add-submit-icon></i>
+                                    <span data-psp-add-submit-label>Save safety permit</span>
                                 </button>
                             </div>
                         </form>
@@ -343,12 +365,20 @@
     const panel = document.getElementById("paper-safety-permits-panel");
     if (!panel) return;
     const input = panel.querySelector(".safety-location-search");
-    const pickerToggle = panel.querySelector("#toggle-existing-detail-safety-picker");
+    const addFormCollapse = panel.querySelector("#paper-safety-permit-add-form");
+    const addModeButtons = panel.querySelectorAll("[data-psp-add-mode]");
+    const existingPicker = panel.querySelector("#existing-detail-safety-picker");
     const pickerFields = panel.querySelector("#existing-detail-safety-picker-fields");
     const pickerType = panel.querySelector("#existing-detail-safety-type");
     const pickerNumber = panel.querySelector("#existing-detail-safety-number");
     const pickerResults = panel.querySelector("#existing-detail-safety-results");
     const pickerId = panel.querySelector("#existing-detail-safety-id");
+    const newPermitFields = panel.querySelector("[data-psp-new-fields]");
+    const addTitle = panel.querySelector("[data-psp-add-title]");
+    const addTitleIcon = panel.querySelector("[data-psp-add-title-icon]");
+    const addSubmit = panel.querySelector("[data-psp-add-submit]");
+    const addSubmitIcon = panel.querySelector("[data-psp-add-submit-icon]");
+    const addSubmitLabel = panel.querySelector("[data-psp-add-submit-label]");
     const newSafetyType = panel.querySelector('select[name="safety_type"]');
     const newSafetyNumber = panel.querySelector('input[name="safety_permit_number"]');
     const newLocationSearch = panel.querySelector('input[name="location_tag_search"]');
@@ -361,7 +391,56 @@
         });
     };
 
-    if (pickerToggle && pickerFields && pickerType && pickerNumber && pickerResults && pickerId) {
+    const setAddMode = function (mode, showForm) {
+        const useExisting = mode === "existing";
+
+        if (existingPicker) existingPicker.hidden = !useExisting;
+        if (newPermitFields) newPermitFields.hidden = useExisting;
+        if (pickerFields) pickerFields.hidden = !useExisting;
+
+        if (useExisting) {
+            setNewPermitFieldsEnabled(false);
+            if (addTitle) addTitle.textContent = "Link existing safety permit";
+            if (addTitleIcon) addTitleIcon.className = "bi bi-link-45deg";
+            if (addSubmitLabel) addSubmitLabel.textContent = "Add selected permit";
+            if (addSubmitIcon) addSubmitIcon.className = "bi bi-link-45deg me-1";
+            if (addSubmit) addSubmit.disabled = !(pickerId && pickerId.value);
+        } else {
+            if (pickerId) pickerId.value = "";
+            setNewPermitFieldsEnabled(true);
+            if (addTitle) addTitle.textContent = "New paper safety permit";
+            if (addTitleIcon) addTitleIcon.className = "bi bi-file-earmark-plus";
+            if (addSubmitLabel) addSubmitLabel.textContent = "Save safety permit";
+            if (addSubmitIcon) addSubmitIcon.className = "bi bi-plus-lg me-1";
+            if (addSubmit) addSubmit.disabled = false;
+        }
+
+        addModeButtons.forEach(function (button) {
+            button.setAttribute("aria-pressed", button.dataset.pspAddMode === mode ? "true" : "false");
+        });
+
+        if (showForm && addFormCollapse && window.bootstrap) {
+            bootstrap.Collapse.getOrCreateInstance(addFormCollapse, { toggle: false }).show();
+        }
+
+        if (showForm) {
+            window.setTimeout(function () {
+                if (useExisting && pickerType) pickerType.focus();
+                if (!useExisting && newSafetyType) newSafetyType.focus();
+            }, 180);
+        }
+    };
+
+    addModeButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            const isPrimaryToggle = button.hasAttribute("data-bs-target");
+            setAddMode(button.dataset.pspAddMode, !isPrimaryToggle);
+        });
+    });
+
+    setAddMode("new", false);
+
+    if (pickerFields && pickerType && pickerNumber && pickerResults && pickerId) {
         let activeIndex = -1;
         const clearResults = function () {
             pickerResults.innerHTML = "";
@@ -375,15 +454,11 @@
             options.forEach((option, optionIndex) => option.classList.toggle("active", optionIndex === activeIndex));
             options[activeIndex].scrollIntoView({ block: "nearest" });
         };
-        pickerToggle.addEventListener("click", function () {
-            pickerFields.hidden = !pickerFields.hidden;
-            if (!pickerFields.hidden) pickerType.focus();
-        });
         pickerType.addEventListener("change", function () {
             pickerNumber.disabled = !pickerType.value;
             pickerNumber.value = "";
             pickerId.value = "";
-            setNewPermitFieldsEnabled(true);
+            if (addSubmit) addSubmit.disabled = true;
             clearResults();
         });
         let pickerTimer;
@@ -393,7 +468,7 @@
             clearResults();
             const query = pickerNumber.value.trim();
             if (!pickerType.value || query.length < 2) return;
-            setNewPermitFieldsEnabled(true);
+            if (addSubmit) addSubmit.disabled = true;
             pickerTimer = setTimeout(function () {
                 const url = new URL("{% url 'permits:paper_safety_permit_autocomplete' %}", window.location.origin);
                 url.searchParams.set("q", query);
@@ -412,6 +487,7 @@
                                 pickerId.value = item.id;
                                 pickerNumber.value = item.safety_permit_number;
                                 setNewPermitFieldsEnabled(false);
+                                if (addSubmit) addSubmit.disabled = false;
                                 clearResults();
                             });
                             pickerResults.appendChild(option);
