@@ -1675,6 +1675,15 @@ textarea.form-control,
     overflow: hidden;
 }
 
+/* Review actions need to escape the card so the status menu can overlay the
+   following pane instead of being clipped behind it. */
+.detail-panel:has(.safety-action-dropdown),
+.safety-review-panel {
+    position: relative;
+    z-index: 30;
+    overflow: visible;
+}
+
 .detail-panel__header {
     display: flex;
     align-items: center;
@@ -1761,6 +1770,7 @@ details[open] > .detail-panel__header .chevron-icon {
 
 .safety-review-panel__body {
     background: #fff;
+    overflow: visible;
 }
 
 .safety-review-panel__intro {
@@ -1798,13 +1808,19 @@ details[open] > .detail-panel__header .chevron-icon {
 
 .safety-review-form__fields {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
     gap: 14px;
-    margin-bottom: 18px;
+    margin-bottom: 4px;
+}
+
+.safety-review-form__field--wide {
+    grid-column: span 2;
 }
 
 .safety-review-form__field {
     display: flex;
+    min-width: 0;
     flex-direction: column;
     gap: 6px;
     color: #475569;
@@ -1830,9 +1846,103 @@ details[open] > .detail-panel__header .chevron-icon {
 
 .safety-review-form__actions {
     display: flex;
-    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 10px;
+    align-self: end;
+    justify-self: end;
 }
+
+.safety-action-dropdown {
+    position: relative;
+    z-index: 20;
+}
+
+.safety-action-dropdown__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 9px 14px;
+    color: #fff;
+    background: #123F36;
+    border: 1px solid #123F36;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 3px 8px rgba(18, 63, 54, 0.16);
+    transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.safety-action-dropdown__toggle:hover,
+.safety-action-dropdown__toggle:focus-visible,
+.safety-action-dropdown__toggle.show {
+    color: #fff;
+    background: #0d3029;
+    border-color: #0d3029;
+    box-shadow: 0 5px 12px rgba(18, 63, 54, 0.22);
+    transform: translateY(-1px);
+}
+
+.safety-action-dropdown__toggle:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(104, 157, 75, 0.3), 0 5px 12px rgba(18, 63, 54, 0.22);
+}
+
+.safety-action-dropdown__chevron {
+    margin-left: 3px;
+    font-size: 10px;
+    transition: transform 0.18s ease;
+}
+
+.safety-action-dropdown__toggle.show .safety-action-dropdown__chevron {
+    transform: rotate(180deg);
+}
+
+.safety-action-dropdown__menu {
+    min-width: 220px;
+    margin-top: 8px !important;
+    padding: 7px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+
+.safety-action-dropdown__heading {
+    padding: 5px 10px 7px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.safety-step-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 38px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.safety-step-menu__item:hover,
+.safety-step-menu__item:focus-visible {
+    transform: translateX(2px);
+}
+
+.safety-step-menu__item--safe { color: #386b27; }
+.safety-step-menu__item--safe:hover,
+.safety-step-menu__item--safe:focus-visible { color: #123F36; background: #edf6e9; }
+.safety-step-menu__item--blocking { color: #a63c3c; }
+.safety-step-menu__item--blocking:hover,
+.safety-step-menu__item--blocking:focus-visible { color: #800020; background: #fff0f0; }
+.safety-step-menu__item--cancel { color: #475569; }
+.safety-step-menu__item--cancel:hover,
+.safety-step-menu__item--cancel:focus-visible { color: #334155; background: #f1f5f9; }
 
 .safety-step-button {
     display: inline-flex;
@@ -1866,6 +1976,8 @@ details[open] > .detail-panel__header .chevron-icon {
     .safety-review-panel__summary { flex-shrink: 0; }
     .safety-review-panel__summary .status-badge { display: none; }
     .safety-review-form__fields { grid-template-columns: 1fr; }
+    .safety-review-form__field--wide { grid-column: auto; }
+    .safety-review-form__actions { grid-column: auto; justify-self: start; }
 }
 
 /* --- Sidebar mini info rows (Draft Record Info, etc.) --- */

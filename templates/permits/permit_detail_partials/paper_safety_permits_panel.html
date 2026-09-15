@@ -148,6 +148,9 @@
                                         <form
                                             method="post"
                                             action="{% url 'permits:paper_safety_permit_review' permit_number=safety_permit.permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
+                                            hx-post="{% url 'permits:paper_safety_permit_review' permit_number=safety_permit.permit.permit_number paper_safety_permit_id=safety_permit.pk %}"
+                                            hx-target="#paper-safety-permits-panel"
+                                            hx-swap="outerHTML"
                                             class="safety-review-form"
                                         >
                                             {% csrf_token %}
@@ -159,30 +162,47 @@
                                                         <input type="text" name="safety_permit_number" class="form-control form-control-sm" maxlength="30" placeholder="Enter permit number">
                                                     </label>
                                                 {% endif %}
-                                                <label class="safety-review-form__field safety-review-form__field--wide">
+                                                <label class="safety-review-form__field {% if not safety_permit.safety_permit_number %}safety-review-form__field--wide{% endif %}">
                                                     <span>Review comment <small>(required only for Cancelled)</small></span>
                                                     <input type="text" name="review_comment" class="form-control form-control-sm persian-text" placeholder="Add a formal review comment">
                                                 </label>
+
+                                                <div class="safety-review-form__actions">
+                                                <div class="dropdown safety-action-dropdown">
+                                                    <button
+                                                        type="button"
+                                                        class="btn safety-action-dropdown__toggle"
+                                                        data-bs-toggle="dropdown"
+                                                        aria-expanded="false"
+                                                        aria-haspopup="true"
+                                                    >
+                                                        <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i>
+                                                        <span>Take Action</span>
+                                                        <i class="bi bi-chevron-down safety-action-dropdown__chevron" aria-hidden="true"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end safety-action-dropdown__menu" aria-label="Safety permit actions">
+                                                        <li class="safety-action-dropdown__heading">Choose next status</li>
+                                                        {% for step in paper_safety_workflow_steps %}
+                                                            {% if step.pk != safety_permit.current_step_id %}
+                                                                <li>
+                                                                    <button
+                                                                        type="submit"
+                                                                        name="step_id"
+                                                                        value="{{ step.pk }}"
+                                                                        class="dropdown-item safety-step-menu__item {% if step.name == 'Cancelled' %}safety-step-menu__item--cancel{% elif step.blocks_main_permit %}safety-step-menu__item--blocking{% else %}safety-step-menu__item--safe{% endif %}"
+                                                                        onclick="this.form.elements.review_comment.required = {% if step.name == 'Cancelled' %}true{% else %}false{% endif %}; return confirm('Change status to \'{{ step.name|escapejs }}\'?\n\nThis action will be recorded in the workflow history.');"
+                                                                    >
+                                                                        <i class="bi {% if step.name == 'Cancelled' %}bi-x-circle{% elif step.blocks_main_permit %}bi-exclamation-triangle{% else %}bi-check-circle{% endif %}" aria-hidden="true"></i>
+                                                                        <span>{{ step.name }}</span>
+                                                                    </button>
+                                                                </li>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                                </div>
                                             </div>
                                             <input type="hidden" name="action" value="change_step">
-                                            <input type="hidden" name="return_to_safety_detail" value="1">
-
-                                            <div class="safety-review-form__actions">
-                                                {% for step in paper_safety_workflow_steps %}
-                                                    {% if step.pk != safety_permit.current_step_id %}
-                                                        <button
-                                                            type="submit"
-                                                            name="step_id"
-                                                            value="{{ step.pk }}"
-                                                            class="safety-step-button {% if step.name == 'Cancelled' %}safety-step-button--cancel{% elif step.blocks_main_permit %}safety-step-button--blocking{% else %}safety-step-button--safe{% endif %}"
-                                                            onclick="this.form.elements.review_comment.required = {% if step.name == 'Cancelled' %}true{% else %}false{% endif %}; return confirm('Change status to \'{{ step.name|escapejs }}\'?\n\nThis action will be recorded in the workflow history.');"
-                                                        >
-                                                            <i class="bi {% if step.name == 'Cancelled' %}bi-x-circle{% elif step.blocks_main_permit %}bi-exclamation-triangle{% else %}bi-check-circle{% endif %}"></i>
-                                                            {{ step.name }}
-                                                        </button>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
                                         </form>
                                     {% endif %}
 
