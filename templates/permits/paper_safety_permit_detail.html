@@ -140,7 +140,7 @@
                 </div></div>
             </div>
 
-            <div class="detail-panel">
+            <div class="detail-panel workflow-history-panel">
                 <div class="detail-panel__header"><i class="bi bi-clock-history"></i> Workflow History</div>
                 <div class="detail-panel__body">
                     {% if status_history %}<div class="table-scroll-container"><table><thead><tr><th>From</th><th>To</th><th>Changed By</th><th>Changed At</th><th>Remarks</th></tr></thead><tbody>{% for event in status_history %}<tr><td>{{ event.from_status|default:"Initial" }}</td><td><span class="status-badge status-default">{{ event.to_status }}</span></td><td>{{ event.changed_by.username|default:"System" }}</td><td>{{ event.changed_at|date:"Y-m-d H:i" }}</td><td class="align-start-cell">{{ event.remarks|default:"—" }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="text-muted mb-0">No workflow history recorded.</p>{% endif %}
