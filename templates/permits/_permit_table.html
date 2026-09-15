@@ -7,13 +7,14 @@
             {% include "shared/_sortable_table_header.html" with column="continuation_of" label="Continuation Of" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
 
+            {% include "shared/_sortable_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=header_query_params %}
+
             {% include "shared/_sortable_table_header.html" with column="workflow" label="Workflow" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="current_step" label="Step No." sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="current_step_title" label="Current Step" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="workflow_state" label="Workflow State" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="is_terminal" label="Terminal" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "shared/_sortable_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
@@ -78,12 +79,22 @@
                 </td>
 
                 <td>
+                    {% if permit.location_tag %}
+                        {{ permit.location_tag.loc_tag }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td>
                     {% if permit.workflow %}
                         {{ permit.workflow.name }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
+
+
 
                 <td class="text-center">
                     {% if permit.current_step %}
@@ -144,13 +155,7 @@
                     {% endif %}
                 </td>
 
-                <td>
-                    {% if permit.location_tag %}
-                        {{ permit.location_tag.loc_tag }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
+
 
                 <td>
                     {% if permit.location_tag and permit.location_tag.unit %}

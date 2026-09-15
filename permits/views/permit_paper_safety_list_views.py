@@ -19,6 +19,8 @@ SAFETY_SORTS = {
     "safety_type": "safety_type__name",
     "current_step": "current_step__step_order",
     "location_tag": "location_tag__loc_tag",
+    "parent_tag": "location_tag__parent__loc_tag",
+    "unit": "location_tag__unit__unit_code",
     "permit_number": "permits__permit_number",
     "created_at": "created_at",
     "modified_at": "modified_at",
@@ -30,7 +32,7 @@ PER_PAGE_CHOICES = (10, 25, 50, 100)
 def _filters(request):
     keys = (
         "q", "safety_permit_number", "safety_type", "current_step",
-        "location_tag", "permit_number", "created_by", "modified_by",
+        "location_tag", "parent_tag", "unit", "permit_number", "created_by", "modified_by",
         "reviewed_by", "created_from", "created_to", "reviewed_from", "reviewed_to",
     )
     return {key: request.GET.get(key, "").strip() for key in keys}
@@ -64,7 +66,8 @@ class PaperSafetyPermitList(LoginRequiredMixin, TemplateView):
             per_page = 25
 
         queryset = PermitPaperSafetyPermit.objects.select_related(
-            "safety_type", "current_step", "location_tag", "created_by", "modified_by", "reviewed_by", "permit"
+            "safety_type", "current_step", "location_tag", "location_tag__parent", "location_tag__unit",
+            "created_by", "modified_by", "reviewed_by", "permit"
         ).prefetch_related("permits").all()
         if filters["q"]:
             query = Q()
@@ -86,6 +89,8 @@ class PaperSafetyPermitList(LoginRequiredMixin, TemplateView):
             "safety_type": "safety_type__name__icontains",
             "current_step": "current_step__name__icontains",
             "location_tag": "location_tag__loc_tag__icontains",
+            "parent_tag": "location_tag__parent__loc_tag__icontains",
+            "unit": "location_tag__unit__unit_code__icontains",
             "permit_number": "permits__permit_number__icontains",
             "created_by": "created_by__username__icontains",
             "modified_by": "modified_by__username__icontains",
@@ -103,6 +108,43 @@ class PaperSafetyPermitList(LoginRequiredMixin, TemplateView):
         queryset = queryset.order_by(("-" if sort_by.startswith("-") else "") + sort_field, "-pk").distinct()
         page_obj = Paginator(queryset, per_page).get_page(request.GET.get("page"))
         query_params = _query_string(filters, sort_by, per_page)
+
+        def build_remove_url(key_to_remove):
+            remaining_filters = dict(filters)
+            remaining_filters[key_to_remove] = ""
+            query_string = _query_string(remaining_filters, sort_by, per_page)
+            return f"?{query_string}" if query_string else "?"
+
+        active_filter_badges = []
+        badge_labels = {
+            "safety_permit_number": "Safety Permit No.",
+            "safety_type": "Safety Type",
+            "current_step": "Workflow Step",
+            "location_tag": "Location Tag",
+            "parent_tag": "Parent Tag",
+            "unit": "Unit",
+            "permit_number": "Main Permit No.",
+            "created_by": "Created By",
+            "modified_by": "Modified By",
+            "reviewed_by": "Reviewed By",
+            "created_from": "Created From",
+            "created_to": "Created To",
+            "reviewed_from": "Reviewed From",
+            "reviewed_to": "Reviewed To",
+        }
+        for key, label in badge_labels.items():
+            value = filters.get(key)
+            if value:
+                active_filter_badges.append({
+                    "key": key,
+                    "label": label,
+                    "value": value,
+                    "remove_url": build_remove_url(key),
+                })
+
+        if filters.get("q"):
+            active_filter_badges = []
+
         context.update({
             "safety_permits": page_obj,
             "filters": filters,
@@ -115,5 +157,6 @@ class PaperSafetyPermitList(LoginRequiredMixin, TemplateView):
             "locations": LocationTag.objects.order_by("loc_tag"),
             "users": User.objects.filter(is_active=True).order_by("username"),
             "has_advanced_filters": any(filters[key] for key in filters if key != "q"),
+            "active_filter_badges": active_filter_badges,
         })
         return context
