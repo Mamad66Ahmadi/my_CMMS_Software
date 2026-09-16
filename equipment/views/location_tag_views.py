@@ -4,6 +4,7 @@ from django.views.generic import DetailView,TemplateView, CreateView, View
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
+from django.db.models import Prefetch
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -14,6 +15,7 @@ from ..models import LocationTag, EquipmentDocument, Equipment, ObjectType, Obje
 from equipment.models import LocationTagChangeRequest
 
 from equipment.forms import LocationTagRequestForm
+from permits.models import PermitHazard, PermitPrecaution
 
 # ----------------------------------------- Location Tag List ------------------------------
 def get_filtered_location_tags(request):
@@ -275,6 +277,80 @@ class LocationTagDetail(LoginRequiredMixin, DetailView):
 
         tag = self.object
 
+        available_tabs = {
+            "general",
+            "hierarchy",
+            "equipment",
+            "permits",
+            "safety-permits",
+            "documents",
+            "history",
+        }
+        requested_tab = self.request.GET.get("tab")
+        if requested_tab in available_tabs:
+            active_tab = requested_tab
+        else:
+            if self.request.GET.get("permits_page"):
+                active_tab = "permits"
+            elif self.request.GET.get("safety_permits_page"):
+                active_tab = "safety-permits"
+            else:
+                active_tab = "general"
+
+        permits_queryset = tag.permits.select_related(
+            "permit_type",
+            "continuation_of",
+            "department",
+            "current_step",
+            "work_order",
+            "created_by",
+            "modified_by",
+        ).prefetch_related(
+            Prefetch(
+                "hazard_assessments",
+                queryset=PermitHazard.objects.filter(is_active=True).select_related(
+                    "hazard"
+                ),
+                to_attr="active_hazard_assessments",
+            ),
+            Prefetch(
+                "precaution_requirements",
+                queryset=PermitPrecaution.objects.filter(
+                    is_active=True
+                ).select_related("precaution"),
+                to_attr="active_precaution_requirements",
+            ),
+        ).order_by("-modified_at", "-pk")
+        permits_paginator = Paginator(permits_queryset, 10)
+        permits_page = permits_paginator.get_page(
+            self.request.GET.get("permits_page")
+        )
+
+        safety_permits_queryset = (
+            tag.paper_safety_permits.select_related(
+                "safety_type",
+                "current_step",
+                "permit",
+                "permit__department",
+                "reviewed_by",
+                "modified_by",
+            )
+            .prefetch_related("permits")
+            .order_by("-modified_at", "-pk")
+        )
+        safety_permits_paginator = Paginator(safety_permits_queryset, 10)
+        safety_permits_page = safety_permits_paginator.get_page(
+            self.request.GET.get("safety_permits_page")
+        )
+
+        permits_params = self.request.GET.copy()
+        permits_params.pop("permits_page", None)
+        permits_params["tab"] = "permits"
+
+        safety_permits_params = self.request.GET.copy()
+        safety_permits_params.pop("safety_permits_page", None)
+        safety_permits_params["tab"] = "safety-permits"
+
         context["children"] = tag.children.all()
 
         equipments = tag.installed_equipments.select_related(
@@ -288,6 +364,15 @@ class LocationTagDetail(LoginRequiredMixin, DetailView):
         ).select_related("equipment")
 
         context["history"] = tag.history.all()[:20]
+        context["active_location_tab"] = active_tab
+        context["location_permits"] = permits_page
+        context["location_permits_count"] = permits_paginator.count
+        context["location_safety_permits"] = safety_permits_page
+        context["location_safety_permits_count"] = safety_permits_paginator.count
+        context["permits_pagination_params"] = permits_params.urlencode()
+        context["safety_permits_pagination_params"] = (
+            safety_permits_params.urlencode()
+        )
 
         # 👉 NEW: latest 5 change requests for this tag
         context["change_requests"] = (

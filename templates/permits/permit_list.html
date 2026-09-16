@@ -100,7 +100,21 @@
     {# Permit table                                                           #}
     {# ---------------------------------------------------------------------- #}
     {% if permits.object_list %}
-        <div class="table-scroll-container">
+        <div class="permit-grid-guide" id="permitGridGuide">
+            <span class="permit-grid-guide__title">
+                <i class="bi bi-grid-3x3"></i>
+                Spreadsheet view
+            </span>
+            <span class="permit-grid-guide__hint">
+                Headers and permit numbers stay visible while you scroll.
+            </span>
+        </div>
+        <div class="table-scroll-container permit-grid"
+             id="permitGrid"
+             role="region"
+             aria-label="Permits table with horizontal and vertical scrolling"
+             aria-describedby="permitGridGuide"
+             tabindex="0">
             {% include "permits/_permit_table.html" %}
         </div>
 
@@ -113,4 +127,36 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+
+    const grid = document.getElementById('permitGrid');
+    if (!grid) return;
+
+    let resizeFrame = null;
+
+    function fitGridToViewport() {
+        const gridTop = grid.getBoundingClientRect().top;
+        const availableHeight = window.innerHeight - gridTop - 20;
+        const gridHeight = Math.min(760, Math.max(240, availableHeight));
+        grid.style.setProperty('--permit-grid-height', `${Math.floor(gridHeight)}px`);
+    }
+
+    function scheduleGridFit() {
+        if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(function () {
+            fitGridToViewport();
+            resizeFrame = null;
+        });
+    }
+
+    fitGridToViewport();
+    window.addEventListener('load', fitGridToViewport, { once: true });
+    window.addEventListener('resize', scheduleGridFit);
+})();
+</script>
 {% endblock %}

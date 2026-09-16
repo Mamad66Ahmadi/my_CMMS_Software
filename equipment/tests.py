@@ -1,7 +1,10 @@
+from urllib.parse import parse_qs
+
 from django.test import RequestFactory, TestCase
 
+from equipment.models import LocationTag
 from equipment.views.equipment_views import EquipmentList
-from equipment.views.location_tag_views import LocationTagList
+from equipment.views.location_tag_views import LocationTagDetail, LocationTagList
 
 
 class EquipmentListActiveFilterTests(TestCase):
@@ -95,3 +98,48 @@ class LocationTagListActiveFilterTests(TestCase):
         context = self.get_context()
 
         self.assertEqual(context["active_filter_badges"], [])
+
+
+class LocationTagDetailRelatedPermitTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.location_tag = LocationTag.objects.create(loc_tag="AREA-100")
+
+    def get_context(self, query_string=""):
+        request = self.factory.get(f"/equipment/tag/AREA-100/?{query_string}")
+        view = LocationTagDetail()
+        view.setup(request, loc_tag=self.location_tag.loc_tag)
+        view.object = self.location_tag
+        return view.get_context_data(object=self.location_tag)
+
+    def test_related_permit_tabs_use_separate_paginated_querysets(self):
+        context = self.get_context("permits_page=2")
+
+        self.assertEqual(context["active_location_tab"], "permits")
+        self.assertEqual(context["location_permits_count"], 0)
+        self.assertEqual(context["location_safety_permits_count"], 0)
+        self.assertEqual(context["location_permits"].paginator.per_page, 10)
+        self.assertEqual(context["location_safety_permits"].paginator.per_page, 10)
+        self.assertEqual(
+            context["location_permits"].object_list.query.order_by,
+            ("-modified_at", "-pk"),
+        )
+        self.assertEqual(
+            context["location_safety_permits"].object_list.query.order_by,
+            ("-modified_at", "-pk"),
+        )
+
+    def test_pagination_parameters_preserve_the_other_tab_page(self):
+        context = self.get_context(
+            "tab=safety-permits&permits_page=2&safety_permits_page=3&page=7"
+        )
+
+        permit_params = parse_qs(context["permits_pagination_params"])
+        safety_params = parse_qs(context["safety_permits_pagination_params"])
+
+        self.assertNotIn("permits_page", permit_params)
+        self.assertEqual(permit_params["safety_permits_page"], ["3"])
+        self.assertEqual(permit_params["tab"], ["permits"])
+        self.assertNotIn("safety_permits_page", safety_params)
+        self.assertEqual(safety_params["permits_page"], ["2"])
+        self.assertEqual(safety_params["tab"], ["safety-permits"])

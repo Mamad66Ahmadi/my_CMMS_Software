@@ -75,25 +75,63 @@
 
     <!-- Tab Navigation -->
     <nav class="ifs-tabs" role="tablist">
-        <button class="ifs-tab ifs-tab--active" data-tab="general" role="tab" aria-selected="true">
+        <button class="ifs-tab {% if active_location_tab == 'general' %}ifs-tab--active{% endif %}"
+                id="tab-general" data-tab="general" role="tab"
+                aria-controls="panel-general"
+                aria-selected="{% if active_location_tab == 'general' %}true{% else %}false{% endif %}"
+                tabindex="{% if active_location_tab == 'general' %}0{% else %}-1{% endif %}">
             <i class="bi bi-info-circle"></i>
             {% trans "General" %}
         </button>
-        <button class="ifs-tab" data-tab="hierarchy" role="tab" aria-selected="false">
+        <button class="ifs-tab {% if active_location_tab == 'hierarchy' %}ifs-tab--active{% endif %}"
+                id="tab-hierarchy" data-tab="hierarchy" role="tab"
+                aria-controls="panel-hierarchy"
+                aria-selected="{% if active_location_tab == 'hierarchy' %}true{% else %}false{% endif %}"
+                tabindex="{% if active_location_tab == 'hierarchy' %}0{% else %}-1{% endif %}">
             <i class="bi bi-diagram-3"></i>
             {% trans "Hierarchy" %}
             {% if children.count %}<span class="ifs-tab__badge">{{ children.count }}</span>{% endif %}
         </button>
-        <button class="ifs-tab" data-tab="equipment" role="tab" aria-selected="false">
+        <button class="ifs-tab {% if active_location_tab == 'equipment' %}ifs-tab--active{% endif %}"
+                id="tab-equipment" data-tab="equipment" role="tab"
+                aria-controls="panel-equipment"
+                aria-selected="{% if active_location_tab == 'equipment' %}true{% else %}false{% endif %}"
+                tabindex="{% if active_location_tab == 'equipment' %}0{% else %}-1{% endif %}">
             <i class="bi bi-gear"></i>
             {% trans "Equipment" %}
             {% if equipments.count %}<span class="ifs-tab__badge">{{ equipments.count }}</span>{% endif %}
         </button>
-        <button class="ifs-tab" data-tab="documents" role="tab" aria-selected="false">
+        <button class="ifs-tab {% if active_location_tab == 'permits' %}ifs-tab--active{% endif %}"
+                id="tab-permits" data-tab="permits" role="tab"
+                aria-controls="panel-permits"
+                aria-selected="{% if active_location_tab == 'permits' %}true{% else %}false{% endif %}"
+                tabindex="{% if active_location_tab == 'permits' %}0{% else %}-1{% endif %}">
+            <i class="bi bi-file-earmark-check"></i>
+            {% trans "Permits" %}
+            {% if location_permits_count %}<span class="ifs-tab__badge">{{ location_permits_count }}</span>{% endif %}
+        </button>
+        <button class="ifs-tab {% if active_location_tab == 'safety-permits' %}ifs-tab--active{% endif %}"
+                id="tab-safety-permits" data-tab="safety-permits" role="tab"
+                aria-controls="panel-safety-permits"
+                aria-selected="{% if active_location_tab == 'safety-permits' %}true{% else %}false{% endif %}"
+                tabindex="{% if active_location_tab == 'safety-permits' %}0{% else %}-1{% endif %}">
+            <i class="bi bi-shield-check"></i>
+            {% trans "Safety Permits" %}
+            {% if location_safety_permits_count %}<span class="ifs-tab__badge">{{ location_safety_permits_count }}</span>{% endif %}
+        </button>
+        <button class="ifs-tab {% if active_location_tab == 'documents' %}ifs-tab--active{% endif %}"
+                id="tab-documents" data-tab="documents" role="tab"
+                aria-controls="panel-documents"
+                aria-selected="{% if active_location_tab == 'documents' %}true{% else %}false{% endif %}"
+                tabindex="{% if active_location_tab == 'documents' %}0{% else %}-1{% endif %}">
             <i class="bi bi-file-earmark-text"></i>
             {% trans "Documents" %}
         </button>
-        <button class="ifs-tab" data-tab="history" role="tab" aria-selected="false">
+        <button class="ifs-tab {% if active_location_tab == 'history' %}ifs-tab--active{% endif %}"
+                id="tab-history" data-tab="history" role="tab"
+                aria-controls="panel-history"
+                aria-selected="{% if active_location_tab == 'history' %}true{% else %}false{% endif %}"
+                tabindex="{% if active_location_tab == 'history' %}0{% else %}-1{% endif %}">
             <i class="bi bi-clock-history"></i>
             {% trans "History" %}
         </button>
@@ -103,7 +141,9 @@
     <div class="ifs-tab-panels">
 
         <!-- General Tab -->
-        <div class="ifs-panel ifs-panel--active" id="panel-general" role="tabpanel">
+        <div class="ifs-panel {% if active_location_tab == 'general' %}ifs-panel--active{% endif %}"
+             id="panel-general" role="tabpanel" aria-labelledby="tab-general"
+             {% if active_location_tab != 'general' %}hidden{% endif %}>
             <div class="ifs-card-grid">
 
                 <!-- Primary Information -->
@@ -216,7 +256,9 @@
         </div>
 
         <!-- Hierarchy Tab -->
-        <div class="ifs-panel" id="panel-hierarchy" role="tabpanel" hidden>
+        <div class="ifs-panel {% if active_location_tab == 'hierarchy' %}ifs-panel--active{% endif %}"
+             id="panel-hierarchy" role="tabpanel" aria-labelledby="tab-hierarchy"
+             {% if active_location_tab != 'hierarchy' %}hidden{% endif %}>
             <div class="ifs-card">
                 <header class="ifs-card__header">
                     <h2 class="ifs-card__title"><i class="bi bi-diagram-3"></i> {% trans "Child Location Tags" %}</h2>
@@ -267,7 +309,9 @@
         </div>
 
         <!-- Equipment Tab -->
-        <div class="ifs-panel" id="panel-equipment" role="tabpanel" hidden>
+        <div class="ifs-panel {% if active_location_tab == 'equipment' %}ifs-panel--active{% endif %}"
+             id="panel-equipment" role="tabpanel" aria-labelledby="tab-equipment"
+             {% if active_location_tab != 'equipment' %}hidden{% endif %}>
             <div class="ifs-card">
                 <header class="ifs-card__header">
                     <h2 class="ifs-card__title"><i class="bi bi-gear"></i> {% trans "Installed Equipment" %}</h2>
@@ -318,13 +362,31 @@
             </div>
         </div>
 
+        <!-- Permits Tab -->
+        <div class="ifs-panel {% if active_location_tab == 'permits' %}ifs-panel--active{% endif %}"
+             id="panel-permits" role="tabpanel" aria-labelledby="tab-permits"
+             {% if active_location_tab != 'permits' %}hidden{% endif %}>
+            {% include "equipment/location_tag_detail/_permits_tab.html" %}
+        </div>
+
+        <!-- Safety Permits Tab -->
+        <div class="ifs-panel {% if active_location_tab == 'safety-permits' %}ifs-panel--active{% endif %}"
+             id="panel-safety-permits" role="tabpanel" aria-labelledby="tab-safety-permits"
+             {% if active_location_tab != 'safety-permits' %}hidden{% endif %}>
+            {% include "equipment/location_tag_detail/_safety_permits_tab.html" %}
+        </div>
+
         <!-- Documents Tab -->
-        <div class="ifs-panel" id="panel-documents" role="tabpanel" hidden>
+        <div class="ifs-panel {% if active_location_tab == 'documents' %}ifs-panel--active{% endif %}"
+             id="panel-documents" role="tabpanel" aria-labelledby="tab-documents"
+             {% if active_location_tab != 'documents' %}hidden{% endif %}>
             {% include "equipment/common/_documents_detail_page.html" %}
         </div>
 
         <!-- History Tab -->
-        <div class="ifs-panel" id="panel-history" role="tabpanel" hidden>
+        <div class="ifs-panel {% if active_location_tab == 'history' %}ifs-panel--active{% endif %}"
+             id="panel-history" role="tabpanel" aria-labelledby="tab-history"
+             {% if active_location_tab != 'history' %}hidden{% endif %}>
             <div class="ifs-card">
                 <header class="ifs-card__header">
                     <h2 class="ifs-card__title"><i class="bi bi-clock-history"></i> {% trans "Change History" %}</h2>
@@ -367,29 +429,59 @@
 (function () {
     'use strict';
 
-    const tabs = document.querySelectorAll('.ifs-tab');
+    const tabs = Array.from(document.querySelectorAll('.ifs-tab'));
     const panels = document.querySelectorAll('.ifs-panel');
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetId = 'panel-' + tab.dataset.tab;
+    function activateTab(tab, updateUrl) {
+        if (!tab) return;
 
-            tabs.forEach(t => {
-                t.classList.remove('ifs-tab--active');
-                t.setAttribute('aria-selected', 'false');
-            });
-            tab.classList.add('ifs-tab--active');
-            tab.setAttribute('aria-selected', 'true');
+        const targetId = 'panel-' + tab.dataset.tab;
 
-            panels.forEach(p => {
-                p.classList.remove('ifs-panel--active');
-                p.hidden = true;
-            });
-            const target = document.getElementById(targetId);
-            target.classList.add('ifs-panel--active');
-            target.hidden = false;
+        tabs.forEach(item => {
+            const isActive = item === tab;
+            item.classList.toggle('ifs-tab--active', isActive);
+            item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            item.tabIndex = isActive ? 0 : -1;
+        });
+
+        panels.forEach(panel => {
+            const isActive = panel.id === targetId;
+            panel.classList.toggle('ifs-panel--active', isActive);
+            panel.hidden = !isActive;
+        });
+
+        if (updateUrl) {
+            const url = new URL(window.location.href);
+            if (tab.dataset.tab === 'general') {
+                url.searchParams.delete('tab');
+                url.hash = '';
+            } else {
+                url.searchParams.set('tab', tab.dataset.tab);
+                url.hash = targetId;
+            }
+            window.history.replaceState({}, '', url);
+        }
+    }
+
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activateTab(tab, true));
+        tab.addEventListener('keydown', event => {
+            let nextIndex = null;
+            if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+            if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = tabs.length - 1;
+
+            if (nextIndex !== null) {
+                event.preventDefault();
+                tabs[nextIndex].focus();
+                activateTab(tabs[nextIndex], true);
+            }
         });
     });
+
+    const activeTab = tabs.find(tab => tab.classList.contains('ifs-tab--active'));
+    activateTab(activeTab || tabs[0], false);
 })();
 </script>
 {% endblock %}

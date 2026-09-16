@@ -1,0 +1,84 @@
+{% load i18n %}
+
+<div class="ifs-card location-related-card">
+    <header class="ifs-card__header">
+        <h2 class="ifs-card__title">
+            <i class="bi bi-shield-check"></i>
+            {% trans "Safety Permits at this Location" %}
+        </h2>
+        <span class="ifs-card__count">{{ location_safety_permits_count }} {% trans "records" %}</span>
+    </header>
+    <div class="ifs-card__body">
+        {% if location_safety_permits %}
+            <div class="ifs-table-container">
+                <table class="ifs-table ifs-table--hover location-related-table location-related-table--safety">
+                    <thead>
+                        <tr>
+                            <th scope="col">{% trans "Safety Permit Number" %}</th>
+                            <th scope="col">{% trans "Type" %}</th>
+                            <th scope="col">{% trans "Status" %}</th>
+                            <th scope="col">{% trans "Linked Main Permits" %}</th>
+                            <th scope="col">{% trans "Reviewed" %}</th>
+                            <th scope="col">{% trans "Modified" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for safety_permit in location_safety_permits %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'permits:paper_safety_permit_detail' safety_permit.pk %}"
+                                       class="ifs-link ifs-link--strong">
+                                        {{ safety_permit.safety_permit_number|default:"Number pending" }}
+                                    </a>
+                                </td>
+                                <td>{{ safety_permit.safety_type|default:"—" }}</td>
+                                <td>
+                                    <span class="ifs-record-status {% if safety_permit.current_step.name == 'Activated' %}ifs-record-status--active{% elif safety_permit.current_step.name == 'Expired' or safety_permit.current_step.name == 'Closed' or safety_permit.current_step.name == 'Cancelled' %}ifs-record-status--closed{% else %}ifs-record-status--review{% endif %}">
+                                        {{ safety_permit.current_step.name|default:"—" }}
+                                    </span>
+                                </td>
+
+                                <td class="location-related-links">
+                                    {% for permit in safety_permit.permits.all %}
+                                        <a href="{% url 'permits:permit_detail' permit.permit_number %}" class="ifs-link">
+                                            {{ permit.permit_number }}
+                                        </a>{% if not forloop.last %}<span>, </span>{% endif %}
+                                    {% empty %}
+                                        {% if safety_permit.permit %}
+                                            <a href="{% url 'permits:permit_detail' safety_permit.permit.permit_number %}" class="ifs-link">
+                                                {{ safety_permit.permit.permit_number }}
+                                            </a>
+                                        {% else %}
+                                            <span class="ifs-text--muted">—</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if safety_permit.reviewed_at %}
+                                        <time datetime="{{ safety_permit.reviewed_at|date:'c' }}">{{ safety_permit.reviewed_at|date:"Y-m-d H:i" }}</time>
+                                        <span class="location-related-by">{{ safety_permit.reviewed_by|default:"—" }}</span>
+                                    {% else %}
+                                        <span class="ifs-text--muted">Not reviewed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <time datetime="{{ safety_permit.modified_at|date:'c' }}">{{ safety_permit.modified_at|date:"Y-m-d H:i" }}</time>
+                                    {% if safety_permit.modified_by %}
+                                        <span class="location-related-by">{{ safety_permit.modified_by }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "equipment/location_tag_detail/_related_pagination.html" with page_obj=location_safety_permits page_param="safety_permits_page" query_params=safety_permits_pagination_params tab_name="safety-permits" label="Safety permits" %}
+        {% else %}
+            <div class="ifs-empty-state">
+                <i class="bi bi-shield-check ifs-empty-state__icon"></i>
+                <p class="ifs-empty-state__title">{% trans "No safety permits" %}</p>
+                <p class="ifs-empty-state__description">{% trans "No safety permits are assigned directly to this location tag." %}</p>
+            </div>
+        {% endif %}
+    </div>
+</div>

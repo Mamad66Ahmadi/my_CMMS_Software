@@ -1,0 +1,140 @@
+{% load i18n %}
+
+<div class="ifs-card location-related-card">
+    <header class="ifs-card__header">
+        <h2 class="ifs-card__title">
+            <i class="bi bi-file-earmark-check"></i>
+            {% trans "Permits at this Location" %}
+        </h2>
+        <span class="ifs-card__count">{{ location_permits_count }} {% trans "records" %}</span>
+    </header>
+    <div class="ifs-card__body">
+        {% if location_permits %}
+            <div class="ifs-table-container">
+                <table class="ifs-table ifs-table--hover location-related-table location-related-table--permits">
+                    <thead>
+                        <tr>
+                            <th scope="col">{% trans "Permit Number" %}</th>
+                            <th scope="col">{% trans "Continuation Of" %}</th>
+                            <th scope="col">{% trans "Department" %}</th>
+                            <th scope="col">{% trans "Status" %}</th>
+                            <th scope="col">{% trans "Type" %}</th>
+                            <th scope="col">{% trans "Scope of Work" %}</th>
+                            <th scope="col">{% trans "Work Order" %}</th>
+                            <th scope="col">{% trans "Hazards" %}</th>
+                            <th scope="col">{% trans "Precautions" %}</th>
+                            <th scope="col">{% trans "Validity" %}</th>
+                            <th scope="col">{% trans "Mech. Isolation" %}</th>
+                            <th scope="col">{% trans "Process Isolation" %}</th>
+                            <th scope="col">{% trans "AA Required" %}</th>
+                            <th scope="col">{% trans "Created" %}</th>
+                            <th scope="col">{% trans "Modified" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for permit in location_permits %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'permits:permit_detail' permit.permit_number %}"
+                                       class="ifs-link ifs-link--strong">
+                                        {{ permit.permit_number }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if permit.continuation_of %}
+                                        <a href="{% url 'permits:permit_detail' permit.continuation_of.permit_number %}"
+                                           class="ifs-link">
+                                            {{ permit.continuation_of.permit_number }}
+                                        </a>
+                                    {% else %}
+                                        <span class="ifs-text--muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ permit.department.name|default:"—" }}</td>
+                                <td>
+                                    {% if permit.current_step and permit.current_step.is_terminal or permit.closed_at %}
+                                        <span class="ifs-record-status ifs-record-status--closed">{% trans "Closed" %}</span>
+                                    {% elif permit.completed_at %}
+                                        <span class="ifs-record-status ifs-record-status--complete">{% trans "Completed" %}</span>
+                                    {% elif permit.suspended_at %}
+                                        <span class="ifs-record-status ifs-record-status--warning">{% trans "Suspended" %}</span>
+                                    {% elif permit.activated_at %}
+                                        <span class="ifs-record-status ifs-record-status--active">{% trans "Active" %}</span>
+                                    {% elif permit.current_step and permit.current_step.is_start %}
+                                        <span class="ifs-record-status ifs-record-status--neutral">{% trans "Draft" %}</span>
+                                    {% else %}
+                                        <span class="ifs-record-status ifs-record-status--review">{% trans "In Progress" %}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ permit.permit_type.name|default:"—" }}</td>
+                                <td class="location-related-scope">
+                                    <bdi title="{{ permit.scope_of_work|default:'' }}">
+                                        {{ permit.scope_of_work|default:"—"|truncatechars:100 }}
+                                    </bdi>
+                                </td>
+                                <td>{{ permit.work_order.wo_number|default:"—" }}</td>
+                                <td>
+                                    <div class="location-related-code-list">
+                                        {% for assessment in permit.active_hazard_assessments %}
+                                            <span class="location-related-code" title="{{ assessment.hazard.name }}">
+                                                {{ assessment.hazard.code }}
+                                            </span>
+                                        {% empty %}
+                                            <span class="ifs-text--muted">—</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="location-related-code-list">
+                                        {% for requirement in permit.active_precaution_requirements %}
+                                            <span class="location-related-code" title="{{ requirement.precaution.name }}">
+                                                {{ requirement.precaution.code }}
+                                            </span>
+                                        {% empty %}
+                                            <span class="ifs-text--muted">—</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="location-related-dates">
+                                    {% if permit.valid_from %}
+                                        <time datetime="{{ permit.valid_from|date:'c' }}">{{ permit.valid_from|date:"Y-m-d H:i" }}</time>
+                                    {% else %}—{% endif %}
+                                    <span aria-hidden="true">→</span>
+                                    {% if permit.valid_to %}
+                                        <time datetime="{{ permit.valid_to|date:'c' }}">{{ permit.valid_to|date:"Y-m-d H:i" }}</time>
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>{{ permit.get_mechanical_isolation_display|default:"—" }}</td>
+                                <td>{{ permit.get_process_isolation_display|default:"—" }}</td>
+                                <td>
+                                    <span class="ifs-boolean-flag {% if permit.area_authority_present_required %}ifs-boolean-flag--yes{% else %}ifs-boolean-flag--no{% endif %}">
+                                        {% if permit.area_authority_present_required %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <time datetime="{{ permit.created_at|date:'c' }}">{{ permit.created_at|date:"Y-m-d H:i" }}</time>
+                                    {% if permit.created_by %}
+                                        <span class="location-related-by">{{ permit.created_by }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <time datetime="{{ permit.modified_at|date:'c' }}">{{ permit.modified_at|date:"Y-m-d H:i" }}</time>
+                                    {% if permit.modified_by %}
+                                        <span class="location-related-by">{{ permit.modified_by }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "equipment/location_tag_detail/_related_pagination.html" with page_obj=location_permits page_param="permits_page" query_params=permits_pagination_params tab_name="permits" label="Permits" %}
+        {% else %}
+            <div class="ifs-empty-state">
+                <i class="bi bi-file-earmark-check ifs-empty-state__icon"></i>
+                <p class="ifs-empty-state__title">{% trans "No permits" %}</p>
+                <p class="ifs-empty-state__description">{% trans "No main permits are assigned directly to this location tag." %}</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
