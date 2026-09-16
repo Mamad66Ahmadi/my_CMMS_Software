@@ -25,7 +25,7 @@
                         {% endif %}
                     </button>
                     {% if filters.loc_tag or filters.parent or filters.unit or filters.train or filters.criticality or filters.obj_type or filters.obj_category or filters.is_active == 'false' %}
-                        <a href="?sort={{ sort_by }}&order={{ sort_order }}" class="btn-filter-clear">
+                        <a href="{{ clear_filters_url }}" class="btn-filter-clear">
                             <i class="bi bi-x-circle"></i> Clear
                         </a>
                     {% endif %}

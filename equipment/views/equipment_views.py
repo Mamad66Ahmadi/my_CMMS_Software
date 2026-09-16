@@ -166,6 +166,41 @@ class EquipmentList(LoginRequiredMixin, TemplateView):
         context["filters"] = filters
         context["total_equipments"] = paginator.count
 
+        active_filter_badges = []
+        badge_definitions = (
+            ("functional_location", "Functional Location", None),
+            ("serial_number", "Serial Number", None),
+            ("manufacturer", "Manufacturer", None),
+            ("model", "Model", None),
+            ("note", "Note", None),
+            ("is_active", "Status", "All equipment"),
+        )
+
+        for key, label, display_value in badge_definitions:
+            value = filters.get(key)
+            if not value or (key == "is_active" and value != "false"):
+                continue
+
+            remaining_params = self.request.GET.copy()
+            remaining_params.pop("page", None)
+            remaining_params.pop(key, None)
+            query_string = remaining_params.urlencode()
+            active_filter_badges.append({
+                "label": label,
+                "value": display_value or value,
+                "remove_url": f"?{query_string}" if query_string else "?",
+            })
+
+        clear_params = self.request.GET.copy()
+        for key in filters:
+            clear_params.pop(key, None)
+        clear_params.pop("page", None)
+        clear_query_string = clear_params.urlencode()
+        context["active_filter_badges"] = active_filter_badges
+        context["clear_filters_url"] = (
+            f"?{clear_query_string}" if clear_query_string else "?"
+        )
+
         param_list = [f"{k}={v}" for k, v in filters.items() if v]
         param_list.append(f"per_page={per_page}")
         context["sort_params"] = "&".join(param_list)

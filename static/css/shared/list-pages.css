@@ -248,6 +248,113 @@
     width: min(460px, 92vw);
 }
 
+/* Active filter summary */
+.active-filters-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 8px 12px;
+    background: var(--c-bg-subtle, #f9fafb);
+    border: 1px solid var(--c-border, #e5e7eb);
+    border-left: 3px solid var(--c-accent, #755684);
+    border-radius: var(--radius-sm, 4px);
+}
+
+.active-filters-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    color: var(--c-text-secondary, #4b5563);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.active-filters-label i {
+    color: var(--c-accent, #755684);
+    font-size: 11px;
+}
+
+.active-filters-list {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 6px 4px 10px;
+    color: var(--c-text-primary, #1f2937);
+    background: var(--c-bg-surface, #fff);
+    border: 1px solid var(--c-border-strong, #d1d5db);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 12.5px;
+    line-height: 1.4;
+}
+
+.filter-chip__label {
+    color: var(--c-text-secondary, #4b5563);
+    font-weight: 600;
+}
+
+.filter-chip__label::after {
+    margin-right: 3px;
+    content: ":";
+}
+
+.filter-chip__value {
+    color: var(--c-text-primary, #1f2937);
+    font-weight: 500;
+}
+
+.filter-chip__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 2px;
+    color: var(--c-text-muted, #9ca3af);
+    border-radius: 50%;
+    font-size: 13px;
+    text-decoration: none;
+    transition: background var(--transition-fast, 120ms ease),
+                color var(--transition-fast, 120ms ease);
+}
+
+.filter-chip__remove:hover,
+.filter-chip__remove:focus-visible {
+    color: var(--c-status-danger-text, #b42318);
+    background: var(--c-status-danger-bg, #fee4e2);
+}
+
+.active-filters-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    padding: 4px 8px;
+    color: var(--c-text-muted, #9ca3af);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color var(--transition-fast, 120ms ease),
+                background var(--transition-fast, 120ms ease);
+}
+
+.active-filters-clear:hover,
+.active-filters-clear:focus-visible {
+    color: var(--c-status-danger-text, #b42318);
+    background: var(--c-status-danger-bg, #fee4e2);
+}
+
 .equipment-list-page h1,
 .permit-list-page h1 {
     font-size: 22px;

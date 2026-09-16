@@ -144,6 +144,43 @@ class LocationTagList(LoginRequiredMixin, TemplateView):
         context["filters"] = filters
         context["total_location_tags"] = queryset.count()
 
+        active_filter_badges = []
+        badge_definitions = (
+            ("loc_tag", "Location Tag", None),
+            ("parent", "Parent Tag", None),
+            ("unit", "Unit", None),
+            ("train", "Train", None),
+            ("criticality", "Criticality", None),
+            ("obj_type", "Type", None),
+            ("obj_category", "Object Category", None),
+            ("is_active", "Status", "All location tags"),
+        )
+
+        for key, label, display_value in badge_definitions:
+            value = filters.get(key)
+            if not value or (key == "is_active" and value != "false"):
+                continue
+
+            remaining_params = self.request.GET.copy()
+            remaining_params.pop("page", None)
+            remaining_params.pop(key, None)
+            query_string = remaining_params.urlencode()
+            active_filter_badges.append({
+                "label": label,
+                "value": display_value or value,
+                "remove_url": f"?{query_string}" if query_string else "?",
+            })
+
+        clear_params = self.request.GET.copy()
+        for key in filters:
+            clear_params.pop(key, None)
+        clear_params.pop("page", None)
+        clear_query_string = clear_params.urlencode()
+        context["active_filter_badges"] = active_filter_badges
+        context["clear_filters_url"] = (
+            f"?{clear_query_string}" if clear_query_string else "?"
+        )
+
         # Build sort_params WITHOUT sort or order
         param_list = []
         for key, value in filters.items():
