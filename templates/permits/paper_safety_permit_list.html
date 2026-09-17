@@ -72,7 +72,11 @@
         </div>
     {% endif %}
     <div class="d-flex justify-content-between align-items-center mb-4"><h1 class="mb-0">Safety Permits <small class="text-muted">({{ safety_permits.paginator.count }} Records)</small></h1><a href="{% url 'permits:permit_list' %}" class="btn btn-outline-secondary"><i class="bi bi-list-ul me-1"></i> Main Permits</a></div>
-    {% if safety_permits.object_list %}<div class="table-scroll-container"><table><thead><tr>
+    {% if safety_permits.object_list %}<div class="table-scroll-container permit-grid"
+        id="safetyPermitGrid"
+        role="region"
+        aria-label="Safety permits table with horizontal and vertical scrolling"
+        tabindex="0"><table class="permit-grid__table"><thead><tr>
         {% include "shared/_sortable_table_header.html" with column="safety_permit_number" label="Safety Permit No." sort_by=sort_by query_params=header_query_params %}
         {% include "shared/_sortable_table_header.html" with column="safety_type" label="Safety Type" sort_by=sort_by query_params=header_query_params %}
         {% include "shared/_sortable_table_header.html" with column="current_step" label="Workflow Step" sort_by=sort_by query_params=header_query_params %}
@@ -90,4 +94,36 @@
         <td class="align-start-cell">{{ item.review_comment|default:"-"|truncatechars:80 }}</td><td>{{ item.created_at|date:"Y-m-d H:i" }}</td><td>{{ item.reviewed_at|date:"Y-m-d H:i"|default:"-" }}</td><td>{{ item.modified_at|date:"Y-m-d H:i" }}</td>
     </tr>{% endfor %}</tbody></table></div>{% include "shared/_pagination.html" with page_obj=safety_permits query_params=query_params %}{% else %}<div class="alert alert-info"><i class="bi bi-info-circle me-1"></i> No safety permits found matching the criteria.</div>{% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+
+    const grid = document.getElementById('safetyPermitGrid');
+    if (!grid) return;
+
+    let resizeFrame = null;
+
+    function fitGridToViewport() {
+        const gridTop = grid.getBoundingClientRect().top;
+        const availableHeight = window.innerHeight - gridTop - 20;
+        const gridHeight = Math.min(720, Math.max(240, availableHeight));
+        grid.style.setProperty('--permit-grid-height', `${Math.floor(gridHeight)}px`);
+    }
+
+    function scheduleGridFit() {
+        if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(function () {
+            fitGridToViewport();
+            resizeFrame = null;
+        });
+    }
+
+    fitGridToViewport();
+    window.addEventListener('load', fitGridToViewport, { once: true });
+    window.addEventListener('resize', scheduleGridFit);
+})();
+</script>
 {% endblock %}
