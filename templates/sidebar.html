@@ -13,6 +13,24 @@
         </button>
     </div>
 
+    <!-- Dashboard -->
+    <div class="sidebar-item">
+        <button class="sidebar-nav-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardCollapse" aria-expanded="false" aria-controls="dashboardCollapse">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+            {% if pending_requests_count > 0 and request.user.is_staff %}
+                <span class="badge-pill" aria-label="{{ pending_requests_count }} pending requests">{{ pending_requests_count }}</span>
+            {% endif %}
+            <i class="bi bi-chevron-right chevron" aria-hidden="true"></i>
+        </button>
+        <div id="dashboardCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+            <a href="{% url 'accounts:dashboard' %}" class="sidebar-sub-link">
+                <i class="bi bi-circle-fill dot"></i> Overview
+            </a>
+        </div>
+    </div>
+
+
     <div class="sidebar-section-label">Operations</div>
 
     <div class="accordion accordion-flush" id="sidebarAccordion">
@@ -32,22 +50,7 @@
             </div>
         </div>
 
-        <!-- Dashboard -->
-        <div class="sidebar-item">
-            <button class="sidebar-nav-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardCollapse" aria-expanded="false" aria-controls="dashboardCollapse">
-                <i class="bi bi-speedometer2"></i>
-                <span>Dashboard</span>
-                {% if pending_requests_count > 0 and request.user.is_staff %}
-                    <span class="badge-pill" aria-label="{{ pending_requests_count }} pending requests">{{ pending_requests_count }}</span>
-                {% endif %}
-                <i class="bi bi-chevron-right chevron" aria-hidden="true"></i>
-            </button>
-            <div id="dashboardCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
-                <a href="{% url 'accounts:dashboard' %}" class="sidebar-sub-link">
-                    <i class="bi bi-circle-fill dot"></i> Overview
-                </a>
-            </div>
-        </div>
+
 
         <!-- Work Orders -->
         <div class="sidebar-item">
