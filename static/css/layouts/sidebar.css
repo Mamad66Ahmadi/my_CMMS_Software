@@ -221,8 +221,9 @@
     text-align: center;
 }
 
-.sidebar-nav-btn span {
+.sidebar-nav-btn > span:not(.badge-pill) {
     flex: 1;
+    min-width: 0;
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -282,9 +283,10 @@
     color: #fff;
     font-size: 0.62rem;
     font-weight: 600;
-    padding: 1px 6px;
+    line-height: 1.2;
+    padding: 2px 14px;
     border-radius: 9px;
-    flex-shrink: 0;
+    flex: 0 0 auto;
 }
 
 .sidebar-sub-link {

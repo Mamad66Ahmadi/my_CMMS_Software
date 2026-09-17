@@ -362,6 +362,17 @@
     color: var(--form-text);
 }
 
+.equipment-form-page .btn-review-reject {
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.equipment-form-page .btn-review-reject:hover {
+    color: #fff;
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
 .equipment-form-page .btn-danger {
     margin-top: 18px;
 }

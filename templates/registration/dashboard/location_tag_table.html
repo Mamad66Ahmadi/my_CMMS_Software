@@ -1,36 +1,46 @@
-<div class="card mb-4">
-    <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center">
-        <span class="text-dark fw-semibold" style="font-size: 1.05rem;">
-            Location Tag Change Requests
-        </span>
-    </div>
-    <div class="card-body">
+<section class="dashboard-request-panel dashboard-request-panel--locations" id="location-requests">
+    <header class="dashboard-request-panel__header">
+        <div class="dashboard-request-panel__identity">
+            <span class="dashboard-request-panel__icon" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
+            <div>
+                <h2 class="dashboard-request-panel__title">Location Tag Requests</h2>
+                <p class="dashboard-request-panel__subtitle">Review pending changes to the controlled location hierarchy.</p>
+            </div>
+        </div>
+        <span class="dashboard-request-panel__count">{{ location_tag_requests.paginator.count }} pending</span>
+    </header>
 
-        <form method="post" action="{% url 'equipment:bulk_location_tag_actions' %}">
-            {% csrf_token %}
-            {% if location_tag_requests %}
+    <form method="post" action="{% url 'equipment:bulk_location_tag_actions' %}" class="dashboard-request-panel__form">
+        {% csrf_token %}
 
-            <div class="d-flex justify-content-end mb-2">
-                <button type="submit" name="bulk_action" value="approve" class="btn btn-success btn-sm me-2">
-                    Approve Selected
-                </button>
-                <button type="submit" name="bulk_action" value="reject" class="btn btn-danger btn-sm">
-                    Reject Selected
-                </button>
+        {% if location_tag_requests %}
+            <div class="dashboard-request-toolbar">
+                <span class="dashboard-request-toolbar__hint">
+                    <i class="bi bi-check2-square" aria-hidden="true"></i>
+                    Select requests to process together
+                </span>
+                <div class="dashboard-request-toolbar__actions">
+                    <button type="submit" name="bulk_action" value="approve" class="dashboard-bulk-button dashboard-bulk-button--approve">
+                        <i class="bi bi-check2" aria-hidden="true"></i> Approve selected
+                    </button>
+                    <button type="submit" name="bulk_action" value="reject" class="dashboard-bulk-button dashboard-bulk-button--reject">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i> Reject selected
+                    </button>
+                </div>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped sortable">
-                    <thead class="table-light">
+            <div class="dashboard-request-table-wrap">
+                <table class="dashboard-request-table sortable">
+                    <thead>
                         <tr>
-                            <th class="no-sort" style="width:35px;">
-                                <input type="checkbox" id="select-all">
+                            <th class="dashboard-request-table__select no-sort">
+                                <input type="checkbox" id="select-all" class="dashboard-checkbox" aria-label="Select all location tag requests on this page">
                             </th>
-                            <th>ID</th>
-                            <th>Tag</th>
+                            <th>Request</th>
+                            <th>Location Tag</th>
                             <th>Action</th>
                             <th>Status</th>
-                            <th>Changes</th>
+                            <th>Requested Changes</th>
                             <th>Requested By</th>
                             <th>Requested At</th>
                         </tr>
@@ -38,68 +48,76 @@
                     <tbody>
                         {% for req in location_tag_requests %}
                         <tr>
-                            <td>
-                                <input type="checkbox" name="selected_requests" value="{{ req.id }}" class="row-checkbox">
+                            <td class="dashboard-request-table__select">
+                                <input type="checkbox" name="selected_requests" value="{{ req.id }}" class="dashboard-checkbox row-checkbox" aria-label="Select location tag request {{ req.id }}">
                             </td>
-
                             <td>
-                                <a href="{% url 'equipment:location_tag_request_review' req.id %}">
-                                    {{ req.id }}
-                                </a>
+                                <a class="dashboard-request-id" href="{% url 'equipment:location_tag_request_review' req.id %}">#{{ req.id }}</a>
                             </td>
-
                             <td>
                                 {% if req.action == req.Action.CREATE %}
-                                    {{ req.loc_tag }}
+                                    <span class="dashboard-asset-name">{{ req.loc_tag }}</span>
+                                    <span class="dashboard-asset-note">New location tag</span>
                                 {% elif req.location_tag %}
-                                    <a href="{% url 'equipment:location_tag_detail' req.location_tag.loc_tag %}">
-                                        {{ req.location_tag.loc_tag }}
-                                    </a>
+                                    <a class="dashboard-asset-name" href="{% url 'equipment:location_tag_detail' req.location_tag.loc_tag %}">{{ req.location_tag.loc_tag }}</a>
                                 {% else %}
-                                    <span class="text-muted">Unavailable</span>
+                                    <span class="dashboard-muted">Unavailable</span>
                                 {% endif %}
                             </td>
-
-                            <td>{{ req.get_action_display }}</td>
-                            <td>{{ req.get_status_display }}</td>
-
-                            <td style="max-width:300px;">
-                                {% if req.action == req.Action.CREATE %}
-                                    <strong>loc_tag:</strong> {{ req.loc_tag }}<br>
-                                    {% if req.description %}<strong>description:</strong> {{ req.description }}<br>{% endif %}
-                                    {% if req.long_tag %}<strong>long_tag:</strong> {{ req.long_tag }}<br>{% endif %}
-                                {% elif req.action == req.Action.REMOVE %}
-                                    <span class="text-danger fw-bold">Remove this tag</span>
-                                {% else %}
-                                    {% if req.changes %}
+                            <td>
+                                <span class="dashboard-request-badge dashboard-request-badge--{{ req.action }}">{{ req.get_action_display }}</span>
+                            </td>
+                            <td>
+                                <span class="dashboard-request-status">
+                                    <span class="dashboard-request-status__dot" aria-hidden="true"></span>
+                                    {{ req.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="dashboard-request-table__changes">
+                                <div class="dashboard-request-changes">
+                                    {% if req.action == req.Action.CREATE %}
+                                        <div><strong>Location tag</strong><span>{{ req.loc_tag }}</span></div>
+                                        {% if req.description %}<div><strong>Description</strong><span>{{ req.description }}</span></div>{% endif %}
+                                        {% if req.long_tag %}<div><strong>Long tag</strong><span>{{ req.long_tag }}</span></div>{% endif %}
+                                    {% elif req.action == req.Action.REMOVE %}
+                                        <span class="dashboard-request-removal"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Remove this tag</span>
+                                    {% elif req.changes %}
                                         {% for field, diff in req.changes.items %}
-                                            <strong>{{ field }}</strong>: "{{ diff.old }}" → "{{ diff.new }}"<br>
+                                            <div>
+                                                <strong>{{ field }}</strong>
+                                                <span>{{ diff.old|default:"—" }} <i class="bi bi-arrow-right" aria-hidden="true"></i> {{ diff.new|default:"—" }}</span>
+                                            </div>
                                         {% endfor %}
                                     {% else %}
-                                        <span class="text-muted">No changes</span>
+                                        <span class="dashboard-muted">No field changes recorded</span>
                                     {% endif %}
-                                {% endif %}
+                                </div>
                             </td>
-
-                            <td>{{ req.requested_by }}</td>
-                            <td>{{ req.requested_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <span class="dashboard-requester">{{ req.requested_by.get_full_name|default:req.requested_by }}</span>
+                                <span class="dashboard-asset-note">{{ req.requested_by }}</span>
+                            </td>
+                            <td>
+                                <time class="dashboard-request-time" datetime="{{ req.requested_at|date:'c' }}">
+                                    <span>{{ req.requested_at|date:"M d, Y" }}</span>
+                                    <small>{{ req.requested_at|date:"H:i" }}</small>
+                                </time>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
 
-            {% else %}
-            <div class="border rounded-1 bg-light p-4 text-center">
-                <div class="text-muted mb-2" style="font-size: 1.25rem;">
-                    <i class="bi bi-info-circle"></i>
+            {% include "registration/dashboard/_request_pagination.html" with page_obj=location_tag_requests page_param="location_page" query_params=location_pagination_params anchor="location-requests" label="location tag requests" %}
+        {% else %}
+            <div class="dashboard-request-empty">
+                <span class="dashboard-request-empty__icon" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
+                <div>
+                    <h3>No pending location tag requests</h3>
+                    <p>New location tag changes awaiting review will appear here.</p>
                 </div>
-                <p class="text-muted mb-0" style="font-size: 1rem; letter-spacing: 0.3px;">
-                    There are currently no pending location tag requests.
-                </p>
             </div>
-            {% endif %}
-        </form>
-
-    </div>
-</div>
+        {% endif %}
+    </form>
+</section>

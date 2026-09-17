@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db.models import Q
 
 from equipment.models.request_equipment_models import (
@@ -28,22 +29,41 @@ class UserDashboardView(LoginRequiredMixin, TemplateView):
 
 
         if user.is_staff or user.is_superuser:
-            location_tag_requests = LocationTagChangeRequest.objects.filter(status="pending").order_by("-requested_at")[:100]
-            equipment_requests = (
+            location_tag_queryset = (
+                LocationTagChangeRequest.objects
+                .filter(status="pending")
+                .select_related("requested_by", "location_tag")
+                .order_by("-requested_at")
+            )
+            equipment_queryset = (
                 EquipmentChangeRequest.objects
                 .filter(status="pending")
                 .select_related("requested_by", "equipment")
                 .prefetch_related("document_requests")
-                .order_by("-requested_at")[:100]
+                .order_by("-requested_at")
             )
+
+            location_tag_requests = Paginator(location_tag_queryset, 10).get_page(
+                self.request.GET.get("location_page")
+            )
+            equipment_requests = Paginator(equipment_queryset, 10).get_page(
+                self.request.GET.get("equipment_page")
+            )
+
+            location_pagination_params = self.request.GET.copy()
+            location_pagination_params.pop("location_page", None)
+            equipment_pagination_params = self.request.GET.copy()
+            equipment_pagination_params.pop("equipment_page", None)
+
             context["location_tag_requests"] = location_tag_requests
             context["equipment_requests"] = equipment_requests
+            context["location_pagination_params"] = location_pagination_params.urlencode()
+            context["equipment_pagination_params"] = equipment_pagination_params.urlencode()
             context["document_requests"] = [] #document_requests
 
-            # ✅ TOTAL COUNT
             context["total_asset_requests"] = (
-                LocationTagChangeRequest.objects.filter(status="pending").count()
-                + EquipmentChangeRequest.objects.filter(status="pending").count()
+                location_tag_requests.paginator.count
+                + equipment_requests.paginator.count
             )
 
         return context

@@ -1,0 +1,43 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="dashboard-pagination" aria-label="{{ label }} pagination">
+    <span class="dashboard-pagination__summary">
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+    </span>
+
+    <span class="dashboard-pagination__links">
+        {% if page_obj.has_previous %}
+            <a class="dashboard-pagination__link"
+               href="?{{ page_param }}=1{% if query_params %}&amp;{{ query_params }}{% endif %}#{{ anchor }}"
+               aria-label="First {{ label }} page">
+                <i class="bi bi-chevron-bar-left" aria-hidden="true"></i>
+                First
+            </a>
+            <a class="dashboard-pagination__link"
+               href="?{{ page_param }}={{ page_obj.previous_page_number }}{% if query_params %}&amp;{{ query_params }}{% endif %}#{{ anchor }}"
+               aria-label="Previous {{ label }} page">
+                <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                Previous
+            </a>
+        {% endif %}
+
+        <span class="dashboard-pagination__current" aria-current="page">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a class="dashboard-pagination__link"
+               href="?{{ page_param }}={{ page_obj.next_page_number }}{% if query_params %}&amp;{{ query_params }}{% endif %}#{{ anchor }}"
+               aria-label="Next {{ label }} page">
+                Next
+                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </a>
+            <a class="dashboard-pagination__link"
+               href="?{{ page_param }}={{ page_obj.paginator.num_pages }}{% if query_params %}&amp;{{ query_params }}{% endif %}#{{ anchor }}"
+               aria-label="Last {{ label }} page">
+                Last
+                <i class="bi bi-chevron-bar-right" aria-hidden="true"></i>
+            </a>
+        {% endif %}
+    </span>
+</nav>
+{% endif %}

@@ -11,119 +11,134 @@
 
 {% block content %}
 
-<!-- ======== Back to Dashboard Button ======== -->
 <div class="equipment-form-page equipment-form-page--location-tag">
-<header class="equipment-form-page__header">
-    <div class="equipment-form-page__identity">
-        <div class="equipment-form-page__icon"><i class="bi bi-geo-alt"></i></div>
-        <div>
-            <div class="equipment-form-page__eyebrow">Location Tag Workflow</div>
-            <h1 class="equipment-form-page__title">Review Location Tag Request</h1>
-            <div class="equipment-form-page__subtitle">Validate the proposed location record before approval.</div>
+    <header class="equipment-form-page__header">
+        <div class="equipment-form-page__identity">
+            <div class="equipment-form-page__icon"><i class="bi bi-geo-alt"></i></div>
+            <div>
+                <div class="equipment-form-page__eyebrow">Location Tag Workflow</div>
+                <h1 class="equipment-form-page__title">Review Location Tag Request</h1>
+                <div class="equipment-form-page__subtitle">
+                    Review {{ req.get_action_display|lower }} request #{{ req.pk }} before applying it.
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="equipment-form-page__actions">
-        <span class="status-badge status-draft"><i class="bi bi-clipboard-check"></i> Review</span>
-        <a href="{% url 'accounts:dashboard' %}" class="btn-secondary-custom">
-            <i class="bi bi-arrow-left"></i> Dashboard
-        </a>
-    </div>
-</header>
-
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert-success">
-            {{ message }}
+        <div class="equipment-form-page__actions">
+            <span class="status-badge status-draft"><i class="bi bi-clipboard-check"></i> Pending Review</span>
+            <a href="{% url 'accounts:dashboard' %}" class="btn-secondary-custom">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
         </div>
-    {% endfor %}
-{% endif %}
+    </header>
 
-<div class="form-card">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-success">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
 
-<form method="post" class="equipment-form">
-{% csrf_token %}
+    <div class="form-card">
+        <p class="equipment-form-page__intro">
+            Requested by <strong>{{ req.requested_by }}</strong> on
+            <strong>{{ req.requested_at|date:"Y-m-d H:i" }}</strong>.
+            Reviewers may correct the proposed values before approval.
+        </p>
 
-<p>
-    {{ form.loc_tag.label_tag }}
-    {{ form.loc_tag }}
-</p>
+        <form method="post" autocomplete="off" class="equipment-form">
+            {% csrf_token %}
 
-<p style="position: relative;">
-    {{ form.parent_search.label_tag }}
-    {{ form.parent_search }}
+            {{ form.non_field_errors }}
 
-    <div id="parent-results" class="autocomplete-results"></div>
-</p>
+            <div class="form-grid form-grid--location-tag">
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.loc_tag.label_tag }}
+                    {{ form.loc_tag }}
+                    {{ form.loc_tag.errors }}
+                </div>
 
-{{ form.parent }}
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.parent_search.label_tag }}
+                    {{ form.parent_search }}
+                    {{ form.parent_search.errors }}
+                    <div id="parent-results" class="autocomplete-results"></div>
+                </div>
 
-<p>
-    {{ form.description.label_tag }}
-    {{ form.description }}
-</p>
+                {{ form.parent }}
 
-<p>
-    {{ form.long_tag.label_tag }}
-    {{ form.long_tag }}
-</p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.unit.label_tag }}
+                    {{ form.unit }}
+                    {{ form.unit.errors }}
+                </div>
 
-<p>
-    {{ form.obj_criticality.label_tag }}
-    {{ form.obj_criticality }}
-</p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.train.label_tag }}
+                    {{ form.train }}
+                    {{ form.train.errors }}
+                </div>
 
-<p>
-    {{ form.obj_type.label_tag }}
-    {{ form.obj_type }}
-</p>
+                <div class="form-field-block location-tag-field--half">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
 
-<p>
-    {{ form.obj_category.label_tag }}
-    {{ form.obj_category }}
-</p>
+                <div class="form-field-block location-tag-field--half">
+                    {{ form.long_tag.label_tag }}
+                    {{ form.long_tag }}
+                    {{ form.long_tag.errors }}
+                </div>
 
-<p>
-    {{ form.unit.label_tag }}
-    {{ form.unit }}
-</p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_criticality.label_tag }}
+                    {{ form.obj_criticality }}
+                    {{ form.obj_criticality.errors }}
+                </div>
 
-<p>
-    {{ form.train.label_tag }}
-    {{ form.train }}
-</p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_type.label_tag }}
+                    {{ form.obj_type }}
+                    {{ form.obj_type.errors }}
+                </div>
 
-<p>
-    {{ form.note.label_tag }}
-    {{ form.note }}
-</p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_category.label_tag }}
+                    {{ form.obj_category }}
+                    {{ form.obj_category.errors }}
+                </div>
 
-<p>
-    {{ form.mih_level.label_tag }}
-    {{ form.mih_level }}
-</p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.mih_level.label_tag }}
+                    {{ form.mih_level }}
+                    {{ form.mih_level.errors }}
+                </div>
 
-<div style="margin-top:25px; display:flex; gap:10px;">
+                <div class="form-field-block location-tag-field--note">
+                    {{ form.note.label_tag }}
+                    {{ form.note }}
+                    {{ form.note.errors }}
+                </div>
 
-    <button type="submit" name="decision" value="approve" class="btn-primary-custom">
-        Approve & Apply
-    </button>
+                <div class="equipment-form-page__submit-row equipment-form-page__submit-row--inline">
+                    <button type="submit" name="decision" value="approve" class="btn-primary-custom">
+                        <i class="bi bi-check2-circle"></i> Approve &amp; Apply
+                    </button>
 
-    <button type="submit" name="decision" value="reject" class="btn-secondary-custom">
-        Reject
-    </button>
+                    <button type="submit" name="decision" value="reject" class="btn-secondary-custom btn-review-reject">
+                        <i class="bi bi-x-circle"></i> Reject
+                    </button>
 
-    <a href="{% url 'accounts:dashboard' %}" class="btn-secondary-custom">
-        Cancel
-    </a>
-
+                    <a href="{% url 'accounts:dashboard' %}" class="btn-secondary-custom">
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
-</form>
-
-</div>
-</div>
-
-<!-- AUTOCOMPLETE JS -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -134,6 +149,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!input) return;
 
     const url = input.dataset.autocompleteUrl;
+    const form = input.closest("form");
 
     input.addEventListener("keyup", function () {
 
@@ -173,6 +189,14 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("click", function(e) {
         if (!resultsBox.contains(e.target) && e.target !== input) {
             resultsBox.style.display = "none";
+        }
+    });
+
+    form.addEventListener("submit", function(e) {
+        if (input.value.trim() !== "" && hidden.value === "") {
+            e.preventDefault();
+            alert("Please select a valid parent location tag from the list.");
+            input.focus();
         }
     });
 
