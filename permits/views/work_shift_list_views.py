@@ -5,7 +5,6 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from django.views.generic import DetailView, TemplateView
-from urllib.parse import urlencode
 
 from permits.models.permit_shift_models import PermitWorkShift, Shift
 from accounts.models import Department
@@ -120,8 +119,6 @@ class WorkShiftListView(LoginRequiredMixin, TemplateView):
         except ValueError:
             selected_date = timezone.localdate()
 
-        per_page = 25
-        page_obj = Paginator(qs, per_page).get_page(self.request.GET.get("page"))
         summary_qs = PermitWorkShift.objects.filter(pk__in=qs.values("pk"))
         summary = summary_qs.aggregate(
             total=Count("id"),
@@ -132,9 +129,29 @@ class WorkShiftListView(LoginRequiredMixin, TemplateView):
         shift_counts = {
             value: summary_qs.filter(shift=value).count() for value, _ in Shift.choices
         }
+        per_page = 25
+        shift_1_work_shifts = Paginator(
+            qs.filter(shift=Shift.SHIFT_1),
+            per_page,
+        ).get_page(self.request.GET.get("shift_1_page"))
+        shift_2_work_shifts = Paginator(
+            qs.filter(shift=Shift.SHIFT_2),
+            per_page,
+        ).get_page(self.request.GET.get("shift_2_page"))
+
+        active_tab = self.request.GET.get("tab", "").strip()
+        if active_tab not in {"shift-1", "shift-2"}:
+            selected_shifts = [value for value in self.request.GET.getlist("shift") if value]
+            if self.request.GET.get("shift_2_page") or selected_shifts == [Shift.SHIFT_2]:
+                active_tab = "shift-2"
+            else:
+                active_tab = "shift-1"
+
         context.update(
             {
-                "work_shifts": page_obj,
+                "shift_1_work_shifts": shift_1_work_shifts,
+                "shift_2_work_shifts": shift_2_work_shifts,
+                "active_work_shift_tab": active_tab,
                 "selected_date": selected_date,
                 "summary": summary,
                 "shift_choices": Shift.choices,
@@ -158,22 +175,67 @@ class WorkShiftListView(LoginRequiredMixin, TemplateView):
                 "previous_date": selected_date - timedelta(days=1),
                 "next_date": selected_date + timedelta(days=1),
                 "shift_counts": shift_counts,
-                "shift_count_rows": [
-                    {"value": value, "label": label, "count": shift_counts[value]}
-                    for value, label in Shift.choices
-                ],
             }
         )
         query = self.request.GET.copy()
         query.pop("page", None)
-        context["query_params"] = query.urlencode()
-        header_query = self.request.GET.copy()
-        header_query.pop("page", None)
-        header_query.pop("sort", None)
-        context["header_query_params"] = header_query.urlencode()
-        context["previous_url"] = f"?{urlencode({**query.dict(), 'date': context['previous_date'].isoformat()})}"
-        context["today_url"] = f"?{urlencode({**query.dict(), 'date': timezone.localdate().isoformat()})}"
-        context["next_url"] = f"?{urlencode({**query.dict(), 'date': context['next_date'].isoformat()})}"
+        query.pop("shift_1_page", None)
+        query.pop("shift_2_page", None)
+        for tab_name, context_prefix in (("shift-1", "shift_1"), ("shift-2", "shift_2")):
+            pagination_query = self.request.GET.copy()
+            pagination_query.pop(f"{context_prefix}_page", None)
+            pagination_query.pop("page", None)
+            pagination_query["tab"] = tab_name
+            context[f"{context_prefix}_query_params"] = pagination_query.urlencode()
+
+            header_query = self.request.GET.copy()
+            header_query.pop("shift_1_page", None)
+            header_query.pop("shift_2_page", None)
+            header_query.pop("page", None)
+            header_query.pop("sort", None)
+            header_query["tab"] = tab_name
+            context[f"{context_prefix}_header_query_params"] = header_query.urlencode()
+
+        context["shift_tabs"] = [
+            {
+                "name": "shift-1",
+                "panel_id": "work-shift-panel-1",
+                "tab_id": "work-shift-tab-1",
+                "label": "Shift 1",
+                "icon": "bi-sun",
+                "window": "07:00–19:00",
+                "pagination_label": "Shift 1 pagination",
+                "count": shift_counts[Shift.SHIFT_1],
+                "page_obj": shift_1_work_shifts,
+                "page_param": "shift_1_page",
+                "query_params": context["shift_1_query_params"],
+                "header_query_params": context["shift_1_header_query_params"],
+            },
+            {
+                "name": "shift-2",
+                "panel_id": "work-shift-panel-2",
+                "tab_id": "work-shift-tab-2",
+                "label": "Shift 2",
+                "icon": "bi-moon-stars",
+                "window": "19:00–07:00 the following day",
+                "pagination_label": "Shift 2 pagination",
+                "count": shift_counts[Shift.SHIFT_2],
+                "page_obj": shift_2_work_shifts,
+                "page_param": "shift_2_page",
+                "query_params": context["shift_2_query_params"],
+                "header_query_params": context["shift_2_header_query_params"],
+            },
+        ]
+
+        def date_url(target_date):
+            date_query = query.copy()
+            date_query["date"] = target_date.isoformat()
+            encoded_query = date_query.urlencode()
+            return f"?{encoded_query}" if encoded_query else "?"
+
+        context["previous_url"] = date_url(context["previous_date"])
+        context["today_url"] = date_url(timezone.localdate())
+        context["next_url"] = date_url(context["next_date"])
         return context
 
 

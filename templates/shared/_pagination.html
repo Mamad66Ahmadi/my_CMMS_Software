@@ -1,11 +1,11 @@
-{# Global pagination primitive. Pass page_obj and, when needed, query_params. #}
-<nav class="pagination app-pagination" aria-label="Pagination">
+{# Global pagination primitive. Pass page_obj and, when needed, query_params/page_param/pagination_label. #}
+<nav class="pagination app-pagination" aria-label="{{ pagination_label|default:'Pagination' }}">
     <span class="step-links app-pagination__links">
         {% if page_obj.has_previous %}
-            <a class="app-pagination__link" href="?page=1{% if query_params %}&{{ query_params }}{% endif %}">
+            <a class="app-pagination__link" href="?{{ page_param|default:'page' }}=1{% if query_params %}&{{ query_params }}{% endif %}">
                 First
             </a>
-            <a class="app-pagination__link" href="?page={{ page_obj.previous_page_number }}{% if query_params %}&{{ query_params }}{% endif %}">
+            <a class="app-pagination__link" href="?{{ page_param|default:'page' }}={{ page_obj.previous_page_number }}{% if query_params %}&{{ query_params }}{% endif %}">
                 Previous
             </a>
         {% endif %}
@@ -15,10 +15,10 @@
         </span>
 
         {% if page_obj.has_next %}
-            <a class="app-pagination__link" href="?page={{ page_obj.next_page_number }}{% if query_params %}&{{ query_params }}{% endif %}">
+            <a class="app-pagination__link" href="?{{ page_param|default:'page' }}={{ page_obj.next_page_number }}{% if query_params %}&{{ query_params }}{% endif %}">
                 Next
             </a>
-            <a class="app-pagination__link" href="?page={{ page_obj.paginator.num_pages }}{% if query_params %}&{{ query_params }}{% endif %}">
+            <a class="app-pagination__link" href="?{{ page_param|default:'page' }}={{ page_obj.paginator.num_pages }}{% if query_params %}&{{ query_params }}{% endif %}">
                 Last
             </a>
         {% endif %}

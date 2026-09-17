@@ -14,7 +14,7 @@
                 <div class="d-flex align-items-center gap-3">
                     <h1 class="mb-0 fw-semibold">Work Shifts</h1>
                     <span class="badge bg-light text-dark border">
-                        {{ work_shifts.paginator.count }} Records
+                        {{ summary.total|default:0 }} Records
                     </span>
                 </div>
 
@@ -54,6 +54,7 @@
                 <form method="get" class="filter-search-group flex-grow-1">
                     <i class="bi bi-search filter-search-icon"></i>
                     <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                    <input type="hidden" name="tab" value="{{ active_work_shift_tab }}">
                     <input type="text" name="permit_number" class="filter-search-input"
                            placeholder="Search by permit number..."
                            value="{{ request.GET.permit_number }}">
@@ -98,6 +99,7 @@
             <div class="offcanvas-body d-flex flex-column p-0">
                 <div class="filter-panel__body flex-grow-1" style="overflow-y:auto;">
                     <form method="get" id="workShiftFilterForm">
+                        <input type="hidden" name="tab" value="{{ active_work_shift_tab }}">
                         <div class="filter-sections">
                             <div class="filter-section filter-section--full">
                                 <div class="filter-section__title">
@@ -225,46 +227,55 @@
         <div class="col"><div class="card card-body py-2"><small>Shift 1 / 2</small><strong>{{ shift_counts.SHIFT_1 }} / {{ shift_counts.SHIFT_2 }}</strong></div></div>
     </div>
 
-    {% for shift_value, shift_label in shift_choices %}
+    <nav class="work-shift-tabs" role="tablist" aria-label="Work shift tables">
+        {% for shift_tab in shift_tabs %}
+            <button class="work-shift-tab {% if active_work_shift_tab == shift_tab.name %}work-shift-tab--active{% endif %}"
+                    id="{{ shift_tab.tab_id }}" type="button" role="tab"
+                    data-work-shift-tab="{{ shift_tab.name }}"
+                    aria-controls="{{ shift_tab.panel_id }}"
+                    aria-selected="{% if active_work_shift_tab == shift_tab.name %}true{% else %}false{% endif %}"
+                    tabindex="{% if active_work_shift_tab == shift_tab.name %}0{% else %}-1{% endif %}">
+                <i class="bi {{ shift_tab.icon }}"></i>
+                <span>{{ shift_tab.label }}</span>
+                <span class="work-shift-tab__badge">{{ shift_tab.count }}</span>
+            </button>
+        {% endfor %}
+    </nav>
+
+    <div class="work-shift-tab-panels">
+    {% for shift_tab in shift_tabs %}
+        <div class="work-shift-tab-panel {% if active_work_shift_tab == shift_tab.name %}work-shift-tab-panel--active{% endif %}"
+             id="{{ shift_tab.panel_id }}" role="tabpanel" aria-labelledby="{{ shift_tab.tab_id }}"
+             {% if active_work_shift_tab != shift_tab.name %}hidden{% endif %}>
         <section class="card mb-3 table-scroll-container">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <strong title="{{ selected_date|to_jalali:'%Y/%m/%d' }}">
-                    {{ selected_date|date:"Y-m-d" }} ({{ shift_label }})
+                    {{ selected_date|date:"Y-m-d" }} ({{ shift_tab.label }})
                     <small class="text-muted">
-                        {% if shift_value == "SHIFT_1" %}
-                            — Shift window: 07:00–19:00
-                        {% else %}
-                            — Shift window: 19:00–07:00 the following day
-                        {% endif %}
+                        — Shift window: {{ shift_tab.window }}
                     </small>
                 </strong>
-                <span>
-                    {% for row in shift_count_rows %}
-                        {% if row.value == shift_value %}{{ row.count }}{% endif %}
-                    {% endfor %}
-                    shifts
-                </span>
+                <span>{{ shift_tab.count }} shifts</span>
             </div>
             <div class="table-responsive">
                 <table class="table align-middle mb-0 permit-table">
                     <thead><tr>
-                        {% include "shared/_sortable_table_header.html" with column="permit_number" label="Permit No" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="location" label="Location" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="work_leader" label="Work Leader" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="worker_count" label="Workers" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=header_query_params %}
-                        {% include "shared/_sortable_table_header.html" with column="signed_signoffs" label="Signoff Progress" sort_by=sort_by query_params=header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="permit_number" label="Permit No" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="location" label="Location" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="unit" label="Unit" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="work_leader" label="Work Leader" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="worker_count" label="Workers" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="status" label="Status" sort_by=sort_by query_params=shift_tab.header_query_params %}
+                        {% include "shared/_sortable_table_header.html" with column="signed_signoffs" label="Signoff Progress" sort_by=sort_by query_params=shift_tab.header_query_params %}
                         <th>Actions</th>
                     </tr></thead>
                     <tbody>
-                    {% for work_shift in work_shifts %}
-                        {% if work_shift.shift == shift_value %}
+                    {% for work_shift in shift_tab.page_obj %}
                         <tr>
                             <td class="fw-bold"><a class="permit-number-link" href="{% url 'permits:permit_detail' work_shift.permit.permit_number %}">{{ work_shift.permit.permit_number }}</a></td>
                             <td>{{ work_shift.permit.permit_type.name }}</td><td>{{ work_shift.permit.department|default:"—" }}</td><td>{{ work_shift.permit.location_tag|default:"—" }}</td>
@@ -277,17 +288,86 @@
                             <td>{{ work_shift.signed_signoffs }}/{{ work_shift.required_signoffs }}</td>
                             <td><a class="btn btn-sm btn-outline-primary" href="{% url 'permits:work_shift_detail' work_shift.pk %}">View</a></td>
                         </tr>
-                        {% endif %}
-                    {% empty %}<tr><td colspan="15" class="text-muted">No work shifts found.</td></tr>{% endfor %}
+                    {% empty %}<tr><td colspan="13" class="text-muted text-center py-4">No work shifts found for this shift.</td></tr>{% endfor %}
                     </tbody>
                 </table>
             </div>
         </section>
+        {% include "shared/_pagination.html" with page_obj=shift_tab.page_obj page_param=shift_tab.page_param query_params=shift_tab.query_params pagination_label=shift_tab.pagination_label %}
+        </div>
     {% endfor %}
-    {% include "shared/_pagination.html" with page_obj=work_shifts %}
+    </div>
 </div>
 {% include "permits/_permit_filter_scripts.html" %}
 
 
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+
+    const tabs = Array.from(document.querySelectorAll('.work-shift-tab'));
+    const panels = document.querySelectorAll('.work-shift-tab-panel');
+
+    function activateWorkShiftTab(tab, updateUrl) {
+        if (!tab) return;
+
+        const targetId = tab.getAttribute('aria-controls');
+
+        tabs.forEach(function (item) {
+            const isActive = item === tab;
+            item.classList.toggle('work-shift-tab--active', isActive);
+            item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            item.tabIndex = isActive ? 0 : -1;
+        });
+
+        panels.forEach(function (panel) {
+            const isActive = panel.id === targetId;
+            panel.classList.toggle('work-shift-tab-panel--active', isActive);
+            panel.hidden = !isActive;
+        });
+
+        if (updateUrl) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', tab.dataset.workShiftTab);
+            url.hash = targetId;
+            window.history.replaceState({}, '', url);
+
+            document.querySelectorAll('input[name="tab"]').forEach(function (input) {
+                input.value = tab.dataset.workShiftTab;
+            });
+        }
+    }
+
+    tabs.forEach(function (tab, index) {
+        tab.addEventListener('click', function () {
+            activateWorkShiftTab(tab, true);
+        });
+
+        tab.addEventListener('keydown', function (event) {
+            let nextIndex = null;
+            if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+            if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = tabs.length - 1;
+
+            if (nextIndex !== null) {
+                event.preventDefault();
+                tabs[nextIndex].focus();
+                activateWorkShiftTab(tabs[nextIndex], true);
+            }
+        });
+    });
+
+    activateWorkShiftTab(
+        tabs.find(function (tab) {
+            return tab.classList.contains('work-shift-tab--active');
+        }) || tabs[0],
+        false
+    );
+})();
+</script>
 {% endblock %}

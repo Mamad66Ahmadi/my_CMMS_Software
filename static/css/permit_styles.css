@@ -3359,6 +3359,116 @@ details[open] > .detail-panel__header .chevron-icon {
 }
 
 
+.work-shift-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.125rem;
+    margin-bottom: 1.25rem;
+    padding: 0 0.75rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Individual tab */
+.work-shift-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    min-height: 42px;
+    padding: 0.65rem 1rem;
+    margin-bottom: -1px;
+
+    color: #5f6b66;
+    background: transparent;
+
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 0.375rem 0.375rem 0 0;
+
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    transition:
+        color 0.15s ease,
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+/* Hover */
+.work-shift-tab:hover {
+    color: #174f43;
+    background: rgba(23, 79, 67, 0.055);
+    border-bottom-color: rgba(23, 79, 67, 0.25);
+}
+
+/* Keyboard focus */
+.work-shift-tab:focus-visible {
+    outline: 2px solid rgba(23, 79, 67, 0.45);
+    outline-offset: -2px;
+}
+
+/* Active tab */
+.work-shift-tab--active {
+    color: #174f43;
+    background: #fff;
+
+    border-color: rgba(0, 0, 0, 0.08);
+    border-bottom-color: #174f43;
+
+    font-weight: 600;
+}
+
+/* Small visual lift for active tab */
+.work-shift-tab--active:hover {
+    background: #fff;
+    border-bottom-color: #174f43;
+}
+
+/* Badge / count */
+.work-shift-tab__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.35rem;
+
+    color: #596760;
+    background: #eef2ef;
+
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 0.3rem;
+
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Active badge */
+.work-shift-tab--active .work-shift-tab__badge {
+    color: #174f43;
+    background: #e4eee8;
+    border-color: rgba(23, 79, 67, 0.12);
+}
+
+/* Tab panels */
+.work-shift-tab-panel {
+    display: none;
+}
+
+.work-shift-tab-panel--active {
+    display: block;
+}
+
+
 /* ==================================================================
    PAPER SAFETY PERMITS PANEL (permit detail)
    ================================================================== */

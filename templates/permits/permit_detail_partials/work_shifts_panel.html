@@ -711,6 +711,16 @@
     /* =========================================================
        8. Add Work Shift modal
        ========================================================= */
+    /*
+       The permit's main column receives a z-index for the safety-permit
+       autocomplete. That creates a stacking context below Bootstrap's
+       body-level backdrop, causing the backdrop to intercept modal clicks.
+       Remove only that stacking context while this modal is open.
+    */
+    .permit-detail-page .permit-layout__main:has(#addWorkShiftModal.show) {
+        z-index: auto !important;
+    }
+
     .shift-modal {
         border: 1px solid var(--wsp-border);
         border-radius: var(--wsp-radius-lg);

@@ -1,3 +1,4 @@
+from datetime import date
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -10,11 +11,13 @@ from equipment.models.equipment_models import LocationTag, TimeStampedModel
 from permits.models import (
     Permit,
     PermitPaperSafetyPermit,
+    PermitWorkShift,
     PaperSafetyPermitType,
     PaperSafetyPermitWorkflowStep,
     PermitType,
     PermitWorkflow,
     PermitWorkflowStep,
+    Shift,
 )
 from permits.services.paper_safety_permit_service import (
     PaperSafetyPermitReviewService,
@@ -293,3 +296,67 @@ class PaperSafetyPermitWorkflowTests(TestCase):
         PermitWorkShiftService._ensure_safety_permits_do_not_block_work_shift(
             self.permit
         )
+
+
+class WorkShiftListViewTests(TestCase):
+    def setUp(self):
+        self.actor = User.objects.create_user(
+            username="work-shift-list-user",
+            personnel_number=90002,
+        )
+        workflow = PermitWorkflow.objects.create(name="Work shift list test")
+        permit_type = PermitType.objects.create(
+            code="SHIFT_LIST_TEST",
+            name="Work shift list test",
+            active_workflow=workflow,
+        )
+        permits = [
+            Permit(
+                permit_number=f"SHIFT-LIST-{index:03d}",
+                permit_type=permit_type,
+                workflow=workflow,
+                scope_of_work="Pagination test",
+                created_by=self.actor,
+            )
+            for index in range(52)
+        ]
+        Permit.objects.bulk_create(permits)
+        PermitWorkShift.objects.bulk_create(
+            [
+                PermitWorkShift(
+                    permit=permit,
+                    date=date(2026, 9, 17),
+                    shift=Shift.SHIFT_1 if index < 26 else Shift.SHIFT_2,
+                    created_by=self.actor,
+                )
+                for index, permit in enumerate(permits)
+            ]
+        )
+        self.client.force_login(self.actor)
+
+    def test_each_shift_uses_its_own_paginator_and_query_parameter(self):
+        response = self.client.get(
+            reverse("permits:work_shift_list"),
+            {
+                "date": "2026-09-17",
+                "shift_1_page": "2",
+                "shift_2_page": "2",
+                "tab": "shift-2",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["shift_1_work_shifts"].number, 2)
+        self.assertEqual(response.context["shift_2_work_shifts"].number, 2)
+        self.assertEqual(len(response.context["shift_1_work_shifts"]), 1)
+        self.assertEqual(len(response.context["shift_2_work_shifts"]), 1)
+        self.assertEqual(response.context["active_work_shift_tab"], "shift-2")
+
+        shift_1_query = response.context["shift_1_query_params"]
+        shift_2_query = response.context["shift_2_query_params"]
+        self.assertNotIn("shift_1_page=", shift_1_query)
+        self.assertIn("shift_2_page=2", shift_1_query)
+        self.assertIn("tab=shift-1", shift_1_query)
+        self.assertNotIn("shift_2_page=", shift_2_query)
+        self.assertIn("shift_1_page=2", shift_2_query)
+        self.assertIn("tab=shift-2", shift_2_query)
