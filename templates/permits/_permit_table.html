@@ -8,9 +8,9 @@
             {% include "shared/_sortable_table_header.html" with column="permit_type" label="Permit Type" sort_by=sort_by query_params=header_query_params %}
 
             {% include "shared/_sortable_table_header.html" with column="location_tag" label="Location Tag" sort_by=sort_by query_params=header_query_params %}
-
-            {% include "shared/_sortable_table_header.html" with column="workflow" label="Workflow" sort_by=sort_by query_params=header_query_params %}
-            {% include "shared/_sortable_table_header.html" with column="current_step" label="Step No." sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
+            {% include "shared/_sortable_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
+            
             {% include "shared/_sortable_table_header.html" with column="current_step_title" label="Current Step" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="workflow_state" label="Workflow State" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="is_terminal" label="Terminal" sort_by=sort_by query_params=header_query_params %}
@@ -19,8 +19,7 @@
             {% include "shared/_sortable_table_header.html" with column="train" label="Train" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="work_order" label="Work Order" sort_by=sort_by query_params=header_query_params %}
 
-            {% include "shared/_sortable_table_header.html" with column="scope_of_work" label="Scope of Work" sort_by=sort_by query_params=header_query_params %}
-            {% include "shared/_sortable_table_header.html" with column="department" label="Department" sort_by=sort_by query_params=header_query_params %}
+
             {% include "shared/_sortable_table_header.html" with column="hazard_code" label="Hazards" sort_by=sort_by query_params=header_query_params %}
             {% include "shared/_sortable_table_header.html" with column="precaution_code" label="Precautions" sort_by=sort_by query_params=header_query_params %}
 
@@ -87,22 +86,21 @@
                 </td>
 
                 <td>
-                    {% if permit.workflow %}
-                        {{ permit.workflow.name }}
+                    {% if permit.department %}
+                        {{ permit.department.name }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
 
-
-
-                <td class="text-center">
-                    {% if permit.current_step %}
-                        {{ permit.current_step.step_number }}
-                    {% else %}
-                        -
-                    {% endif %}
+                <td class="persian-text align-start-cell">
+                    <bdi title="{{ permit.scope_of_work|default:'' }}">
+                        {{ permit.scope_of_work|default:"-"|truncatechars:70 }}
+                    </bdi>
                 </td>
+
+
+
 
                 <td>
                     {% if permit.current_step %}
@@ -181,19 +179,7 @@
                     {% endif %}
                 </td>
 
-                <td class="persian-text align-start-cell">
-                    <bdi title="{{ permit.scope_of_work|default:'' }}">
-                        {{ permit.scope_of_work|default:"-"|truncatechars:70 }}
-                    </bdi>
-                </td>
 
-                <td>
-                    {% if permit.department %}
-                        {{ permit.department.name }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
 
                 <td>
                     {% if permit.hazards.all %}

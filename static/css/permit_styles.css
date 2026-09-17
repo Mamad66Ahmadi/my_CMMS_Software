@@ -663,36 +663,11 @@ textarea:focus-visible,
     overflow: auto;
     overscroll-behavior: contain;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    scrollbar-color: var(--c-accent) var(--c-bg-subtle-2);
-    scrollbar-width: auto;
 }
 
 .permit-grid:focus-visible {
     outline: 2px solid var(--c-accent);
     outline-offset: 2px;
-}
-
-.permit-grid::-webkit-scrollbar {
-    width: 13px;
-    height: 13px;
-}
-
-.permit-grid::-webkit-scrollbar-track {
-    background: var(--c-bg-subtle-2);
-}
-
-.permit-grid::-webkit-scrollbar-thumb {
-    background: var(--c-accent);
-    border: 3px solid var(--c-bg-subtle-2);
-    border-radius: 8px;
-}
-
-.permit-grid::-webkit-scrollbar-thumb:hover {
-    background: var(--c-primary);
-}
-
-.permit-grid::-webkit-scrollbar-corner {
-    background: var(--c-bg-subtle-2);
 }
 
 @media (max-width: 768px) {

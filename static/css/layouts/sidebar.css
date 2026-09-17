@@ -92,13 +92,6 @@
     padding-bottom: 16px;
 }
 
-.sidebar #sidebarAccordion::-webkit-scrollbar { width: 4px; }
-.sidebar #sidebarAccordion::-webkit-scrollbar-track { background: transparent; }
-.sidebar #sidebarAccordion::-webkit-scrollbar-thumb {
-    background: #2a3a4a;
-    border-radius: 2px;
-}
-
 .sidebar-header {
     display: flex;
     align-items: center;

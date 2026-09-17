@@ -1,0 +1,71 @@
+/* Global formal-gray scrollbar treatment for every application surface. */
+:root {
+    --scrollbar-track: #f1f3f5;
+    --scrollbar-thumb: #9aa1aa;
+    --scrollbar-thumb-hover: #747b85;
+    --scrollbar-thumb-active: #565d66;
+    --scrollbar-border: #f1f3f5;
+}
+
+html,
+body,
+body * {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: auto;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border: 3px solid var(--scrollbar-border);
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: var(--scrollbar-thumb-active);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
+}
+
+/* Permit grid formerly had a higher-specificity green scrollbar theme. */
+.permit-grid {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track) !important;
+}
+
+.permit-grid::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.permit-grid::-webkit-scrollbar-track,
+.permit-grid::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track) !important;
+}
+
+.permit-grid::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb) !important;
+    border: 3px solid var(--scrollbar-border) !important;
+    border-radius: 8px;
+}
+
+.permit-grid::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover) !important;
+}
+
+.permit-grid::-webkit-scrollbar-thumb:active {
+    background: var(--scrollbar-thumb-active) !important;
+}

@@ -49,82 +49,89 @@
         <form method="post" autocomplete="off" class="equipment-form">
             {% csrf_token %}
 
-            <p class="form-field-block">
-                {{ form.loc_tag.label_tag }}
-                {{ form.loc_tag }}
-            </p>
+            <div class="form-grid form-grid--location-tag">
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.loc_tag.label_tag }}
+                    {{ form.loc_tag }}
+                    {{ form.loc_tag.errors }}
+                </div>
 
-            <!-- Parent Search -->
-            <p class="form-field-block" style="position: relative;">
-                {{ form.parent_search.label_tag }}
-                {{ form.parent_search }}
-                <div id="parent-results" class="autocomplete-results"></div>
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.parent_search.label_tag }}
+                    {{ form.parent_search }}
+                    {{ form.parent_search.errors }}
+                    <div id="parent-results" class="autocomplete-results"></div>
+                </div>
 
-            <!-- Hidden parent field -->
-            {{ form.parent }}
+                {{ form.parent }}
 
-            <p class="form-field-block">
-                {{ form.description.label_tag }}
-                {{ form.description }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.unit.label_tag }}
+                    {{ form.unit }}
+                    {{ form.unit.errors }}
+                </div>
 
-            <p class="form-field-block">
-                {{ form.long_tag.label_tag }}
-                {{ form.long_tag }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.train.label_tag }}
+                    {{ form.train }}
+                    {{ form.train.errors }}
+                </div>
 
-            <p class="form-field-block">
-                {{ form.obj_criticality.label_tag }}
-                {{ form.obj_criticality }}
-            </p>
+                <div class="form-field-block location-tag-field--half">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
 
-            <p class="form-field-block">
-                {{ form.obj_type.label_tag }}
-                {{ form.obj_type }}
-            </p>
+                <div class="form-field-block location-tag-field--half">
+                    {{ form.long_tag.label_tag }}
+                    {{ form.long_tag }}
+                    {{ form.long_tag.errors }}
+                </div>
 
-            <p class="form-field-block">
-                {{ form.obj_category.label_tag }}
-                {{ form.obj_category }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_criticality.label_tag }}
+                    {{ form.obj_criticality }}
+                    {{ form.obj_criticality.errors }}
+                </div>
 
-            <p class="form-field-block">
-                {{ form.unit.label_tag }}
-                {{ form.unit }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_type.label_tag }}
+                    {{ form.obj_type }}
+                    {{ form.obj_type.errors }}
+                </div>
 
-            <p class="form-field-block">
-                {{ form.train.label_tag }}
-                {{ form.train }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_category.label_tag }}
+                    {{ form.obj_category }}
+                    {{ form.obj_category.errors }}
+                </div>
 
-            <p class="form-field-block">
-                {{ form.note.label_tag }}
-                {{ form.note }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.mih_level.label_tag }}
+                    {{ form.mih_level }}
+                    {{ form.mih_level.errors }}
+                </div>
 
-            <p class="form-field-block">
-                {{ form.mih_level.label_tag }}
-                {{ form.mih_level }}
-            </p>
+                <div class="form-field-block location-tag-field--note">
+                    {{ form.note.label_tag }}
+                    {{ form.note }}
+                    {{ form.note.errors }}
+                </div>
 
-            <div style="margin-top:25px;">
-                <button type="submit" class="btn-primary-custom">
-                    Submit Request
-                </button>
+                <div class="equipment-form-page__submit-row equipment-form-page__submit-row--inline">
+                    <button type="submit" class="btn-primary-custom">
+                        Submit Request
+                    </button>
 
-                <a href="{% url 'equipment:location_tag_list' %}"
-                   class="btn-secondary-custom">
-                    Cancel
-                </a>
+                    <a href="{% url 'equipment:location_tag_list' %}"
+                       class="btn-secondary-custom">
+                        Cancel
+                    </a>
+                </div>
             </div>
 
         </form>
-
-        <p>
-            {{ form.loc_tag.errors }}
-        </p>
 
     </div>
 </div>

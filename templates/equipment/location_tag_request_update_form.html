@@ -36,105 +36,102 @@
 
     <div class="form-card">
 
-        <p>You are submitting a modification request for:</p>
-
-        <h4 class="tag-highlight">
-            {{ view.tag.loc_tag }}
-        </h4>
-
-        <hr style="margin:20px 0;">
+        <p class="equipment-form-page__intro">
+            You are submitting a modification request for <strong>{{ view.tag.loc_tag }}</strong>.
+        </p>
 
         <form method="post" class="equipment-form">
             {% csrf_token %}
 
-            <p>
-                {{ form.loc_tag.label_tag }}
-                {{ form.loc_tag }}
-            </p>
+            <div class="form-grid form-grid--location-tag">
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.loc_tag.label_tag }}
+                    {{ form.loc_tag }}
+                    {{ form.loc_tag.errors }}
+                </div>
 
-            <!-- Parent Search -->
-            <p style="position: relative;">
-                {{ form.parent_search.label_tag }}
-                {{ form.parent_search }}
-                <div id="parent-results" class="autocomplete-results"></div>
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.parent_search.label_tag }}
+                    {{ form.parent_search }}
+                    {{ form.parent_search.errors }}
+                    <div id="parent-results" class="autocomplete-results"></div>
+                </div>
 
-            <!-- Hidden parent field -->
-            {{ form.parent }}
+                {{ form.parent }}
 
-            <p>
-                {{ form.description.label_tag }}
-                {{ form.description }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.unit.label_tag }}
+                    {{ form.unit }}
+                    {{ form.unit.errors }}
+                </div>
 
-            <p>
-                {{ form.long_tag.label_tag }}
-                {{ form.long_tag }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.train.label_tag }}
+                    {{ form.train }}
+                    {{ form.train.errors }}
+                </div>
 
-            <p>
-                {{ form.obj_criticality.label_tag }}
-                {{ form.obj_criticality }}
-            </p>
+                <div class="form-field-block location-tag-field--half">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
 
-            <p>
-                {{ form.obj_type.label_tag }}
-                {{ form.obj_type }}
-            </p>
+                <div class="form-field-block location-tag-field--half">
+                    {{ form.long_tag.label_tag }}
+                    {{ form.long_tag }}
+                    {{ form.long_tag.errors }}
+                </div>
 
-            <p>
-                {{ form.obj_category.label_tag }}
-                {{ form.obj_category }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_criticality.label_tag }}
+                    {{ form.obj_criticality }}
+                    {{ form.obj_criticality.errors }}
+                </div>
 
-            <p>
-                {{ form.unit.label_tag }}
-                {{ form.unit }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_type.label_tag }}
+                    {{ form.obj_type }}
+                    {{ form.obj_type.errors }}
+                </div>
 
-            <p>
-                {{ form.train.label_tag }}
-                {{ form.train }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.obj_category.label_tag }}
+                    {{ form.obj_category }}
+                    {{ form.obj_category.errors }}
+                </div>
 
-            <p>
-                {{ form.note.label_tag }}
-                {{ form.note }}
-            </p>
+                <div class="form-field-block location-tag-field--quarter">
+                    {{ form.mih_level.label_tag }}
+                    {{ form.mih_level }}
+                    {{ form.mih_level.errors }}
+                </div>
 
-            <p>
-                {{ form.mih_level.label_tag }}
-                {{ form.mih_level }}
-            </p>
+                <div class="form-field-block location-tag-field--note">
+                    {{ form.note.label_tag }}
+                    {{ form.note }}
+                    {{ form.note.errors }}
+                </div>
 
-            <div style="margin-top:25px;">
-                <button type="submit" class="btn-primary-custom">
-                    Submit Change Request
-                </button>
+                <div class="equipment-form-page__submit-row equipment-form-page__submit-row--inline">
+                    <button type="submit" class="btn-primary-custom">
+                        Submit Change Request
+                    </button>
 
-                <a href="{% url 'equipment:location_tag_detail' view.tag.loc_tag %}"
-                   class="btn-secondary-custom">
-                    Cancel
-                </a>
+                    <a href="{% url 'equipment:location_tag_detail' view.tag.loc_tag %}"
+                       class="btn-secondary-custom">
+                        Cancel
+                    </a>
 
+                    <a href="{% url 'equipment:location_tag_request_remove' view.tag.loc_tag %}"
+                       class="btn btn-danger"
+                       onclick="return confirmRemove();">
+                        Request to Remove the Tag
+                    </a>
+                </div>
             </div>
 
         </form>
-
-        
-
-        <p>
-            {{ form.non_field_errors }}
-            {{ form.loc_tag.errors }}
-        </p>
-        <div style="margin-top:50px;">
-            <a href="{% url 'equipment:location_tag_request_remove' view.tag.loc_tag %}"
-            class="btn btn-danger"
-            onclick="return confirmRemove();">
-                Request to Remove the Tag
-            </a>
-        </div>
-        
     </div>
 </div>
 <script>
@@ -266,5 +263,4 @@ input.addEventListener("input", function () {
 
 
 {% endblock %}
-
 

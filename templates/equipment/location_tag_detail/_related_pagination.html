@@ -1,25 +1,25 @@
 {% if page_obj.paginator.num_pages > 1 %}
-<nav class="ifs-related-pagination" aria-label="{{ label }} pagination">
-    <span class="ifs-related-pagination__summary">
+<nav class="app-pagination app-pagination--with-summary" aria-label="{{ label }} pagination">
+    <span class="app-pagination__summary">
         Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
     </span>
-    <span class="ifs-related-pagination__links">
+    <span class="app-pagination__links">
         {% if page_obj.has_previous %}
-            <a href="?{{ page_param }}=1{% if query_params %}&amp;{{ query_params }}{% endif %}#panel-{{ tab_name }}">
+            <a class="app-pagination__link" href="?{{ page_param }}=1{% if query_params %}&amp;{{ query_params }}{% endif %}#panel-{{ tab_name }}">
                 First
             </a>
-            <a href="?{{ page_param }}={{ page_obj.previous_page_number }}{% if query_params %}&amp;{{ query_params }}{% endif %}#panel-{{ tab_name }}">
+            <a class="app-pagination__link" href="?{{ page_param }}={{ page_obj.previous_page_number }}{% if query_params %}&amp;{{ query_params }}{% endif %}#panel-{{ tab_name }}">
                 Previous
             </a>
         {% endif %}
-        <span class="ifs-related-pagination__current" aria-current="page">
+        <span class="app-pagination__current" aria-current="page">
             Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
         </span>
         {% if page_obj.has_next %}
-            <a href="?{{ page_param }}={{ page_obj.next_page_number }}{% if query_params %}&amp;{{ query_params }}{% endif %}#panel-{{ tab_name }}">
+            <a class="app-pagination__link" href="?{{ page_param }}={{ page_obj.next_page_number }}{% if query_params %}&amp;{{ query_params }}{% endif %}#panel-{{ tab_name }}">
                 Next
             </a>
-            <a href="?{{ page_param }}={{ page_obj.paginator.num_pages }}{% if query_params %}&amp;{{ query_params }}{% endif %}#panel-{{ tab_name }}">
+            <a class="app-pagination__link" href="?{{ page_param }}={{ page_obj.paginator.num_pages }}{% if query_params %}&amp;{{ query_params }}{% endif %}#panel-{{ tab_name }}">
                 Last
             </a>
         {% endif %}

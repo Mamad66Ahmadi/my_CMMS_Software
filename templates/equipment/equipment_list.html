@@ -62,7 +62,7 @@
 
     {% if equipments %}
         {% include "equipment/equipment_list/_table.html" %}
-        {% include "shared/_pagination.html" %}
+        {% include "shared/_pagination.html" with page_obj=equipments query_params=query_params %}
     {% else %}
         <div class="alert alert-info">
             <i class="bi bi-info-circle me-1"></i>

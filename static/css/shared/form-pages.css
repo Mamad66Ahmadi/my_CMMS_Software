@@ -142,6 +142,40 @@
     gap: 14px 18px;
 }
 
+.equipment-form-page .form-grid--location-tag {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 18px 16px;
+}
+
+.equipment-form-page .location-tag-field--quarter {
+    grid-column: span 3;
+}
+
+.equipment-form-page .location-tag-field--half {
+    grid-column: span 6;
+}
+
+.equipment-form-page .location-tag-field--full {
+    grid-column: 1 / -1;
+}
+
+.equipment-form-page .location-tag-field--note {
+    grid-column: span 4;
+}
+
+.equipment-form-page .location-tag-field--note textarea {
+    min-height: 44px;
+    height: 44px;
+}
+
+.equipment-form-page .form-field--span-2 {
+    grid-column: span 2;
+}
+
+.equipment-form-page .form-field--span-3 {
+    grid-column: span 3;
+}
+
 .equipment-form-page .form-field,
 .equipment-form-page .form-field-block {
     position: relative;
@@ -270,6 +304,42 @@
     opacity: 1;
 }
 
+.equipment-form-page__submit-row {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.equipment-form-page__submit-row--inline {
+    grid-column: span 8;
+    align-self: end;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+@media (max-width: 1000px) {
+    .equipment-form-page .form-grid--location-tag {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .equipment-form-page .form-grid--location-tag .location-tag-field--quarter {
+        grid-column: span 1;
+    }
+
+    .equipment-form-page .form-grid--location-tag .location-tag-field--note,
+    .equipment-form-page .form-grid--location-tag .equipment-form-page__submit-row--inline {
+        grid-column: span 1;
+    }
+
+    .equipment-form-page .form-grid--location-tag .location-tag-field--half,
+    .equipment-form-page .form-grid--location-tag .location-tag-field--full,
+    .equipment-form-page .form-grid--location-tag .form-field--span-2,
+    .equipment-form-page .form-grid--location-tag .form-field--span-3 {
+        grid-column: 1 / -1;
+    }
+}
+
 .equipment-form-page .btn-primary-custom,
 .equipment-form-page .ifs-btn--primary {
     background: var(--form-primary);
@@ -294,6 +364,10 @@
 
 .equipment-form-page .btn-danger {
     margin-top: 18px;
+}
+
+.equipment-form-page__submit-row .btn-danger {
+    margin-top: 0;
 }
 
 .equipment-form-page .autocomplete-results {
@@ -326,7 +400,14 @@
     }
 
     .equipment-form-page .form-field--full,
-    .equipment-form-page .field-full {
+    .equipment-form-page .field-full,
+    .equipment-form-page .form-grid--location-tag .location-tag-field--quarter,
+    .equipment-form-page .form-grid--location-tag .location-tag-field--half,
+    .equipment-form-page .form-grid--location-tag .location-tag-field--full,
+    .equipment-form-page .form-grid--location-tag .location-tag-field--note,
+    .equipment-form-page .form-grid--location-tag .equipment-form-page__submit-row--inline,
+    .equipment-form-page .form-grid--location-tag .form-field--span-2,
+    .equipment-form-page .form-grid--location-tag .form-field--span-3 {
         grid-column: auto;
     }
 }

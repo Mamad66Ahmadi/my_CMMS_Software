@@ -10,7 +10,10 @@
     </header>
     <div class="ifs-card__body">
         {% if location_permits %}
-            <div class="ifs-table-container">
+            <div class="ifs-table-container location-related-table-scroll location-related-table-scroll--permits"
+                 role="region"
+                 aria-label="{% trans 'Permits at this location table' %}"
+                 tabindex="0">
                 <table class="ifs-table ifs-table--hover location-related-table location-related-table--permits">
                     <thead>
                         <tr>
