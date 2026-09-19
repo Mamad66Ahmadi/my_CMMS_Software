@@ -1838,6 +1838,22 @@ details[open] > .detail-panel__header .chevron-icon {
     z-index: 20;
 }
 
+/* Keep an opened status action above later permit rows and the next detail
+   panel. Later siblings otherwise win the normal paint order even though the
+   dropdown itself has a z-index. */
+#paper-safety-permits-panel .psp-item:has(.safety-action-dropdown__menu.show) {
+    position: relative;
+    z-index: 100;
+}
+
+#paper-safety-permits-panel .psp-item:has(.safety-action-dropdown__menu.show) .collapse.show,
+#paper-safety-permits-panel .psp-item:has(.safety-action-dropdown__menu.show) .psp-item__detail,
+#paper-safety-permits-panel .psp-item:has(.safety-action-dropdown__menu.show) .safety-review-form,
+#paper-safety-permits-panel .psp-item:has(.safety-action-dropdown__menu.show) .safety-review-form__fields,
+#paper-safety-permits-panel .psp-item:has(.safety-action-dropdown__menu.show) .safety-review-form__actions {
+    overflow: visible;
+}
+
 .safety-action-dropdown__toggle {
     display: inline-flex;
     align-items: center;
@@ -1882,6 +1898,7 @@ details[open] > .detail-panel__header .chevron-icon {
 }
 
 .safety-action-dropdown__menu {
+    z-index: 1010;
     min-width: 220px;
     margin-top: 8px !important;
     padding: 7px;
